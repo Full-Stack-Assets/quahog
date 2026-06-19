@@ -65,7 +65,7 @@ func _run_sequence() -> void:
 	# ── WARNING ────────────────────────────────────────────────────────────
 	_set_phase(GloriaPhase.WARNING)
 	if WeatherController.has_method("force_state"):
-		WeatherController.force_state("COASTAL_RAIN")
+		WeatherController.force_state(WeatherController.WeatherState.COASTAL_RAIN)
 	await get_tree().create_timer(warning_duration).timeout
 	if not _sequence_running:
 		return
@@ -73,7 +73,7 @@ func _run_sequence() -> void:
 	# ── PEAK ───────────────────────────────────────────────────────────────
 	_set_phase(GloriaPhase.PEAK)
 	if WeatherController.has_method("force_state"):
-		WeatherController.force_state("NOREASTER")
+		WeatherController.force_state(WeatherController.WeatherState.NOREASTER)
 	await get_tree().create_timer(peak_duration).timeout
 	if not _sequence_running:
 		return
