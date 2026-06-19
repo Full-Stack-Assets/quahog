@@ -310,8 +310,8 @@ func complete_mission(id: String) -> void:
 	m.state = MissionState.COMPLETED
 
 	# Pay the player.
-	if m.reward_amount > 0.0 and PlayerWallet.has_method("add_funds"):
-		PlayerWallet.add_funds(m.reward_amount)
+	if m.reward_amount > 0.0 and PlayerWallet.has_method("add"):
+		PlayerWallet.add(m.reward_amount, "mission reward: %s" % m.display_name)
 		print("MissionManager: reward $%.2f for '%s'" % [m.reward_amount, m.display_name])
 
 	emit_signal("mission_completed", m)

@@ -5,6 +5,9 @@
 ## Access via: SaveLoadManager.<method>
 extends Node
 
+# Explicit dependency (resolved at parse time, independent of global-class scan order)
+const ServiceLocatorRef = preload("res://scripts/core/ServiceLocator.gd")
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -200,8 +203,8 @@ func _collect_save_data() -> Dictionary:
 	var player_position: Vector3 = Vector3.ZERO
 	var player_rotation: Vector3 = Vector3.ZERO
 
-	if ServiceLocator.has_service("PlayerController"):
-		var pc = ServiceLocator.get_service("PlayerController")
+	if ServiceLocatorRef.has_service("PlayerController"):
+		var pc = ServiceLocatorRef.get_service("PlayerController")
 		player_position = pc.global_position
 		player_rotation = pc.rotation
 
@@ -283,8 +286,8 @@ func _apply_save_data(data: Dictionary) -> void:
 	# Player position / rotation
 	var pos_dict: Dictionary = data.get("player_position", {})
 	var rot_dict: Dictionary = data.get("player_rotation", {})
-	if pos_dict and ServiceLocator.has_service("PlayerController"):
-		var pc = ServiceLocator.get_service("PlayerController")
+	if pos_dict and ServiceLocatorRef.has_service("PlayerController"):
+		var pc = ServiceLocatorRef.get_service("PlayerController")
 		pc.global_position = Vector3(
 			float(pos_dict.get("x", 0.0)),
 			float(pos_dict.get("y", 0.0)),
