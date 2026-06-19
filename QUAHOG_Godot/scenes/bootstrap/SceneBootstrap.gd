@@ -53,6 +53,15 @@ func validate_singletons() -> void:
 ## Initializes the scene state for the prologue: locks time to midnight (00:00)
 ## and forces the weather to DENSE_FOG.
 func initialize_scene() -> void:
+	var weather: Node = get_node_or_null("/root/WeatherController")
+
+	# Wire the scene's WorldEnvironment into the WeatherController autoload so
+	# weather states drive the actual environment visuals.
+	var world_env := get_node_or_null("WorldEnvironment") as WorldEnvironment
+	if weather != null and world_env != null and world_env.environment != null:
+		weather.environment = world_env.environment
+		print("[SceneBootstrap] WorldEnvironment wired into WeatherController.")
+
 	# Prologue begins at midnight for atmosphere.
 	var clock: Node = get_node_or_null("/root/TimeOfDayClock")
 	if clock != null:
@@ -60,7 +69,6 @@ func initialize_scene() -> void:
 		print("[SceneBootstrap] Time set to midnight (00:00).")
 
 	# Prologue opens with dense coastal fog.
-	var weather: Node = get_node_or_null("/root/WeatherController")
 	if weather != null:
 		weather.force_state(weather.WeatherState.DENSE_FOG)
 		print("[SceneBootstrap] Weather forced to DENSE_FOG for prologue.")

@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/bootstrap/SceneBootstrap.gd" id="1_boot"]
+
+[sub_resource type="Environment" id="Environment_boot"]
+ambient_light_source = 2
+ambient_light_color = Color(0.55, 0.55, 0.6, 1)
+fog_enabled = false
+
+[node name="Bootstrap" type="Node"]
+script = ExtResource("1_boot")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_boot")
