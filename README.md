@@ -2,14 +2,21 @@
 
 Project QUAHOG — **Grand Theft Auto: South Coast**, an unofficial fan concept and satire of *GTA: Vice City* relocated to the South Coast of Massachusetts (Fall River, New Bedford, Cape Cod, Brockton) in 1986.
 
-This repository holds both the design/pitch materials and the Godot game build.
+This repository holds the design/pitch materials plus two engine builds of the game:
+the original Unity codebase and the in-progress Godot port.
 
 ## Contents
 
 ### `QUAHOG_Godot/`
-The Godot game project. Contains autoloads, gameplay scripts (player, vehicle, world,
-traffic, AI, combat, audio, events), UI/HUD widgets, and core systems. See
+The Godot game project (GDScript). Contains autoloads, gameplay scripts (player, vehicle,
+world, traffic, AI, combat, audio, events), UI/HUD widgets, and core systems. See
 [`QUAHOG_Godot/GODOT_SETUP.md`](QUAHOG_Godot/GODOT_SETUP.md) for setup instructions.
+
+### `QUAHOG_Unity/`
+The original Unity engine project (C#, namespace `Quahog.SouthCoast`) — the codebase being
+ported to Godot. `QuahogEngine.csproj` is a headless compile harness that builds the game
+scripts in `Assets/_Scripts/` against stubbed Unity APIs in `stubs/`. Engine development
+plans live in [`QUAHOG_Unity/plans/`](QUAHOG_Unity/plans/).
 
 ### `quahog-project-files/`
 Design and pitch materials:
