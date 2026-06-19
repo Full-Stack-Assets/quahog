@@ -43,7 +43,7 @@ func _physics_process(_delta: float) -> void:
 		push_warning("BuoyancyEffector '%s': no valid buoyancy points." % name)
 		return
 
-	var space_state := get_world_3d().direct_space_state
+	var space_state := _body.get_world_3d().direct_space_state
 	var submerged_count: int = 0
 
 	for point in _resolved_points:

@@ -42,7 +42,7 @@ func purchase() -> void:
 
 	# Persist to empire database if available.
 	if has_node("/root/EmpireDatabaseManager"):
-		EmpireDatabaseManager.record_purchase(data)
+		get_node("/root/EmpireDatabaseManager").record_purchase(data)
 
 	emit_signal("purchased", self)
 	print("AssetProperty: purchased '%s' for $%.2f" % [data.display_name, data.purchase_price])
@@ -53,7 +53,7 @@ func collect_daily_yield() -> float:
 	if data == null or not data.is_owned:
 		return 0.0
 	var amount: float = data.daily_yield
-	PlayerWallet.add_funds(amount)
+	PlayerWallet.add(amount, "daily yield: %s" % data.display_name)
 	emit_signal("yield_collected", self)
 	print("AssetProperty: collected $%.2f from '%s'" % [amount, data.display_name])
 	return amount

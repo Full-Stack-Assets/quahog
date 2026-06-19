@@ -167,7 +167,7 @@ func _apply_dead_zone(vec: Vector2, dead_zone: float) -> Vector2:
 
 
 func _detect_device_switch(event: InputEvent) -> void:
-	if event is InputEventJoypadButton or event is InputEventJoypadAxis:
+	if event is InputEventJoypadButton or event is InputEventJoypadMotion:
 		if _current_device != "gamepad":
 			_current_device = "gamepad"
 			print("[InputManager] Device switched to: gamepad")

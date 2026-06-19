@@ -1,6 +1,6 @@
 # CombatController.gd
 # res://scripts/systems/combat/CombatController.gd
-extends Node
+extends Node3D
 
 # ---------------------------------------------------------------------------
 # Weapon enum
