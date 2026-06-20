@@ -44,6 +44,10 @@ namespace Quahog.SouthCoast
             root.AddComponent<TestSceneBootstrap>().InitTestScene();
             PlayerWallet.Instance.SetBalance(500f);
 
+            // Backdrop camera: an atmospheric sky that reacts to time + weather
+            // (so the empty play area isn't a black void), and a Camera to build on.
+            root.AddComponent<WorldBackdrop>();
+
             // Living-world HUD: day/time clock, weather, and wanted-level stars.
             root.AddComponent<WorldHud>();
 
