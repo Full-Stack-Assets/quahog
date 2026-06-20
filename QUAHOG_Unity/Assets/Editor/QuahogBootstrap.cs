@@ -101,11 +101,37 @@ namespace Quahog.SouthCoast.EditorTools
             }
         }
 
-        /// <summary>Pre-build (incl. Build Automation): stamp identity only — no pipeline changes.</summary>
+        /// <summary>
+        /// Configure WebGL so the player loads from any static host (GitHub Pages,
+        /// itch.io, plain file servers) that can't send a "Content-Encoding: gzip"
+        /// header. Decompression Fallback makes the loader decompress in JS, so the
+        /// gzip-compressed build no longer depends on server headers.
+        /// </summary>
+        public static void ConfigureWebGLForStaticHosting()
+        {
+            try
+            {
+                PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
+                PlayerSettings.WebGL.decompressionFallback = true;
+                Debug.Log("[QuahogBootstrap] WebGL set to Gzip + Decompression Fallback (static-host friendly).");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("[QuahogBootstrap] WebGL config skipped: " + e.Message);
+            }
+        }
+
+        /// <summary>Pre-build (incl. Build Automation): stamp identity, and make
+        /// WebGL builds static-host friendly. No render-pipeline changes.</summary>
         private class BuildHook : IPreprocessBuildWithReport
         {
             public int callbackOrder => 0;
-            public void OnPreprocessBuild(BuildReport report) => EnsureIdentity();
+            public void OnPreprocessBuild(BuildReport report)
+            {
+                EnsureIdentity();
+                if (report.summary.platform == BuildTarget.WebGL)
+                    ConfigureWebGLForStaticHosting();
+            }
         }
     }
 }
