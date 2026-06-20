@@ -10,11 +10,14 @@ name: Build & Deploy WebGL
 #     UNITY_SERIAL   — your Pro/Plus serial number
 
 on:
-  push:
-    branches: [ claude/extract-into-repo-b738b0 ]
-    paths:
-      - 'QUAHOG_Unity/**'
-      - '.github/workflows/deploy-webgl.yml'
+  # DORMANT until a Unity license secret is configured (see WEBGL_CI_SETUP.md).
+  # We're using UBA to build + manual publish for now. To switch this pipeline
+  # back on, uncomment the push trigger below.
+  # push:
+  #   branches: [ main, claude/extract-into-repo-b738b0 ]
+  #   paths:
+  #     - 'QUAHOG_Unity/**'
+  #     - '.github/workflows/deploy-webgl.yml'
   workflow_dispatch:
 
 concurrency:
