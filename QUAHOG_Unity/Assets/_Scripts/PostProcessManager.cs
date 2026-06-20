@@ -29,10 +29,6 @@ namespace Quahog.SouthCoast
         [Tooltip("Global PostProcessVolume to drive. Created at runtime if not assigned.")]
         [SerializeField] private PostProcessVolume _globalVolume;
 
-        [Header("Transition")]
-        [Tooltip("Duration in seconds for weather/time blends.")]
-        [SerializeField] private float _transitionDuration = 2f;
-
         // ------------------------------------------------------------------
         // Cached effect references
         // ------------------------------------------------------------------
@@ -427,13 +423,16 @@ namespace Quahog.SouthCoast
 
         private System.Collections.IEnumerator ResetChromaticAberrationAfterFrames(int frames)
         {
+            // Cache wanted level before yielding; HeatManager may be destroyed by the time
+            // the coroutine resumes.
+            int wantedLevel = HeatManager.Instance != null ? HeatManager.Instance.WantedLevel : 0;
+
             for (int i = 0; i < frames; i++)
                 yield return null;
 
             if (_chromaticAberration == null) yield break;
 
-            // Restore to a value appropriate for the current wanted level
-            int wantedLevel = HeatManager.Instance != null ? HeatManager.Instance.WantedLevel : 0;
+            // Restore to the wanted-level-appropriate value captured before the yield.
             float restored = wantedLevel >= 4 ? Mathf.Lerp(0f, 0.6f, (wantedLevel - 3f) / 2f) : 0f;
             _chromaticAberration.intensity.value = restored;
             _chromaticAberration.enabled.value = restored > 0f;
