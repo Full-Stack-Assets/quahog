@@ -52,13 +52,27 @@ namespace Quahog.SouthCoast
             // Living-world HUD: day/time clock, weather, and wanted-level stars.
             root.AddComponent<WorldHud>();
 
-            // ----- Playable slice: greybox coastal town + on-foot player + drivable car.
-            // Build the world first so the ground/colliders exist, then drop the player
-            // into the plaza and a car on the street. Walk up to the car and press F.
-            var town = TownGreybox.Build();
-            var player = PlayerCharacter.Spawn(town.PlayerSpawn);
+            // ----- Playable slice: real GIS city block (map-accurate) + on-foot player
+            // + drivable car. We try to build the city from real GeoJSON data
+            // (Resources/gis/newbedford.json); if that asset is missing or invalid we
+            // fall back to the procedural greybox so a build is never empty.
+            Vector3 playerSpawn, vehicleSpawn;
+            var gis = Quahog.SouthCoast.Gis.GisCity.TryBuildFromResources("gis/newbedford");
+            if (gis != null)
+            {
+                playerSpawn = gis.PlayerSpawn;
+                vehicleSpawn = gis.VehicleSpawn;
+            }
+            else
+            {
+                var town = TownGreybox.Build();
+                playerSpawn = town.PlayerSpawn;
+                vehicleSpawn = town.VehicleSpawn;
+            }
+
+            var player = PlayerCharacter.Spawn(playerSpawn);
             var followCam = ThirdPersonCamera.Attach(player.transform);
-            var car = CarController.Spawn(town.VehicleSpawn);
+            var car = CarController.Spawn(vehicleSpawn);
             root.AddComponent<PlayerVehicleInteractor>().Init(player, followCam, car);
 
             // Street life: wandering pedestrians + a few decorative AI cars (kinematic,

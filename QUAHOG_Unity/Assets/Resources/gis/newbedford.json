@@ -1,0 +1,39 @@
+{
+  "type": "FeatureCollection",
+  "_comment": "PLACEHOLDER sample inside the New Bedford waterfront bbox (S 41.6330, W -70.9270, N 41.6400, E -70.9180). Replace with a full overpass-turbo export (same GeoJSON format) to render the real district.",
+  "features": [
+    { "type": "Feature", "properties": { "highway": "primary", "name": "Union St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9258,41.6372],[-70.9192,41.6372]] } },
+    { "type": "Feature", "properties": { "highway": "residential", "name": "Spring St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9258,41.6350],[-70.9192,41.6350]] } },
+    { "type": "Feature", "properties": { "highway": "residential", "name": "William St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9258,41.6394],[-70.9192,41.6394]] } },
+    { "type": "Feature", "properties": { "highway": "secondary", "name": "Purchase St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9255,41.6346],[-70.9255,41.6398]] } },
+    { "type": "Feature", "properties": { "highway": "residential", "name": "Water St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9225,41.6346],[-70.9225,41.6398]] } },
+    { "type": "Feature", "properties": { "highway": "residential", "name": "Front St" },
+      "geometry": { "type": "LineString", "coordinates": [[-70.9195,41.6346],[-70.9195,41.6398]] } },
+
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "3" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9251,41.6354],[-70.9240,41.6354],[-70.9240,41.6368],[-70.9251,41.6368],[-70.9251,41.6354]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "5" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9238,41.6354],[-70.9229,41.6354],[-70.9229,41.6368],[-70.9238,41.6368],[-70.9238,41.6354]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "2" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9221,41.6354],[-70.9210,41.6354],[-70.9210,41.6368],[-70.9221,41.6368],[-70.9221,41.6354]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "4" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9208,41.6354],[-70.9199,41.6354],[-70.9199,41.6368],[-70.9208,41.6368],[-70.9208,41.6354]]] } },
+
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "4" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9251,41.6376],[-70.9240,41.6376],[-70.9240,41.6390],[-70.9251,41.6390],[-70.9251,41.6376]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "6" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9238,41.6376],[-70.9229,41.6376],[-70.9229,41.6390],[-70.9238,41.6390],[-70.9238,41.6376]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "building:levels": "3" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9221,41.6376],[-70.9210,41.6376],[-70.9210,41.6390],[-70.9221,41.6390],[-70.9221,41.6376]]] } },
+    { "type": "Feature", "properties": { "building": "yes", "height": "30" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9208,41.6376],[-70.9199,41.6376],[-70.9199,41.6390],[-70.9208,41.6390],[-70.9208,41.6376]]] } },
+
+    { "type": "Feature", "properties": { "natural": "water", "name": "New Bedford Harbor" },
+      "geometry": { "type": "Polygon", "coordinates": [[[-70.9192,41.6346],[-70.9182,41.6346],[-70.9182,41.6398],[-70.9192,41.6398],[-70.9192,41.6346]]] } }
+  ]
+}
