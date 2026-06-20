@@ -9,6 +9,11 @@ name: Acquire Unity Activation File
 
 on:
   workflow_dispatch:
+  # Also runs when this file itself is pushed, so it can be triggered without a
+  # default-branch "Run workflow" button. Remove this once you have the .ulf.
+  push:
+    paths:
+      - '.github/workflows/unity-activation.yml'
 
 jobs:
   activation:
