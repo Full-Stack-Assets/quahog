@@ -40,6 +40,7 @@ namespace Quahog.SouthCoast
             missingCount += CheckSingleton(MissionManager.Instance, nameof(MissionManager));
             missingCount += CheckSingleton(HUDManager.Instance, nameof(HUDManager));
             missingCount += CheckSingleton(SceneObjectRegistry.Instance, nameof(SceneObjectRegistry));
+            missingCount += CheckSingleton(PostProcessManager.Instance, nameof(PostProcessManager));
 
             if (missingCount > 0)
             {
