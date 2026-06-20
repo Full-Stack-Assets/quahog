@@ -32,6 +32,7 @@ RevenueManager="*res://autoloads/RevenueManager.gd"
 MissionManager="*res://autoloads/MissionManager.gd"
 GloriaEventDirector="*res://autoloads/GloriaEventDirector.gd"
 HUDManager="*res://autoloads/HUDManager.gd"
+PostProcessManager="*res://autoloads/PostProcessManager.gd"
 
 [display]
 
