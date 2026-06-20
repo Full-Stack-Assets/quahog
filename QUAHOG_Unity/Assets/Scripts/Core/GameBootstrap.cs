@@ -31,12 +31,21 @@ namespace Quahog.SouthCoast
             root.AddComponent<EmpireDatabaseManager>();
             root.AddComponent<SceneObjectRegistry>();
 
+            // Demo-friendly cadence so the living-world systems are visibly
+            // moving in a build (the GDScript defaults are tuned for real play).
+            TimeOfDayClock.Instance.SecondsPerGameHour = 3f;      // a full day ~72s
+            WeatherController.Instance.StateCheckInterval = 12f;  // roll weather often
+            WeatherController.Instance.BlendDuration = 1.5f;      // snappy transitions
+
             // Run the ported bootstrap (validates singletons, sets prologue state).
             root.AddComponent<SceneBootstrap>();
 
             // Visible proof-of-life HUD, and some starting cash to show it ticking.
             root.AddComponent<TestSceneBootstrap>().InitTestScene();
             PlayerWallet.Instance.SetBalance(500f);
+
+            // Living-world HUD: day/time clock, weather, and wanted-level stars.
+            root.AddComponent<WorldHud>();
 
             Debug.Log("[GameBootstrap] QUAHOG online — managers spawned, HUD up, $500 in the wallet.");
         }
