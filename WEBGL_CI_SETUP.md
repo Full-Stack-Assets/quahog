@@ -30,22 +30,26 @@ New repository secret**, and add:
 
 ---
 
-## Getting `UNITY_LICENSE` (free Personal license)
+## Getting `UNITY_LICENSE` (free Personal license — via Unity Hub)
 
-1. Add `UNITY_EMAIL` and `UNITY_PASSWORD` first (above).
-2. On GitHub → **Actions** tab → **Acquire Unity Activation File** → **Run workflow**.
-3. When it finishes, open the run → download the **Manual Activation File**
-   artifact → unzip it. You'll get a file ending in `.alf`.
-4. Go to **https://license.unity3d.com/manual**, upload the `.alf`, answer the
-   couple of questions (Personal / non-commercial is fine), and download the
-   `.ulf` file it gives back.
-5. Open the `.ulf` in a text editor, copy **everything**, and paste it as the
-   value of a new secret named **`UNITY_LICENSE`**.
+Unity now requires **Personal** licenses to be activated through **Unity Hub**.
+The old web-based `.alf → .ulf` activation flow is closed, so this is a one-time
+local step. (You need Hub on *some* computer once; you can uninstall it after.)
 
-> Have a paid Unity Plus/Pro plan instead? Skip the steps above. Add a
-> `UNITY_SERIAL` secret with your serial key (plus `UNITY_EMAIL` /
-> `UNITY_PASSWORD`) and add `UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}` to the
-> Build step's `env:` in `deploy-webgl.yml`.
+1. Install **Unity Hub**: https://unity.com/download
+2. Open Hub and **sign in** with your Unity account. Hub activates a free
+   Personal license automatically (you do **not** need to install an editor).
+3. Find the activated license file `Unity_lic.ulf`:
+   - **Windows:** `C:\ProgramData\Unity\Unity_lic.ulf`
+   - **macOS:** `/Library/Application Support/Unity/Unity_lic.ulf`
+   - **Linux:** `~/.local/share/unity3d/Unity/Unity_lic.ulf`
+4. Open it in a text editor, copy **everything**, and paste it as the value of a
+   new secret named **`UNITY_LICENSE`**.
+
+> **Paid Unity Plus/Pro plan?** Easier — skip Hub. Add a `UNITY_SERIAL` secret
+> with your serial key (plus `UNITY_EMAIL` / `UNITY_PASSWORD`) and add
+> `UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}` to the Build step's `env:` in
+> `deploy-webgl.yml`.
 
 ---
 

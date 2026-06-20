@@ -10,7 +10,7 @@ name: Build & Deploy WebGL
 
 on:
   push:
-    branches: [ claude/extract-into-repo-b738b0 ]
+    branches: [ main, claude/extract-into-repo-b738b0 ]
     paths:
       - 'QUAHOG_Unity/**'
       - '.github/workflows/deploy-webgl.yml'
