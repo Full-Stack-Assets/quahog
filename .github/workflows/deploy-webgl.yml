@@ -9,11 +9,14 @@ name: Build & Deploy WebGL
 # Until those exist, runs will fail at the Build step — that's expected.
 
 on:
-  push:
-    branches: [ main, claude/extract-into-repo-b738b0 ]
-    paths:
-      - 'QUAHOG_Unity/**'
-      - '.github/workflows/deploy-webgl.yml'
+  # DORMANT — using UBA to build + manual publish. The GameCI path is parked
+  # (Unity 6 Personal license activation on CI is unresolved). Re-enable by
+  # uncommenting the push trigger below.
+  # push:
+  #   branches: [ main, claude/extract-into-repo-b738b0 ]
+  #   paths:
+  #     - 'QUAHOG_Unity/**'
+  #     - '.github/workflows/deploy-webgl.yml'
   workflow_dispatch:
 
 concurrency:
