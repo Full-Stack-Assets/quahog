@@ -51,7 +51,7 @@ namespace Quahog.SouthCoast.EditorTools
                     PlayerSettings.companyName == "DefaultCompany")
                     PlayerSettings.companyName = "Rockwharf Games";
 
-                PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, "com.rockwharf.quahog");
+                PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, "com.rockwharf.quahog");
                 AssetDatabase.SaveAssets();
             }
             catch (Exception e)
