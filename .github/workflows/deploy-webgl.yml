@@ -1,0 +1,67 @@
+name: Build & Deploy WebGL
+
+# Builds the Unity WebGL player on GitHub's runners and publishes it to the
+# gh-pages branch, which GitHub Pages serves at:
+#   https://full-stack-assets.github.io/quahog/
+#
+# Requires three repo secrets (see WEBGL_CI_SETUP.md):
+#   UNITY_EMAIL, UNITY_PASSWORD, UNITY_LICENSE
+# Until those exist, runs will fail at the Build step — that's expected.
+
+on:
+  push:
+    branches: [ claude/extract-into-repo-b738b0 ]
+    paths:
+      - 'QUAHOG_Unity/**'
+      - '.github/workflows/deploy-webgl.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: webgl-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build WebGL and publish to Pages
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # lets the deploy step push to gh-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: QUAHOG_Unity/Library
+          key: Library-WebGL-${{ hashFiles('QUAHOG_Unity/Assets/**', 'QUAHOG_Unity/Packages/**', 'QUAHOG_Unity/ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+            Library-
+
+      - name: Build WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: QUAHOG_Unity
+          targetPlatform: WebGL
+
+      - name: Locate built player
+        id: loc
+        run: |
+          dir="$(dirname "$(find build -name index.html | head -n1)")"
+          echo "Found WebGL player at: $dir"
+          echo "dir=$dir" >> "$GITHUB_OUTPUT"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ${{ steps.loc.outputs.dir }}
+          force_orphan: true

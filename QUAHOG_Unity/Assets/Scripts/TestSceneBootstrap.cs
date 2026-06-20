@@ -52,7 +52,7 @@ namespace Quahog.SouthCoast
 
         private void EnsureSingleton<T>(GameObject host) where T : MonoBehaviour
         {
-            if (FindObjectOfType<T>() != null) return;
+            if (FindAnyObjectByType<T>() != null) return;
             GameObject go = new GameObject(typeof(T).Name);
             go.transform.SetParent(host.transform);
             go.AddComponent<T>();

@@ -8,56 +8,61 @@ A minimal **buildable Unity 6 project** for
 > also holds the Godot project and prototypes). In the UBA target, set the
 > **project subdirectory** to `QUAHOG_Unity`.
 
-## What's committed here
+## Layout
 
 ```
 QUAHOG_Unity/
 ├── ProjectSettings/
 │   ├── ProjectVersion.txt        # ★ Unity 6000.0.23f1 — match UBA's dropdown
 │   └── EditorBuildSettings.asset  # ★ builds Assets/Scenes/Bootstrap.unity
-├── Packages/manifest.json         # ★ lists URP (com.unity.render-pipelines.universal) + uGUI
+├── Packages/manifest.json         # ★ lists URP + uGUI + core modules
 ├── Assets/
 │   ├── Scenes/Bootstrap.unity(.meta)   # ★ proof-of-life scene; meta GUID is in the build list
-│   └── _Scripts/                       # each .cs has a committed .meta
+│   ├── Editor/
+│   │   └── QuahogBootstrap.cs(.meta)   # editor-only: configures URP + identity (see below)
+│   └── Scripts/                        # each .cs has a committed .meta
 │       ├── Core/Managers.cs            # Singleton<T> + core manager singletons
-│       ├── Core/GameBootstrap.cs       # runtime entry point (see below)
+│       ├── Core/GameBootstrap.cs       # runtime entry point ([RuntimeInitializeOnLoadMethod])
 │       ├── SceneBootstrap.cs           # validates singletons, sets prologue state
 │       └── TestSceneBootstrap.cs       # builds the minimal HUD (cash + health bar)
 └── .gitignore                     # ignores Library/ Temp/ Obj/ Logs/ Build/ *.csproj *.sln
 ```
 
-`GameBootstrap` runs via `[RuntimeInitializeOnLoadMethod]` — **no scene wiring, no
-`UnityEditor` usage**, so it stays in `_Scripts/` (not `Assets/Editor/`) and is safe
-in a player build. It spawns the managers, runs `SceneBootstrap`, draws the HUD, and
-seeds `$500`. A green build shows a cash counter + health bar and logs:
+## Render pipeline — built-in now, URP later (#7)
+
+The first build ships on the **built-in** render pipeline. URP is in the manifest
+(package present) but **not assigned** — the proof-of-life HUD is uGUI screen-overlay,
+which renders regardless of pipeline, and there's no 3D content yet to go "pink". This
+keeps the first UBA run low-risk.
+
+`Assets/Editor/QuahogBootstrap.cs` is an **editor-only** script (`#if UNITY_EDITOR`,
+under `Assets/Editor/`, so it never enters a player build). On load and as an
+`IPreprocessBuildWithReport` pre-build step it stamps **product identity only**
+(name / company / Android bundle id `com.rockwharf.quahog`) — no pipeline changes.
+
+When you're ready to move to URP, open the project in a Unity 6 editor and run
+**`QUAHOG ▸ Enable URP`**: it creates `Assets/Settings/URP-Quahog.asset` + its renderer
+via URP's API and assigns them in Graphics/Quality settings. Then commit
+`Assets/Settings/` and the updated `ProjectSettings/*.asset`.
+
+## Runtime entry point
+
+`GameBootstrap` runs via `[RuntimeInitializeOnLoadMethod]` (no scene wiring, no
+`UnityEditor`), spawns the managers, runs `SceneBootstrap`, draws the HUD, seeds `$500`.
+A green build logs:
 
 ```
 [GameBootstrap] QUAHOG online — managers spawned, HUD up, $500 in the wallet.
 [SceneBootstrap] All singletons validated successfully.
 ```
 
-## What Unity/UBA generates on first import (intentionally NOT committed)
-
-These are machine-generated and risky to hand-author blind, so they're left for
-Unity to create on the first build (UBA runs the editor in batch mode):
+## Generated on first import (intentionally NOT committed)
 
 - `Library/`, `Temp/`, `Obj/`, `*.csproj`, `*.sln` — gitignored (never commit `Library/`; it's multi-GB).
-- `Packages/packages-lock.json` — Unity resolves it. Commit it afterward for deterministic resolution.
-- Most of `ProjectSettings/*.asset` (PlayerSettings, Graphics, Quality, Tags, Physics, …) — Unity writes defaults.
-
-## URP pipeline assets — decision needed
-
-The proof-of-life HUD is **uGUI (screen-space overlay)**, which renders independent
-of the 3D render pipeline — so the **first build shows the HUD whether or not URP is
-assigned**. The scene has no 3D meshes yet, so there is nothing to render "pink."
-
-URP is listed in `manifest.json` (so the package is present), but the URP pipeline
-**assets** (`Assets/Settings/URP-Quahog.asset`, its Renderer, and the
-`GraphicsSettings`/`QualitySettings` assignments) are **not** committed, because a
-hand-authored URP `.asset` that's subtly wrong can fail the whole import. They should
-be generated once from a Unity editor (Assets → Create → Rendering → URP Asset, then
-assign in Project Settings → Graphics/Quality). Until then the project uses the
-built-in default pipeline, which is fine for the UI-only proof-of-life.
+- `Packages/packages-lock.json` — let UBA resolve it on the first build, then commit the
+  generated file for deterministic resolution (hand-guessing transitive versions is worse than none).
+- Most of `ProjectSettings/*.asset` (Graphics, Quality, Player, Tags, Physics, …) — Unity
+  writes defaults; `QuahogBootstrap` then overlays URP + identity.
 
 ## Connect Build Automation (web dashboard, phone-friendly)
 
@@ -65,12 +70,17 @@ built-in default pipeline, which is fine for the UI-only proof-of-life.
 2. **Link source:** connect this GitHub repo + branch.
 3. **Build configuration:**
    - **Project subdirectory:** `QUAHOG_Unity` ← required (project is nested).
-   - **Unity version:** match `ProjectVersion.txt` (6000.0.23f1) or change that file
-     to a Unity 6 version UBA lists.
+   - **Unity version:** match `ProjectVersion.txt` (`6000.0.23f1`) or change that file to a Unity 6 version UBA lists.
    - **Platform:** Android (`.apk`) is easiest to sideload; debug keystore is fine.
-   - **Scene:** `EditorBuildSettings` already lists `Bootstrap.unity` (or set a scene override).
 4. **Run the build**, read the log, download the artifact / share link.
+5. **After the first green build:** pull the generated `Packages/packages-lock.json`
+   (and, if you opened the editor, the `ProjectSettings/*.asset` + `Assets/Settings/URP-*`)
+   and commit them for fully deterministic rebuilds.
 
-> This project has not been compiled by a Unity editor in this repo — the first UBA
-> run is the verification step. SQLite is **not** referenced by any committed script
-> yet (the empire DB is a stub), so no SQLite package is required.
+## Scope note
+
+This is a **4-script proof-of-life**, not the full game. The actual QUAHOG systems live
+as **GDScript** in `QUAHOG_Godot/`; only a handful of C# files were ever provided. Porting
+the real systems back to C# (the "144 .cs files, subfoldered by system") is a separate,
+large effort. SQLite is **not** referenced by any committed script (the empire DB is a stub),
+so no SQLite package is needed yet.
