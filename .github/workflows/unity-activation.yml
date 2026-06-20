@@ -1,0 +1,26 @@
+name: Acquire Unity Activation File
+
+# One-time helper to get a Unity license activation file (.alf) for a free
+# Personal license. Run it manually, then follow WEBGL_CI_SETUP.md to turn the
+# .alf into a .ulf and store it as the UNITY_LICENSE secret.
+#
+# You only need this for the free Personal plan. If you have a Plus/Pro serial,
+# skip this and set UNITY_SERIAL instead (see WEBGL_CI_SETUP.md).
+
+on:
+  workflow_dispatch:
+
+jobs:
+  activation:
+    name: Request manual activation file
+    runs-on: ubuntu-latest
+    steps:
+      - name: Request activation file
+        id: getManualLicenseFile
+        uses: game-ci/unity-request-activation-file@v2
+
+      - name: Upload activation file
+        uses: actions/upload-artifact@v4
+        with:
+          name: Manual Activation File
+          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
