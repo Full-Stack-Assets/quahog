@@ -6,9 +6,11 @@ UBA, no zips, no manual steps.
 
 Live URL: **https://full-stack-assets.github.io/quahog/**
 
-There are two workflows:
+The main workflow is:
 - `.github/workflows/deploy-webgl.yml` — the build + deploy pipeline.
-- `.github/workflows/unity-activation.yml` — a one-time helper to get a license file.
+
+Some branches may also include `.github/workflows/unity-activation.yml`, a
+one-time helper that only prints the same license steps below.
 
 You only have to do the setup below **once**.
 
@@ -30,26 +32,28 @@ New repository secret**, and add:
 
 ---
 
-## Getting `UNITY_LICENSE` (free Personal license — via Unity Hub)
+## Getting `UNITY_LICENSE` (free Personal license)
 
-Unity now requires **Personal** licenses to be activated through **Unity Hub**.
-The old web-based `.alf → .ulf` activation flow is closed, so this is a one-time
-local step. (You need Hub on *some* computer once; you can uninstall it after.)
+Unity no longer supports the CI-based `.alf` activation workflow. You must
+activate locally and then paste the resulting license into a GitHub secret.
 
-1. Install **Unity Hub**: https://unity.com/download
-2. Open Hub and **sign in** with your Unity account. Hub activates a free
-   Personal license automatically (you do **not** need to install an editor).
-3. Find the activated license file `Unity_lic.ulf`:
-   - **Windows:** `C:\ProgramData\Unity\Unity_lic.ulf`
+1. Open **Unity Hub** on your machine.
+2. Go to **Preferences → Licenses → Add → Get a free personal license**.
+3. Unity Hub writes the license to a `.ulf` file on your machine:
+   - **Windows:** `C:\ProgramData\Unity\Unity_lic.ulf` or `C:\ProgramData\Unity\config\Unity_lic.ulf`
    - **macOS:** `/Library/Application Support/Unity/Unity_lic.ulf`
    - **Linux:** `~/.local/share/unity3d/Unity/Unity_lic.ulf`
-4. Open it in a text editor, copy **everything**, and paste it as the value of a
-   new secret named **`UNITY_LICENSE`**.
+4. Open the `.ulf` in a text editor, copy **everything**, and paste it as the
+   value of a new secret named **`UNITY_LICENSE`**.
 
-> **Paid Unity Plus/Pro plan?** Easier — skip Hub. Add a `UNITY_SERIAL` secret
-> with your serial key (plus `UNITY_EMAIL` / `UNITY_PASSWORD`) and add
-> `UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}` to the Build step's `env:` in
-> `deploy-webgl.yml`.
+> **Tip:** If your branch includes the **Acquire Unity Activation File**
+> workflow (`.github/workflows/unity-activation.yml`), it now prints manual
+> activation instructions when run — it no longer generates an artifact.
+
+> Have a paid Unity Pro/Enterprise plan instead? Skip the steps above. Add a
+> `UNITY_SERIAL` secret with your serial key (plus `UNITY_EMAIL` /
+> `UNITY_PASSWORD`) and add `UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}` to the
+> Build step's `env:` in `deploy-webgl.yml`.
 
 ---
 
