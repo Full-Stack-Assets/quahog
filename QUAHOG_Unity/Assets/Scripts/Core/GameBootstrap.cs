@@ -61,6 +61,10 @@ namespace Quahog.SouthCoast
             var car = CarController.Spawn(town.VehicleSpawn);
             root.AddComponent<PlayerVehicleInteractor>().Init(player, followCam, car);
 
+            // Street life: wandering pedestrians + a few decorative AI cars (kinematic,
+            // so they never disturb the player's physics car).
+            StreetLife.Spawn();
+
             Debug.Log("[GameBootstrap] QUAHOG online — managers spawned, HUD up, $500 in the wallet.");
         }
     }
