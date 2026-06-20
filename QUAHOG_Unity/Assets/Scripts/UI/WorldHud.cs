@@ -17,6 +17,10 @@ namespace Quahog.SouthCoast
         private Text _wantedText;
         private Font _font;
 
+        private GameObject _controlsPanel;   // holds the four action buttons
+        private Text _toggleLabel;           // label on the show/hide toggle
+        private bool _controlsVisible = true;
+
         private void Start()
         {
             _font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -62,14 +66,25 @@ namespace Quahog.SouthCoast
             Text help = MakeLabel(canvasGo, "HelpText", new Vector2(-20f, -124f), 14, new Color(0.7f, 0.7f, 0.7f));
             help.text = "tap a button, or use:  [W]  [↑]  [↓]  [T]";
 
-            // Tap controls (bottom-right) so it works on touch as well as keyboard.
-            MakeButton(canvasGo, "Weather",  new Vector2(-20f, 200f), CycleWeather);
-            MakeButton(canvasGo, "+ Wanted", new Vector2(-20f, 152f), AddWanted);
-            MakeButton(canvasGo, "Clear",    new Vector2(-20f, 104f), ClearHeat);
-            MakeButton(canvasGo, "+1 Hour",  new Vector2(-20f, 56f),  AdvanceHour);
+            // Tap controls live in a panel that can be hidden via the toggle below.
+            _controlsPanel = new GameObject("ControlButtons");
+            _controlsPanel.transform.SetParent(canvasGo.transform, false);
+            var panelRt = _controlsPanel.AddComponent<RectTransform>();
+            panelRt.anchorMin = Vector2.zero;
+            panelRt.anchorMax = Vector2.one;
+            panelRt.offsetMin = panelRt.offsetMax = Vector2.zero;
+
+            MakeButton(_controlsPanel, "Weather",  new Vector2(-20f, 200f), CycleWeather);
+            MakeButton(_controlsPanel, "+ Wanted", new Vector2(-20f, 152f), AddWanted);
+            MakeButton(_controlsPanel, "Clear",    new Vector2(-20f, 104f), ClearHeat);
+            MakeButton(_controlsPanel, "+1 Hour",  new Vector2(-20f, 56f),  AdvanceHour);
+
+            // Always-visible toggle that hides/shows the panel above it.
+            GameObject toggle = MakeButton(canvasGo, ControlsLabel(true), new Vector2(-20f, 8f), ToggleControls);
+            _toggleLabel = toggle.GetComponentInChildren<Text>();
         }
 
-        private void MakeButton(GameObject parent, string label, Vector2 pos, UnityEngine.Events.UnityAction action)
+        private GameObject MakeButton(GameObject parent, string label, Vector2 pos, UnityEngine.Events.UnityAction action)
         {
             var go = new GameObject(label + "_Btn");
             go.transform.SetParent(parent.transform, false);
@@ -103,7 +118,17 @@ namespace Quahog.SouthCoast
             t.color = new Color(0.85f, 0.92f, 0.97f);
             t.alignment = TextAnchor.MiddleCenter;
             t.text = label;
+            return go;
         }
+
+        private void ToggleControls()
+        {
+            _controlsVisible = !_controlsVisible;
+            if (_controlsPanel != null) _controlsPanel.SetActive(_controlsVisible);
+            if (_toggleLabel != null) _toggleLabel.text = ControlsLabel(_controlsVisible);
+        }
+
+        private static string ControlsLabel(bool visible) => visible ? "Controls ▾" : "Controls ▴";
 
         private Text MakeLabel(GameObject parent, string name, Vector2 pos, int size, Color color)
         {
