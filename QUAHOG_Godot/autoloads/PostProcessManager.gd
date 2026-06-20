@@ -239,25 +239,19 @@ func set_combat_vignette(active: bool) -> void:
 func _apply_district(district: int, instant: bool = false) -> void:
 	if environment == null:
 		return
-	var b: float
-	var s: float
-	var c: float
-	_get_district_grade(district, b, s, c)
+	var grade: Dictionary = _get_district_grade(district)
 	if instant:
-		environment.adjustment_brightness  = b
-		environment.adjustment_saturation  = s
-		environment.adjustment_contrast    = c
+		environment.adjustment_brightness = grade.brightness
+		environment.adjustment_saturation = grade.saturation
+		environment.adjustment_contrast   = grade.contrast
 	else:
-		_blend_grade(b, s, c)
+		_blend_grade(grade.brightness, grade.saturation, grade.contrast)
 
 func _start_district_blend() -> void:
 	if environment == null:
 		return
-	var b: float
-	var s: float
-	var c: float
-	_get_district_grade(_current_district, b, s, c)
-	_blend_grade(b, s, c)
+	var grade: Dictionary = _get_district_grade(_current_district)
+	_blend_grade(grade.brightness, grade.saturation, grade.contrast)
 
 func _blend_grade(to_b: float, to_s: float, to_c: float) -> void:
 	if environment == null:
@@ -279,18 +273,23 @@ func _snapshot_current_grade() -> void:
 		_from_saturation = environment.adjustment_saturation
 		_from_contrast   = environment.adjustment_contrast
 	else:
-		_get_district_grade(_current_district, _from_brightness, _from_saturation, _from_contrast)
+		var grade: Dictionary = _get_district_grade(_current_district)
+		_from_brightness = grade.brightness
+		_from_saturation = grade.saturation
+		_from_contrast   = grade.contrast
 
-func _get_district_grade(district: int, b: float, s: float, c: float) -> void:
+## Returns a Dictionary with keys "brightness", "saturation", "contrast"
+## for the given district enum value.
+func _get_district_grade(district: int) -> Dictionary:
 	match district:
 		District.DIGHTON:
-			b = dighton_brightness; s = dighton_saturation; c = dighton_contrast
+			return { "brightness": dighton_brightness, "saturation": dighton_saturation, "contrast": dighton_contrast }
 		District.TAUNTON_HILL:
-			b = taunton_brightness; s = taunton_saturation; c = taunton_contrast
+			return { "brightness": taunton_brightness, "saturation": taunton_saturation, "contrast": taunton_contrast }
 		District.SAWYER:
-			b = sawyer_brightness; s = sawyer_saturation; c = sawyer_contrast
+			return { "brightness": sawyer_brightness,  "saturation": sawyer_saturation,  "contrast": sawyer_contrast  }
 		_: # NEW_SEFTON default
-			b = new_sefton_brightness; s = new_sefton_saturation; c = new_sefton_contrast
+			return { "brightness": new_sefton_brightness, "saturation": new_sefton_saturation, "contrast": new_sefton_contrast }
 
 # ---------------------------------------------------------------------------
 # Internal — weather glow
