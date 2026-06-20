@@ -30,6 +30,7 @@ namespace Quahog.SouthCoast
             root.AddComponent<HUDManager>();
             root.AddComponent<EmpireDatabaseManager>();
             root.AddComponent<SceneObjectRegistry>();
+            root.AddComponent<PostProcessManager>();
 
             // Demo-friendly cadence so the living-world systems are visibly
             // moving in a build (the GDScript defaults are tuned for real play).
