@@ -24,7 +24,7 @@ namespace Quahog.SouthCoast
             GameObject c = new GameObject("TestUI_Canvas");
             Canvas cv = c.AddComponent<Canvas>();
             cv.renderMode = RenderMode.ScreenSpaceOverlay;
-            cv.sortingOrder = true;
+            cv.sortingOrder = 100;
             c.AddComponent<CanvasScaler>();
             c.AddComponent<GraphicRaycaster>();
 

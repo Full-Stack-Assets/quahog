@@ -13,10 +13,14 @@ world, traffic, AI, combat, audio, events), UI/HUD widgets, and core systems. Se
 [`QUAHOG_Godot/GODOT_SETUP.md`](QUAHOG_Godot/GODOT_SETUP.md) for setup instructions.
 
 ### `QUAHOG_Unity/`
-The original Unity engine project (C#, namespace `Quahog.SouthCoast`) — the codebase being
-ported to Godot. `QuahogEngine.csproj` is a headless compile harness that builds the game
-scripts in `Assets/_Scripts/` against stubbed Unity APIs in `stubs/`. Engine development
-plans live in [`QUAHOG_Unity/plans/`](QUAHOG_Unity/plans/).
+The Unity engine project (C#, namespace `Quahog.SouthCoast`). A minimal buildable project
+set up for [Unity Build Automation](QUAHOG_Unity/BUILD_AUTOMATION.md): a code-driven
+`GameBootstrap` spawns the manager singletons and a minimal HUD with no scene wiring.
+Engine development plans live in [`QUAHOG_Unity/plans/`](QUAHOG_Unity/plans/).
+
+### `prototypes/`
+Standalone runnable prototypes. `Quahog3D.html` is a self-contained offline 3D prototype
+(Three.js/WebGL) you can open directly in a phone or desktop browser.
 
 ### `quahog-project-files/`
 Design and pitch materials:
