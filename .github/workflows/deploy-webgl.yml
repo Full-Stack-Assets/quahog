@@ -4,9 +4,10 @@ name: Build & Deploy WebGL
 # gh-pages branch, which GitHub Pages serves at:
 #   https://full-stack-assets.github.io/quahog/
 #
-# Requires three repo secrets (see WEBGL_CI_SETUP.md):
-#   UNITY_EMAIL, UNITY_PASSWORD, UNITY_LICENSE
-# Until those exist, runs will fail at the Build step — that's expected.
+# Requires repo secrets (see WEBGL_CI_SETUP.md):
+#   UNITY_EMAIL, UNITY_PASSWORD, and ONE of:
+#     UNITY_LICENSE  — contents of your .ulf file (personal/free license)
+#     UNITY_SERIAL   — your Pro/Plus serial number
 
 on:
   push:
@@ -47,6 +48,7 @@ jobs:
           UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}
         with:
           projectPath: QUAHOG_Unity
           targetPlatform: WebGL

@@ -16,7 +16,7 @@ You only have to do the setup below **once**.
 
 ---
 
-## What you need to add: 3 repository secrets
+## What you need to add: repository secrets
 
 Go to the repo on GitHub → **Settings → Secrets and variables → Actions →
 New repository secret**, and add:
@@ -25,10 +25,11 @@ New repository secret**, and add:
 |------------------|----------------------------------------------------|
 | `UNITY_EMAIL`    | The email you log into Unity with                  |
 | `UNITY_PASSWORD` | Your Unity account password                        |
-| `UNITY_LICENSE`  | The **contents** of your `.ulf` license file (steps below) |
+| `UNITY_LICENSE`  | The **contents** of your `.ulf` license file (personal/free — steps below) |
+| `UNITY_SERIAL`   | Your Unity serial number **(Pro/Plus only — alternative to `UNITY_LICENSE`)** |
 
-> These are encrypted and only exposed to the build job. No one (including me)
-> can read them back.
+You need `UNITY_EMAIL` + `UNITY_PASSWORD` plus **one** of `UNITY_LICENSE` or
+`UNITY_SERIAL` depending on your license type.
 
 ---
 
@@ -50,10 +51,10 @@ activate locally and then paste the resulting license into a GitHub secret.
 > workflow (`.github/workflows/unity-activation.yml`), it now prints manual
 > activation instructions when run — it no longer generates an artifact.
 
-> Have a paid Unity Pro/Enterprise plan instead? Skip the steps above. Add a
-> `UNITY_SERIAL` secret with your serial key (plus `UNITY_EMAIL` /
-> `UNITY_PASSWORD`) and add `UNITY_SERIAL: ${{ secrets.UNITY_SERIAL }}` to the
-> Build step's `env:` in `deploy-webgl.yml`.
+> **Have a paid Unity Pro/Enterprise plan?** Add a `UNITY_SERIAL` secret with
+> your serial key (plus `UNITY_EMAIL` / `UNITY_PASSWORD`) — the workflow
+> already forwards `UNITY_SERIAL` to the builder, so no other changes are
+> needed.
 
 ---
 
@@ -70,7 +71,7 @@ serves whatever the latest build produced.)
 
 ## That's it
 
-Once the three secrets exist:
+Once the required secrets are set:
 - **Push to the branch → it builds → it deploys.** Check progress under the
   **Actions** tab. First build is ~20–30 min (no cache); later builds are faster.
 - You can also trigger a build by hand: **Actions → Build & Deploy WebGL →
