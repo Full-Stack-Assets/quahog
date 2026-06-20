@@ -52,6 +52,15 @@ namespace Quahog.SouthCoast
             // Living-world HUD: day/time clock, weather, and wanted-level stars.
             root.AddComponent<WorldHud>();
 
+            // ----- Playable slice: greybox coastal town + on-foot player + drivable car.
+            // Build the world first so the ground/colliders exist, then drop the player
+            // into the plaza and a car on the street. Walk up to the car and press F.
+            var town = TownGreybox.Build();
+            var player = PlayerCharacter.Spawn(town.PlayerSpawn);
+            var followCam = ThirdPersonCamera.Attach(player.transform);
+            var car = CarController.Spawn(town.VehicleSpawn);
+            root.AddComponent<PlayerVehicleInteractor>().Init(player, followCam, car);
+
             Debug.Log("[GameBootstrap] QUAHOG online — managers spawned, HUD up, $500 in the wallet.");
         }
     }
