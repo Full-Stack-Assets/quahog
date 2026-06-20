@@ -1,11 +1,23 @@
 name: Acquire Unity Activation File
 
-# One-time helper to get a Unity license activation file (.alf) for a free
-# Personal license. Run it manually, then follow WEBGL_CI_SETUP.md to turn the
-# .alf into a .ulf and store it as the UNITY_LICENSE secret.
+# One-time helper — explains how to get the UNITY_LICENSE secret required by
+# the build workflow.  The old game-ci/unity-request-activation-file action
+# (which produced a .alf file) is no longer supported by Unity or GameCI.
 #
-# You only need this for the free Personal plan. If you have a Plus/Pro serial,
-# skip this and set UNITY_SERIAL instead (see WEBGL_CI_SETUP.md).
+# The new process is entirely local:
+#   1. Open Unity Hub on your machine.
+#   2. Go to Preferences → Licenses → Add → Get a free personal license
+#      (or use your Pro/Plus serial).
+#   3. Unity Hub writes the license to a .ulf file on your machine:
+#        Windows : C:\ProgramData\Unity\Unity_lic.ulf
+#        macOS   : /Library/Application Support/Unity/Unity_lic.ulf
+#        Linux   : ~/.local/share/unity3d/Unity/Unity_lic.ulf
+#   4. Open that file in a text editor, copy ALL contents, and paste them
+#      as a new GitHub secret named UNITY_LICENSE (Settings → Secrets →
+#      Actions → New repository secret).
+#
+# After adding UNITY_LICENSE (plus UNITY_EMAIL and UNITY_PASSWORD) the
+# deploy-webgl.yml pipeline will be fully operational.
 
 on:
   workflow_dispatch:
@@ -15,12 +27,31 @@ jobs:
     name: Request manual activation file
     runs-on: ubuntu-latest
     steps:
-      - name: Request activation file
-        id: getManualLicenseFile
-        uses: game-ci/unity-request-activation-file@v2
-
-      - name: Upload activation file
-        uses: actions/upload-artifact@v4
-        with:
-          name: Manual Activation File
-          path: ${{ steps.getManualLicenseFile.outputs.filePath }}
+      - name: Print activation instructions
+        run: |
+          echo "========================================================"
+          echo "  Unity license activation — manual steps required"
+          echo "========================================================"
+          echo ""
+          echo "The automated CI method for obtaining a Unity activation"
+          echo "file (.alf) is no longer supported by Unity or GameCI."
+          echo ""
+          echo "Please follow these steps on your local machine:"
+          echo ""
+          echo "  1. Open Unity Hub."
+          echo "  2. Go to Preferences → Licenses → Add →"
+          echo "     'Get a free personal license'."
+          echo "     (Pro/Plus users: activate with your serial instead.)"
+          echo "  3. Locate the generated .ulf file:"
+          echo "       Windows : C:\\ProgramData\\Unity\\Unity_lic.ulf"
+          echo "       macOS   : /Library/Application Support/Unity/Unity_lic.ulf"
+          echo "       Linux   : ~/.local/share/unity3d/Unity/Unity_lic.ulf"
+          echo "  4. Open the .ulf file in a text editor and copy all contents."
+          echo "  5. In this repository go to:"
+          echo "     Settings → Secrets and variables → Actions →"
+          echo "     New repository secret"
+          echo "     Name  : UNITY_LICENSE"
+          echo "     Value : <paste .ulf contents>"
+          echo ""
+          echo "See WEBGL_CI_SETUP.md for full setup instructions."
+          echo "========================================================"

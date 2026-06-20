@@ -32,15 +32,20 @@ New repository secret**, and add:
 
 ## Getting `UNITY_LICENSE` (free Personal license)
 
-1. Add `UNITY_EMAIL` and `UNITY_PASSWORD` first (above).
-2. On GitHub → **Actions** tab → **Acquire Unity Activation File** → **Run workflow**.
-3. When it finishes, open the run → download the **Manual Activation File**
-   artifact → unzip it. You'll get a file ending in `.alf`.
-4. Go to **https://license.unity3d.com/manual**, upload the `.alf`, answer the
-   couple of questions (Personal / non-commercial is fine), and download the
-   `.ulf` file it gives back.
-5. Open the `.ulf` in a text editor, copy **everything**, and paste it as the
+Unity no longer supports the CI-based `.alf` activation workflow. You must
+activate locally and then paste the resulting license into a GitHub secret.
+
+1. Open **Unity Hub** on your machine.
+2. Go to **Preferences → Licenses → Add → Get a free personal license**.
+3. Unity Hub writes the license to a `.ulf` file on your machine:
+   - **Windows:** `C:\ProgramData\Unity\Unity_lic.ulf`
+   - **macOS:** `/Library/Application Support/Unity/Unity_lic.ulf`
+   - **Linux:** `~/.local/share/unity3d/Unity/Unity_lic.ulf`
+4. Open the `.ulf` in a text editor, copy **everything**, and paste it as the
    value of a new secret named **`UNITY_LICENSE`**.
+
+> **Tip:** The **Acquire Unity Activation File** workflow (`.github/workflows/unity-activation.yml`)
+> now prints these same instructions when run — it no longer generates an artifact.
 
 > Have a paid Unity Plus/Pro plan instead? Skip the steps above. Add a
 > `UNITY_SERIAL` secret with your serial key (plus `UNITY_EMAIL` /
