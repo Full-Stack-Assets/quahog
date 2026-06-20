@@ -4,167 +4,50 @@ using UnityEngine.Rendering.PostProcessing;
 namespace Quahog.SouthCoast
 {
     /// <summary>
-    /// Singleton manager for the full post-processing stack.
-    /// Controls Bloom, Depth of Field, Color Grading, and Vignette effects.
-    /// Exposes per-district profiles and responds to weather/time-of-day changes.
-    /// Requires a PostProcessVolume component on the same GameObject with a
-    /// PostProcessProfile that contains Bloom, DepthOfField, ColorGrading,
-    /// and Vignette effect overrides.
+    /// PostProcessManager controls the full post-processing stack for QUAHOG.
+    /// Effects are adapted dynamically based on the current weather state,
+    /// time of day, wanted level, and player health to reinforce atmosphere.
+    ///
+    /// Requires a <see cref="PostProcessVolume"/> (global, priority 100) to be
+    /// present in the scene or configured via the inspector. The manager adds
+    /// one automatically if none is assigned.
     /// </summary>
-    [RequireComponent(typeof(PostProcessVolume))]
-    public class PostProcessManager : MonoBehaviour
+    public sealed class PostProcessManager : MonoBehaviour
     {
         // ------------------------------------------------------------------
         // Singleton
         // ------------------------------------------------------------------
 
-        /// <summary>Global singleton instance.</summary>
+        /// <summary>The active PostProcessManager instance.</summary>
         public static PostProcessManager Instance { get; private set; }
 
         // ------------------------------------------------------------------
-        // Enums
+        // Inspector fields
         // ------------------------------------------------------------------
 
-        /// <summary>
-        /// In-game districts, each carrying its own post-process colour grade.
-        /// </summary>
-        public enum District
-        {
-            NewSefton,
-            Dighton,
-            TauntonHill,
-            Sawyer
-        }
-
-        /// <summary>
-        /// Weather state that drives atmospheric post-process overrides.
-        /// Must match WeatherController.WeatherState ordinal values.
-        /// </summary>
-        public enum WeatherState
-        {
-            Clear,
-            DenseFog,
-            CoastalRain,
-            Noreaster
-        }
+        [Header("Volume")]
+        [Tooltip("Global PostProcessVolume to drive. Created at runtime if not assigned.")]
+        [SerializeField] private PostProcessVolume _globalVolume;
 
         // ------------------------------------------------------------------
-        // Inspector — Volume reference
+        // Cached effect references
         // ------------------------------------------------------------------
 
-        [Header("Post-Process Volume")]
-        [Tooltip("PostProcessVolume used for runtime parameter overrides. " +
-                 "Populated from the component on this GameObject if left empty.")]
-        [SerializeField] private PostProcessVolume postProcessVolume;
-
-        // ------------------------------------------------------------------
-        // Inspector — Transition
-        // ------------------------------------------------------------------
-
-        [Header("Transition")]
-        [Tooltip("Seconds to blend between district or weather profiles.")]
-        [SerializeField] private float blendDuration = 1.5f;
-
-        // ------------------------------------------------------------------
-        // Inspector — Bloom
-        // ------------------------------------------------------------------
-
-        [Header("Bloom — Base")]
-        [Tooltip("Bloom intensity used during Clear weather at noon.")]
-        [SerializeField] private float bloomBaseIntensity = 1.0f;
-
-        [Tooltip("Bloom threshold (luminance cut-off).")]
-        [SerializeField] private float bloomThreshold = 1.1f;
-
-        [Header("Bloom — Weather Overrides")]
-        [Tooltip("Bloom intensity multiplier during DenseFog.")]
-        [SerializeField] private float bloomFogMultiplier = 0.5f;
-
-        [Tooltip("Bloom intensity multiplier during CoastalRain.")]
-        [SerializeField] private float bloomRainMultiplier = 0.7f;
-
-        [Tooltip("Bloom intensity multiplier during Noreaster.")]
-        [SerializeField] private float bloomNoreasterMultiplier = 0.3f;
-
-        [Header("Bloom — Time of Day")]
-        [Tooltip("Bloom intensity multiplier at night (hour 20–06).")]
-        [SerializeField] private float bloomNightMultiplier = 1.8f;
-
-        // ------------------------------------------------------------------
-        // Inspector — Depth of Field
-        // ------------------------------------------------------------------
-
-        [Header("Depth of Field")]
-        [Tooltip("Enable depth-of-field during aiming / cutscenes.")]
-        [SerializeField] private bool dofEnabled = false;
-
-        [Tooltip("Focal distance in world units.")]
-        [SerializeField] private float dofFocalLength = 70f;
-
-        [Tooltip("Lens aperture (lower = shallower depth of field).")]
-        [SerializeField] private float dofAperture = 5.6f;
-
-        // ------------------------------------------------------------------
-        // Inspector — Color Grading (per-district)
-        // ------------------------------------------------------------------
-
-        [Header("Color Grading — New Sefton (harbour, blue-white)")]
-        [SerializeField] private float newSeftonTemperature  = -8f;
-        [SerializeField] private float newSeftonTint         = 2f;
-        [SerializeField] private float newSeftonSaturation   = 10f;
-        [SerializeField] private float newSeftonContrast     = 5f;
-
-        [Header("Color Grading — Dighton (amber/copper)")]
-        [SerializeField] private float dightonTemperature    = 12f;
-        [SerializeField] private float dightonTint           = -3f;
-        [SerializeField] private float dightonSaturation     = 15f;
-        [SerializeField] private float dightonContrast       = 8f;
-
-        [Header("Color Grading — Taunton Hill (cyan/industrial)")]
-        [SerializeField] private float tauntonTemperature    = -15f;
-        [SerializeField] private float tauntonTint           = 5f;
-        [SerializeField] private float tauntonSaturation     = -5f;
-        [SerializeField] private float tauntonContrast       = 12f;
-
-        [Header("Color Grading — Sawyer (violet/underground)")]
-        [SerializeField] private float sawyerTemperature     = -20f;
-        [SerializeField] private float sawyerTint            = 10f;
-        [SerializeField] private float sawyerSaturation      = 20f;
-        [SerializeField] private float sawyerContrast        = 15f;
-
-        // ------------------------------------------------------------------
-        // Inspector — Vignette
-        // ------------------------------------------------------------------
-
-        [Header("Vignette")]
-        [Tooltip("Vignette intensity at rest.")]
-        [SerializeField] private float vignetteBaseIntensity = 0.25f;
-
-        [Tooltip("Vignette intensity during combat (raised by HeatManager).")]
-        [SerializeField] private float vignetteCombatIntensity = 0.45f;
+        private Bloom _bloom;
+        private Vignette _vignette;
+        private ColorGrading _colorGrading;
+        private MotionBlur _motionBlur;
+        private DepthOfField _depthOfField;
+        private AmbientOcclusion _ambientOcclusion;
+        private ChromaticAberration _chromaticAberration;
+        private Grain _grain;
 
         // ------------------------------------------------------------------
         // Runtime state
         // ------------------------------------------------------------------
 
-        private District     _currentDistrict = District.NewSefton;
-        private WeatherState _currentWeather  = WeatherState.Clear;
-
-        // Cached effect handles (set in Awake; null-safe guarded throughout).
-        private Bloom        _bloom;
-        private DepthOfField _dof;
-        private ColorGrading _colorGrading;
-        private Vignette     _vignette;
-
-        // Lerp state for smooth district transitions.
-        private float _blendT        = 1f;
-        private bool  _isTransitioning = false;
-
-        // Snapshot of the color-grading values we are blending FROM.
-        private float _fromTemperature;
-        private float _fromTint;
-        private float _fromSaturation;
-        private float _fromContrast;
+        private WeatherController.WeatherState _currentWeather =
+            WeatherController.WeatherState.Clear;
 
         // ------------------------------------------------------------------
         // Unity lifecycle
@@ -179,257 +62,380 @@ namespace Quahog.SouthCoast
             }
             Instance = this;
             DontDestroyOnLoad(gameObject);
+        }
 
-            if (postProcessVolume == null)
-                postProcessVolume = GetComponent<PostProcessVolume>();
-
+        private void Start()
+        {
+            InitializeVolume();
             CacheEffects();
-            ApplyDistrict(_currentDistrict, instant: true);
-            ApplyWeather(_currentWeather);
+            ApplyClearDay();
+            SubscribeToEvents();
+            Debug.Log("[PostProcessManager] Post-processing stack initialized.");
         }
 
-        private void Update()
+        private void OnDestroy()
         {
-            if (_isTransitioning)
-                TickBlend();
+            UnsubscribeFromEvents();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         // ------------------------------------------------------------------
-        // Public API — District
+        // Initialization helpers
         // ------------------------------------------------------------------
 
         /// <summary>
-        /// Transition to a new district's color grade, blending over
-        /// <see cref="blendDuration"/> seconds.
+        /// Ensures a global <see cref="PostProcessVolume"/> with a fresh profile
+        /// exists. Creates one programmatically if the inspector field is empty.
         /// </summary>
-        public void SetDistrict(District district)
+        private void InitializeVolume()
         {
-            if (district == _currentDistrict && !_isTransitioning)
-                return;
-
-            SnapshotCurrentGrade();
-            _currentDistrict  = district;
-            _blendT           = 0f;
-            _isTransitioning  = true;
-        }
-
-        /// <returns>The currently active district.</returns>
-        public District GetDistrict() => _currentDistrict;
-
-        // ------------------------------------------------------------------
-        // Public API — Weather
-        // ------------------------------------------------------------------
-
-        /// <summary>
-        /// Apply a weather-driven bloom and vignette override immediately.
-        /// </summary>
-        public void SetWeather(WeatherState weather)
-        {
-            _currentWeather = weather;
-            ApplyWeather(weather);
-        }
-
-        /// <returns>The currently active weather state.</returns>
-        public WeatherState GetWeather() => _currentWeather;
-
-        // ------------------------------------------------------------------
-        // Public API — Time of Day
-        // ------------------------------------------------------------------
-
-        /// <summary>
-        /// Called by TimeOfDayClock when the in-game hour changes.
-        /// Adjusts bloom intensity for day / night cycle.
-        /// </summary>
-        /// <param name="hour">In-game hour (0–23).</param>
-        public void OnHourChanged(int hour)
-        {
-            if (_bloom == null)
-                return;
-
-            bool isNight = hour >= 20 || hour < 6;
-            float weatherMultiplier = WeatherBloomMultiplier(_currentWeather);
-            float targetIntensity   = bloomBaseIntensity
-                                      * weatherMultiplier
-                                      * (isNight ? bloomNightMultiplier : 1f);
-
-            _bloom.intensity.Override(targetIntensity);
-        }
-
-        // ------------------------------------------------------------------
-        // Public API — Depth of Field
-        // ------------------------------------------------------------------
-
-        /// <summary>Enable or disable depth-of-field (e.g. during aiming).</summary>
-        public void SetDepthOfField(bool enabled, float focalLength = -1f, float aperture = -1f)
-        {
-            if (_dof == null)
-                return;
-
-            _dof.active = enabled;
-            if (enabled)
+            if (_globalVolume == null)
             {
-                _dof.focusDistance.Override(focalLength > 0f ? focalLength : dofFocalLength);
-                _dof.aperture.Override(aperture > 0f ? aperture : dofAperture);
+                _globalVolume = gameObject.AddComponent<PostProcessVolume>();
+                _globalVolume.isGlobal = true;
+                _globalVolume.priority = 100f;
             }
-        }
 
-        // ------------------------------------------------------------------
-        // Public API — Vignette
-        // ------------------------------------------------------------------
+            if (_globalVolume.profile == null)
+                _globalVolume.profile = ScriptableObject.CreateInstance<PostProcessProfile>();
+        }
 
         /// <summary>
-        /// Elevate vignette intensity to signal combat tension, then restore
-        /// the base value when calm.
+        /// Retrieves each effect from the volume profile, adding it if absent.
         /// </summary>
-        public void SetCombatVignette(bool active)
-        {
-            if (_vignette == null)
-                return;
-
-            _vignette.intensity.Override(active ? vignetteCombatIntensity : vignetteBaseIntensity);
-        }
-
-        // ------------------------------------------------------------------
-        // Internal — Effect cache
-        // ------------------------------------------------------------------
-
         private void CacheEffects()
         {
-            if (postProcessVolume == null || postProcessVolume.profile == null)
-            {
-                Debug.LogWarning("[PostProcessManager] No PostProcessVolume or profile assigned.");
-                return;
-            }
+            _bloom = GetOrAddEffect<Bloom>();
+            _vignette = GetOrAddEffect<Vignette>();
+            _colorGrading = GetOrAddEffect<ColorGrading>();
+            _motionBlur = GetOrAddEffect<MotionBlur>();
+            _depthOfField = GetOrAddEffect<DepthOfField>();
+            _ambientOcclusion = GetOrAddEffect<AmbientOcclusion>();
+            _chromaticAberration = GetOrAddEffect<ChromaticAberration>();
+            _grain = GetOrAddEffect<Grain>();
+        }
 
-            postProcessVolume.profile.TryGetSettings(out _bloom);
-            postProcessVolume.profile.TryGetSettings(out _dof);
-            postProcessVolume.profile.TryGetSettings(out _colorGrading);
-            postProcessVolume.profile.TryGetSettings(out _vignette);
+        private T GetOrAddEffect<T>() where T : PostProcessEffectSettings
+        {
+            if (!_globalVolume.profile.TryGetSettings(out T effect))
+                effect = _globalVolume.profile.AddSettings<T>();
+            return effect;
         }
 
         // ------------------------------------------------------------------
-        // Internal — District color grade application
+        // Event wiring
         // ------------------------------------------------------------------
 
-        private void ApplyDistrict(District district, bool instant = false)
+        private void SubscribeToEvents()
         {
-            if (_colorGrading == null)
-                return;
+            if (WeatherController.Instance != null)
+                WeatherController.Instance.OnWeatherChanged += OnWeatherChanged;
 
-            GetDistrictGradeValues(district,
-                out float temperature, out float tint,
-                out float saturation,  out float contrast);
+            if (TimeOfDayClock.Instance != null)
+                TimeOfDayClock.Instance.OnTimeChanged += OnTimeChanged;
 
-            if (instant)
+            if (HeatManager.Instance != null)
+                HeatManager.Instance.OnWantedLevelChanged += OnWantedLevelChanged;
+        }
+
+        private void UnsubscribeFromEvents()
+        {
+            if (WeatherController.Instance != null)
+                WeatherController.Instance.OnWeatherChanged -= OnWeatherChanged;
+
+            if (TimeOfDayClock.Instance != null)
+                TimeOfDayClock.Instance.OnTimeChanged -= OnTimeChanged;
+
+            if (HeatManager.Instance != null)
+                HeatManager.Instance.OnWantedLevelChanged -= OnWantedLevelChanged;
+        }
+
+        // ------------------------------------------------------------------
+        // Event handlers
+        // ------------------------------------------------------------------
+
+        /// <summary>Reacts to weather transitions by blending to a matching preset.</summary>
+        private void OnWeatherChanged(WeatherController.WeatherState newState)
+        {
+            _currentWeather = newState;
+
+            switch (newState)
             {
-                _colorGrading.temperature.Override(temperature);
-                _colorGrading.tint.Override(tint);
-                _colorGrading.saturation.Override(saturation);
-                _colorGrading.contrast.Override(contrast);
+                case WeatherController.WeatherState.Clear:
+                    ApplyClearDay();
+                    break;
+                case WeatherController.WeatherState.CoastalRain:
+                    ApplyCoastalRain();
+                    break;
+                case WeatherController.WeatherState.Noreaster:
+                    ApplyNoreaster();
+                    break;
+                case WeatherController.WeatherState.DenseFog:
+                    ApplyDenseFog();
+                    break;
+                default:
+                    ApplyClearDay();
+                    break;
             }
         }
 
-        private void TickBlend()
+        /// <summary>Adjusts color grading warmth/coolness with the time of day (0–24 h).</summary>
+        private void OnTimeChanged(float hour)
         {
-            _blendT += Time.deltaTime / Mathf.Max(blendDuration, 0.001f);
+            if (_colorGrading == null) return;
 
-            if (_blendT >= 1f)
-            {
-                _blendT          = 1f;
-                _isTransitioning = false;
-            }
-
-            GetDistrictGradeValues(_currentDistrict,
-                out float toTemp, out float toTint,
-                out float toSat,  out float toCon);
-
-            float t = Mathf.SmoothStep(0f, 1f, _blendT);
-
-            if (_colorGrading != null)
-            {
-                _colorGrading.temperature.Override(Mathf.Lerp(_fromTemperature, toTemp, t));
-                _colorGrading.tint.Override(Mathf.Lerp(_fromTint, toTint, t));
-                _colorGrading.saturation.Override(Mathf.Lerp(_fromSaturation, toSat, t));
-                _colorGrading.contrast.Override(Mathf.Lerp(_fromContrast, toCon, t));
-            }
-        }
-
-        private void SnapshotCurrentGrade()
-        {
-            if (_colorGrading != null)
-            {
-                _fromTemperature = _colorGrading.temperature.value;
-                _fromTint        = _colorGrading.tint.value;
-                _fromSaturation  = _colorGrading.saturation.value;
-                _fromContrast    = _colorGrading.contrast.value;
-            }
+            // Dawn (5–7 h): warm amber tones
+            // Noon (10–14 h): neutral with a slight warm tint
+            // Dusk (17–19 h): deep orange
+            // Night (20–4 h): cool blue tones
+            float temperature;
+            if (hour >= 5f && hour < 7f)
+                temperature = Mathf.Lerp(0f, 20f, (hour - 5f) / 2f);    // dawn warm-up
+            else if (hour >= 7f && hour < 10f)
+                temperature = Mathf.Lerp(20f, 5f, (hour - 7f) / 3f);    // morning
+            else if (hour >= 10f && hour < 17f)
+                temperature = 5f;                                          // neutral day
+            else if (hour >= 17f && hour < 19f)
+                temperature = Mathf.Lerp(5f, 30f, (hour - 17f) / 2f);   // dusk
+            else if (hour >= 19f && hour < 21f)
+                temperature = Mathf.Lerp(30f, -20f, (hour - 19f) / 2f); // twilight
             else
-            {
-                GetDistrictGradeValues(_currentDistrict,
-                    out _fromTemperature, out _fromTint,
-                    out _fromSaturation,  out _fromContrast);
-            }
+                temperature = -20f;                                        // night
+
+            _colorGrading.enabled.value = true;
+            _colorGrading.enabled.overrideState = true;
+            _colorGrading.temperature.value = temperature;
+            _colorGrading.temperature.overrideState = true;
         }
 
-        private void GetDistrictGradeValues(District district,
-            out float temperature, out float tint,
-            out float saturation,  out float contrast)
+        /// <summary>Intensifies vignette and chromatic aberration with wanted level.</summary>
+        private void OnWantedLevelChanged(int wantedLevel)
         {
-            switch (district)
-            {
-                case District.Dighton:
-                    temperature = dightonTemperature;
-                    tint        = dightonTint;
-                    saturation  = dightonSaturation;
-                    contrast    = dightonContrast;
-                    break;
-                case District.TauntonHill:
-                    temperature = tauntonTemperature;
-                    tint        = tauntonTint;
-                    saturation  = tauntonSaturation;
-                    contrast    = tauntonContrast;
-                    break;
-                case District.Sawyer:
-                    temperature = sawyerTemperature;
-                    tint        = sawyerTint;
-                    saturation  = sawyerSaturation;
-                    contrast    = sawyerContrast;
-                    break;
-                default: // NewSefton
-                    temperature = newSeftonTemperature;
-                    tint        = newSeftonTint;
-                    saturation  = newSeftonSaturation;
-                    contrast    = newSeftonContrast;
-                    break;
-            }
+            if (_vignette == null || _chromaticAberration == null) return;
+
+            // Vignette tightens as heat rises (0 → 5 stars)
+            float vignetteIntensity = Mathf.Lerp(0.2f, 0.55f, wantedLevel / 5f);
+            _vignette.enabled.value = true;
+            _vignette.enabled.overrideState = true;
+            _vignette.intensity.value = vignetteIntensity;
+            _vignette.intensity.overrideState = true;
+
+            // Chromatic aberration adds a "panic" feel at high wanted levels
+            float aberration = wantedLevel >= 4 ? Mathf.Lerp(0f, 0.6f, (wantedLevel - 3f) / 2f) : 0f;
+            _chromaticAberration.enabled.value = aberration > 0f;
+            _chromaticAberration.enabled.overrideState = true;
+            _chromaticAberration.intensity.value = aberration;
+            _chromaticAberration.intensity.overrideState = true;
         }
 
         // ------------------------------------------------------------------
-        // Internal — Weather bloom / vignette
+        // Weather presets
         // ------------------------------------------------------------------
 
-        private void ApplyWeather(WeatherState weather)
+        /// <summary>
+        /// Applies the clear-day post-processing preset: subtle bloom, light vignette,
+        /// neutral colour grading, no grain.
+        /// </summary>
+        public void ApplyClearDay()
         {
-            if (_bloom == null)
-                return;
+            SetBloom(enabled: true, threshold: 1.1f, intensity: 0.4f, scatter: 0.7f);
+            SetVignette(enabled: true, intensity: 0.25f, smoothness: 0.35f);
+            SetColorGrading(enabled: true, postExposure: 0f, contrast: 5f,
+                            saturation: 10f, temperature: 5f);
+            SetAmbientOcclusion(enabled: true, intensity: 0.5f, radius: 0.3f);
+            SetGrain(enabled: false, intensity: 0f);
+            SetMotionBlur(enabled: false, shutterAngle: 270f);
 
-            float multiplier = WeatherBloomMultiplier(weather);
-            _bloom.intensity.Override(bloomBaseIntensity * multiplier);
-            _bloom.threshold.Override(bloomThreshold);
-
-            if (_vignette != null)
-                _vignette.intensity.Override(vignetteBaseIntensity);
+            Debug.Log("[PostProcessManager] Applied ClearDay post-process preset.");
         }
 
-        private float WeatherBloomMultiplier(WeatherState weather)
+        /// <summary>
+        /// Applies the coastal-rain preset: desaturated palette, elevated grain,
+        /// stronger vignette, and reduced bloom to mimic overcast light.
+        /// </summary>
+        public void ApplyCoastalRain()
         {
-            switch (weather)
-            {
-                case WeatherState.DenseFog:    return bloomFogMultiplier;
-                case WeatherState.CoastalRain: return bloomRainMultiplier;
-                case WeatherState.Noreaster:   return bloomNoreasterMultiplier;
-                default:                       return 1f;
-            }
+            SetBloom(enabled: true, threshold: 1.0f, intensity: 0.6f, scatter: 0.8f);
+            SetVignette(enabled: true, intensity: 0.38f, smoothness: 0.5f);
+            SetColorGrading(enabled: true, postExposure: -0.15f, contrast: 10f,
+                            saturation: -20f, temperature: -5f);
+            SetAmbientOcclusion(enabled: true, intensity: 0.7f, radius: 0.4f);
+            SetGrain(enabled: true, intensity: 0.2f, size: 1.2f);
+            SetMotionBlur(enabled: true, shutterAngle: 180f);
+
+            Debug.Log("[PostProcessManager] Applied CoastalRain post-process preset.");
+        }
+
+        /// <summary>
+        /// Applies the nor'easter preset: heavy desaturation, intense grain,
+        /// strong motion blur and vignette to convey storm chaos.
+        /// </summary>
+        public void ApplyNoreaster()
+        {
+            SetBloom(enabled: true, threshold: 0.9f, intensity: 1.0f, scatter: 0.9f);
+            SetVignette(enabled: true, intensity: 0.5f, smoothness: 0.6f);
+            SetColorGrading(enabled: true, postExposure: -0.3f, contrast: 15f,
+                            saturation: -40f, temperature: -10f);
+            SetAmbientOcclusion(enabled: true, intensity: 0.8f, radius: 0.5f);
+            SetGrain(enabled: true, intensity: 0.4f, size: 1.5f);
+            SetMotionBlur(enabled: true, shutterAngle: 240f);
+
+            Debug.Log("[PostProcessManager] Applied Noreaster post-process preset.");
+        }
+
+        /// <summary>
+        /// Applies the dense-fog preset: heavily desaturated, diffuse bloom,
+        /// reduced depth clarity, and a strong cool colour shift.
+        /// </summary>
+        public void ApplyDenseFog()
+        {
+            SetBloom(enabled: true, threshold: 0.8f, intensity: 1.2f, scatter: 0.95f);
+            SetVignette(enabled: true, intensity: 0.42f, smoothness: 0.8f);
+            SetColorGrading(enabled: true, postExposure: -0.2f, contrast: -5f,
+                            saturation: -30f, temperature: -15f);
+            SetAmbientOcclusion(enabled: false, intensity: 0f, radius: 0.3f);
+            SetGrain(enabled: true, intensity: 0.15f, size: 1.0f);
+            SetMotionBlur(enabled: false, shutterAngle: 270f);
+
+            Debug.Log("[PostProcessManager] Applied DenseFog post-process preset.");
+        }
+
+        // ------------------------------------------------------------------
+        // Public API — direct effect control
+        // ------------------------------------------------------------------
+
+        /// <summary>
+        /// Applies a temporary health-critical vignette pulse (e.g., when the
+        /// player drops below 25 % health).
+        /// </summary>
+        /// <param name="healthNormalized">Player health ratio in [0, 1].</param>
+        public void ApplyHealthVignette(float healthNormalized)
+        {
+            if (_vignette == null) return;
+
+            bool critical = healthNormalized < 0.25f;
+            _vignette.enabled.value = true;
+            _vignette.enabled.overrideState = true;
+            _vignette.color.value = critical ? new Color(0.5f, 0f, 0f, 1f) : Color.black;
+            _vignette.color.overrideState = true;
+
+            float baseIntensity = _currentWeather == WeatherController.WeatherState.DenseFog
+                ? 0.42f : 0.25f;
+            _vignette.intensity.value = critical
+                ? Mathf.Lerp(0.6f, 0.8f, 1f - healthNormalized / 0.25f)
+                : baseIntensity;
+            _vignette.intensity.overrideState = true;
+        }
+
+        /// <summary>
+        /// Triggers a brief chromatic-aberration and screen-shake stand-in for
+        /// impact feedback (e.g., after receiving damage).
+        /// </summary>
+        public void TriggerImpactFlash()
+        {
+            if (_chromaticAberration == null) return;
+
+            _chromaticAberration.enabled.value = true;
+            _chromaticAberration.enabled.overrideState = true;
+            _chromaticAberration.intensity.value = 0.8f;
+            _chromaticAberration.intensity.overrideState = true;
+
+            // Restore after one frame via coroutine (kept minimal, no Invoke dependency)
+            StartCoroutine(ResetChromaticAberrationAfterFrames(3));
+        }
+
+        // ------------------------------------------------------------------
+        // Internal setters
+        // ------------------------------------------------------------------
+
+        private void SetBloom(bool enabled, float threshold, float intensity, float scatter)
+        {
+            if (_bloom == null) return;
+            _bloom.enabled.value = enabled;
+            _bloom.enabled.overrideState = true;
+            _bloom.threshold.value = threshold;
+            _bloom.threshold.overrideState = true;
+            _bloom.intensity.value = intensity;
+            _bloom.intensity.overrideState = true;
+            _bloom.scatter.value = scatter;
+            _bloom.scatter.overrideState = true;
+        }
+
+        private void SetVignette(bool enabled, float intensity, float smoothness)
+        {
+            if (_vignette == null) return;
+            _vignette.enabled.value = enabled;
+            _vignette.enabled.overrideState = true;
+            _vignette.intensity.value = intensity;
+            _vignette.intensity.overrideState = true;
+            _vignette.smoothness.value = smoothness;
+            _vignette.smoothness.overrideState = true;
+        }
+
+        private void SetColorGrading(bool enabled, float postExposure, float contrast,
+                                     float saturation, float temperature)
+        {
+            if (_colorGrading == null) return;
+            _colorGrading.enabled.value = enabled;
+            _colorGrading.enabled.overrideState = true;
+            _colorGrading.postExposure.value = postExposure;
+            _colorGrading.postExposure.overrideState = true;
+            _colorGrading.contrast.value = contrast;
+            _colorGrading.contrast.overrideState = true;
+            _colorGrading.saturation.value = saturation;
+            _colorGrading.saturation.overrideState = true;
+            _colorGrading.temperature.value = temperature;
+            _colorGrading.temperature.overrideState = true;
+        }
+
+        private void SetAmbientOcclusion(bool enabled, float intensity, float radius)
+        {
+            if (_ambientOcclusion == null) return;
+            _ambientOcclusion.enabled.value = enabled;
+            _ambientOcclusion.enabled.overrideState = true;
+            _ambientOcclusion.intensity.value = intensity;
+            _ambientOcclusion.intensity.overrideState = true;
+            _ambientOcclusion.radius.value = radius;
+            _ambientOcclusion.radius.overrideState = true;
+        }
+
+        private void SetGrain(bool enabled, float intensity, float size = 1f)
+        {
+            if (_grain == null) return;
+            _grain.enabled.value = enabled;
+            _grain.enabled.overrideState = true;
+            _grain.intensity.value = intensity;
+            _grain.intensity.overrideState = true;
+            _grain.size.value = size;
+            _grain.size.overrideState = true;
+        }
+
+        private void SetMotionBlur(bool enabled, float shutterAngle)
+        {
+            if (_motionBlur == null) return;
+            _motionBlur.enabled.value = enabled;
+            _motionBlur.enabled.overrideState = true;
+            _motionBlur.shutterAngle.value = shutterAngle;
+            _motionBlur.shutterAngle.overrideState = true;
+        }
+
+        private System.Collections.IEnumerator ResetChromaticAberrationAfterFrames(int frames)
+        {
+            // Cache wanted level before yielding; HeatManager may be destroyed by the time
+            // the coroutine resumes.
+            int wantedLevel = HeatManager.Instance != null ? HeatManager.Instance.WantedLevel : 0;
+
+            for (int i = 0; i < frames; i++)
+                yield return null;
+
+            if (_chromaticAberration == null) yield break;
+
+            // Restore to the wanted-level-appropriate value captured before the yield.
+            float restored = wantedLevel >= 4 ? Mathf.Lerp(0f, 0.6f, (wantedLevel - 3f) / 2f) : 0f;
+            _chromaticAberration.intensity.value = restored;
+            _chromaticAberration.enabled.value = restored > 0f;
         }
     }
 }
