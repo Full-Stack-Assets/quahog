@@ -28,21 +28,22 @@ QUAHOG_Unity/
 └── .gitignore                     # ignores Library/ Temp/ Obj/ Logs/ Build/ *.csproj *.sln
 ```
 
-## How URP gets configured (#7) — no hand-authored .asset YAML
+## Render pipeline — built-in now, URP later (#7)
+
+The first build ships on the **built-in** render pipeline. URP is in the manifest
+(package present) but **not assigned** — the proof-of-life HUD is uGUI screen-overlay,
+which renders regardless of pipeline, and there's no 3D content yet to go "pink". This
+keeps the first UBA run low-risk.
 
 `Assets/Editor/QuahogBootstrap.cs` is an **editor-only** script (`#if UNITY_EDITOR`,
-under `Assets/Editor/`, so it never enters a player build). It runs on editor load
-**and** as an `IPreprocessBuildWithReport` pre-build step — so UBA triggers it — and:
+under `Assets/Editor/`, so it never enters a player build). On load and as an
+`IPreprocessBuildWithReport` pre-build step it stamps **product identity only**
+(name / company / Android bundle id `com.rockwharf.quahog`) — no pipeline changes.
 
-- creates `Assets/Settings/URP-Quahog.asset` + its renderer via URP's own API if missing,
-- assigns them as the active pipeline in **GraphicsSettings** and **QualitySettings**,
-- stamps product name / company / Android bundle id (`com.rockwharf.quahog`).
-
-Generating the URP assets through the URP API (instead of committing hand-written
-`.asset` files) avoids the #1 way a blind scaffold breaks: a malformed pipeline asset
-that fails import. It's wrapped in try/catch, so even if the URP API call hiccups the
-build still proceeds — the proof-of-life HUD is uGUI screen-overlay and renders
-regardless of the 3D pipeline (and there are no 3D meshes yet to go "pink").
+When you're ready to move to URP, open the project in a Unity 6 editor and run
+**`QUAHOG ▸ Enable URP`**: it creates `Assets/Settings/URP-Quahog.asset` + its renderer
+via URP's API and assigns them in Graphics/Quality settings. Then commit
+`Assets/Settings/` and the updated `ProjectSettings/*.asset`.
 
 ## Runtime entry point
 
