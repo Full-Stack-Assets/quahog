@@ -30,39 +30,56 @@ internal static class Program
         return _failed == 0 ? 0 : 1;
     }
 
-    // ---- GeoJSON parsing -------------------------------------------------
+    // A fixed fixture so the parser assertions are stable regardless of whatever
+    // real city data is currently baked into newbedford.json.
+    private const string FixtureJson = @"{
+      ""type"":""FeatureCollection"",""features"":[
+        {""type"":""Feature"",""properties"":{""highway"":""primary"",""name"":""Main""},
+         ""geometry"":{""type"":""LineString"",""coordinates"":[[-70.92,41.636],[-70.91,41.636]]}},
+        {""type"":""Feature"",""properties"":{""highway"":""residential"",""name"":""Side""},
+         ""geometry"":{""type"":""LineString"",""coordinates"":[[-70.92,41.637],[-70.91,41.637]]}},
+        {""type"":""Feature"",""properties"":{""building"":""yes"",""height"":""30""},
+         ""geometry"":{""type"":""Polygon"",""coordinates"":[[[-70.92,41.635],[-70.919,41.635],[-70.919,41.636],[-70.92,41.636],[-70.92,41.635]]]}},
+        {""type"":""Feature"",""properties"":{""building"":""yes"",""building:levels"":""5""},
+         ""geometry"":{""type"":""Polygon"",""coordinates"":[[[-70.918,41.635],[-70.917,41.635],[-70.917,41.636],[-70.918,41.636],[-70.918,41.635]]]}},
+        {""type"":""Feature"",""properties"":{""natural"":""water""},
+         ""geometry"":{""type"":""Polygon"",""coordinates"":[[[-70.915,41.635],[-70.914,41.635],[-70.914,41.638],[-70.915,41.638],[-70.915,41.635]]]}}
+      ]}";
+
+    // ---- GeoJSON parsing (against the stable fixture) --------------------
     private static void TestMiniJsonAndGeoJson(string[] args)
     {
-        Console.WriteLine("\n[GeoJSON parse]");
-        string json = LoadSample(args);
-        if (json == null) { Check("sample GeoJSON found", false); return; }
-        Check("sample GeoJSON found", true);
-
-        GeoData data = GeoJson.Parse(json);
-        // The placeholder New Bedford sample has 6 streets, 8 buildings, 1 water area.
-        Check($"roads == 6 (got {data.Roads.Count})", data.Roads.Count == 6);
-        Check($"buildings == 8 (got {data.Buildings.Count})", data.Buildings.Count == 8);
+        Console.WriteLine("\n[GeoJSON parse — fixture]");
+        GeoData data = GeoJson.Parse(FixtureJson);
+        Check($"roads == 2 (got {data.Roads.Count})", data.Roads.Count == 2);
+        Check($"buildings == 2 (got {data.Buildings.Count})", data.Buildings.Count == 2);
         Check($"water == 1 (got {data.Water.Count})", data.Water.Count == 1);
 
-        // Spot-check tag interpretation: the "height":"30" feature should be ~30m,
-        // and a "building:levels":"5" feature should be 5 * 3.2 = 16m.
         bool sawTall = false, sawLevels = false;
         foreach (var b in data.Buildings)
         {
             if (Math.Abs(b.Height - 30f) < 0.01f) sawTall = true;
-            if (Math.Abs(b.Height - 16f) < 0.01f) sawLevels = true;
+            if (Math.Abs(b.Height - 16f) < 0.01f) sawLevels = true;  // 5 levels * 3.2
         }
         Check("explicit height=30 parsed", sawTall);
         Check("building:levels=5 -> 16m", sawLevels);
 
-        // A primary road should be wider than a residential one.
         float primary = 0, residential = 0;
         foreach (var r in data.Roads)
         {
-            if (r.Name == "Union St") primary = r.Width;       // primary
-            if (r.Name == "Water St") residential = r.Width;   // residential
+            if (r.Name == "Main") primary = r.Width;
+            if (r.Name == "Side") residential = r.Width;
         }
         Check($"primary wider than residential ({primary} > {residential})", primary > residential);
+
+        // The live baked dataset (placeholder or real city) must be non-trivial.
+        Console.WriteLine("[GeoJSON parse — live dataset]");
+        string live = LoadSample(args);
+        if (live == null) { Check("live GeoJSON found", false); return; }
+        Check("live GeoJSON found", true);
+        GeoData ld = GeoJson.Parse(live);
+        Check($"live has roads (got {ld.Roads.Count})", ld.Roads.Count > 0);
+        Check($"live has buildings (got {ld.Buildings.Count})", ld.Buildings.Count > 0);
     }
 
     // ---- Ear clipping ----------------------------------------------------
