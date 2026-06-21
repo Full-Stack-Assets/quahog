@@ -82,7 +82,7 @@ Rust-belt coastal noir with salt-air humor. Overcast harbor light, wet cobblesto
 ### HUD & UI
 - Minimap/radar that tracks player rotation, shows property icons, hostile blips in red, and lighthouse sweeps.
 - Health/armor, wanted-level badges (police + faction), wallet/cash, current radio station, weather indicator, objective markers, interaction prompts.
-- Clean menu: spawn picker, view toggle, radio, settings (graphics/detail slider tied to tile `errorTarget`).
+- Clean front-end + pause menu: map/fast-travel, view toggle, radio, garage, save/load, and full **Settings** (graphics presets + ray-tracing/upscaler toggles, audio mix, controls remap, accessibility).
 
 ### Visual style & post-processing
 - Photoreal tiles as the base; PBR-lit game props matched to the scene light.
