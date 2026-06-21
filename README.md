@@ -1,36 +1,45 @@
-# QUAHOG
+# QUAHOG (working title — name TBD)
 
-Project QUAHOG — **Grand Theft Auto: South Coast**, an unofficial fan concept and satire of *GTA: Vice City* relocated to the South Coast of Massachusetts (Fall River, New Bedford, Cape Cod, Brockton) in 1986.
+An original 3D open-world game set on the **real Massachusetts South Coast**
+(New Bedford, Fall River, Brockton, Cape Cod) — walk real streets and real
+landmarks, populated by original characters, with GTA-style walk/drive
+mechanics. *GTA: Vice City is only a tonal reference; this is original work.*
 
-This repository holds the design/pitch materials plus two engine builds of the game:
-the original Unity codebase and the in-progress Godot port.
+> The project name still needs to change off "Quahog" (Family Guy collision).
+> Seeds under consideration: Quequechan, Spindle City, Mount Hope.
 
-## Contents
+## Engines — canonical vs. legacy
 
-### `QUAHOG_Godot/`
-The Godot game project (GDScript). Contains autoloads, gameplay scripts (player, vehicle,
-world, traffic, AI, combat, audio, events), UI/HUD widgets, and core systems. See
-[`QUAHOG_Godot/GODOT_SETUP.md`](QUAHOG_Godot/GODOT_SETUP.md) for setup instructions.
+The project has consolidated on a **single canonical engine**. Earlier Unity and
+Godot tracks (and a second, parallel web attempt in Unity) are kept as
+**reference only** — not actively developed. See [`ENGINES.md`](ENGINES.md) for
+the full reconciliation.
 
-### `QUAHOG_Unity/`
-The Unity engine project (C#, namespace `Quahog.SouthCoast`). A minimal buildable project
-set up for [Unity Build Automation](QUAHOG_Unity/BUILD_AUTOMATION.md): a code-driven
-`GameBootstrap` spawns the manager singletons and a minimal HUD with no scene wiring.
-Engine development plans live in [`QUAHOG_Unity/plans/`](QUAHOG_Unity/plans/).
+### ✅ `QUAHOG_Web/` — canonical (active)
+The browser-playable game: **Three.js / React Three Fiber** + Rapier physics.
+Third-person walk, car enter/drive, collision, on the **real New Bedford
+waterfront** street grid + auto-extruded OSM building blockout, with ambient
+pedestrians and traffic. Buildable live and deployed.
+**Live:** https://projectsouthcoast.vercel.app · setup: [`QUAHOG_Web/README.md`](QUAHOG_Web/README.md)
 
-### `prototypes/`
-Standalone runnable prototypes. `Quahog3D.html` is a self-contained offline 3D prototype
-(Three.js/WebGL) you can open directly in a phone or desktop browser.
+### Map data — `quahog-project-files/mapdata/`
+The canonical OpenStreetMap pipeline feeding the web game: real road/water/
+building geometry for New Bedford & Fall River → GeoJSON / PMTiles / OBJ and the
+slice blockout JSON. See [`quahog-project-files/mapdata/README.md`](quahog-project-files/mapdata/README.md).
 
 ### `quahog-project-files/`
-Design and pitch materials:
-- `gta-south-coast_2.html` — the static pitch one-pager (deploy-ready, no build step)
-- `GTA-South-Coast-GDD.md` — the full Game Design Document
-- `vercel.json` — static hosting config
-- PDFs — pitch sheet, master plan, technical blueprints, and system design docs
+Design and pitch materials: the Game Design Document, Master Plan, pitch
+one-pager, and system-design PDFs.
 
-See [`quahog-project-files/README.md`](quahog-project-files/README.md) for deployment details.
+## Legacy / reference (not active)
+
+- `QUAHOG_Godot/` — earlier Godot (GDScript) port. See [`QUAHOG_Godot/LEGACY.md`](QUAHOG_Godot/LEGACY.md).
+- `QUAHOG_Unity/` — earlier Unity (C#) project, incl. a parallel Unity→WebGL slice. See [`QUAHOG_Unity/LEGACY.md`](QUAHOG_Unity/LEGACY.md).
+- `tools/csharp/`, `tools/mapgen/` — tooling for the Unity track (headless C# compile/test; a Unity-targeted OSM fetcher). Superseded for web by `quahog-project-files/mapdata/`.
+- `prototypes/Quahog3D.html` — standalone offline Three.js prototype.
 
 ---
 
-**Unofficial fan parody.** Not affiliated with, endorsed by, or connected to Rockstar Games or Take-Two Interactive. All studio names, locations, characters, factions, and stations are fictional.
+**Unofficial fan parody / original work.** Not affiliated with, endorsed by, or
+connected to Rockstar Games or Take-Two Interactive. Map data ©
+OpenStreetMap contributors, ODbL.

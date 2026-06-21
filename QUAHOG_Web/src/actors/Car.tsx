@@ -6,8 +6,10 @@ import { consumeTap, moveAxis } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
 
-const MAX_SPEED = 28;
-const REVERSE_SPEED = 12;
+// Arcade tuning informed by the legacy Unity CarController.cs (high lateral grip
+// kills sliding; modest top speed for tight historic streets).
+const MAX_SPEED = 22;
+const REVERSE_SPEED = 9;
 
 export function Car() {
   const body = useRef<RapierRigidBody>(null);
@@ -33,7 +35,7 @@ export function Car() {
 
     // steering scales with speed; invert while reversing
     const grip = THREE.MathUtils.clamp(Math.abs(vForward) / 5, 0, 1);
-    yaw -= ax.x * 1.5 * dt * grip * (vForward < -0.1 ? -1 : 1);
+    yaw -= ax.x * 1.7 * dt * grip * (vForward < -0.1 ? -1 : 1);
 
     // throttle / brake / coast
     const target =

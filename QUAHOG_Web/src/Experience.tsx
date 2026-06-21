@@ -5,6 +5,7 @@ import { Ground } from "./world/Ground";
 import { Roads } from "./world/Roads";
 import { Buildings } from "./world/Buildings";
 import { Landmarks } from "./world/Landmarks";
+import { StreetLife } from "./world/StreetLife";
 import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
 import { FollowCamera } from "./actors/FollowCamera";
@@ -58,6 +59,8 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
           </>
         )}
       </Physics>
+
+      {slice && <StreetLife roads={slice.roads} />}
 
       <FollowCamera />
     </>

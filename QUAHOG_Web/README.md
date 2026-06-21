@@ -39,6 +39,9 @@ The chase camera eases behind whichever actor is active.
 - **Landmarks** — 15 named POIs with floating labels; the five **hero** buildings
   (Seamen's Bethel, Whaling Museum, Mariner's Home, Double Bank Building, Rodman
   Candleworks) are gold with neon marker beams, ready for hand-detailing.
+- **Street life** — ambient kinematic pedestrians wandering the district plus
+  decorative traffic that drives the real road network (ported from the legacy
+  Unity `StreetLife.cs`).
 - **Coastal Neon** starter look — dusk key light + harbor fog.
 
 ## Data
@@ -65,6 +68,7 @@ src/
 
 ## Not yet (next slice work)
 
-Hand-detailed Seamen's Bethel, fish-pier ambush mission scaffold, pedestrians/
-traffic, weather + friction, audio. The project name still needs to change off
-"Quahog" (seeds: Quequechan, Spindle City, Mount Hope).
+Hand-detailed Seamen's Bethel, fish-pier ambush mission scaffold, weather +
+friction, audio, smarter pedestrian/traffic AI (collision avoidance, traffic
+signals). The project name still needs to change off "Quahog" (seeds:
+Quequechan, Spindle City, Mount Hope).
