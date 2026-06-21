@@ -647,4 +647,6 @@ blood states, price, vendor, unlock.
 
 - **Region fixes + fast travel:** ground enlarged 3 km → 60 km so the whole map has land+collider (no more floating Fall River/voids); **water lifted clear of the ground** so it's visible in 3D (was map-only) + brighter teal; **bridge railings**; **fast travel** from the big map (M) to town centers + hero spots; the **Braga Bridge** now reads green (rails + truss towers). Shipped (`f5ccbeb`→`0293104`).
 
+- **Stack fix + Phase 2 street detail:** fixed road **z-fight flicker / "floating"** (ground top moved to y=0 below the roads), capped DPR for framerate, fast travel now brings your car; then Phase 2 — **sidewalk/curb aprons** framing every street, **rooftop clutter** (water tanks/AC) on mid-rises, and **crosswalks** at intersections. Shipped (`8c9648f`→`472af59`).
+
 <!-- Append new dated entries above this line as work lands. -->
