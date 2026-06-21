@@ -1,9 +1,12 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
+
+const CELL = 1000;       // road chunk size (m)
+const DRAW_DIST = 1500;  // hide road chunks beyond this from the camera
 
 // Road classes → surface material. Highways get lane markings; vehicular streets
 // get plain asphalt; footways/pedestrian/steps get historic cobblestone.
@@ -68,47 +71,70 @@ export function Roads({ roads }: { roads: Road[] }) {
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const ns = useMemo(() => new THREE.Vector2(0.4, 0.4), []);
 
-  const { surface, highway, cobble } = useMemo(() => {
+  // chunk roads into a spatial grid so off-screen/distant cells are culled
+  const chunks = useMemo(() => {
     const land = roads.filter((r) => !r.bridge); // bridges handled by <Bridges/>
-    const hw = land.filter((r) => HIGHWAY.has(r.highway));
-    const cb = land.filter((r) => COBBLE.has(r.highway));
-    const sf = land.filter((r) => !HIGHWAY.has(r.highway) && !COBBLE.has(r.highway));
-    return {
-      surface: buildRibbon(sf, 0.06, 0),
-      highway: buildRibbon(hw, 0.08, 0),
-      cobble: buildRibbon(cb, 0.05, 1.2), // setts tile across width every ~1.2m
-    };
+    const cells = new Map<string, { cb: Road[]; sf: Road[]; hw: Road[]; cx: number; cz: number }>();
+    for (const r of land) {
+      const mid = r.points[Math.floor(r.points.length / 2)] ?? r.points[0];
+      const gx = Math.floor(mid[0] / CELL), gn = Math.floor(mid[1] / CELL);
+      const key = `${gx}_${gn}`;
+      let c = cells.get(key);
+      if (!c) { c = { cb: [], sf: [], hw: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
+      if (HIGHWAY.has(r.highway)) c.hw.push(r);
+      else if (COBBLE.has(r.highway)) c.cb.push(r);
+      else c.sf.push(r);
+    }
+    return [...cells.values()].map((c) => ({
+      cx: c.cx, cz: c.cz,
+      cobble: buildRibbon(c.cb, 0.05, 1.2),
+      surface: buildRibbon(c.sf, 0.06, 0),
+      highway: buildRibbon(c.hw, 0.08, 0),
+    }));
   }, [roads]);
 
-  // wet-road sheen: drop roughness + darken when it's raining (§5)
-  const mats = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
-  const baseRough = [0.95, 0.9, 0.82];
+  // distance-cull cells + wet-road sheen (rain) via traversal
+  const root = useRef<THREE.Group>(null);
+  const groups = useRef<(THREE.Group | null)[]>([]);
+  const camera = useThree((s) => s.camera);
   useFrame(() => {
     const wet = useGame.getState().weather === "rain" ? 1 : 0;
-    mats.current.forEach((m, i) => {
-      if (!m) return;
-      m.roughness = baseRough[i] - wet * 0.55;
-      m.metalness = wet * 0.5;
+    const cp = camera.position;
+    chunks.forEach((c, i) => {
+      const g = groups.current[i];
+      if (g) g.visible = Math.hypot(cp.x - c.cx, cp.z - c.cz) < DRAW_DIST;
     });
+    if (wet !== lastWet.current) {
+      lastWet.current = wet;
+      root.current?.traverse((o) => {
+        const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+        if (m?.isMeshStandardMaterial) { m.roughness = (m.userData.base ?? 0.9) - wet * 0.55; m.metalness = wet * 0.5; }
+      });
+    }
   });
+  const lastWet = useRef(-1);
 
   return (
-    <group>
-      {cobble && (
-        <mesh geometry={cobble} receiveShadow>
-          <meshStandardMaterial ref={(m) => (mats.current[0] = m)} map={cobbleTex} color="#8a8580" roughness={0.95} />
-        </mesh>
-      )}
-      {surface && (
-        <mesh geometry={surface} receiveShadow>
-          <meshStandardMaterial ref={(m) => (mats.current[1] = m)} map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} />
-        </mesh>
-      )}
-      {highway && (
-        <mesh geometry={highway} receiveShadow>
-          <meshStandardMaterial ref={(m) => (mats.current[2] = m)} map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} />
-        </mesh>
-      )}
+    <group ref={root}>
+      {chunks.map((c, i) => (
+        <group key={i} ref={(el) => (groups.current[i] = el)}>
+          {c.cobble && (
+            <mesh geometry={c.cobble} receiveShadow>
+              <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} userData={{ base: 0.95 }} />
+            </mesh>
+          )}
+          {c.surface && (
+            <mesh geometry={c.surface} receiveShadow>
+              <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} userData={{ base: 0.9 }} />
+            </mesh>
+          )}
+          {c.highway && (
+            <mesh geometry={c.highway} receiveShadow>
+              <meshStandardMaterial map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} />
+            </mesh>
+          )}
+        </group>
+      ))}
     </group>
   );
 }
