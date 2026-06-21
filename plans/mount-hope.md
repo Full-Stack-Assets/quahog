@@ -16,6 +16,42 @@ Everything below is scoped to be **achievable in the web engine** unless marked 
 
 ---
 
+## Working loop (how this plan gets executed)
+
+Repeat this loop every working cycle. One task (or one small coherent batch) at a
+time; keep the build green; be honest about status.
+
+1. **READ** — open this file. Skim the checklist + the latest running-log entry.
+   Pick the **next task**: highest-priority unchecked `[ ]` (or resume a `[~]`),
+   respecting dependencies and any current user-chosen focus. Prefer order:
+   foundations → core systems → content → aesthetics/polish, unless redirected.
+2. **SCOPE** — restate the task + its acceptance criteria (use the task's intricate
+   spec/sub-bullets as the definition of done). Mark it `[~]` in the checklist.
+3. **BUILD** — implement it in `QUAHOG_Web/` (code) or `quahog-project-files/` /
+   `plans/` (data/docs). Keep changes focused on the task.
+4. **VERIFY** — run `npm run build` (tsc + vite) until clean. Sanity-check
+   behavior/intent. If shippable, deploy (push → Vercel) and confirm the
+   deployment is **READY**. Note: WebGL visuals can't be eyeballed here, so verify
+   build + logic and flag anything needing the user's eyes.
+5. **REVIEW** — self-review against the task's spec; check for regressions; confirm
+   no console/type errors. If only partly done, keep it `[~]` and note what's left.
+6. **CHECK OFF** — set the box to `[x]` (done & shipped) or `[~]` (partial).
+   Append a dated bullet to the **running log**: what changed + commit hash +
+   any blocker/follow-up.
+7. **COMMIT & PUSH** — commit on the feature branch, fast-forward `main`, push
+   (Vercel auto-deploys). Update task counts if helpful.
+8. **REPEAT** — go to step 1.
+
+**Rules of the loop**
+- Never leave the build broken between cycles.
+- Don't check a box until it's actually built + verified + shipped.
+- Record blockers explicitly (e.g., needs a key/asset/user decision) and skip to
+  the next unblocked task rather than stalling.
+- Batch only tightly-related tasks; otherwise one at a time for clean history.
+- The user can interrupt to re-prioritize at any point; honor it, then resume the loop.
+
+---
+
 ## 0. Foundations & ops
 - [x] Repo + branch workflow; Vercel project + git auto-deploy (`projectsouthcoast`)
 - [x] Engine reconciliation: R3F canonical; Unity/Godot marked legacy
@@ -450,6 +486,117 @@ modular kits + procedural placement driven by OSM data.
 
 ---
 
+# Part III — System Detail Atlases (exhaustive)
+
+Each game system gets its own deep atlas. Real-world 1980s references are listed
+for accuracy; **ship fictionalized analogs** (Vice-City style) to avoid trademark.
+Per-asset build spec lives under each entry. VO is produced via **ElevenLabs**
+(see §G), keyed through a server proxy so the API key never ships in the client.
+
+## A. Vehicle Atlas — the 1980s market (fictionalize on ship)
+Per vehicle: low-poly model + LODs, color/livery + dirt/rust variants, damage
+deform, working lights, optional interior, handling profile (mass/grip/accel/top
+speed/braking), engine+horn audio, spawn rules (district/era/wealth).
+
+- [ ] **American full-size sedans/coupes** — Caprice/Impala, LTD Crown Victoria, Delta 88, Bonneville, Town Car, Fleetwood/DeVille, Diplomat/Gran Fury (cop), Grand Marquis
+- [ ] **American mid-size & compact** — Citation, Fairmont, Reliant/Aries (K-car), Cavalier, Tempo/Topaz, Celebrity, Century, Cutlass Ciera, Corsica, Taurus (’86)
+- [ ] **Muscle / pony / performance** — Camaro (Z28/IROC), Firebird/Trans Am, Mustang 5.0 (Fox), Corvette C4, Monte Carlo SS, Buick Grand National/GNX, Mustang SVO, Dodge Daytona, Charger 2.2
+- [ ] **Personal-luxury coupes** — Eldorado, Riviera, Toronado, Thunderbird, Cordoba, Mark VI/VII, Monte Carlo, Cutlass Supreme
+- [ ] **Station wagons** — Country Squire (woody), Caprice/Custom Cruiser wagon, Colony Park, Vista Cruiser, K-wagon
+- [ ] **Pickups** — F-150/F-250, C/K (Silverado), D-series/Ram, Ranger, S-10, Toyota Hilux/pickup, Datsun/Nissan 720
+- [ ] **SUVs / 4x4** — Bronco (full + Bronco II), Blazer K5/S-10, Jeep CJ-7 / Wrangler YJ, Cherokee XJ, Wagoneer, Suburban, Scout II, Toyota Land Cruiser/4Runner
+- [ ] **Vans & minivans** — Econoline, G-van (boogie van w/ murals), Caravan/Voyager (’84 minivan), Astro, VW Vanagon, Toyota Van
+- [ ] **Japanese imports** — Civic/CRX, Accord, Corolla (AE86), Celica, Supra, Datsun/Nissan 280ZX→300ZX, Sentra, Maxima, Camry, Cressida, Mazda RX-7, 626, Mitsubishi Starion/Conquest, MR2, Subaru GL/Brat, Isuzu Impulse
+- [ ] **German** — VW Rabbit/Golf GTI, Jetta, Scirocco, BMW E30 3-series, E28 5-series, Mercedes W123/W124, 190E, S-class W126, Audi 4000/5000, Porsche 911/944/928/924
+- [ ] **Other European** — Saab 900 (Turbo), Volvo 240/740, Peugeot 505, Fiat/Alfa Spider, Renault Alliance, **Yugo GV**, Lancia, Lotus Esprit
+- [ ] **Economy / subcompact** — Chevette, Escort/EXP, Festiva, Sprint/Metro, Horizon/Omni, Pinto holdovers, Gremlin/Pacer holdovers
+- [ ] **Exotics & sports** — Ferrari Testarossa/308/328, Lamborghini Countach, DeLorean DMC-12, Porsche 959, Lotus, De Tomaso, TVR
+- [ ] **Luxury / executive** — Rolls-Royce/Bentley, Mercedes S, Jaguar XJ/XJS, Cadillac limo, stretch limo
+- [ ] **Commercial & service** — yellow taxi (Checker/Caprice), marked police cruiser + unmarked, fire engine + ladder truck, ambulance, garbage truck, box/delivery truck, semi tractor-trailer, tow truck, dump truck, cement mixer, school bus, transit bus, USPS mail jeep/LLV, ice-cream truck, food truck, news van, utility/bucket truck, hearse, parade float
+- [ ] **Motorcycles & mopeds** — Harley (cruiser/chopper/police), Honda CB/Nighthawk/Gold Wing, cafe racer, dirt bike, scooter/Vespa, **moped (the “Linguiça”)**
+- [ ] **Boats & marine** — fishing dragger/scalloper, lobster boat, ferry (Cuttyhunk/Vineyard), speedboat/cigarette boat, sailboat/yacht, dinghy/skiff, Coast Guard cutter/RIB, tugboat, **“Codfish 40” cruiser**
+- [ ] **Misc/utility** — bicycle (BMX/road/beach cruiser), forklift, golf cart, riding mower, go-kart, airport tug, harbor crane
+- [ ] **Canon flavor mapping** — “Townie” rusted beater (K-car/Caprice analog) heavy in Fall River; “Linguiça” moped; “Codfish 40” cruiser; preppy imports + yachts on the Cape; lowriders for the South End/Crioulo crews
+- [ ] **Systems** — vehicle data table (stats/spawn), paint/livery system, dirt/rust/damage materials, license plates (MA), wreck/burn states, ambient parked-car variety, rarity/wealth tiers per district
+
+## B. Character Atlas
+Per character: model (GLB/MetaHuman-grade), rig + anim set, face + lipsync,
+portrait, **ElevenLabs voice profile**, wardrobe, role/missions.
+- [ ] **Vinny Tavares (protagonist)** — full sheet: look, wardrobe options, voice, ability/anim set, arc beats
+- [ ] **Allies** — Auntie Conceição, Deacon Mealy, Reggie “Two-Stroke” Pina, Marisol Cabral, Iron Mike Fontaine (each: bio, model, VO, mission role)
+- [ ] **Antagonists** — Sully Brangwynne, Chip Worthington III, Lady Borden, the Fake Kennedys (each: bio, model, VO, boss role)
+- [ ] **Radio personalities** — Buddy Mello, Iron Mike, DJ Sully, Tia Conceição (voices + on-air persona)
+- [ ] **Faction rosters** — Azorean Syndicate, Crioulo/South End Crew, Cape Set, Provençal, the Brass (police): boss → lieutenants → enforcers → grunts, with colors/wardrobe/vehicles/turf
+- [ ] **Named minor NPCs** — vendors, fixers, fence, mechanic, bartender, priest, gym corner-man, ferry captain, mission-givers
+- [ ] **Generic NPC archetypes** — dockworker, fisherman, millhand, factory worker, preppy/yachtie, cop, priest/nun, businessman, retiree, teen, jogger, drunk, tourist, panhandler, kid — each w/ model set + wardrobe + voice bank
+- [ ] **Production** — character data table, casting/voice map, portrait set, relationship/standing data
+
+## C. Pedestrian Behavior Atlas (elevated AI)
+- [ ] **Core states** — idle, stroll, commute, sit, lean/smoke, window-shop, jog, wait (crosswalk/bus), converse, eat
+- [ ] **Threat reactions** — flee, panic-run, cower, hands-up, rubberneck/film, fight back, call cops, hide indoors
+- [ ] **World reactions** — to weather (umbrellas, run for cover, hunch in cold), to vehicles (dodge, jump back, yell, slap hood), to gunfire/explosions (scatter), to fire/water
+- [ ] **Social behaviors** — groups walking, conversations (turn-take + gestures), queues, crowds at events (Feast, boxing, ferry), street performers, arguments
+- [ ] **Daily schedules** — per archetype + time-of-day (home→work→lunch→home→nightlife); shops/bars populate accordingly
+- [ ] **Navigation** — sidewalk navmesh, crosswalks, jaywalking, doorway enter/exit, stairs, avoid obstacles + each other, personal space
+- [ ] **Dialogue/barks** — dialect engine + **ElevenLabs** archetype voice banks; greetings, insults, reactions, ambient chatter; subtitles
+- [ ] **Reputation reactions** — defer/fear/respect by player standing + turf; faction members hostile on their turf
+- [ ] **Density & perf** — per-district/time spawn density, crowd pooling, behavior LOD (simplify off-screen)
+
+## D. Interiors Atlas
+Shared modular interior kit (walls/floors/ceilings/doors/stairs/windows/lighting),
+era-1980s prop library, ambient audio + interactables; hero interiors fully
+dressed, ambient ones use window fake-out.
+- [ ] **Residential** — triple-decker apartment (kitchen, living, 2 bed, bath, hall, back porch), sea-captain mansion (foyer, parlor, study, grand stair, bedrooms), Cape cottage, worker flat, tenement hallway
+- [ ] **Safehouses** — starter flat, **Maplecroft B&B** (period-creepy), upgraded apartments, mansion endgame — each w/ bed (save), wardrobe (change), stash
+- [ ] **Bars/nightlife** — tavern (neon, pool table, jukebox), dive bar, social club (Portuguese/Azorean), gambling back-room
+- [ ] **Food** — Portuguese bakery (cases of malasadas), diner/luncheonette (counter+booths), clam shack, coffee shop
+- [ ] **Shops** — package/liquor store, pharmacy, pawn shop, hardware, record shop, barbershop, gun-running mill front, gas-station mart, corner store
+- [ ] **Civic/religious** — Seamen’s Bethel (ship-prow pulpit), church nave, city hall, police station (cells), library, courthouse
+- [ ] **Industrial** — granite mill floor (looms / chop-shop bay), warehouse, fish-processing, ice house, boat cabin/wheelhouse
+- [ ] **Sports/training** — Champion City Gym (ring, bags, lockers)
+- [ ] **Systems** — interior streaming (load on enter), occlusion, exterior/interior door transitions, interior lighting + ambience, NPC population, lootables/interactables
+
+## E. Weapons Atlas (1980s-appropriate, fictionalized)
+Per weapon: model, damage/range/fire-rate/recoil/mag, ammo type, reload + holster
+anim, sound (foley/ElevenLabs), pickup, tier (Quequechan Mill upgrade), legality
+(heat on draw/fire).
+- [ ] **Fists & improvised** — fists, brass knuckles, baseball bat, crowbar, pipe, tire iron, chain, broken bottle, hammer, **gaff/fishing knife/oar** (maritime), nightstick/baton
+- [ ] **Knives/blades** — switchblade, hunting knife, machete, cleaver
+- [ ] **Pistols** — .38/.357 revolver, 9mm auto (Beretta-92 analog), .45 (1911 analog), compact/snub, Glock-17 analog (new ’82), Desert Eagle analog
+- [ ] **Shotguns** — pump, sawn-off, double-barrel, semi-auto
+- [ ] **SMGs** — Uzi analog, MAC-10/11 analog, MP5 analog, grease gun
+- [ ] **Rifles** — bolt hunting rifle, lever-action, AK analog, M16/AR analog, M1 carbine, sniper (scoped)
+- [ ] **Heavy (mill-tier)** — RPG/LAW analog, light MG, flamethrower, mounted gun
+- [ ] **Thrown/placed** — molotov, frag grenade, pipe bomb, dynamite, throwing knife, brick
+- [ ] **Special / regional** — harpoon/whaling gun, speargun, flare gun (signal), nail gun, taser-prototype
+- [ ] **Systems** — weapon wheel/inventory, ammo types + pickups, holstering, dual-wield (stretch), durability for melee, weapon shops + the mill chop-shop tier gate, cops react to brandishing
+
+## F. Clothing & Wardrobe Atlas
+Player slots: head, face/eyes, torso-inner, torso-outer, hands, legs, feet,
+accessories. Per item: model fit to rig, materials, color variants, wet/dirty/
+blood states, price, vendor, unlock.
+- [ ] **Tops** — t-shirt, polo, flannel, bowling shirt, Hawaiian shirt, fisherman’s/cable-knit sweater, hoodie, tank, dress shirt
+- [ ] **Outerwear** — leather jacket (biker), denim jacket, Members-Only jacket, windbreaker/track jacket, bomber, peacoat, oilskin/raincoat (slicker), suit jacket/blazer, varsity jacket
+- [ ] **Bottoms** — jeans (straight/acid-wash), chinos, track pants, work pants, shorts, suit trousers, coveralls
+- [ ] **Footwear** — high-top sneakers, running shoes, work boots, cowboy boots, loafers, deck/boat shoes, dress shoes
+- [ ] **Headwear** — ballcap, trucker cap, knit watch cap, fedora, bandana, headband, do-rag
+- [ ] **Eyewear/accessories** — aviators, Wayfarers, gold chains, watch, gloves, belt, suspenders, fanny pack, backpack
+- [ ] **Role/faction outfits** — Azorean Syndicate sharp suit, South End/lowrider streetwear, Cape preppy (sweater-over-shoulders, boat shoes), dockworker/oilskins, millhand coveralls, cop uniform, priest cassock, boxer trunks+robe, tracksuit
+- [ ] **Systems** — clothing shops, change at safehouse, full outfit presets, dirt/wet/blood overlay states, story-locked outfits, disguise (lower heat/faction recognition)
+
+## G. Radio & VO Atlas (ElevenLabs pipeline)
+- [ ] **VO production pipeline** — ElevenLabs voice per host/character → generated audio assets → packaged/streamed; **server proxy for the ElevenLabs key** (mirror the maps-signing proxy); Web-Speech fallback for dev; subtitle/caption data alongside each line
+- [ ] **The Rage (1480 AM, talk)** — Buddy Mello: rant scripts (bridge traffic, potholes, the Pats, civic gripes), caller segments, station IDs, milestone-reactive lines (player rampage callouts)
+- [ ] **The Anvil (WBOX, sports)** — Iron Mike Fontaine: boxing gospel, City-of-Champions hype, fight recaps, training rants
+- [ ] **WHALE 92.1 (classic rock)** — DJ Sully: patter, dedications, triple-shots, weekend-format bits
+- [ ] **Maré Alta 105.3 (Portuguese/Cape Verdean oldies)** — Tia Conceição: warm host bits (PT/Kriolu phrases), feast-season shout-outs
+- [ ] **New stations** — Cape yacht-rock/AOR (preppy), punk/hardcore (youth), AM news/talk, Cape Verdean kriolu, country, oldies/doo-wop
+- [ ] **Shared content** — fictional **commercials** for South Coast businesses, PSAs, **traffic/weather/news** that reference real geography + react to player/story milestones, station jingles/IDs, time-of-day shows
+- [ ] **Music** — royalty-free/procedural now → curated license-free later; per-station playlists, crossfade, in-car vs walking ambience, volume ducking under talk
+- [ ] **Mission/cinematic VO** — character dialogue, mission briefings, in-game phone calls, cutscene lines — all via ElevenLabs voice map; lipsync hookup
+
+---
+
 ## Running log
 
 ### 2026-06-21
@@ -466,5 +613,7 @@ modular kits + procedural placement driven by OSM data.
 - Gameplay pass: **real car models** (player + traffic), **melee combat** (F → KO/kill), **1st/3rd-person toggle** (V), **clouds + planes**; HUD controls updated.
 - Created `plans/mount-hope.md` as source of truth, then **expanded it** into a full essential-systems + aesthetics/art-direction/game-feel checklist.
 - Added **Part II — World Detail Atlas**: intricate per-city mapping & aesthetic tasks — road/paving system, intersections & signage, modular building/façade kit, NE residential typologies (triple-deckers, mansions, Cape cottages), storefronts & signage, granite mills/churches/civic, ocean & working-waterfront detail, the **inter-city highway network (I-195, MA-24, US-6, MA-18)**, hero **bridges (Braga/“Verde”, Fairhaven, Sagamore/Bourne)**, per-city aesthetic packs (NB/FR/Brockton/Cape), and major systems upgrades (typology classifier, procedural city-gen, navmesh, streaming/LOD, living economy).
+- Added **Part III — System Detail Atlases**: exhaustive **vehicle atlas** (the 1980s market by category, fictionalized for ship), plus **character**, **elevated pedestrian-AI**, **interiors**, **weapons**, **clothing/wardrobe**, and **radio & VO** atlases — the radio/VO atlas specifies an **ElevenLabs** pipeline (server-proxied key, subtitles, per-host/character voices, more stations, ads/news/music).
+- Added the **Working loop** process (read → scope → build → verify → review → check off → log → commit → repeat) as the canonical execution protocol.
 
 <!-- Append new dated entries above this line as work lands. -->
