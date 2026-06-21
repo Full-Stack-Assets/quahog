@@ -28,6 +28,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const armed = useGame((s) => s.armed);
   const weapon = useGame((s) => s.weapon);
   const down = useGame((s) => s.down);
+  const nearLabel = useGame((s) => s.nearLabel);
   const near = useEconomy((s) => s.near);
   const owned = useEconomy((s) => s.owned);
   const ownedCount = Object.keys(owned).length;
@@ -189,7 +190,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
             letterSpacing: 1,
           }}
         >
-          PRESS E TO STEAL THE CAR
+          PRESS E TO {nearLabel || "ENTER"}
         </div>
       )}
 

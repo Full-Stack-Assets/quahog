@@ -91,6 +91,12 @@ export function Player() {
 
       const near = !!tj || ownD < ENTER_RADIUS || boatD < 6;
       game.setNearCar(near);
+      if (near) {
+        game.setNearLabel(
+          boatD < 6 && boatD <= ownD && boatD <= tjD ? "BOARD BOAT"
+            : tj && tjD <= ownD ? "STEAL CAR" : "ENTER CAR",
+        );
+      }
       if (near && consumeTap("KeyE")) {
         if (boatD < 6 && boatD <= ownD && boatD <= tjD) {
           rb.setEnabled(false); game.setNearCar(false); game.setMode("boat"); // cast off

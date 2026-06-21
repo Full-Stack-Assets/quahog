@@ -11,6 +11,7 @@ interface GameState {
   mode: Mode;
   view: View;
   nearCar: boolean;
+  nearLabel: string;
   weather: Weather;
   paused: boolean;
   slice: Slice | null;
@@ -30,6 +31,7 @@ interface GameState {
   setView: (v: View) => void;
   toggleView: () => void;
   setNearCar: (v: boolean) => void;
+  setNearLabel: (s: string) => void;
   toggleWeather: () => void;
   togglePause: () => void;
   setPaused: (p: boolean) => void;
@@ -51,6 +53,7 @@ export const useGame = create<GameState>((set) => ({
   mode: "foot",
   view: "third",
   nearCar: false,
+  nearLabel: "",
   weather: "clear",
   paused: false,
   slice: null,
@@ -70,6 +73,7 @@ export const useGame = create<GameState>((set) => ({
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
   setNearCar: (nearCar) => set((s) => (s.nearCar === nearCar ? s : { nearCar })),
+  setNearLabel: (nearLabel) => set((s) => (s.nearLabel === nearLabel ? s : { nearLabel })),
   toggleWeather: () => set((s) => ({ weather: s.weather === "clear" ? "rain" : s.weather === "rain" ? "fog" : "clear" })),
   togglePause: () => set((s) => ({ paused: !s.paused })),
   setPaused: (paused) => set({ paused }),
