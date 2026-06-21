@@ -26,6 +26,7 @@ import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
 import { Marina } from "./world/Marina";
+import { Gulls } from "./world/Gulls";
 import { SkidMarks } from "./world/SkidMarks";
 import { Rain } from "./world/Rain";
 import { Tracers } from "./world/Tracers";
@@ -112,6 +113,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
       <Marina />
+      <Gulls />
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Awnings roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}

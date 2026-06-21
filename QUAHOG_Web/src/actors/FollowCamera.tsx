@@ -6,6 +6,7 @@ import { useGame } from "../store";
 
 const BASE_FOV = 60;
 const _shake = new THREE.Vector3();
+let _photoYaw = 0;
 
 function lerpAngle(a: number, b: number, t: number) {
   let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
@@ -25,6 +26,15 @@ export function FollowCamera() {
     const mode = game.mode;
     const target = mode === "car" ? shared.car : mode === "boat" ? shared.boat : shared.player;
     if (!target) return;
+
+    // photo mode: slow cinematic orbit around the subject (§24)
+    if (game.photo) {
+      const tp0 = target.translation();
+      _photoYaw += dt * 0.25;
+      camera.position.set(tp0.x + Math.sin(_photoYaw) * 11, tp0.y + 5, tp0.z + Math.cos(_photoYaw) * 11);
+      camera.lookAt(tp0.x, tp0.y + 1.2, tp0.z);
+      return;
+    }
 
     // FOV widens with car speed for a sense of velocity (§13)
     const cam = camera as THREE.PerspectiveCamera;

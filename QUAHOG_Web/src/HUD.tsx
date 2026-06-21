@@ -29,6 +29,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const weapon = useGame((s) => s.weapon);
   const down = useGame((s) => s.down);
   const nearLabel = useGame((s) => s.nearLabel);
+  const photo = useGame((s) => s.photo);
   const near = useEconomy((s) => s.near);
   const owned = useEconomy((s) => s.owned);
   const ownedCount = Object.keys(owned).length;
@@ -56,6 +57,14 @@ export function HUD({ sliceName }: { sliceName: string }) {
   }, []);
 
   const hurt = Math.max(0, (40 - health) / 40); // 0 healthy → 1 near-death
+
+  if (photo) return (
+    <div style={wrap}>
+      <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", color: "#ffcf4a", fontSize: 12, letterSpacing: 2, opacity: 0.85 }}>
+        📷 PHOTO MODE — O to exit
+      </div>
+    </div>
+  );
 
   return (
     <div style={wrap}>

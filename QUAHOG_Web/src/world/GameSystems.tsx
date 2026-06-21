@@ -35,6 +35,7 @@ export function GameSystems() {
     if (consumeTap("KeyP") || consumeTap("Escape")) { useGame.getState().togglePause(); sfx.ui(); }
     if (consumeTap("KeyC")) { useGame.getState().toggleChar(); sfx.ui(); }
     if (consumeTap("KeyM")) { useGame.getState().toggleMap(); sfx.ui(); }
+    if (consumeTap("KeyO")) { useGame.getState().togglePhoto(); sfx.ui(); }
     if (consumeTap("KeyG")) useGame.getState().toggleArmed();
     if (consumeTap("Digit1") && useGame.getState().armed) useGame.getState().toggleArmed(); // fists
     if (consumeTap("Digit2")) useGame.getState().setWeapon("pistol");
