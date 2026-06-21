@@ -264,9 +264,9 @@ time; keep the build green; be honest about status.
 
 ## 19. Audio & music
 - [x] Radio: 4 stations (WHALE, The Rage, The Anvil, Maré Alta) — TTS hosts, music, switching/mute
-- [ ] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones
+- [~] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — scripts ~4x longer + ad/ident/news rotation + **wanted/weather reactions** (radioEngine); mission-milestone reactions TODO
 - [ ] More stations + larger procedural/licensed-free music sets
-- [ ] VO pipeline for NPC/mission dialogue (TTS now, recorded later)
+- [~] VO pipeline for NPC/mission dialogue (TTS now, recorded later) — ElevenLabs server proxy (api/tts.ts) + vo.ts client wired to radio hosts, Web-Speech fallback; NPC/mission dialogue hookup TODO
 - [ ] Mission/score adaptive music layers (calm/tension/chase)
 
 ## 20. Audio aesthetics & ambience
@@ -337,7 +337,7 @@ time; keep the build green; be honest about status.
 
 ## 28. Districts / content expansion
 - [x] New Bedford waterfront (primary)
-- [~] New Bedford full (downtown, South End, North End) — slice expanded waterfront→downtown (7,645 buildings, real City Hall/PD/libraries); South/North End + St. Luke's (widen west) TODO
+- [~] New Bedford full (downtown, South End, North End) — slice now spans **New Bedford · Fairhaven · Dartmouth** (16,252 buildings / 3,868 roads), real City Hall/PD/libraries, elevated Acushnet bridges; South/North End + St. Luke's + Padanaram/UMassD (multi-slice) TODO
 - [ ] Fall River (Spindle City): Flint, Lizzie Borden, Battleship Cove, Braga Bridge, mills
 - [ ] Brockton (Champion City Gym, boxing)
 - [ ] Cape Cod (marinas, Fake Kennedys)
@@ -345,8 +345,8 @@ time; keep the build green; be honest about status.
 - [ ] “Gloria” hurricane set-piece (flood, map alteration, sunk boats)
 
 ## 29. Performance & optimization
-- [ ] Instanced rendering (buildings, props, crowds, traffic)
-- [ ] LOD + frustum/occlusion culling; impostors for far buildings
+- [~] Instanced rendering (buildings, props, crowds, traffic) — props/parked cars/trees/skids/impacts instanced; far buildings merged per chunk
+- [~] LOD + frustum/occlusion culling; impostors for far buildings — far buildings chunked per 160 m cell + frustum + 1050 m distance cull (Buildings.tsx); LOD/impostors TODO
 - [ ] Object pooling (peds, cars, particles, decals)
 - [ ] Texture atlasing + compression; geometry merging
 - [ ] Frame budget profiling; fixed-timestep physics; web worker offload where possible
@@ -629,5 +629,7 @@ blood states, price, vendor, unlock.
 - **30-item goal run:** across several batches — **economy** (5 buyable fronts + passive revenue, economy.ts §15/§17); **feel** (Shift sprint+stamina, Space handbrake/drift, chromatic-aberration + film-grain post, on-screen objective distance §10/§13/§3/§21); **weather/ocean/streets** (fog state + wet roads + ocean swell + cycling traffic signals §5/§6/§7); **UI/meta** (title/start screen, pause **settings** with effects+volume, **toast** notifications §22/§26/§21); **combat/side-content** (weapon switching + **shotgun** spread, hidden **scrimshaw** collectibles, **flyer/poster** boards §11/§18/§8). Also reworked police fairness + busted/wasted respawn and added the procedural **SFX/ambience** engine (sfx.ts). Hook false-positive removed (option A). Shipped across `ef1a38e`→`HEAD`.
 
 - **Direction adjust + Step 1 (world build-out):** per user, dropped the planned combat-depth section and refocused the next roadmap on **world rendering + inter-city highways + surrounding towns (Dartmouth, Fairhaven, Westport) → Fall River**. Added in-world **St. Luke's Hospital** stand-in (WASTED respawn) + hospital/police **map markers** on the minimap and big map. **Re-pulled a larger New Bedford slice** via Overpass (waterfront→downtown: **7,645 buildings / 1,753 roads**, up from ~1,071), taught `make_slice.py` to capture civic landmarks, and **re-anchored the police station to the real downtown NBPD footprint** (hospital follows when the pull widens west to St. Luke's). ElevenLabs (key→`ELEVENLABS_API_KEY` env) + gamepad (native API) links handed to the user. Shipped (`d6eda37`, `5e2383d`).
+
+- **Perf → radio depth → Dartmouth (ordered batch):** ① **Perf pass** — far buildings chunked into a 160 m grid with automatic frustum culling + a 1050 m distance cull and no shadow casting, so the now-16k-building world stays interactive (Buildings.tsx §29). ② **Radio depth** — ad/ident/news rotation + hosts reacting to **wanted level** and **weather**, on top of ~4× longer host scripts (radioEngine §19); ElevenLabs VO pipeline (proxy + client) wired to all four hosts with Web-Speech fallback (§33), Iron Mike=Shaun-Boston + Buddy voices recorded. ③ **Step 16 Fairhaven** (+ elevated Acushnet bridges) and **Step 17 Dartmouth** (Route 6 corridor) pulled into the slice — now **New Bedford · Fairhaven · Dartmouth**, 16,252 buildings / 3,868 roads (mapgen now sends a User-Agent to beat the Overpass WAF). Shipped (`66e8fbc`→`f8cd5cc`).
 
 <!-- Append new dated entries above this line as work lands. -->
