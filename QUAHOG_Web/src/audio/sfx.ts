@@ -14,7 +14,6 @@ class Sfx {
   private sirenGain?: GainNode;
   private sirenLfo?: OscillatorNode;
   private ambGain?: GainNode;
-  private gullTimer?: number;
   private started = false;
 
   /** Lazily create the context + persistent nodes; attach gesture resume. */
@@ -119,13 +118,13 @@ class Sfx {
   }
   setVolume(v: number) { this.ensure(); this.master!.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), this.ctx!.currentTime, 0.05); }
 
-  /** Start the harbor ambience bed + periodic gull cries. */
+  /** Start the harbor ambience bed (soft low wind only — no chirps). */
   startAmbience() {
     this.ensure();
     if (this.started) return;
     this.started = true;
     const ctx = this.ctx!;
-    // wind: looping filtered noise
+    // wind: looping low-pass-filtered noise, kept low and dark
     const src = ctx.createBufferSource();
     src.buffer = this.noise!; src.loop = true;
     const f = ctx.createBiquadFilter();
@@ -133,14 +132,6 @@ class Sfx {
     src.connect(f).connect(this.ambGain!);
     src.start();
     this.ambGain!.gain.setTargetAtTime(0.04, ctx.currentTime, 2);
-    // occasional gull cries
-    const gull = () => {
-      const base = 900 + Math.random() * 500;
-      this.tone(base, 0.14, 0.05, "sawtooth", base * 1.4);
-      setTimeout(() => this.tone(base * 1.1, 0.12, 0.04, "sawtooth", base * 0.8), 160);
-      this.gullTimer = window.setTimeout(gull, 4000 + Math.random() * 9000);
-    };
-    this.gullTimer = window.setTimeout(gull, 3000);
   }
 }
 
