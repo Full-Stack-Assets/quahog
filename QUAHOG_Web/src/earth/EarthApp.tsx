@@ -16,6 +16,7 @@ import { installInput } from "../input";
 import { computeSpawn } from "./follow";
 import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
+import { TilesBVH } from "./bvh";
 import { Radio } from "../audio/Radio";
 
 // Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
@@ -86,6 +87,7 @@ export function EarthApp() {
         {/* errorTarget: higher = coarser tiles = far less geometry/memory (stability) */}
         <TilesRenderer key={apiKey} errorTarget={16}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
+          <TilesBVH />
 
           {mode === "orbit" ? (
             <>

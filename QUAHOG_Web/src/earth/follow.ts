@@ -1,25 +1,33 @@
 import * as THREE from "three";
 import type { Slice } from "../slice";
 
+type RayBVH = THREE.Raycaster & { firstHitOnly?: boolean };
+
 // Shared helpers for "walking on the photoreal tiles": everything lives inside a
 // y-up content group nested in the ENU frame (anchored at the slice origin), so
 // slice coords [east, north] map to content (x = east, z = -north) — identical to
 // the game world. Ground height comes from raycasting the loaded tile meshes.
-
-const _q = new THREE.Quaternion();
 
 export const DRIVABLE = new Set([
   "motorway", "trunk", "primary", "secondary", "tertiary",
   "residential", "unclassified", "living_street", "service",
 ]);
 
-/** ENU "up" direction in world space, from the content group's orientation. */
+const _q = new THREE.Quaternion();
+const _up = new THREE.Vector3();
+const _a = new THREE.Vector3();
+const _b = new THREE.Vector3();
+const _c = new THREE.Vector3();
+
+/** ENU "up" direction in world space, from the content group's orientation.
+ *  Returns a shared scratch vector — use it immediately, don't store across frames. */
 export function frameUp(parent: THREE.Object3D): THREE.Vector3 {
   parent.getWorldQuaternion(_q);
-  return new THREE.Vector3(0, 1, 0).applyQuaternion(_q);
+  return _up.set(0, 1, 0).applyQuaternion(_q);
 }
 
-/** Surface height (content-space y) at content (x,z), or null if no tile yet. */
+/** Surface height (content-space y) at content (x,z), or null if no tile yet.
+ *  Allocation-free hot path (raycast accelerated by the tile BVH). */
 export function groundY(
   parent: THREE.Object3D,
   group: THREE.Object3D | null | undefined,
@@ -29,10 +37,11 @@ export function groundY(
   up: THREE.Vector3,
 ): number | null {
   if (!group) return null;
-  const world = parent.localToWorld(new THREE.Vector3(x, 0, z));
-  ray.set(world.addScaledVector(up, 180), up.clone().negate());
+  parent.localToWorld(_a.set(x, 0, z));
+  ray.set(_a.addScaledVector(up, 180), _b.copy(up).negate());
+  (ray as RayBVH).firstHitOnly = true;
   const hits = ray.intersectObject(group, true);
-  return hits.length ? parent.worldToLocal(hits[0].point.clone()).y : null;
+  return hits.length ? parent.worldToLocal(_c.copy(hits[0].point)).y : null;
 }
 
 /** Distance to the nearest wall ahead (content-space dir), or Infinity. Used to
@@ -47,9 +56,10 @@ export function forwardHit(
 ): number {
   if (!group) return Infinity;
   parent.getWorldQuaternion(_q);
-  const originW = parent.localToWorld(originLocal.clone());
-  const dirW = new THREE.Vector3(dirContent.x, 0, dirContent.z).applyQuaternion(_q).normalize();
-  ray.set(originW, dirW);
+  parent.localToWorld(_a.copy(originLocal));
+  _b.set(dirContent.x, 0, dirContent.z).applyQuaternion(_q).normalize();
+  ray.set(_a, _b);
+  (ray as RayBVH).firstHitOnly = true;
   ray.far = maxDist;
   const hits = ray.intersectObject(group, true);
   ray.far = Infinity;
