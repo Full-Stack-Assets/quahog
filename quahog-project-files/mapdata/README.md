@@ -58,6 +58,57 @@ out geom;
 Pulled 2026-06-21 from `overpass-api.de`. To refresh, re-run the query above and
 re-convert the OSM JSON to GeoJSON.
 
+## Vector tiles (`southcoast.pmtiles`)
+
+A single [PMTiles](https://docs.protomaps.com/pmtiles/) archive (v3, zoom 9–16,
+~2.3 MB) covering **both cities**, for a 2D minimap or planning map. No tile
+server needed — it's one static file read via HTTP range requests.
+
+Vector-tile layers inside it:
+
+| source-layer | geometry | key fields |
+|--------------|----------|------------|
+| `roads` | line | `highway`, `name`, `oneway`, `maxspeed`, `lanes`, `bridge`, `tunnel`, `ref`, `surface`, `city` |
+| `rail` | line | `railway`, `name`, `city` |
+| `waterways` | line | `waterway`, `name`, `city` |
+| `water` | polygon | `name`, `city` |
+| `coastline` | line | `city` |
+| `boundary` | line | `name`, `admin_level`, `city` |
+
+Every feature carries a `city` property (`"Fall River"` / `"New Bedford"`).
+
+### Built with
+
+[tippecanoe](https://github.com/felt/tippecanoe), straight from the GeoJSON in
+this folder (no Geofabrik needed). The cities are split into the thematic layers
+above, then:
+
+```sh
+tippecanoe -o southcoast.pmtiles -Z9 -z16 \
+  --drop-densest-as-needed --extend-zooms-if-still-dropping --simplification=4 \
+  -n "QUAHOG South Coast" -A "© OpenStreetMap contributors, ODbL" \
+  -Lroads:roads.geojson -Lrail:rail.geojson -Lwaterways:waterways.geojson \
+  -Lwater:water.geojson -Lcoastline:coastline.geojson -Lboundary:boundary.geojson
+```
+
+## Viewer (`southcoast-map.html`)
+
+A self-contained [MapLibre GL](https://maplibre.org/) page styled to the 1986
+Vice City palette: neon roads, teal water, dashed city limits, layer toggles,
+and click-to-inspect roads. It reads `southcoast.pmtiles` from the same folder.
+
+⚠️ **Must be served over HTTP with byte-range support** — PMTiles works by
+fetching ranges of the file. Most static hosts qualify (Vercel, nginx, S3 +
+CloudFront, `npx serve`). Python's `http.server` does **not** support ranges
+and will fail. Quick local preview:
+
+```sh
+npx serve .            # or any range-capable static server
+# then open http://localhost:3000/southcoast-map.html
+```
+
+`file://` will not work (no range requests).
+
 ## License / attribution
 
 Data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
