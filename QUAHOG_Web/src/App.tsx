@@ -7,6 +7,7 @@ import { Minimap } from "./Minimap";
 import { PauseMenu } from "./ui/PauseMenu";
 import { CharacterMenu } from "./ui/CharacterMenu";
 import { BigMap } from "./ui/BigMap";
+import { TouchControls } from "./ui/TouchControls";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
 
@@ -34,6 +35,7 @@ export default function App() {
       <BigMap />
       <CharacterMenu />
       <PauseMenu />
+      <TouchControls />
       <Radio />
     </>
   );

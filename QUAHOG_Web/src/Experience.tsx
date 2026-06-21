@@ -10,6 +10,7 @@ import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Props } from "./world/Props";
+import { StreetSigns } from "./world/StreetSigns";
 import { HarborProps } from "./world/HarborProps";
 import { SkidMarks } from "./world/SkidMarks";
 import { Rain } from "./world/Rain";
@@ -75,6 +76,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <SkidMarks />
       <Rain />
