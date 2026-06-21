@@ -106,7 +106,7 @@ for lm in landmarks:
 landmarks=list(seen.values())
 
 slice_obj = {
-    "name": "SouthCoast — New Bedford to Westport",
+    "name": "SouthCoast — New Bedford · Fall River · the towns",
     "origin": {"lat":OLAT,"lon":OLON},
     "meters_per_degree": {"lat":M_LAT,"lon":round(M_LON,3)},
     "axes": "x=east(m), z=south is +? -> see note; y=up",
