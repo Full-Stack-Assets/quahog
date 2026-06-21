@@ -183,18 +183,18 @@ time; keep the build green; be honest about status.
 ## 11. Combat & weapons
 - [x] Melee punch → KO/kill + knockback
 - [ ] Melee combo / block / grapple; lock-on
-- [ ] Gunplay: aiming, hitscan/projectile, reticle, cover-shoot, recoil
-- [ ] Weapon set: fists, bat, pistol, shotgun, SMG, “heavy” (Quequechan Mill tier)
+- [~] Gunplay: aiming, hitscan/projectile, reticle, cover-shoot, recoil — pistol hitscan along the aim yaw + tracer/muzzle flash + recoil shake (Player + Tracers.tsx); reticle/cover-shoot TODO
+- [~] Weapon set: fists, bat, pistol, shotgun, SMG, “heavy” (Quequechan Mill tier) — fists + pistol; bat/shotgun/SMG/heavy TODO
 - [ ] Ammo, reload, pickups, weapon switching
 - [ ] Damage model + health/armor + regen/medkits
 - [ ] Hit reactions, ragdolls, blood decals (toggleable), impact particles
-- [ ] Enemy combat AI (cops, faction enforcers): chase, shoot, take cover, flank
+- [~] Enemy combat AI (cops, faction enforcers): chase, shoot, take cover, flank — cop cars chase, ram, and arrest (Police.tsx); shooting/cover/flank + faction enforcers TODO
 
 ## 12. Vehicles
 - [x] Real car models (Bronco/Mustang/G/Z/RAV4) — player + traffic
 - [x] Arcade driving (accel/brake/steer/reverse), enter/exit, collision — faster top speed + speed-scaled steering; ram traffic to halt it; **carjack** traffic on foot (E) with model/colour swap
 - [ ] Wheel rotation + steering animation; suspension travel
-- [ ] Working lights (head/tail/brake/reverse/turn signals)
+- [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking (Vehicles.tsx); reverse/turn signals TODO
 - [ ] Damage/deformation, smoke when wrecked, explosions
 - [ ] Region-accurate spawns (“Townie”, “Linguiça” moped, “Codfish 40”, lowriders, preppy imports)
 - [ ] Motorcycles/mopeds, boats, bicycles
@@ -217,14 +217,14 @@ time; keep the build green; be honest about status.
 - [ ] Ped density + variety by district + time of day; crowds
 - [ ] Traffic: lanes, stop at lights, yield, collision avoidance, honking, react to player
 - [ ] Faction NPCs + turf spawns (Azorean Syndicate, South End/Crioulo, Cape Set, Provençal)
-- [ ] Police NPCs + pursuit + backup escalation
+- [x] Police NPCs + pursuit + backup escalation — cop cars spawn/escalate with police heat and home in (Police.tsx); shootable, arrest on foot
 - [ ] NPC daily schedules / spawn zones
 - [ ] Performance: instanced/pooled crowds + LOD
 
 ## 15. Gameplay systems (canon)
 - [x] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints — mission.ts + MissionRunner.tsx (objective beam/ring); waypoint trail TODO
-- [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — game.ts police+faction 0–5 + decay; busted/wasted TODO
-- [ ] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip
+- [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — police+faction 0–5 + decay (game.ts); **busted/wasted** loop with respawn (Consequence.tsx)
+- [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [ ] **AcquisitionEngine** (5 businesses) + property ownership/markers
 - [ ] **RevenueManager** (daily yields, margin-leak events)
@@ -619,5 +619,7 @@ blood states, price, vendor, unlock.
 - **Execution batch (§32/§3/§4/§15/§16):** rewrote `Roads.tsx` into a 3-class surface system (highway w/ lane markings · asphalt streets · historic granite cobblestone via new `makeCobbleTexture`); added `Effects.tsx` (bloom + vignette + SMAA) + **ACES tone mapping**; added `DayNight.tsx` (600 s day/night cycle driving sun/hemisphere/ambient/fog/bg + drei `<Stars>` + **Palmer’s Island lighthouse beam**); added `game.ts` **PlayerWallet + dual-axis Heat/Wanted** (police + faction 0–5, decay) with `GameSystems.tsx` autosave/load; added `mission.ts` + `MissionRunner.tsx` **mission engine** with a 3-step playable **“Off the Boat”** opener (Bethel → steal car → safehouse) + objective beam/ring marker; HUD gained cash/clock/stars/health panel + objective banner. Shipped (`39ece9e`, `80a05b8`).
 
 - **Player-request batch (UX/driving/map/mobile):** ① collapsible **radio menu** + new **character menu** (outfit-colour tint applied live to the player model) with launcher buttons (§9/§22); ② **inverted A/D** on-foot strafing (§10); ③ **large map** screen — full-screen pannable/zoomable, real OSM **street-name labels**, water, player heading + objective (BigMap.tsx, M), plus **3D street-name signs** in-world (StreetSigns.tsx) (§21/§33); ④ **faster + smoother driving** (top speed 22→44, speed-scaled steering, removed the continuous camera speed-shake that caused the "shaky/bumpy" feel) and **vehicle combat/theft** — ram a traffic car to stop it, **carjack** it on foot (E) with model/colour swap + heat (§12/§13); ⑤ **touch controls** — on-screen thumb-stick + action buttons for phones (TouchControls.tsx, coarse-pointer only) (§25). Shipped (`1800e75`, `91a9e50`, `0aee2eb`).
+
+- **"Heat has teeth" batch:** added **gunplay** — G draws a pistol, click/Space fires a hitscan along the aim with tracer + muzzle flash (Tracers.tsx), dropping peds and damaging cops (§11); **police pursuit** — cop cars spawn and escalate with the police-heat axis, home in with a flashing lightbar, drain health on contact and arrest the player on foot, and are shootable for a payout (Police.tsx, §14); the **busted/wasted** loop — black-out → cash penalty → heat cleared → respawn at the Bethel (Consequence.tsx, §15); a **safehouse** zone that bleeds off heat and autosaves (Safehouse.tsx, §15); and dynamic **vehicle head/tail/brake lights** (dusk + braking, §12). Shipped (`d8884af`).
 
 <!-- Append new dated entries above this line as work lands. -->
