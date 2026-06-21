@@ -333,6 +333,123 @@ Everything below is scoped to be **achievable in the web engine** unless marked 
 
 ---
 
+# Part II — World Detail Atlas (intricate, per-city)
+
+Granular mapping + aesthetic tasks. Each top-level checkbox is a trackable unit;
+the nested bullets are the intricate spec for that unit. Grounded in the real
+South Coast (real roads, real architecture). All achievable in the web engine via
+modular kits + procedural placement driven by OSM data.
+
+## 32. Roads & paving (surface system, all cities)
+- [ ] **Road-class material set** — distinct look per OSM class
+  - motorway/trunk: smooth dark highway asphalt + rumble strips, wide lanes
+  - primary/secondary: city asphalt, patched, oil-stained centerlines
+  - residential: narrower, cracked, frost-heaved, tar crack-seal “snakes”
+  - service/alley: broken asphalt, gravel patches, weeds in seams
+- [ ] **Historic cobblestone & brick** — Johnny Cake Hill / NB historic district
+  - rounded granite setts, uneven height, moss in joints, wet-shine, cart-rut wear
+  - brick-paved crosswalks & plazas; herringbone vs running-bond patterns
+- [ ] **Lane & road markings** — double-yellow, dashed white, turn arrows, stop bars, “ONLY”, crosswalk zebra/ladder, faded/repainted, plow-scraped
+- [ ] **Curbs & edges** — granite curbstones (NB/FR signature), curb cuts, ADA ramps, rolled curbs in suburbs, painted (yellow no-park / blue handicap)
+- [ ] **Drainage & utilities in-road** — catch-basin grates, manhole covers (city seal), water/gas valve caps, sewer steam, gutter flow in rain
+- [ ] **Wear & grime decals** — potholes (patched/open), tar seams, oil drips at stop lines, skid marks, manhole settling rings, salt-stain whitening
+- [ ] **Embedded rail/trolley tracks** — old streetcar rails flush in pavement near downtown/mills
+- [ ] **Parking** — parallel-park lane markings, metered spots, lots (striped, light poles, painted arrows), gravel/dirt back lots
+- [ ] **Road geometry polish** — crown/camber, banking on ramps, expansion joints on bridges, smooth spline tangents at corners (no hard kinks)
+
+## 33. Intersections, signage & street systems
+- [ ] **Traffic control** — period (1980s) signal heads on mast arms + pedestal, walk/don’t-walk, blinking-yellow at night, stop/yield signs, all-way stops
+- [ ] **Rotaries/traffic circles** — President Ave rotary (FR) and others, yield geometry, central island landscaping
+- [ ] **Signage kit** — green street-name signs, one-way, no-parking, speed limit, school zone, route shields (**I-195, US-6, MA-18, MA-24, MA-79, MA-138**), overhead guide signs on highways
+- [ ] **Street lighting** — cobra-head sodium (amber) on arterials; historic acorn/harbor lamps in the cobblestone district; auto-on at dusk; pools of warm light
+- [ ] **Roadside furniture** — utility poles with sagging wires + transformers + pole-mounted signs, fire hydrants, USPS blue mailboxes, newspaper boxes, bus shelters, phone booths, parking meters, benches, bike racks
+- [ ] **Wires & overhead** — power/phone line spans pole-to-pole, service drops to houses, traffic-signal span wires, slight catenary sag + wind sway
+
+## 34. Buildings & façade system (modular kit, shared)
+- [ ] **Footprint → mass → roof** — extrude OSM footprints with real heights; roof types: flat+parapet, gable, hip, mansard, sawtooth (mills), with chimneys/vents/AC units/water tanks
+- [ ] **Façade module library** — tileable bays with: double-hung windows, storefront plate glass, arched/round-top windows, bay windows, doors/transoms, cornices, lintels, sills, string courses, quoins
+- [ ] **Material set (PBR)** — red brick (multiple bonds), Fall River **granite block**, clapboard, wood shingle, stucco, cast stone, painted brick, glazed terra-cotta trim
+- [ ] **Detail props** — fire escapes (tenement signature), downspouts/gutters, awnings, window AC units, satellite-less era TV antennas, rooftop billboards, ghost-sign painted ads, parapets, cornice brackets
+- [ ] **Weathering pass** — soot near rooflines, rust streaks under metal, salt bloom near harbor, peeling paint, water stains, boarded windows in dead zones
+- [ ] **Glass & interiors fake-out** — parallax/interior-cubemap windows + lit rooms at night (randomized warm/cool, some dark)
+- [ ] **Procedural façade assignment** — pick kit + materials by district + building size + era so streets read coherent, not repetitive
+
+## 35. Residential typologies (New England)
+- [ ] **Triple-decker** (the iconic FR/NB three-family) — stacked porches, flat/low roof, clapboard, side stair, small yard, driveway
+- [ ] **Sea-captain & mill-owner mansions** — Greek Revival / Federal / Italianate on County St (NB) and the Highlands (FR); columns, widow’s walks, iron fences
+- [ ] **Victorian / Queen Anne** — turrets, gingerbread trim, polychrome paint, wrap porches
+- [ ] **Worker row houses & duplexes** — tight mill-adjacent rows, shared walls
+- [ ] **Cape Cod cottages & shingle-style** — gray weathered shingles, gambrel/saltbox roofs, dormers, hydrangeas, crushed-shell driveways (Cape district)
+- [ ] **Postwar ranches & capes** — suburban Brockton/outer districts
+- [ ] **Yard kit** — picket/chain-link fences, stoops, clotheslines, lawns, hedges, mailboxes, detached garages, above-ground pools, lawn ornaments
+
+## 36. Commercial, storefronts & signage
+- [ ] **Mixed-use main streets** — ground-floor retail under apartments (Acushnet Ave NB, South Main/Columbia FR)
+- [ ] **Storefront kit** — recessed entries, plate-glass display windows, bulkhead bases, transoms, roll-down security gates, awnings
+- [ ] **Signage** — neon, hand-painted, plastic backlit box signs, projecting blade signs, barber poles, era-correct logos (fictional)
+- [ ] **Business types (flavor)** — Portuguese bakery (malasadas), package store, pharmacy, luncheonette/diner, fish market, hardware, laundromat, pawn shop, tavern/bar (neon), corner store, record shop, movie marquee, gas station (period pumps + price signs)
+- [ ] **Interiors (hero shops)** — bar, bakery, gym, gun-running mill front, safehouse — enterable, dressed
+- [ ] **Window dressing** — products, “OPEN/CLOSED” signs, flyers/posters, day-night open/close states
+
+## 37. Civic, religious & industrial
+- [ ] **Fall River granite mills** — multi-story granite blocks, tall mill windows, sawtooth/monitor roofs, brick smokestacks, water/stair towers, loading docks, mill yards + the Quequechan canal/river running through
+- [ ] **Churches** — St. Anne’s basilica (twin spires, granite + marble), Seamen’s Bethel, ornate Catholic parishes; stained glass; bell towers
+- [ ] **Civic buildings** — city hall, library, courthouse, post office, fire/police stations, schools (brick + columns)
+- [ ] **Industrial waterfront** — fish-processing plants, ice houses, cold storage, fuel depots, rail spur + freight yard, water towers
+- [ ] **Parks & green** — Buttonwood Park (NB), Kennedy Park (FR), Cape beaches/dunes; trees, paths, ballfields, bandstands, monuments
+
+## 38. Ocean, harbor & working waterfront (per body of water)
+- [ ] **New Bedford Harbor / Acushnet River** — the Hurricane Barrier (massive stone + gate), State Pier, fish piers with draggers/scallopers moored, fuel & ice docks, co-op
+- [ ] **Palmer’s Island Lighthouse** — modeled + rotating beam
+- [ ] **Mount Hope Bay (Fall River)** — Battleship Cove (USS Massachusetts, PT boats, submarine Lionfish), waterfront under the Braga Bridge
+- [ ] **Cape Cod waters** — beaches, dunes, marinas, moored yachts, the Canal
+- [ ] **Water shading** — Gerstner waves, foam at shore/pilings, fresnel + depth color, oily sheen near docks, reflections, wakes behind boats
+- [ ] **Waterfront props** — pilings, bollards, cleats, lobster traps stacked, nets drying, buoys, dinghies, gulls on every piling, breakwaters/jetties, seaweed at tide line
+- [ ] **Boats (ambient + usable)** — fishing draggers, ferries (Cuttyhunk/Vineyard), pleasure boats, Coast Guard; bobbing animation; usable boat for smuggling
+- [ ] **Tide & flood** — tide line shading; “Gloria” storm-surge flood that raises water over low roads/docks
+
+## 39. Inter-city highway network (major upgrade)
+- [ ] **I-195** — the east-west spine linking **New Bedford ↔ Fall River**: 4-lane divided, median jersey barrier, guardrails, breakdown lanes, overhead green guide signs, mile markers, sodium lighting, embankments
+- [ ] **Interchanges & ramps** — on/off ramps, cloverleaf/diamond interchanges, gore points, merge/accel lanes, ramp meters-off (era), exit numbering
+- [ ] **MA-24** — Fall River ↔ **Brockton** (north); **US-6** coastal route; **MA-18** NB waterfront connector to I-195; **MA-79/138** spurs
+- [ ] **Cape connection** — US-6 to the **Sagamore/Bourne bridges** over the Cape Cod Canal
+- [ ] **Highway dressing** — sound barriers, cut-slope/embankment terrain, drainage culverts, overpasses with shadow, reflective signage, rumble strips, lane reflectors, breakdown shoulders, brush/treelines
+- [ ] **Traffic on highways** — faster lane-following AI, merging, trucks, exits; police highway pursuit
+- [ ] **Seamless streaming** — load/unload districts as you drive the highway between cities (no loading screens)
+
+## 40. Bridges (hero infrastructure)
+- [ ] **Braga Bridge (“Verde Bridge”, Fall River)** — the long green steel cantilever over the Taunton River; deck, towers, truss detail, lime-green paint, night lighting + fog glow; drivable, with Battleship Cove beneath
+- [ ] **New Bedford–Fairhaven Bridge** — swing-span over the Acushnet, low steel deck
+- [ ] **Brightman St / old bascule bridges** — period detail
+- [ ] **Sagamore & Bourne Bridges** — Cape Cod Canal steel arches
+- [ ] **Rail & canal bridges** — smaller crossings tying districts
+- [ ] **Bridge tech** — expansion joints (bump/rumble), pylons in water w/ reflections, under-bridge ambient shadow + reverb, navigation lights, suicide-fence/railings
+
+## 41. Per-city aesthetic packs
+- [ ] **New Bedford — “Whaling City”**
+  - cobblestone historic district + Seamen’s Bethel/Whaling Museum/Custom House; working fish harbor; Acushnet Ave commercial; South End (Cape Verdean/Portuguese) triple-deckers + murals; County St mansions; the Hurricane Barrier; gritty maritime palette (greys, weathered wood, rust, harbor blue)
+- [ ] **Fall River — “Spindle City”**
+  - granite textile mills + smokestacks dominating the skyline; the Flint + the Highlands; the Quequechan; Columbia St Portuguese district; Battleship Cove + the green Braga Bridge; Lizzie Borden house (Second St) + Maplecroft (French St); steep hills; granite-grey + brick-red palette
+- [ ] **Brockton — “City of Champions”**
+  - brick downtown, boxing gyms (Champion City Gym), Campanello-era homes, working-class grid; warmer brick palette
+- [ ] **Cape Cod**
+  - weathered-shingle cottages, marinas + yachts, dunes/beaches/lighthouses, US-6, preppy yacht-club money; bright sand/sea-glass palette; summer-crowd density
+- [ ] **District transitions** — palette/material/density blends so each city reads distinct from the road
+
+## 42. Other major upgrades & systems
+- [ ] **OSM footprint → typology classifier** — auto-tag each building (triple-decker / mill / storefront / mansion / civic) to assign the right kit + materials
+- [ ] **Procedural city generator** — scale detailing to full districts from data (no hand placement per building)
+- [ ] **Per-city satellite ground** — signed Static Maps draped + aligned for each district (extend the proxy)
+- [ ] **Full road-network graph + navmesh** — drives traffic routing, ped sidewalks, GPS/route line, AI pursuit
+- [ ] **Streaming & LOD at multi-city scale** — district chunks, impostors, instanced props/crowds, memory budget
+- [ ] **Season + time-of-day dressing** — snow banks (winter), leaves (fall), summer crowds (Cape), holiday/feast banners
+- [ ] **Interiors streaming** — enterable hero interiors load/unload seamlessly
+- [ ] **Living economy** — shops open/close by time; ferries run on schedule; rush-hour traffic density
+- [ ] **Destructible/dynamic props** — bins, signs, fences, fruit stands, fire hydrants (spray), light poles
+- [ ] **GPS / waypoint route line** on roads to objectives (mini-map + world)
+
+---
+
 ## Running log
 
 ### 2026-06-21
@@ -347,6 +464,7 @@ Everything below is scoped to be **achievable in the web engine** unless marked 
 - Photoreal **Google 3D Tiles** build (`earth.html`) with full play world + signing proxy — **blocked by Google billing/quota**; parked.
 - Pivoted to make the **stylized web game canonical**; folded in **rigged human model**, **radio**, and a **signed Static Maps proxy** for satellite ground (needs Vercel env vars).
 - Gameplay pass: **real car models** (player + traffic), **melee combat** (F → KO/kill), **1st/3rd-person toggle** (V), **clouds + planes**; HUD controls updated.
-- Created `plans/mount-hope.md` as source of truth, then **expanded it** into a full essential-systems + aesthetics/art-direction/game-feel checklist (this revision).
+- Created `plans/mount-hope.md` as source of truth, then **expanded it** into a full essential-systems + aesthetics/art-direction/game-feel checklist.
+- Added **Part II — World Detail Atlas**: intricate per-city mapping & aesthetic tasks — road/paving system, intersections & signage, modular building/façade kit, NE residential typologies (triple-deckers, mansions, Cape cottages), storefronts & signage, granite mills/churches/civic, ocean & working-waterfront detail, the **inter-city highway network (I-195, MA-24, US-6, MA-18)**, hero **bridges (Braga/“Verde”, Fairhaven, Sagamore/Bourne)**, per-city aesthetic packs (NB/FR/Brockton/Cape), and major systems upgrades (typology classifier, procedural city-gen, navmesh, streaming/LOD, living economy).
 
 <!-- Append new dated entries above this line as work lands. -->
