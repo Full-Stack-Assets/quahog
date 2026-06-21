@@ -33,6 +33,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>
           <b>WASD</b> move &nbsp;·&nbsp; <b>E</b> {mode === "car" ? "exit car" : "enter car"}
           <br />
+          <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
+          <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>
       </div>

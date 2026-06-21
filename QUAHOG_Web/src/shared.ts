@@ -1,4 +1,12 @@
+import * as THREE from "three";
 import type { RapierRigidBody } from "@react-three/rapier";
+
+// A knockable agent (pedestrian) the player can punch/shove.
+export interface Body {
+  pos: THREE.Vector3;
+  push: THREE.Vector3;
+  hit: number; // melee hits queued by the player, consumed by the owner
+}
 
 // Cross-component mutable handles shared by the player, car, and camera.
 // (Kept out of React state so per-frame updates don't trigger re-renders.)
@@ -12,4 +20,6 @@ export const shared = {
   heading: -Math.PI / 2,
   /** Car heading (radians). */
   carYaw: -Math.PI / 2,
+  /** Pedestrian bodies registered by StreetLife, for melee contact. */
+  peds: [] as Body[],
 };

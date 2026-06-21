@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { consumeTap, moveAxis } from "../input";
+import { Vehicle } from "../earth/Vehicles";
 import { shared } from "../shared";
 import { useGame } from "../store";
 
@@ -79,28 +80,10 @@ export function Car() {
       mass={1.2}
     >
       <CuboidCollider args={[1.0, 0.6, 2.1]} />
-      {/* body */}
-      <mesh castShadow position={[0, 0.1, 0]}>
-        <boxGeometry args={[2.0, 0.9, 4.2]} />
-        <meshStandardMaterial color="#1f6f8b" metalness={0.3} roughness={0.4} />
-      </mesh>
-      {/* cabin */}
-      <mesh castShadow position={[0, 0.8, -0.2]}>
-        <boxGeometry args={[1.8, 0.7, 2.0]} />
-        <meshStandardMaterial color="#0e3b4a" metalness={0.2} roughness={0.5} />
-      </mesh>
-      {/* wheels */}
-      {[
-        [-1.0, -0.4, 1.4],
-        [1.0, -0.4, 1.4],
-        [-1.0, -0.4, -1.4],
-        [1.0, -0.4, -1.4],
-      ].map((p, i) => (
-        <mesh key={i} position={p as [number, number, number]} rotation-z={Math.PI / 2}>
-          <cylinderGeometry args={[0.45, 0.45, 0.3, 12]} />
-          <meshStandardMaterial color="#111111" roughness={0.9} />
-        </mesh>
-      ))}
+      {/* real car model; collider center is ~0.6 above the wheels' contact */}
+      <group position={[0, -0.6, 0]}>
+        <Vehicle type="mustang" color="#b81d24" />
+      </group>
     </RigidBody>
   );
 }

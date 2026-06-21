@@ -9,6 +9,7 @@ import { Water } from "./world/Water";
 import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
+import { Ambient } from "./earth/Ambient";
 import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
 import { FollowCamera } from "./actors/FollowCamera";
@@ -78,6 +79,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
 
       {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      <Ambient weather="clear" />
 
       <FollowCamera />
     </>

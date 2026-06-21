@@ -1,7 +1,9 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { ModelCharacter } from "./ModelCharacter";
+import { Vehicle, VEHICLE_TYPES } from "../earth/Vehicles";
+import { shared, type Body } from "../shared";
 import type { Road } from "../slice";
 
 // Ambient "street life" ported from the legacy Unity StreetLife.cs: wandering
@@ -70,15 +72,42 @@ function Pedestrians({ center }: { center: [number, number] }) {
   const state = useRef(
     Array.from({ length: PED_COUNT }, () => {
       const pos = randInBox(center);
-      return { pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS) };
+      return {
+        pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS),
+        down: 0, dead: false,
+        body: { pos: pos.clone(), push: new THREE.Vector3(), hit: 0 } as Body,
+      };
     }),
   );
+
+  // register pedestrian bodies so the player's punch can find them
+  useEffect(() => {
+    shared.peds = state.current.map((p) => p.body);
+    return () => { shared.peds = []; };
+  }, []);
 
   useFrame((_, dt) => {
     const step = Math.min(dt, 0.05);
     state.current.forEach((p, i) => {
       const g = refs.current[i];
       if (!g) return;
+
+      // resolve melee hits: first = knocked out, again = killed
+      if (p.body.hit > 0) {
+        if (p.dead) { /* stays down */ }
+        else if (p.down > 0) p.dead = true;
+        else p.down = 4;
+        p.body.hit = 0;
+      }
+      if (p.dead || p.down > 0) {
+        if (p.down > 0) p.down -= step;
+        g.position.copy(p.pos);
+        g.rotation.set(Math.PI / 2, p.heading, 0); // lying down
+        p.body.pos.copy(p.pos);
+        return;
+      }
+
+      if (p.body.push.lengthSq() > 0) { p.pos.add(p.body.push); p.body.push.set(0, 0, 0); }
       const to = new THREE.Vector3().subVectors(p.goal, p.pos);
       to.y = 0;
       if (to.length() < 0.6) {
@@ -89,7 +118,8 @@ function Pedestrians({ center }: { center: [number, number] }) {
         p.heading = Math.atan2(to.x, to.z);
       }
       g.position.copy(p.pos);
-      g.rotation.y = p.heading;
+      g.rotation.set(0, p.heading, 0);
+      p.body.pos.copy(p.pos);
     });
   });
 
@@ -118,6 +148,7 @@ function Traffic({ routes }: { routes: Route[] }) {
         forward: Math.random() < 0.5,
         dist: Math.random() * routes[ri].total,
         color: pick(CAR_COLORS),
+        vtype: pick(VEHICLE_TYPES),
         pos: new THREE.Vector3(),
         heading: 0,
       };
@@ -158,14 +189,7 @@ function Traffic({ routes }: { routes: Route[] }) {
     <group>
       {state.current.map((c, i) => (
         <group key={i} ref={(el) => (refs.current[i] = el)}>
-          <mesh castShadow position={[0, 0.5, 0]}>
-            <boxGeometry args={[1.7, 0.7, 3.6]} />
-            <meshStandardMaterial color={c.color} metalness={0.2} roughness={0.5} />
-          </mesh>
-          <mesh castShadow position={[0, 1.0, -0.2]}>
-            <boxGeometry args={[1.5, 0.55, 1.7]} />
-            <meshStandardMaterial color="#1a1a22" roughness={0.4} />
-          </mesh>
+          <Vehicle type={c.vtype} color={c.color} />
         </group>
       ))}
     </group>

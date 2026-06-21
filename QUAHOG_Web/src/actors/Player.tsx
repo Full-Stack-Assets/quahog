@@ -25,6 +25,8 @@ export function Player() {
     const rb = body.current;
     if (!rb) return;
     const game = useGame.getState();
+    // hide the body in first-person, and while driving
+    if (mesh.current) mesh.current.visible = game.mode === "foot" && game.view !== "first";
     if (game.mode === "car") return; // disabled while driving
 
     const ax = moveAxis();
@@ -56,6 +58,25 @@ export function Player() {
         rb.setEnabled(false);
         game.setNearCar(false);
         game.setMode("car");
+      }
+    }
+
+    // melee: punch the nearest pedestrian in front (F)
+    if (consumeTap("KeyF")) {
+      const p = rb.translation();
+      const fx = Math.sin(shared.heading), fz = Math.cos(shared.heading);
+      let best: (typeof shared.peds)[number] | null = null;
+      let bestD = 2.0;
+      for (const ped of shared.peds) {
+        const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
+        const dd = Math.hypot(dx, dz) || 1;
+        if (dd < bestD && (dx * fx + dz * fz) / dd > 0.25) { best = ped; bestD = dd; }
+      }
+      if (best) {
+        best.hit += 1;
+        const ax = best.pos.x - p.x, az = best.pos.z - p.z;
+        const m = Math.hypot(ax, az) || 1;
+        best.push.x += ax / m; best.push.z += az / m;
       }
     }
   });
