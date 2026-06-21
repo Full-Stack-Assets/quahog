@@ -68,6 +68,8 @@ export const shared = {
   skid: false,
   /** Decaying camera-shake impulse; bump it to jolt the chase camera. */
   shake: 0,
+  /** Sprint stamina 0..100 (on foot). */
+  stamina: 100,
   /** Threat that scatters nearby pedestrians (gunfire/violence). */
   alarm: { pos: new THREE.Vector3(), t: 0 },
   /** Pending impact bursts (blood/dust) drained by the particle renderer. */

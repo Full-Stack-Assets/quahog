@@ -31,12 +31,22 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const owned = useEconomy((s) => s.owned);
   const ownedCount = Object.keys(owned).length;
   const [hhmm, setHhmm] = useState("09:00");
+  const [stamina, setStamina] = useState(100);
+  const [dist, setDist] = useState<number | null>(null);
   useEffect(() => {
     const id = setInterval(() => {
       const h = Math.floor(shared.hour);
       const m = Math.floor((shared.hour - h) * 60);
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
-    }, 250);
+      setStamina(shared.stamina);
+      // distance to the active objective
+      const ms = useMission.getState();
+      const step = ms.done ? null : ms.steps[ms.step];
+      const body = useGame.getState().mode === "car" ? shared.car : shared.player;
+      const t = body?.translation();
+      if (step?.target && t) setDist(Math.round(Math.hypot(t.x - step.target[0], t.z - step.target[2])));
+      else setDist(null);
+    }, 200);
     return () => clearInterval(id);
   }, []);
 
@@ -102,6 +112,11 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <div style={{ width: `${health}%`, height: "100%", background: health > 30 ? "#4ad66d" : "#e23b3b" }} />
         </div>
         {armed && <div style={{ fontSize: 11, marginTop: 4, color: "#ffcf4a" }}>🔫 PISTOL</div>}
+        {stamina < 99.5 && (
+          <div style={{ marginTop: 4, height: 4, background: "#2a2a3a", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ width: `${stamina}%`, height: "100%", background: "#5ad0ff" }} />
+          </div>
+        )}
       </div>
 
       <div
@@ -121,7 +136,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         </div>
         <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>{sliceName}</div>
         <div style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>
-          <b>WASD</b> move &nbsp;·&nbsp; <b>E</b> {mode === "car" ? "exit car" : "enter car"}
+          <b>WASD</b> move &nbsp;·&nbsp; {mode === "car" ? <><b>Space</b> handbrake</> : <><b>Shift</b> sprint</>} &nbsp;·&nbsp; <b>E</b> {mode === "car" ? "exit car" : "enter car"}
           <br />
           <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
           <br />
@@ -148,6 +163,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         </div>
         <div style={{ fontSize: 13, marginTop: 2, color: missionDone ? "#7CFC00" : "#e7e0ff" }}>
           {missionDone ? "✓ " : "► "}{objective}
+          {!missionDone && dist != null && <span style={{ opacity: 0.7 }}> — {dist} m</span>}
         </div>
       </div>
 

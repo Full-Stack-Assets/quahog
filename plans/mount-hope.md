@@ -226,8 +226,8 @@ time; keep the build green; be honest about status.
 - [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — police+faction 0–5 + decay (game.ts); **busted/wasted** loop with respawn (Consequence.tsx)
 - [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
-- [ ] **AcquisitionEngine** (5 businesses) + property ownership/markers
-- [ ] **RevenueManager** (daily yields, margin-leak events)
+- [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
+- [~] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems); margin-leak events TODO
 - [ ] **ChopShopArmsManager** (weapons gated to Quequechan Mill #4 tier)
 - [ ] **WeatherController** ↔ vehicle friction
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
@@ -247,8 +247,8 @@ time; keep the build green; be honest about status.
 - [ ] Dialogue system (NPC conversations, choices where relevant)
 
 ## 17. Progression & economy
-- [ ] Cash earning/spending loops (missions, businesses, side jobs, theft)
-- [ ] Property empire with upkeep + income tick
+- [~] Cash earning/spending loops (missions, businesses, side jobs, theft) — mission rewards + business income + buy fronts; side jobs/theft fences TODO
+- [~] Property empire with upkeep + income tick — buy 5 fronts, passive income tick (economy.ts); upkeep/leak events TODO
 - [ ] Player upgrades/skills (driving, shooting, health, stamina)
 - [ ] Shops: weapons, clothing, vehicle mods, food (health)
 - [ ] Bank/stash; bribes; fines

@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { ModelCharacter } from "../world/ModelCharacter";
-import { consumeTap, moveAxis } from "../input";
+import { consumeTap, isDown, moveAxis } from "../input";
 import { shared, addShake, raiseAlarm, addImpact, type TrafficCar, type Body, type Cop } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
@@ -25,7 +25,7 @@ export function Player() {
     };
   }, []);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const rb = body.current;
     if (!rb) return;
     const game = useGame.getState();
@@ -43,9 +43,14 @@ export function Player() {
       .addScaledVector(right, -ax.x); // A/D inverted for on-foot strafing
 
     const v = rb.linvel();
-    if (dir.lengthSq() > 1e-4) {
+    const moving = dir.lengthSq() > 1e-4;
+    // sprint (Shift) drains stamina; it regens when not sprinting
+    const wantSprint = moving && (isDown("ShiftLeft") || isDown("ShiftRight")) && shared.stamina > 1;
+    shared.stamina = THREE.MathUtils.clamp(shared.stamina + (wantSprint ? -28 : 18) * dt, 0, 100);
+    const speed = wantSprint ? WALK_SPEED * 1.7 : WALK_SPEED;
+    if (moving) {
       dir.normalize();
-      rb.setLinvel({ x: dir.x * WALK_SPEED, y: v.y, z: dir.z * WALK_SPEED }, true);
+      rb.setLinvel({ x: dir.x * speed, y: v.y, z: dir.z * speed }, true);
       shared.heading = Math.atan2(dir.x, dir.z);
     } else {
       rb.setLinvel({ x: 0, y: v.y, z: 0 }, true);
