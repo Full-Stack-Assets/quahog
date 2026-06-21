@@ -645,4 +645,6 @@ blood states, price, vendor, unlock.
 
 - **Roads perf → heroes → Phase 2 cont:** ① **road chunking** — roads split into 1000 m cells with frustum + 1500 m distance culling (Roads.tsx) instead of one always-drawn 16k-road mesh. ② **Hero landmarks** (Heroes.tsx) — stylized **USS Massachusetts** at Battleship Cove, the **Lizzie Borden House**, and the **Dartmouth Mall** hub (also a purchasable front), on real coords. ③ **Phase 2 storefront awnings** — instanced two-tone awnings along commercial frontages near the core. Shipped (`788dac5`→`3778469`).
 
+- **Region fixes + fast travel:** ground enlarged 3 km → 60 km so the whole map has land+collider (no more floating Fall River/voids); **water lifted clear of the ground** so it's visible in 3D (was map-only) + brighter teal; **bridge railings**; **fast travel** from the big map (M) to town centers + hero spots; the **Braga Bridge** now reads green (rails + truss towers). Shipped (`f5ccbeb`→`0293104`).
+
 <!-- Append new dated entries above this line as work lands. -->
