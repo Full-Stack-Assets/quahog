@@ -11,6 +11,8 @@ import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Props } from "./world/Props";
 import { StreetSigns } from "./world/StreetSigns";
+import { ParkedCars } from "./world/ParkedCars";
+import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
 import { SkidMarks } from "./world/SkidMarks";
 import { Rain } from "./world/Rain";
@@ -82,10 +84,12 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       )}
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Police />
       <Tracers />
+      <Impacts />
       <SkidMarks />
       <Rain />
       <Ambient weather="clear" />

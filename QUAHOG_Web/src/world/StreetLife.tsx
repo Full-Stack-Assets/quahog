@@ -34,6 +34,9 @@ interface Route {
   total: number; // total length
 }
 
+const TMP = new THREE.Vector3();
+const TMP2 = new THREE.Vector3();
+
 // ---------------------------------------------------------------------------
 
 export function StreetLife({
@@ -108,14 +111,31 @@ function Pedestrians({ center }: { center: [number, number] }) {
       }
 
       if (p.body.push.lengthSq() > 0) { p.pos.add(p.body.push); p.body.push.set(0, 0, 0); }
-      const to = new THREE.Vector3().subVectors(p.goal, p.pos);
-      to.y = 0;
-      if (to.length() < 0.6) {
-        p.goal = randInBox(center);
+
+      // threat awareness: flee gunfire/violence or an oncoming fast car (§14)
+      let threat: THREE.Vector3 | null = null;
+      if (shared.alarm.t > 0 && p.pos.distanceTo(shared.alarm.pos) < 26) threat = shared.alarm.pos;
+      else if (shared.car && Math.abs(shared.carSpeed) > 10) {
+        const c = shared.car.translation();
+        if (Math.hypot(c.x - p.pos.x, c.z - p.pos.z) < 12) threat = TMP.set(c.x, 0, c.z);
+      }
+
+      if (threat) {
+        const away = TMP2.subVectors(p.pos, threat); away.y = 0;
+        if (away.lengthSq() < 1e-3) away.set(Math.random() - 0.5, 0, Math.random() - 0.5);
+        away.normalize();
+        p.pos.addScaledVector(away, PED_SPEED * 2.2 * step); // run
+        p.heading = Math.atan2(away.x, away.z);
       } else {
-        to.normalize();
-        p.pos.addScaledVector(to, PED_SPEED * step);
-        p.heading = Math.atan2(to.x, to.z);
+        const to = new THREE.Vector3().subVectors(p.goal, p.pos);
+        to.y = 0;
+        if (to.length() < 0.6) {
+          p.goal = randInBox(center);
+        } else {
+          to.normalize();
+          p.pos.addScaledVector(to, PED_SPEED * step);
+          p.heading = Math.atan2(to.x, to.z);
+        }
       }
       g.position.copy(p.pos);
       g.rotation.set(0, p.heading, 0);

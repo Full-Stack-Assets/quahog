@@ -32,6 +32,12 @@ export interface Cop {
   dead: boolean;
 }
 
+// A one-shot impact burst (blood/dust) consumed by the particle renderer.
+export interface Impact {
+  pos: THREE.Vector3;
+  color: string;
+}
+
 // Cross-component mutable handles shared by the player, car, and camera.
 // (Kept out of React state so per-frame updates don't trigger re-renders.)
 export const shared = {
@@ -62,9 +68,24 @@ export const shared = {
   skid: false,
   /** Decaying camera-shake impulse; bump it to jolt the chase camera. */
   shake: 0,
+  /** Threat that scatters nearby pedestrians (gunfire/violence). */
+  alarm: { pos: new THREE.Vector3(), t: 0 },
+  /** Pending impact bursts (blood/dust) drained by the particle renderer. */
+  impacts: [] as Impact[],
 };
 
 /** Add a one-shot camera shake (juice §23). */
 export function addShake(amount: number) {
   shared.shake = Math.min(1.2, shared.shake + amount);
+}
+
+/** Raise an alarm at a world point so nearby peds flee (§14). */
+export function raiseAlarm(x: number, z: number, seconds = 5) {
+  shared.alarm.pos.set(x, 0, z);
+  shared.alarm.t = Math.max(shared.alarm.t, seconds);
+}
+
+/** Queue an impact burst at a point (§23). */
+export function addImpact(pos: THREE.Vector3, color: string) {
+  if (shared.impacts.length < 16) shared.impacts.push({ pos: pos.clone(), color });
 }

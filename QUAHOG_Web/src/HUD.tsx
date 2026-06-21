@@ -58,6 +58,14 @@ export function HUD({ sliceName }: { sliceName: string }) {
         </div>
       )}
 
+      {/* aiming reticle when armed on foot */}
+      {armed && !down && (
+        <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", width: 22, height: 22 }}>
+          <div style={{ position: "absolute", left: 10, top: 0, width: 2, height: 22, background: "rgba(255,207,74,.85)" }} />
+          <div style={{ position: "absolute", top: 10, left: 0, width: 22, height: 2, background: "rgba(255,207,74,.85)" }} />
+        </div>
+      )}
+
       {/* low-health damage vignette (§23) */}
       {hurt > 0 && (
         <div

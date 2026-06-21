@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
-import { shared, addShake, type TrafficCar, type Body, type Cop } from "../shared";
+import { shared, addShake, raiseAlarm, addImpact, type TrafficCar, type Body, type Cop } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
 
@@ -109,6 +109,8 @@ export function Player() {
         best.push.x += ax / m; best.push.z += az / m;
         useStats.getState().heat(0.4, 0.9); // assault draws police + faction heat
         addShake(0.5); // impact juice
+        addImpact(new THREE.Vector3(best.pos.x, 1.1, best.pos.z), "#9a2a2a");
+        raiseAlarm(p.x, p.z, 5);
       }
     }
 
@@ -136,12 +138,13 @@ export function Player() {
         if (Math.abs(dx * fz - dz * fx) < 2.2 && along < bestT) { bestT = along; bestCop = cop; bestPed = null; }
       }
       const to = new THREE.Vector3();
-      if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); }
-      else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); }
+      if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); addImpact(to, "#8a1414"); }
+      else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); addImpact(to, "#8a1414"); }
       else to.set(p.x + fx * bestT, p.y + 0.4, p.z + fz * bestT);
       shared.shots.push({ from, to, life: 0.06 });
       addShake(0.3);
       useStats.getState().heat(0.7, 0.6);
+      raiseAlarm(p.x, p.z, 6); // gunfire scatters the crowd
     }
   });
 
