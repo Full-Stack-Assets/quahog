@@ -197,7 +197,7 @@ time; keep the build green; be honest about status.
 - [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking (Vehicles.tsx); reverse/turn signals TODO
 - [ ] Damage/deformation, smoke when wrecked, explosions
 - [ ] Region-accurate spawns (“Townie”, “Linguiça” moped, “Codfish 40”, lowriders, preppy imports)
-- [ ] Motorcycles/mopeds, boats, bicycles
+- [~] Motorcycles/mopeds, boats, bicycles — **pilotable yacht** (Boat.tsx; board at the Long Island marina, drives on water, wake); motorcycles/mopeds/bicycles TODO
 - [ ] Garage / car storage / customization (paint, wheels)
 - [ ] Car radio audible inside; horn
 
@@ -457,7 +457,7 @@ modular kits + procedural placement driven by OSM data.
 
 ## 40. Bridges (hero infrastructure)
 - [ ] **Braga Bridge (“Verde Bridge”, Fall River)** — the long green steel cantilever over the Taunton River; deck, towers, truss detail, lime-green paint, night lighting + fog glow; drivable, with Battleship Cove beneath
-- [ ] **New Bedford–Fairhaven Bridge** — swing-span over the Acushnet, low steel deck
+- [~] **New Bedford–Fairhaven Bridge** — swing-span over the Acushnet, low steel deck — **drivable ramped deck + piers** (Bridges.tsx, generic for all spans); swing-span animation + steel truss detail TODO
 - [ ] **Brightman St / old bascule bridges** — period detail
 - [ ] **Sagamore & Bourne Bridges** — Cape Cod Canal steel arches
 - [ ] **Rail & canal bridges** — smaller crossings tying districts
@@ -635,5 +635,7 @@ blood states, price, vendor, unlock.
 - **Perf → radio depth → Dartmouth (ordered batch):** ① **Perf pass** — far buildings chunked into a 160 m grid with automatic frustum culling + a 1050 m distance cull and no shadow casting, so the now-16k-building world stays interactive (Buildings.tsx §29). ② **Radio depth** — ad/ident/news rotation + hosts reacting to **wanted level** and **weather**, on top of ~4× longer host scripts (radioEngine §19); ElevenLabs VO pipeline (proxy + client) wired to all four hosts with Web-Speech fallback (§33), Iron Mike=Shaun-Boston + Buddy voices recorded. ③ **Step 16 Fairhaven** (+ elevated Acushnet bridges) and **Step 17 Dartmouth** (Route 6 corridor) pulled into the slice — now **New Bedford · Fairhaven · Dartmouth**, 16,252 buildings / 3,868 roads (mapgen now sends a User-Agent to beat the Overpass WAF). Shipped (`66e8fbc`→`f8cd5cc`).
 
 - **Step 19 + music + Phase 1 aesthetics + ocean barrier:** ① **multi-tile building streaming** (public/tiles/, 500 m tiles loaded by distance + per-tile colliders; main slice 3.5 MB→849 KB) — unblocks whole-region build-out. ② **Legitimate music** — radio plays real MP3 tracks per station (ElevenLabs Music generator scripts/gen_music.py) with synth fallback. ③ **Phase 1 aesthetics** — STYLE_GUIDE.md; **façade window kit** (procedural per-floor windows, day glass + night-lit, colour by use/height); **shadows follow the player** across the map. ④ **Ocean** — wave-wash ambience everywhere + **water is now a barrier** (sink/recover, Hazards.tsx) so bridges are the required crossing; bridges lowered to a drivable at-grade causeway on pilings. ⑤ Removed the gull-cry **squeak**. Shipped (`25db5fa`→`a4d903b`).
+
+- **Drivable bridges + Sconticut/boats:** ① **drivable elevated bridges** (Bridges.tsx stitches OSM bridge ways into spans, ramps grade→7 m crest→grade with a trimesh collider + piers). ② Fixed the **floating hospital** placeholder. ③ Extended the slice SE down **Sconticut Neck → West Island/Long Island** (36k buildings / 398 tiles, slice still 1.79 MB). ④ **Off the Hook Bar and Grill** purchasable at 56 Goulart Memorial Dr, doubling as the boat dock. ⑤ **Pilotable yacht** (Boat.tsx — board with E, drive on water, exempt from the water barrier) + moored-yacht **Marina** at Long Island (wealthy area = yachts; NB harbor keeps trawlers). Noted **Dartmouth Mall** as a hub for the Fall River push. Shipped (`d065234`→`dd0bcbd`).
 
 <!-- Append new dated entries above this line as work lands. -->
