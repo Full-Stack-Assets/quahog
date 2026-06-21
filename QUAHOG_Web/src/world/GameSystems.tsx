@@ -15,7 +15,19 @@ const DAY_SECONDS = 600; // matches DayNight's cycle length
 export function GameSystems() {
   const acc = useRef(0);
   const prevStars = useRef(0);
-  useEffect(() => { useStats.getState().load(); useEconomy.getState().load(); sfx.startAmbience(); }, []);
+  useEffect(() => {
+    useStats.getState().load();
+    useEconomy.getState().load();
+    sfx.startAmbience();
+    // restore settings (§26)
+    try {
+      const s = JSON.parse(localStorage.getItem("mounthope.settings.v1") || "{}");
+      const g = useGame.getState();
+      if (typeof s.fxOn === "boolean" && s.fxOn !== g.fxOn) g.toggleFx();
+      if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
+      if (s.weather) useGame.setState({ weather: s.weather });
+    } catch { /* ignore */ }
+  }, []);
   useFrame((_, dt) => {
     // global hotkeys
     if (consumeTap("KeyR")) useGame.getState().toggleWeather();
@@ -41,7 +53,12 @@ export function GameSystems() {
     prevStars.current = stars;
     st.decay(dt);
     acc.current += dt;
-    if (acc.current > 20) { acc.current = 0; st.save(); }
+    if (acc.current > 20) {
+      acc.current = 0;
+      st.save();
+      const g = useGame.getState();
+      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
+    }
   });
   return null;
 }

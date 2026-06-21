@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useGame } from "../store";
 import { useStats } from "../game";
 import { useMission } from "../mission";
+import { useEconomy, BUSINESSES } from "../economy";
 import { sfx } from "../audio/sfx";
 import { radio } from "../audio/radioEngine";
 
@@ -29,6 +30,10 @@ export function PauseMenu() {
   const weather = useGame((s) => s.weather);
   const fxOn = useGame((s) => s.fxOn);
   const reduceShake = useGame((s) => s.reduceShake);
+  const cash = useStats((s) => s.cash);
+  const owned = useEconomy((s) => s.owned);
+  const mTitle = useMission((s) => s.title);
+  const mDone = useMission((s) => s.done);
   const [vol, setVol] = useState(0.5);
   if (!paused) return null;
   const wlabel = weather === "rain" ? "Rain" : weather === "fog" ? "Fog" : "Clear";
@@ -51,8 +56,12 @@ export function PauseMenu() {
         <div style={{ color: "#ff7ad9", fontWeight: 700, letterSpacing: 3, fontFamily: "'Courier New', monospace", fontSize: 20 }}>
           PAUSED
         </div>
-        <div style={{ color: "#9a93b8", fontSize: 11, marginBottom: 14, fontFamily: "'Courier New', monospace" }}>
+        <div style={{ color: "#9a93b8", fontSize: 11, marginBottom: 10, fontFamily: "'Courier New', monospace" }}>
           MOUNT HOPE
+        </div>
+        <div style={{ color: "#cfc8e6", fontSize: 11, marginBottom: 12, fontFamily: "'Courier New', monospace", lineHeight: 1.6 }}>
+          💵 ${Math.floor(cash).toLocaleString()} &nbsp;·&nbsp; 🏠 {Object.keys(owned).length}/{BUSINESSES.length} fronts<br />
+          🎯 {mDone ? "Campaign complete" : mTitle}
         </div>
 
         <button style={btn} onClick={() => useGame.getState().setPaused(false)}>▶ Resume</button>

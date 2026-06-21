@@ -11,10 +11,10 @@ import type { Road } from "../slice";
 // no rigid bodies) so it can never shove the player's physics car — exactly the
 // constraint the Unity version held. Cars here follow the REAL OSM road network.
 
-const PED_COUNT = 12;
+const PED_COUNT = 20;
 const PED_SPEED = 1.5; // m/s
 const PED_WANDER = 32; // half-extent of wander box around origin
-const CAR_COUNT = 8;
+const CAR_COUNT = 14;
 const CAR_SPEED = 9; // m/s
 const CONNECT_R = 10; // how close road endpoints must be to count as joined
 
@@ -201,6 +201,11 @@ function Traffic({ routes }: { routes: Route[] }) {
         g.rotation.y = c.heading;
         return;
       }
+
+      // yield: pause if the player (car/on foot) is right in front of us
+      const pb = (shared.car && shared.car.isEnabled?.() === false ? shared.player : shared.car) ?? shared.player;
+      const pt = pb?.translation();
+      if (pt && Math.hypot(pt.x - c.pos.x, pt.z - c.pos.z) < 7) { g.position.copy(c.pos); g.rotation.y = c.heading; return; }
 
       const route = routes[c.route];
       c.dist += CAR_SPEED * step;
