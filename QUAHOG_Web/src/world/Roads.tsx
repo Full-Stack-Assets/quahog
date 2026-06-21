@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { makeAsphaltTexture, makeCobbleTexture } from "./textures";
+import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
 
@@ -65,6 +65,8 @@ export function Roads({ roads }: { roads: Road[] }) {
     t.repeat.set(1, 0.5); // bigger cobbles along length
     return t;
   }, []);
+  const nrm = useMemo(() => makeNoiseNormal(), []);
+  const ns = useMemo(() => new THREE.Vector2(0.4, 0.4), []);
 
   const { surface, highway, cobble } = useMemo(() => {
     const land = roads.filter((r) => !r.bridge); // bridges handled by <Bridges/>
@@ -99,12 +101,12 @@ export function Roads({ roads }: { roads: Road[] }) {
       )}
       {surface && (
         <mesh geometry={surface} receiveShadow>
-          <meshStandardMaterial ref={(m) => (mats.current[1] = m)} map={surfaceTex} color="#5a5c66" roughness={0.9} />
+          <meshStandardMaterial ref={(m) => (mats.current[1] = m)} map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} />
         </mesh>
       )}
       {highway && (
         <mesh geometry={highway} receiveShadow>
-          <meshStandardMaterial ref={(m) => (mats.current[2] = m)} map={highwayTex} color="#6a6c76" roughness={0.82} />
+          <meshStandardMaterial ref={(m) => (mats.current[2] = m)} map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} />
         </mesh>
       )}
     </group>

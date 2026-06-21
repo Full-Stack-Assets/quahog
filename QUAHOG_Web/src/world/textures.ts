@@ -8,6 +8,29 @@ function canvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   return [c, c.getContext("2d")!];
 }
 
+// A tileable surface normal map (Phase 2) — fakes fine bumpiness so asphalt /
+// ground catch the light + IBL instead of reading dead flat. Shared singleton.
+let _noiseNormal: THREE.Texture | null = null;
+export function makeNoiseNormal(): THREE.Texture {
+  if (_noiseNormal) return _noiseNormal;
+  const [c, ctx] = canvas(128);
+  ctx.fillStyle = "#8080ff"; ctx.fillRect(0, 0, 128, 128); // flat normal
+  for (let i = 0; i < 700; i++) {
+    const x = Math.random() * 128, y = Math.random() * 128, r = 1 + Math.random() * 3;
+    const dx = (Math.random() - 0.5) * 90, dy = (Math.random() - 0.5) * 90;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgb(${128 + dx},${128 + dy},255)`);
+    g.addColorStop(1, "rgba(128,128,255,0)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  const t = new THREE.Texture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(8, 8);
+  t.needsUpdate = true;
+  _noiseNormal = t;
+  return t;
+}
+
 // Façade maps (§ Phase 1): one tileable cell ≈ one floor (~3.2 m). `albedo` is
 // white wall + dark glass window (multiplies the per-building base colour);
 // `emissive` is black wall + warm lit window (glows at night). Shared singletons.

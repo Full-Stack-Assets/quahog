@@ -31,6 +31,7 @@ import { Safehouse } from "./world/Safehouse";
 import { Hospital } from "./world/Hospital";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
+import { EnvLight } from "./world/EnvLight";
 import { GameSystems } from "./world/GameSystems";
 import { MissionRunner } from "./world/MissionRunner";
 import { Effects } from "./world/Effects";
@@ -72,6 +73,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
   return (
     <>
       <DayNight />
+      <EnvLight />
       <GameSystems />
       <MissionRunner />
       <Consequence />

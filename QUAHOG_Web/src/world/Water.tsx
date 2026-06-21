@@ -52,21 +52,37 @@ export function Water({ polys }: { polys: [number, number][][] }) {
 
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  // Gerstner-style swell: sum a few directional waves for choppy, believable
+  // motion; recompute normals so the IBL reflection rolls with the surface.
+  const WAVES = useMemo(() => ([
+    { dx: 0.7, dz: 0.7, len: 26, amp: 0.22, spd: 1.0 },
+    { dx: -0.5, dz: 0.86, len: 14, amp: 0.13, spd: 1.4 },
+    { dx: 0.95, dz: -0.3, len: 8, amp: 0.07, spd: 1.9 },
+  ]), []);
+  const height = (x: number, z: number, t: number) => {
+    let h = 0;
+    for (const w of WAVES) {
+      const k = (2 * Math.PI) / w.len;
+      h += w.amp * Math.sin((x * w.dx + z * w.dz) * k + t * w.spd);
+    }
+    return h;
+  };
+
   useFrame((state, dt) => {
     if (matRef.current?.normalMap) {
       matRef.current.normalMap.offset.x += dt * 0.012;
       matRef.current.normalMap.offset.y += dt * 0.006;
     }
-    // gentle swell: displace Y by crossing sine waves over world x/z
     if (base && meshRef.current) {
       const t = state.clock.elapsedTime;
-      const pos = meshRef.current.geometry.attributes.position as THREE.BufferAttribute;
+      const g = meshRef.current.geometry;
+      const pos = g.attributes.position as THREE.BufferAttribute;
       const arr = pos.array as Float32Array;
       for (let i = 0; i < arr.length; i += 3) {
-        const x = base[i], z = base[i + 2];
-        arr[i + 1] = base[i + 1] + Math.sin(x * 0.08 + t * 1.1) * 0.18 + Math.cos(z * 0.06 - t * 0.8) * 0.14;
+        arr[i + 1] = base[i + 1] + height(base[i], base[i + 2], t);
       }
       pos.needsUpdate = true;
+      if ((g.index?.count ?? 0) < 60000) g.computeVertexNormals(); // skip on huge meshes
     }
   });
 
@@ -75,13 +91,14 @@ export function Water({ polys }: { polys: [number, number][][] }) {
     <mesh ref={meshRef} geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
       <meshStandardMaterial
         ref={matRef}
-        color="#16384a"
-        roughness={0.18}
-        metalness={0.55}
+        color="#13323f"
+        roughness={0.12}
+        metalness={0.6}
+        envMapIntensity={1.2}
         normalMap={normalMap}
-        normalScale={new THREE.Vector2(0.5, 0.5)}
+        normalScale={new THREE.Vector2(0.45, 0.45)}
         transparent
-        opacity={0.94}
+        opacity={0.95}
       />
     </mesh>
   );
