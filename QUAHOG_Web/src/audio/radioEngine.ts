@@ -4,6 +4,8 @@
 // continuously, music stations drop DJ IDs between beds. Must be started from a
 // user gesture (a station button) — handled by resuming the AudioContext.
 import { speak, stopVO } from "./vo";
+import { useStats } from "../game";
+import { useGame } from "../store";
 
 export interface Host {
   name: string;
@@ -149,6 +151,44 @@ export const STATIONS: Station[] = [
   },
 ];
 
+// --- station-agnostic content (§19 radio depth): ads, idents, news/weather,
+// and lines that react to the player's wanted level. Read in the host voice.
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
+const ADS = [
+  "Engine knockin' like a screen door in a nor'easter? The Anvil Garage, on the waterfront — we'll get her runnin' right, no questions asked.",
+  "Quohog Republic. Cold beer, hot chowder, and a jukebox that only knows the seventies. Down on the docks.",
+  "Linguiça Linq — chouriço and eggs, twenty-four hours. 'Cause some hungers don't keep banker's hours.",
+  "Maré Alta Records, downtown — fado, funaná, rock and roll. If we don't have it, you don't need it.",
+  "Whaling City Cab. Two trucks, one that starts. We'll get ya there. Probably.",
+  "This weekend at the Madeira Field — carne de espeto, malasadas, and the carousel that's older than your grandfather.",
+  "Sal's Marine Supply, Pope's Island. Nets, traps, and lies about the one that got away. All half off.",
+  "Buy American, buy local, buy a clam roll the size of your fist. That's the South Coast guarantee.",
+];
+
+const IDS = [
+  "You're locked in.",
+  "All across the South Coast.",
+  "From the harbor to the highway.",
+  "Turn it up.",
+  "Nobody does it like we do it.",
+];
+
+const NEWS = [
+  "Top of the hour: the harbor commission says dredging's behind schedule again. In other words, water's still wet.",
+  "City council voted to study the pothole problem. The study fell in a pothole. We'll keep you posted.",
+  "Fish prices up at the auction this mornin' — good news for the fleet, bad news for your Friday supper.",
+  "The bridge will be openin' on the half hour all weekend, so plan accordingly, or don't, and suffer.",
+];
+
+const WANTED = [
+  "Scanner's lightin' up down by the waterfront — sounds like somebody's havin' an exciting evening. Stay clear, folks.",
+  "Lotta blue lights downtown tonight. Whatever you did, pal — and somebody did somethin' — knock it off.",
+  "Police all over the South End. If that's one of you listenin', maybe ease off the gas, huh?",
+];
+const RAIN = ["Wipers on, comin' down steady off the bay.", "Roads are slick as a politician's promise tonight — easy out there."];
+const FOG = ["Pea-soup fog on the harbor — foghorn's earnin' its keep.", "Can't see the end of the pier in this fog. Drive like it."];
+
 class RadioEngine {
   private ctx?: AudioContext;
   private master?: GainNode;
@@ -156,6 +196,7 @@ class RadioEngine {
   private talkTimer?: number;
   private step = 0;
   private lineIdx = 0;
+  private seg = 0;
   private station: Station | null = null;
   vol = 0.5;
   muted = false;
@@ -184,6 +225,7 @@ class RadioEngine {
     this.station = s;
     this.step = 0;
     this.lineIdx = 0;
+    this.seg = 0;
     if (s.kind === "music") {
       const beatMs = (60 / s.tempo) * 1000;
       this.timer = window.setInterval(() => this.tick(), beatMs);
@@ -251,8 +293,7 @@ class RadioEngine {
       if (s) this.scheduleTalk(s.talkGapMs);
       return;
     }
-    const line = s.host.lines[this.lineIdx % s.host.lines.length];
-    this.lineIdx++;
+    const line = this.chooseSegment(s);
     // duck the music bed while the host talks
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol * 0.28, this.ctx.currentTime, 0.08);
     const done = () => {
@@ -268,6 +309,25 @@ class RadioEngine {
       prefs: s.host.prefs,
       onend: done,
     });
+  }
+
+  // Interleave host lines with ads, idents, news, and reactive weather/wanted
+  // chatter so the dial feels alive (§19 radio depth).
+  private chooseSegment(s: Station): string {
+    this.seg++;
+    try {
+      const police = useStats.getState().police;
+      const weather = useGame.getState().weather;
+      if (police >= 3 && Math.random() < 0.28) return pick(WANTED);
+      if (weather === "rain" && Math.random() < 0.18) return pick(RAIN);
+      if (weather === "fog" && Math.random() < 0.18) return pick(FOG);
+    } catch { /* stores not ready */ }
+    if (this.seg % 4 === 0) return pick(ADS);
+    if (this.seg % 9 === 0) return `${s.dial}, ${s.name}. ${pick(IDS)}`;
+    if (s.kind === "talk" && this.seg % 6 === 0) return pick(NEWS);
+    const line = s.host.lines[this.lineIdx % s.host.lines.length];
+    this.lineIdx++;
+    return line;
   }
 }
 
