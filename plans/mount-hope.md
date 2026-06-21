@@ -643,4 +643,6 @@ blood states, price, vendor, unlock.
 
 - **Region build-out → Fall River:** stopped tracking the raw OSM dump (gitignore) to keep the repo lean, then extended the slice west along the **I-195 / Route 6 corridor** through **Westport** and on to **Fall River + the Charles M. Braga Jr. Memorial Bridge** (drivable). Region now **68,482 buildings / 16,167 roads / 954 streamed tiles** (slim slice 4.2 MB); pulls done incrementally and merged (dedupe by id) to stay within Overpass limits. Shipped (`793e0c4`→`25abda5`).
 
+- **Roads perf → heroes → Phase 2 cont:** ① **road chunking** — roads split into 1000 m cells with frustum + 1500 m distance culling (Roads.tsx) instead of one always-drawn 16k-road mesh. ② **Hero landmarks** (Heroes.tsx) — stylized **USS Massachusetts** at Battleship Cove, the **Lizzie Borden House**, and the **Dartmouth Mall** hub (also a purchasable front), on real coords. ③ **Phase 2 storefront awnings** — instanced two-tone awnings along commercial frontages near the core. Shipped (`788dac5`→`3778469`).
+
 <!-- Append new dated entries above this line as work lands. -->
