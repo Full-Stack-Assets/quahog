@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>QUAHOG — South Coast Planning Map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js"></script>
+<style>
+  :root {
+    --bg:#150b2e; --road:#ff3caa; --road-major:#ff7ad9; --rail:#9b8cff;
+    --water:#0e2a4d; --water-edge:#22d3ee; --coast:#22d3ee; --boundary:#ffd166;
+    --ink:#e7e0ff;
+  }
+  html,body{margin:0;height:100%;background:var(--bg);font-family:"Courier New",monospace;color:var(--ink)}
+  #map{position:absolute;inset:0}
+  #panel{
+    position:absolute;top:12px;left:12px;z-index:2;background:rgba(21,11,46,.85);
+    border:1px solid #5b3a8e;border-radius:8px;padding:12px 14px;backdrop-filter:blur(4px);
+    box-shadow:0 0 24px rgba(255,60,170,.25);max-width:240px;
+  }
+  #panel h1{margin:0 0 2px;font-size:15px;letter-spacing:1px;color:var(--road-major);text-shadow:0 0 8px rgba(255,60,170,.6)}
+  #panel .sub{font-size:11px;opacity:.7;margin-bottom:10px}
+  .row{display:flex;align-items:center;gap:8px;font-size:12px;margin:5px 0;cursor:pointer;user-select:none}
+  .row input{accent-color:var(--road)}
+  .swatch{width:14px;height:4px;border-radius:2px;display:inline-block}
+  #readout{position:absolute;bottom:12px;left:12px;z-index:2;font-size:11px;
+    background:rgba(21,11,46,.8);padding:5px 9px;border-radius:6px;border:1px solid #5b3a8e}
+  .attr{position:absolute;bottom:0;right:0;z-index:2;font-size:10px;background:rgba(0,0,0,.5);
+    padding:2px 6px;color:#bbb}
+  .attr a{color:#9cf}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <h1>SOUTH COAST</h1>
+  <div class="sub">New Bedford · Fall River — 1986</div>
+  <label class="row"><input type="checkbox" data-lyr="water" checked><span class="swatch" style="background:var(--water-edge)"></span>Water</label>
+  <label class="row"><input type="checkbox" data-lyr="roads" checked><span class="swatch" style="background:var(--road)"></span>Roads</label>
+  <label class="row"><input type="checkbox" data-lyr="rail" checked><span class="swatch" style="background:var(--rail)"></span>Rail</label>
+  <label class="row"><input type="checkbox" data-lyr="boundary" checked><span class="swatch" style="background:var(--boundary)"></span>City limits</label>
+</div>
+<div id="readout">click a road for details</div>
+<div class="attr">© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, ODbL</div>
+
+<script>
+const css = getComputedStyle(document.documentElement);
+const C = n => css.getPropertyValue(n).trim();
+
+// register the pmtiles:// protocol for MapLibre
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol("pmtiles", protocol.tile);
+
+const PM = "pmtiles://./southcoast.pmtiles";
+
+const map = new maplibregl.Map({
+  container: "map",
+  center: [-71.02, 41.69],   // between the two cities
+  zoom: 11.2,
+  hash: true,
+  style: {
+    version: 8,
+    glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
+    sources: { sc: { type: "vector", url: PM, attribution: "© OpenStreetMap contributors, ODbL" } },
+    layers: [
+      { id: "bg", type: "background", paint: { "background-color": C("--bg") } },
+      { id: "water", type: "fill", source: "sc", "source-layer": "water",
+        paint: { "fill-color": C("--water"), "fill-outline-color": C("--water-edge") } },
+      { id: "waterways", type: "line", source: "sc", "source-layer": "waterways",
+        paint: { "line-color": C("--water-edge"), "line-width": 1, "line-opacity": .6 } },
+      { id: "coastline", type: "line", source: "sc", "source-layer": "coastline",
+        paint: { "line-color": C("--coast"), "line-width": 1.5, "line-opacity": .8 } },
+      { id: "boundary", type: "line", source: "sc", "source-layer": "boundary",
+        paint: { "line-color": C("--boundary"), "line-width": 1.5, "line-dasharray": [3,2], "line-opacity": .8 } },
+      { id: "rail", type: "line", source: "sc", "source-layer": "rail",
+        paint: { "line-color": C("--rail"), "line-width": 1, "line-dasharray": [2,2] } },
+      // minor roads
+      { id: "roads", type: "line", source: "sc", "source-layer": "roads",
+        filter: ["!", ["in", ["get","highway"], ["literal",["motorway","trunk","primary","secondary","motorway_link","trunk_link"]]]],
+        paint: { "line-color": C("--road"),
+          "line-width": ["interpolate",["linear"],["zoom"], 11,0.3, 14,1, 16,2.5],
+          "line-opacity": .55 } },
+      // major roads — brighter, drawn on top
+      { id: "roads-major", type: "line", source: "sc", "source-layer": "roads",
+        filter: ["in", ["get","highway"], ["literal",["motorway","trunk","primary","secondary","motorway_link","trunk_link"]]],
+        paint: { "line-color": C("--road-major"),
+          "line-width": ["interpolate",["linear"],["zoom"], 11,1, 14,3, 16,6],
+          "line-blur": .4 } },
+      // road labels
+      { id: "road-labels", type: "symbol", source: "sc", "source-layer": "roads",
+        minzoom: 14, filter: ["has","name"],
+        layout: { "symbol-placement":"line", "text-field":["get","name"],
+          "text-font":["Open Sans Regular"], "text-size":11 },
+        paint: { "text-color":"#fff", "text-halo-color":C("--bg"), "text-halo-width":1.5 } },
+    ],
+  },
+});
+
+map.addControl(new maplibregl.NavigationControl(), "top-right");
+map.addControl(new maplibregl.ScaleControl({ unit: "imperial" }), "bottom-left");
+
+// layer toggles
+document.querySelectorAll("input[data-lyr]").forEach(cb => {
+  cb.addEventListener("change", () => {
+    const v = cb.checked ? "visible" : "none";
+    const ids = { water:["water","waterways","coastline"], roads:["roads","roads-major","road-labels"],
+                  rail:["rail"], boundary:["boundary"] }[cb.dataset.lyr];
+    ids.forEach(id => map.setLayoutProperty(id, "visibility", v));
+  });
+});
+
+// click to inspect a road
+const readout = document.getElementById("readout");
+map.on("click", e => {
+  const f = map.queryRenderedFeatures(e.point, { layers:["roads","roads-major"] })[0];
+  if (!f) { readout.textContent = "click a road for details"; return; }
+  const p = f.properties;
+  readout.innerHTML = `<b>${p.name||"(unnamed)"}</b> — ${p.highway}` +
+    `${p.oneway==="yes"?" · one-way":""}${p.maxspeed?" · "+p.maxspeed+" mph":""}` +
+    ` <span style="opacity:.6">[${p.city}]</span>`;
+});
+map.on("mousemove", "roads", () => map.getCanvas().style.cursor="pointer");
+map.on("mouseleave", "roads", () => map.getCanvas().style.cursor="");
+</script>
+</body>
+</html>
