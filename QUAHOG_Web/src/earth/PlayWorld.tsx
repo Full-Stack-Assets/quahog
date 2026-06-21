@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
-import { ModelCharacter } from "./ModelCharacter";
+import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { DRIVABLE, followCam, forwardHit, frameUp, groundY, lerpAngle } from "./follow";
 import { playState, resetBodies, type Body } from "./playState";

@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { Character } from "./Character";
+import { ModelCharacter } from "./ModelCharacter";
 import type { Road } from "../slice";
 
 // Ambient "street life" ported from the legacy Unity StreetLife.cs: wandering
@@ -97,7 +97,7 @@ function Pedestrians({ center }: { center: [number, number] }) {
     <group>
       {state.current.map((p, i) => (
         <group key={i} ref={(el) => (refs.current[i] = el)} position={p.pos}>
-          <Character shirt={p.color} pants={pick(PANTS)} skin={pick(SKINS)} hair={pick(HAIRS)} />
+          <ModelCharacter />
         </group>
       ))}
     </group>

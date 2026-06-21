@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Sky } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
-import { Ground } from "./world/Ground";
+import { SatelliteGround } from "./world/SatelliteGround";
 import { Roads } from "./world/Roads";
 import { Buildings } from "./world/Buildings";
 import { Water } from "./world/Water";
@@ -58,7 +58,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       />
 
       <Physics gravity={[0, -9.81, 0]}>
-        <Ground />
+        <SatelliteGround origin={slice?.origin} />
         <Player />
         <Car />
         {slice && (

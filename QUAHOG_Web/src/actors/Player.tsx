@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
-import { Character } from "../world/Character";
+import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
@@ -72,13 +72,9 @@ export function Player() {
     >
       <CapsuleCollider args={[0.5, 0.4]} />
       <group ref={mesh}>
-        {/* humanoid; feet at local 0, so drop by the capsule half-height */}
+        {/* rigged human; feet at local 0, so drop by the capsule half-height */}
         <group position={[0, -0.9, 0]}>
-          <Character
-            skin="#caa07a"
-            shirt="#b23b34"
-            pants="#23344f"
-            hair="#2a2018"
+          <ModelCharacter
             moving={() => {
               const v = body.current?.linvel();
               return !!v && Math.hypot(v.x, v.z) > 0.6;
