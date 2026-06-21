@@ -43,6 +43,8 @@ export interface Impact {
 export const shared = {
   player: null as RapierRigidBody | null,
   car: null as RapierRigidBody | null,
+  boat: null as RapierRigidBody | null,
+  boatYaw: -Math.PI / 2,
   // Initial facing = -x (west), looking toward Seamen's Bethel from the spawn.
   /** Camera azimuth (radians), eased toward the active target's heading. */
   camYaw: -Math.PI / 2,

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Slice } from "./slice";
 
-export type Mode = "foot" | "car";
+export type Mode = "foot" | "car" | "boat";
 export type View = "third" | "first";
 export type Weather = "clear" | "rain" | "fog";
 export type Down = null | "busted" | "wasted";

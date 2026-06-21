@@ -18,7 +18,7 @@ export function Hazards() {
 
   useFrame((_, dt) => {
     const game = useGame.getState();
-    if (game.paused || game.down) return;
+    if (game.paused || game.down || game.mode === "boat") return; // boats belong on water
     const body = game.mode === "car" ? shared.car : shared.player;
     if (!body) return;
     const t = body.translation();

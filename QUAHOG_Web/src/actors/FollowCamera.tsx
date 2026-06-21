@@ -23,7 +23,7 @@ export function FollowCamera() {
     if (consumeTap("KeyV")) game.toggleView();
 
     const mode = game.mode;
-    const target = mode === "car" ? shared.car : shared.player;
+    const target = mode === "car" ? shared.car : mode === "boat" ? shared.boat : shared.player;
     if (!target) return;
 
     // FOV widens with car speed for a sense of velocity (§13)
@@ -41,7 +41,7 @@ export function FollowCamera() {
     const shakeAmt = shared.shake;
 
     const tp = target.translation();
-    const heading = mode === "car" ? shared.carYaw : shared.heading;
+    const heading = mode === "car" ? shared.carYaw : mode === "boat" ? shared.boatYaw : shared.heading;
     shared.camYaw = lerpAngle(shared.camYaw, heading, 1 - Math.exp(-dt * 3));
 
     if (game.view === "first") {
@@ -57,8 +57,8 @@ export function FollowCamera() {
     }
 
     const yaw = shared.camYaw;
-    const dist = mode === "car" ? 12 : 7;
-    const height = mode === "car" ? 5.5 : 4;
+    const dist = mode === "car" ? 12 : mode === "boat" ? 16 : 7;
+    const height = mode === "car" ? 5.5 : mode === "boat" ? 7 : 4;
     const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
     const want = new THREE.Vector3(
       tp.x - fwd.x * dist,

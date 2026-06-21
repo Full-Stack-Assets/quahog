@@ -19,7 +19,12 @@ export const BUSINESSES: Business[] = [
   { id: "linq", name: "Linguiça Linq", blurb: "all-night diner", pos: [-300, 0, 92], cost: 650, perDay: 260 },
   { id: "marealta", name: "Maré Alta Records", blurb: "record shop", pos: [-262, 0, 60], cost: 700, perDay: 280 },
   { id: "whalingcab", name: "Whaling City Cab", blurb: "taxi depot", pos: [-220, 0, 176], cost: 900, perDay: 360 },
+  // out on Sconticut Neck toward Long Island — 56 Goulart Memorial Drive
+  { id: "longisland", name: "Off the Hook Bar and Grill", blurb: "Long Island waterfront bar & marina", pos: [6092, 0, 4485], cost: 1800, perDay: 600 },
 ];
+
+// Where the pilotable boat is moored (just off the Long Island marina).
+export const BOAT_SPAWN: [number, number, number] = [6130, 0.6, 4520];
 
 const KEY = "mounthope.economy.v1";
 

@@ -32,7 +32,7 @@ export function Player() {
     // hide the body in first-person, and while driving
     if (mesh.current) mesh.current.visible = game.mode === "foot" && game.view !== "first";
     if (game.paused) return; // frozen in the pause menu
-    if (game.mode === "car") return; // disabled while driving
+    if (game.mode !== "foot") return; // disabled while driving/boating
 
     const ax = moveAxis();
     const yaw = shared.camYaw;
@@ -73,27 +73,36 @@ export function Player() {
       let ownD = Infinity;
       if (car) { const c = car.translation(); ownD = Math.hypot(p.x - c.x, p.z - c.z); }
 
-      const near = !!tj || ownD < ENTER_RADIUS;
+      // nearest boat (board at the marina)
+      const boat = shared.boat;
+      let boatD = Infinity;
+      if (boat) { const bp = boat.translation(); boatD = Math.hypot(p.x - bp.x, p.z - bp.z); }
+
+      const near = !!tj || ownD < ENTER_RADIUS || boatD < 6;
       game.setNearCar(near);
       if (near && consumeTap("KeyE")) {
-        if (tj && tjD <= ownD) {
-          // carjack: drag the driver out, take their ride
-          useGame.getState().setPlayerCar(tj.type, tj.color);
-          if (car) {
-            car.setTranslation({ x: tj.pos.x, y: 1.4, z: tj.pos.z }, true);
-            car.setLinvel({ x: 0, y: 0, z: 0 }, true);
-            car.setRotation({ x: 0, y: Math.sin(tj.yaw / 2), z: 0, w: Math.cos(tj.yaw / 2) }, true);
-          }
-          shared.carYaw = tj.yaw;
-          tj.stolen = true;
-          addShake(0.4);
-          useStats.getState().heat(0.8, 0.4); // carjacking draws heat
+        if (boatD < 6 && boatD <= ownD && boatD <= tjD) {
+          rb.setEnabled(false); game.setNearCar(false); game.setMode("boat"); // cast off
         } else {
-          useStats.getState().heat(0.5, 0); // grand theft auto (own ride)
+          if (tj && tjD <= ownD) {
+            // carjack: drag the driver out, take their ride
+            useGame.getState().setPlayerCar(tj.type, tj.color);
+            if (car) {
+              car.setTranslation({ x: tj.pos.x, y: 1.4, z: tj.pos.z }, true);
+              car.setLinvel({ x: 0, y: 0, z: 0 }, true);
+              car.setRotation({ x: 0, y: Math.sin(tj.yaw / 2), z: 0, w: Math.cos(tj.yaw / 2) }, true);
+            }
+            shared.carYaw = tj.yaw;
+            tj.stolen = true;
+            addShake(0.4);
+            useStats.getState().heat(0.8, 0.4); // carjacking draws heat
+          } else {
+            useStats.getState().heat(0.5, 0); // grand theft auto (own ride)
+          }
+          rb.setEnabled(false);
+          game.setNearCar(false);
+          game.setMode("car");
         }
-        rb.setEnabled(false);
-        game.setNearCar(false);
-        game.setMode("car");
       }
     }
 

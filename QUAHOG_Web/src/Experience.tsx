@@ -19,6 +19,7 @@ import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
+import { Marina } from "./world/Marina";
 import { SkidMarks } from "./world/SkidMarks";
 import { Rain } from "./world/Rain";
 import { Tracers } from "./world/Tracers";
@@ -35,6 +36,7 @@ import { MissionRunner } from "./world/MissionRunner";
 import { Effects } from "./world/Effects";
 import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
+import { Boat } from "./actors/Boat";
 import { FollowCamera } from "./actors/FollowCamera";
 
 // Post-processing, toggleable from settings (§26).
@@ -79,6 +81,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         <SatelliteGround origin={slice?.origin} />
         <Player />
         <Car />
+        <Boat />
         {slice && (
           <>
             <Roads roads={slice.roads} />
@@ -99,6 +102,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
+      <Marina />
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
