@@ -655,6 +655,8 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 3, ~3 items):** harbor **gulls** + **photo mode** (O, cinematic orbit, HUD hidden); **radio subtitles** — the dial now captions the currently spoken host/ad line in the active host's name (radioEngine `onSubtitle` → HUD §33); **custom map waypoint** — right-click the big map to drop a pink pin, the HUD shows a pink bearing arrow + distance to it, clear via the 📍 button (BigMap/HUD/shared §21). Shipped (`1c53cd0`→`a8f1ddd`).
 
-- **"Next 50" grind (part 4, +1):** **owned-front rest perk** — standing on foot inside a front you own now heals you fast (≈12/s) and bleeds off police + faction heat (a payoff for buying property), with a one-time "Resting at …" toast (Businesses §15). Shipped (`a8f1ddd`→HEAD).
+- **"Next 50" grind (part 4, +1):** **owned-front rest perk** — standing on foot inside a front you own now heals you fast (≈12/s) and bleeds off police + faction heat (a payoff for buying property), with a one-time "Resting at …" toast (Businesses §15). Shipped (`a8f1ddd`→`ac13bf1`).
+
+- **"Next 50" grind (part 5, +1):** **traffic obeys red lights** — TrafficLights now publishes its signal stop-lines to `shared.stopZones` with a live red flag (red + amber = stop); ambient traffic halts when a red stop-line is just ahead (≤8 m) and aligned with its travel direction, so cross-street cars ignore it and cars queue behind each other (StreetLife `redAhead`, §14). Shipped (`ac13bf1`→HEAD).
 
 <!-- Append new dated entries above this line as work lands. -->

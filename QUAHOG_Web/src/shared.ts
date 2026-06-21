@@ -78,6 +78,8 @@ export const shared = {
   impacts: [] as Impact[],
   /** Player-placed map waypoint (world x/z) — guides the HUD arrow when set. */
   waypoint: null as { x: number; z: number } | null,
+  /** Signal stop-lines published by TrafficLights; traffic halts at red ones. */
+  stopZones: [] as { x: number; z: number; rot: number; red: boolean }[],
 };
 
 /** Add a one-shot camera shake (juice §23). */

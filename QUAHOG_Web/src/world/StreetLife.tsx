@@ -207,6 +207,10 @@ function Traffic({ routes }: { routes: Route[] }) {
       const pt = pb?.translation();
       if (pt && Math.hypot(pt.x - c.pos.x, pt.z - c.pos.z) < 7) { g.position.copy(c.pos); g.rotation.y = c.heading; return; }
 
+      // obey red signals: stop if a red stop-line is just ahead and aligned with
+      // our travel direction (§14). Cross-street cars (≈90°) ignore it.
+      if (redAhead(c.pos, c.heading)) { g.position.copy(c.pos); g.rotation.y = c.heading; return; }
+
       const route = routes[c.route];
       c.dist += CAR_SPEED * step;
 
@@ -256,6 +260,25 @@ function randInBox(center: [number, number] = [0, 0]) {
   );
 }
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
+const STOP_DIST = 8;
+/** True if a red signal stop-line is just ahead of a car heading `heading`. */
+function redAhead(pos: THREE.Vector3, heading: number) {
+  const fx = Math.sin(heading), fz = Math.cos(heading);
+  for (const z of shared.stopZones) {
+    if (!z.red) continue;
+    const dx = z.x - pos.x, dz = z.z - pos.z;
+    const d = Math.hypot(dx, dz);
+    if (d > STOP_DIST || d < 0.001) continue;
+    if (fx * dx + fz * dz <= 0) continue; // behind us
+    // aligned with this road? compare heading to the stop-line's road bearing (mod π)
+    let da = (heading - z.rot) % Math.PI;
+    if (da > Math.PI / 2) da -= Math.PI;
+    if (da < -Math.PI / 2) da += Math.PI;
+    if (Math.abs(da) < 0.6) return true;
+  }
+  return false;
+}
 
 /** Position + unit direction at arc-length `d` along a route (start→end). */
 function sampleAlong(route: Route, d: number): { point: THREE.Vector3; dir: THREE.Vector3 } {

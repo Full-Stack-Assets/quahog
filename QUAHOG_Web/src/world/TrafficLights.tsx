@@ -1,6 +1,7 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { shared } from "../shared";
 import type { Road } from "../slice";
 
 // Decorative period traffic signals (§7/§33): mast-arm signal heads at a handful
@@ -30,6 +31,12 @@ export function TrafficLights({ roads, center }: { roads: Road[]; center: [numbe
   const ambers = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
   const greens = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
 
+  // publish stop-lines so traffic can halt at red (§7/§14)
+  useEffect(() => {
+    shared.stopZones = spots.map((s) => ({ x: s.x, z: s.z, rot: s.rot, red: false }));
+    return () => { shared.stopZones = []; };
+  }, [spots]);
+
   useFrame(({ clock }) => {
     spots.forEach((s, i) => {
       const p = (clock.elapsedTime + s.phase) % 7.8; // 4s red, 3s green, 0.8 amber
@@ -37,6 +44,9 @@ export function TrafficLights({ roads, center }: { roads: Road[]; center: [numbe
       if (reds.current[i]) reds.current[i]!.emissiveIntensity = red ? 3 : 0.05;
       if (greens.current[i]) greens.current[i]!.emissiveIntensity = green ? 3 : 0.05;
       if (ambers.current[i]) ambers.current[i]!.emissiveIntensity = amber ? 3 : 0.05;
+      // amber counts as "stop if you can" → treat as red for the AI hold
+      const z = shared.stopZones[i];
+      if (z) z.red = red || amber;
     });
   });
 
