@@ -10,6 +10,7 @@ import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Props } from "./world/Props";
+import { Businesses } from "./world/Businesses";
 import { StreetSigns } from "./world/StreetSigns";
 import { ParkedCars } from "./world/ParkedCars";
 import { Impacts } from "./world/Impacts";
@@ -87,6 +88,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
+      <Businesses />
       <Police />
       <Tracers />
       <Impacts />

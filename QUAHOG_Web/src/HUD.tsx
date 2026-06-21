@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useGame } from "./store";
 import { useStats } from "./game";
 import { useMission } from "./mission";
+import { useEconomy, BUSINESSES } from "./economy";
 import { shared } from "./shared";
 
 const wrap: React.CSSProperties = {
@@ -26,6 +27,9 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const missionDone = useMission((s) => s.done);
   const armed = useGame((s) => s.armed);
   const down = useGame((s) => s.down);
+  const near = useEconomy((s) => s.near);
+  const owned = useEconomy((s) => s.owned);
+  const ownedCount = Object.keys(owned).length;
   const [hhmm, setHhmm] = useState("09:00");
   useEffect(() => {
     const id = setInterval(() => {
@@ -85,7 +89,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
           borderRadius: 8, padding: "8px 12px", textAlign: "right", minWidth: 150,
         }}
       >
-        <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${cash.toLocaleString()}</div>
+        <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${Math.floor(cash).toLocaleString()}</div>
+        {ownedCount > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🏠 {ownedCount}/{BUSINESSES.length} fronts</div>}
         <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm}</div>
         <div style={{ fontSize: 12, marginTop: 4 }}>
           <span title="police" style={{ color: "#6cb6ff" }}>{stars(police)}</span>
@@ -162,6 +167,20 @@ export function HUD({ sliceName }: { sliceName: string }) {
           }}
         >
           PRESS E TO STEAL THE CAR
+        </div>
+      )}
+
+      {near && (
+        <div
+          style={{
+            position: "absolute", bottom: "27%", left: "50%", transform: "translateX(-50%)",
+            background: cash >= near.cost ? "rgba(74,214,109,.9)" : "rgba(80,80,90,.9)",
+            color: cash >= near.cost ? "#06210d" : "#fff",
+            padding: "8px 16px", borderRadius: 6, fontWeight: 700, letterSpacing: 1, textAlign: "center",
+          }}
+        >
+          PRESS B TO BUY {near.name.toUpperCase()} — ${near.cost.toLocaleString()}
+          <div style={{ fontSize: 10, fontWeight: 400, opacity: 0.85 }}>{near.blurb} · +${near.perDay}/day</div>
         </div>
       )}
 
