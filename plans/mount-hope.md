@@ -338,9 +338,10 @@ time; keep the build green; be honest about status.
 ## 28. Districts / content expansion
 - [x] New Bedford waterfront (primary)
 - [~] New Bedford full (downtown, South End, North End) — slice now spans **New Bedford · Fairhaven · Dartmouth** (16,252 buildings / 3,868 roads), real City Hall/PD/libraries, elevated Acushnet bridges; South/North End + St. Luke's + Padanaram/UMassD (multi-slice) TODO
-- [ ] Fall River (Spindle City): Flint, Lizzie Borden, Battleship Cove, Braga Bridge, mills
-  - on the way west, make the **Dartmouth Mall** a central hub location (shops/missions/parking)
-  - extend Fairhaven down **Sconticut Neck → West Island**; **Long Island restaurant/marina** = purchasable + boat dock
+- [~] Fall River (Spindle City): Flint, Lizzie Borden, Battleship Cove, Braga Bridge, mills — geography + roads + **drivable Braga Bridge** streamed in (region now 68k buildings / 954 tiles); Battleship Cove/Lizzie Borden hero detail TODO
+  - [x] **Westport** + I-195/Route 6 corridor (New Bedford → Westport → Fall River)
+  - [x] Fairhaven down **Sconticut Neck → West Island**; **Off the Hook** marina purchasable + boat dock
+  - on the way west, make the **Dartmouth Mall** a central hub location (shops/missions/parking) — TODO
 - [ ] Brockton (Champion City Gym, boxing)
 - [ ] Cape Cod (marinas, Fake Kennedys)
 - [ ] Connecting roads/highways between districts; fast-travel
@@ -447,7 +448,7 @@ modular kits + procedural placement driven by OSM data.
 - [ ] **Tide & flood** — tide line shading; “Gloria” storm-surge flood that raises water over low roads/docks
 
 ## 39. Inter-city highway network (major upgrade)
-- [ ] **I-195** — the east-west spine linking **New Bedford ↔ Fall River**: 4-lane divided, median jersey barrier, guardrails, breakdown lanes, overhead green guide signs, mile markers, sodium lighting, embankments
+- [~] **I-195** — the east-west spine linking **New Bedford ↔ Fall River**: 4-lane divided, median jersey barrier, guardrails, breakdown lanes, overhead green guide signs, mile markers, sodium lighting, embankments — real I-195 + Route 18/US-6 geometry rendered as highway ribbons + drivable bridges across the region; barriers/guide-signs/ramps detailing TODO
 - [ ] **Interchanges & ramps** — on/off ramps, cloverleaf/diamond interchanges, gore points, merge/accel lanes, ramp meters-off (era), exit numbering
 - [ ] **MA-24** — Fall River ↔ **Brockton** (north); **US-6** coastal route; **MA-18** NB waterfront connector to I-195; **MA-79/138** spurs
 - [ ] **Cape connection** — US-6 to the **Sagamore/Bourne bridges** over the Cape Cod Canal
@@ -456,7 +457,7 @@ modular kits + procedural placement driven by OSM data.
 - [ ] **Seamless streaming** — load/unload districts as you drive the highway between cities (no loading screens)
 
 ## 40. Bridges (hero infrastructure)
-- [ ] **Braga Bridge (“Verde Bridge”, Fall River)** — the long green steel cantilever over the Taunton River; deck, towers, truss detail, lime-green paint, night lighting + fog glow; drivable, with Battleship Cove beneath
+- [~] **Braga Bridge (“Verde Bridge”, Fall River)** — the long green steel cantilever over the Taunton River; deck, towers, truss detail, lime-green paint, night lighting + fog glow; drivable, with Battleship Cove beneath — **drivable** via the generic ramped-deck system (carries I-195 over the Taunton); green steel truss/full height + lighting TODO
 - [~] **New Bedford–Fairhaven Bridge** — swing-span over the Acushnet, low steel deck — **drivable ramped deck + piers** (Bridges.tsx, generic for all spans); swing-span animation + steel truss detail TODO
 - [ ] **Brightman St / old bascule bridges** — period detail
 - [ ] **Sagamore & Bourne Bridges** — Cape Cod Canal steel arches
@@ -639,5 +640,7 @@ blood states, price, vendor, unlock.
 - **Drivable bridges + Sconticut/boats:** ① **drivable elevated bridges** (Bridges.tsx stitches OSM bridge ways into spans, ramps grade→7 m crest→grade with a trimesh collider + piers). ② Fixed the **floating hospital** placeholder. ③ Extended the slice SE down **Sconticut Neck → West Island/Long Island** (36k buildings / 398 tiles, slice still 1.79 MB). ④ **Off the Hook Bar and Grill** purchasable at 56 Goulart Memorial Dr, doubling as the boat dock. ⑤ **Pilotable yacht** (Boat.tsx — board with E, drive on water, exempt from the water barrier) + moored-yacht **Marina** at Long Island (wealthy area = yachts; NB harbor keeps trawlers). Noted **Dartmouth Mall** as a hub for the Fall River push. Shipped (`d065234`→`dd0bcbd`).
 
 - **Phase 2 + 3 visual:** **IBL** (procedural PMREM env → real reflections/ambient on glass, wet roads, cars, water), asphalt **normal maps**, **Gerstner ocean** (multi-wave + reflective); **time-of-day colour grade** (warm dusk / cool night), a **sun-glow** sprite (bloom haze), **coastal-neon dusk signs** on every business front. Shipped (`108402d`, `af4771c`).
+
+- **Region build-out → Fall River:** stopped tracking the raw OSM dump (gitignore) to keep the repo lean, then extended the slice west along the **I-195 / Route 6 corridor** through **Westport** and on to **Fall River + the Charles M. Braga Jr. Memorial Bridge** (drivable). Region now **68,482 buildings / 16,167 roads / 954 streamed tiles** (slim slice 4.2 MB); pulls done incrementally and merged (dedupe by id) to stay within Overpass limits. Shipped (`793e0c4`→`25abda5`).
 
 <!-- Append new dated entries above this line as work lands. -->
