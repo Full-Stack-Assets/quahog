@@ -337,7 +337,7 @@ time; keep the build green; be honest about status.
 
 ## 28. Districts / content expansion
 - [x] New Bedford waterfront (primary)
-- [ ] New Bedford full (downtown, South End, North End)
+- [~] New Bedford full (downtown, South End, North End) — slice expanded waterfront→downtown (7,645 buildings, real City Hall/PD/libraries); South/North End + St. Luke's (widen west) TODO
 - [ ] Fall River (Spindle City): Flint, Lizzie Borden, Battleship Cove, Braga Bridge, mills
 - [ ] Brockton (Champion City Gym, boxing)
 - [ ] Cape Cod (marinas, Fake Kennedys)
@@ -627,5 +627,7 @@ blood states, price, vendor, unlock.
 - **Audio + police-fairness batch:** procedural **SFX** (gunshot, punch, car crunch, horn-H, cash/UI/bust stings), a **speed-tracked engine note**, a **police siren**, and a **harbor wind + gull ambience** bed (audio/sfx.ts §19/§20/§13). Reworked **police** to be fair (chase at 3★+, slower/fewer units, spawn a few streets away, **losable**, no accidental kills, **5 s arrest grace**) and fixed the **busted/wasted respawn** → BUSTED to the **police station**, WASTED to the **hospital** (places.ts §14/§15). Added **cop blips + police-station markers** to the minimap and big map, and made the **touch controls drag-to-move + resizable** with persisted layout plus gun/fire buttons (§21/§25). Hook false-positive removed (option A). Shipped (`ef1a38e`, `d8fe418`).
 
 - **30-item goal run:** across several batches — **economy** (5 buyable fronts + passive revenue, economy.ts §15/§17); **feel** (Shift sprint+stamina, Space handbrake/drift, chromatic-aberration + film-grain post, on-screen objective distance §10/§13/§3/§21); **weather/ocean/streets** (fog state + wet roads + ocean swell + cycling traffic signals §5/§6/§7); **UI/meta** (title/start screen, pause **settings** with effects+volume, **toast** notifications §22/§26/§21); **combat/side-content** (weapon switching + **shotgun** spread, hidden **scrimshaw** collectibles, **flyer/poster** boards §11/§18/§8). Also reworked police fairness + busted/wasted respawn and added the procedural **SFX/ambience** engine (sfx.ts). Hook false-positive removed (option A). Shipped across `ef1a38e`→`HEAD`.
+
+- **Direction adjust + Step 1 (world build-out):** per user, dropped the planned combat-depth section and refocused the next roadmap on **world rendering + inter-city highways + surrounding towns (Dartmouth, Fairhaven, Westport) → Fall River**. Added in-world **St. Luke's Hospital** stand-in (WASTED respawn) + hospital/police **map markers** on the minimap and big map. **Re-pulled a larger New Bedford slice** via Overpass (waterfront→downtown: **7,645 buildings / 1,753 roads**, up from ~1,071), taught `make_slice.py` to capture civic landmarks, and **re-anchored the police station to the real downtown NBPD footprint** (hospital follows when the pull widens west to St. Luke's). ElevenLabs (key→`ELEVENLABS_API_KEY` env) + gamepad (native API) links handed to the user. Shipped (`d6eda37`, `5e2383d`).
 
 <!-- Append new dated entries above this line as work lands. -->
