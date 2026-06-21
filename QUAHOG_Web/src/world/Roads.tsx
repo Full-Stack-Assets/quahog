@@ -13,8 +13,6 @@ const HIGHWAY = new Set([
 ]);
 const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
 const TILE = 8; // metres of road per texture repeat along length
-const BRIDGE_Y = 0.25; // bridge deck just above the road grade — drivable at grade,
-                       // reads as a low causeway/trestle on pilings over the water
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
 // texture repeats (cobble repeats across the width; asphalt spans 0..1 for lanes).
@@ -68,30 +66,15 @@ export function Roads({ roads }: { roads: Road[] }) {
     return t;
   }, []);
 
-  const { surface, highway, cobble, bridge, pylons } = useMemo(() => {
-    const br = roads.filter((r) => r.bridge);
-    const land = roads.filter((r) => !r.bridge);
+  const { surface, highway, cobble } = useMemo(() => {
+    const land = roads.filter((r) => !r.bridge); // bridges handled by <Bridges/>
     const hw = land.filter((r) => HIGHWAY.has(r.highway));
     const cb = land.filter((r) => COBBLE.has(r.highway));
     const sf = land.filter((r) => !HIGHWAY.has(r.highway) && !COBBLE.has(r.highway));
-    // pylons: drop a pier from the deck to the water/ground every ~24 m
-    const py: [number, number][] = [];
-    for (const r of br) {
-      for (let i = 0; i < r.points.length - 1 && py.length <= 160; i++) {
-        const [ax, an] = r.points[i], [bx, bn] = r.points[i + 1];
-        const seg = Math.hypot(bx - ax, bn - an);
-        for (let d = 0; d < seg && py.length <= 160; d += 24) {
-          const t = seg ? d / seg : 0;
-          py.push([ax + (bx - ax) * t, -(an + (bn - an) * t)]);
-        }
-      }
-    }
     return {
       surface: buildRibbon(sf, 0.06, 0),
       highway: buildRibbon(hw, 0.08, 0),
       cobble: buildRibbon(cb, 0.05, 1.2), // setts tile across width every ~1.2m
-      bridge: buildRibbon(br, BRIDGE_Y, 0),
-      pylons: py,
     };
   }, [roads]);
 
@@ -124,19 +107,6 @@ export function Roads({ roads }: { roads: Road[] }) {
           <meshStandardMaterial ref={(m) => (mats.current[2] = m)} map={highwayTex} color="#6a6c76" roughness={0.82} />
         </mesh>
       )}
-      {/* elevated bridge decks + piers */}
-      {bridge && (
-        <mesh geometry={bridge} castShadow receiveShadow>
-          <meshStandardMaterial map={highwayTex} color="#7a7c86" roughness={0.8} />
-        </mesh>
-      )}
-      {/* pilings: stubs from the deck down into the water */}
-      {pylons.map(([x, z], i) => (
-        <mesh key={i} position={[x, BRIDGE_Y - 0.95, z]} castShadow>
-          <boxGeometry args={[0.8, 1.9, 0.8]} />
-          <meshStandardMaterial color="#5c4a36" roughness={0.95} />
-        </mesh>
-      ))}
     </group>
   );
 }

@@ -4,6 +4,7 @@ import { loadSlice, type Slice } from "./slice";
 import { useGame } from "./store";
 import { SatelliteGround } from "./world/SatelliteGround";
 import { Roads } from "./world/Roads";
+import { Bridges } from "./world/Bridges";
 import { StreamingBuildings } from "./world/StreamingBuildings";
 import { Water } from "./world/Water";
 import { Landmarks } from "./world/Landmarks";
@@ -81,6 +82,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         {slice && (
           <>
             <Roads roads={slice.roads} />
+            <Bridges roads={slice.roads} />
             <StreamingBuildings fallback={slice.buildings} center={CORE} />
             {/* generic markers, minus landmarks we hand-model */}
             <Landmarks landmarks={slice.landmarks.filter((l) => !MODELED.has(l.name))} />
