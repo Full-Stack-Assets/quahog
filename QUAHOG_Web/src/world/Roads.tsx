@@ -1,7 +1,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal } from "./textures";
+import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal, makeGroundTexture } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
 
@@ -19,13 +19,13 @@ const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
 // texture repeats (cobble repeats across the width; asphalt spans 0..1 for lanes).
-function buildRibbon(roads: Road[], y: number, uScale: number): THREE.BufferGeometry | null {
+function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0): THREE.BufferGeometry | null {
   const pos: number[] = [];
   const uv: number[] = [];
   const idx: number[] = [];
   let v = 0;
   for (const r of roads) {
-    const half = r.width / 2;
+    const half = r.width / 2 + pad;
     const u = uScale === 0 ? 1 : r.width / uScale; // tiles across the width
     let len = 0;
     for (let i = 0; i < r.points.length - 1; i++) {
@@ -70,6 +70,7 @@ export function Roads({ roads }: { roads: Road[] }) {
   }, []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const ns = useMemo(() => new THREE.Vector2(0.4, 0.4), []);
+  const sidewalkTex = useMemo(() => { const t = makeGroundTexture(); t.repeat.set(3, 0.4); return t; }, []);
 
   // chunk roads into a spatial grid so off-screen/distant cells are culled
   const chunks = useMemo(() => {
@@ -87,6 +88,8 @@ export function Roads({ roads }: { roads: Road[] }) {
     }
     return [...cells.values()].map((c) => ({
       cx: c.cx, cz: c.cz,
+      // concrete curb/sidewalk apron under + around the carriageway
+      apron: buildRibbon([...c.sf, ...c.hw], 0.04, 0, 2.6),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
       surface: buildRibbon(c.sf, 0.06, 0),
       highway: buildRibbon(c.hw, 0.08, 0),
@@ -118,6 +121,11 @@ export function Roads({ roads }: { roads: Road[] }) {
     <group ref={root}>
       {chunks.map((c, i) => (
         <group key={i} ref={(el) => (groups.current[i] = el)}>
+          {c.apron && (
+            <mesh geometry={c.apron} receiveShadow>
+              <meshStandardMaterial map={sidewalkTex} color="#9a9890" roughness={0.95} userData={{ base: 0.95 }} />
+            </mesh>
+          )}
           {c.cobble && (
             <mesh geometry={c.cobble} receiveShadow>
               <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} userData={{ base: 0.95 }} />

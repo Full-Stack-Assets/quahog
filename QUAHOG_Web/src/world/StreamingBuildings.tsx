@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
@@ -62,6 +62,28 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const maps = useMemo(() => makeFacadeMaps(), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
+
+  // rooftop clutter (water tanks / AC units) on mid-rise buildings for skyline depth
+  const roofs = useMemo(() => {
+    const out: [number, number, number][] = [];
+    for (const b of buildings) {
+      if (b.height < 7 || b.height > 45) continue;
+      let x = 0, n = 0; for (const p of b.footprint) { x += p[0]; n += p[1]; }
+      const k = b.footprint.length;
+      out.push([x / k, b.height, -(n / k)]);
+      if (out.length > 90) break;
+    }
+    return out;
+  }, [buildings]);
+  const roofRef = useRef<THREE.InstancedMesh>(null);
+  useLayoutEffect(() => {
+    const m = roofRef.current;
+    if (!m) return;
+    for (let i = 0; i < roofs.length; i++) { _rm.makeTranslation(roofs[i][0], roofs[i][1] + 0.5, roofs[i][2]); m.setMatrixAt(i, _rm); }
+    m.count = roofs.length;
+    m.instanceMatrix.needsUpdate = true;
+  }, [roofs]);
+
   if (!geom) return null;
   const mesh = (
     <mesh geometry={geom} castShadow={colliders} receiveShadow>
@@ -71,8 +93,17 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
       />
     </mesh>
   );
-  return colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh;
+  return (
+    <group>
+      {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
+      <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
+        <boxGeometry args={[1.8, 1, 1.8]} />
+        <meshStandardMaterial color="#55585e" roughness={0.9} />
+      </instancedMesh>
+    </group>
+  );
 }
+const _rm = new THREE.Matrix4();
 
 export function StreamingBuildings({ fallback, center }: { fallback: Building[]; center: [number, number] }) {
   const [manifest, setManifest] = useState<Manifest | null>(null);
