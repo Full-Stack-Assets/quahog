@@ -129,20 +129,15 @@ export function Police() {
 
   return (
     <group>
-      {/* police station — where the player is processed after a bust */}
+      {/* police station beacon — marks the real downtown PD footprint */}
       <group position={POLICE_STATION}>
-        <mesh position={[0, 3, 0]} castShadow receiveShadow>
-          <boxGeometry args={[12, 6, 10]} />
-          <meshStandardMaterial color="#5a6472" roughness={0.85} />
+        <mesh position={[0, 9, 0]}>
+          <sphereGeometry args={[0.6, 10, 10]} />
+          <meshStandardMaterial color="#2a5aff" emissive="#2a5aff" emissiveIntensity={2.4} />
         </mesh>
-        <mesh position={[0, 6.6, 0]}>
-          <boxGeometry args={[12.4, 0.6, 10.4]} />
+        <mesh position={[0, 4.5, 0]}>
+          <cylinderGeometry args={[0.12, 0.12, 9, 6]} />
           <meshStandardMaterial color="#2a3550" />
-        </mesh>
-        {/* blue station light */}
-        <mesh position={[0, 7.2, 0]}>
-          <sphereGeometry args={[0.5, 10, 10]} />
-          <meshStandardMaterial color="#2a5aff" emissive="#2a5aff" emissiveIntensity={2} />
         </mesh>
       </group>
 

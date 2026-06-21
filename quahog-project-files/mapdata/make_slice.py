@@ -79,7 +79,8 @@ for el in data["elements"]:
         for ring in assemble_rings(outer):
             if len(ring) >= 3: water.append(ring)
     if t.get("name") and (t.get("historic") or t.get("tourism") or
-                          t.get("amenity") in ("place_of_worship","ferry_terminal","theatre")):
+                          t.get("amenity") in ("place_of_worship","ferry_terminal","theatre",
+                                               "hospital","police","townhall","library")):
         # point: node coords, or way centroid
         if el["type"]=="node":
             pt = proj(el["lon"], el["lat"])
@@ -100,7 +101,7 @@ for lm in landmarks:
 landmarks=list(seen.values())
 
 slice_obj = {
-    "name": "New Bedford Waterfront — Historic District",
+    "name": "New Bedford — Waterfront to Downtown",
     "origin": {"lat":OLAT,"lon":OLON},
     "meters_per_degree": {"lat":M_LAT,"lon":round(M_LON,3)},
     "axes": "x=east(m), z=south is +? -> see note; y=up",
