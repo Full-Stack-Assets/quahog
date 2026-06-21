@@ -171,6 +171,7 @@ function Traffic({ routes }: { routes: Route[] }) {
         dist: Math.random() * routes[ri].total,
         color,
         vtype,
+        braking: false,
         pos: new THREE.Vector3(),
         heading: 0,
         // shared handle the player ram/steal logic reads + writes
@@ -197,6 +198,7 @@ function Traffic({ routes }: { routes: Route[] }) {
       // rammed → sit still until the stop timer expires
       if (c.car.stop > 0) {
         c.car.stop -= step;
+        c.braking = true;
         g.position.copy(c.pos);
         g.rotation.y = c.heading;
         return;
@@ -205,11 +207,12 @@ function Traffic({ routes }: { routes: Route[] }) {
       // yield: pause if the player (car/on foot) is right in front of us
       const pb = (shared.car && shared.car.isEnabled?.() === false ? shared.player : shared.car) ?? shared.player;
       const pt = pb?.translation();
-      if (pt && Math.hypot(pt.x - c.pos.x, pt.z - c.pos.z) < 7) { g.position.copy(c.pos); g.rotation.y = c.heading; return; }
+      if (pt && Math.hypot(pt.x - c.pos.x, pt.z - c.pos.z) < 7) { c.braking = true; g.position.copy(c.pos); g.rotation.y = c.heading; return; }
 
       // obey red signals: stop if a red stop-line is just ahead and aligned with
       // our travel direction (§14). Cross-street cars (≈90°) ignore it.
-      if (redAhead(c.pos, c.heading)) { g.position.copy(c.pos); g.rotation.y = c.heading; return; }
+      if (redAhead(c.pos, c.heading)) { c.braking = true; g.position.copy(c.pos); g.rotation.y = c.heading; return; }
+      c.braking = false;
 
       const route = routes[c.route];
       c.dist += CAR_SPEED * step;
@@ -242,7 +245,7 @@ function Traffic({ routes }: { routes: Route[] }) {
     <group>
       {state.current.map((c, i) => (
         <group key={i} ref={(el) => (refs.current[i] = el)}>
-          <Vehicle type={c.vtype} color={c.color} />
+          <Vehicle type={c.vtype} color={c.color} brake={() => c.braking} />
         </group>
       ))}
     </group>

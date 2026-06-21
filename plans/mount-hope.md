@@ -663,6 +663,8 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 7, +1):** **baseball bat melee** — key **4** equips a bat (key **1** back to bare fists); the bat reaches farther (2.8 m), hits harder, and knocks pedestrians flying with a heavier camera punch; it renders in the player's hand and reads on the HUD as 🏏 BAT (store `melee`, GameSystems, Player, HUD §10/§11). Shipped (`5115727`→`3783f51`).
 
-- **"Next 50" grind (part 8, +1):** **scrimshaw counter** — the hidden-collectible tally is now a persistent HUD readout (🦴 n/8), reactive via `store.scrimshaw`, seeded from the save on load and bumped on pickup (Collectibles/store/HUD §18). Shipped (`3783f51`→HEAD).
+- **"Next 50" grind (part 8, +1):** **scrimshaw counter** — the hidden-collectible tally is now a persistent HUD readout (🦴 n/8), reactive via `store.scrimshaw`, seeded from the save on load and bumped on pickup (Collectibles/store/HUD §18). Shipped (`3783f51`→`74eebc9`).
+
+- **"Next 50" grind (part 9, +1):** **traffic brake lights** — ambient cars now flare their taillights whenever they're halted (red light, yielding to the player, or freshly rammed) via the existing Vehicle `brake` getter, so a queue at a red reads correctly at night (StreetLife §12). Shipped (`74eebc9`→HEAD).
 
 <!-- Append new dated entries above this line as work lands. -->
