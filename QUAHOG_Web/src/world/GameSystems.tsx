@@ -13,6 +13,8 @@ export function GameSystems() {
     // global hotkeys
     if (consumeTap("KeyR")) useGame.getState().toggleWeather();
     if (consumeTap("KeyP") || consumeTap("Escape")) useGame.getState().togglePause();
+    if (consumeTap("KeyC")) useGame.getState().toggleChar();
+    if (consumeTap("KeyM")) useGame.getState().toggleMap();
 
     if (useGame.getState().paused) return; // freeze sim while paused
     useStats.getState().decay(dt);

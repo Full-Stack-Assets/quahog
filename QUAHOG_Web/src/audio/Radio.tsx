@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { radio, STATIONS } from "./radioEngine";
+import { useGame } from "../store";
 
 // Car-radio panel: pick a station (talk host or music), switch live, mute.
-// Keys: [ / ] previous/next station, M mute.
+// Keys: [ / ] previous/next station, M mute. Collapsible via the store.
 export function Radio() {
   const [idx, setIdx] = useState(-1); // -1 = off
   const [muted, setMuted] = useState(false);
+  const open = useGame((s) => s.radioOpen);
+  const toggleRadio = useGame((s) => s.toggleRadio);
 
   const select = (i: number) => {
     const next = i < 0 || i >= STATIONS.length ? -1 : i;
@@ -24,7 +27,6 @@ export function Radio() {
     const onKey = (e: KeyboardEvent) => {
       if (e.code === "BracketRight") step(1);
       else if (e.code === "BracketLeft") step(-1);
-      else if (e.code === "KeyM") toggleMute();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -37,15 +39,33 @@ export function Radio() {
     font: "11px 'Courier New', monospace", fontWeight: 700, padding: "5px 8px", borderRadius: 6,
   });
 
+  // collapsed: a compact launcher button (keeps audio playing)
+  if (!open) {
+    return (
+      <button
+        onClick={toggleRadio}
+        title="Open radio"
+        style={{
+          position: "fixed", top: 12, right: 12, zIndex: 3, pointerEvents: "auto", cursor: "pointer",
+          border: "1px solid #2c3a5e", background: "rgba(5,7,13,.82)", color: "#ffcf4a",
+          borderRadius: 8, padding: "8px 10px", font: "14px 'Courier New', monospace",
+        }}
+      >📻{cur ? ` ${cur.dial}` : ""}</button>
+    );
+  }
+
   return (
     <div style={{
       position: "fixed", top: 12, right: 12, zIndex: 3, pointerEvents: "none",
       font: "12px/1.4 'Courier New', monospace", color: "#e7e0ff",
       background: "rgba(5,7,13,.82)", border: "1px solid #2c3a5e", borderRadius: 8, padding: "10px 12px", width: 210,
     }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
         <b style={{ color: "#ffcf4a" }}>📻 RADIO</b>
-        <button style={chip(muted)} onClick={toggleMute}>{muted ? "MUTED" : "MUTE"}</button>
+        <span style={{ display: "flex", gap: 6 }}>
+          <button style={chip(muted)} onClick={toggleMute}>{muted ? "MUTED" : "MUTE"}</button>
+          <button style={chip(false)} onClick={toggleRadio} title="Hide radio">▾</button>
+        </span>
       </div>
       <div style={{ opacity: 0.85, margin: "5px 0 8px", minHeight: 30 }}>
         {cur ? (
@@ -67,7 +87,7 @@ export function Radio() {
           </button>
         ))}
       </div>
-      <div style={{ opacity: 0.5, fontSize: 9, marginTop: 8 }}>[ ] change · M mute</div>
+      <div style={{ opacity: 0.5, fontSize: 9, marginTop: 8 }}>[ ] change station · ▾ hide</div>
     </div>
   );
 }

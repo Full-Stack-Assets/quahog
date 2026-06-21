@@ -17,7 +17,7 @@ const Y_OFF = 0; // lift/drop so feet sit on the ground
 
 useGLTF.preload(URL);
 
-export function ModelCharacter({ moving }: { moving?: () => boolean }) {
+export function ModelCharacter({ moving, tint }: { moving?: () => boolean; tint?: string }) {
   const gltf = useGLTF(URL);
   const scene = useMemo(() => skeletonClone(gltf.scene), [gltf.scene]);
   const { actions, names } = useAnimations(gltf.animations, scene);
@@ -25,11 +25,21 @@ export function ModelCharacter({ moving }: { moving?: () => boolean }) {
 
   useEffect(() => {
     scene.traverse((o) => {
-      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+      const mesh = o as THREE.Mesh;
+      if (!mesh.isMesh) return;
+      mesh.castShadow = true;
+      // tint a private material clone so the player's outfit colour doesn't
+      // bleed onto pedestrians sharing the source GLB material.
+      if (tint) {
+        const src = mesh.material as THREE.Material;
+        const m = (Array.isArray(src) ? src[0] : src).clone() as THREE.MeshStandardMaterial;
+        if (m.color) m.color.set(tint);
+        mesh.material = m;
+      }
     });
     const a = names.length ? actions[names[0]] : null;
     if (a) { a.reset().play(); action.current = a; }
-  }, [actions, names, scene]);
+  }, [actions, names, scene, tint]);
 
   useFrame(() => {
     if (action.current) action.current.paused = moving ? !moving() : false;

@@ -12,6 +12,10 @@ interface GameState {
   weather: Weather;
   paused: boolean;
   slice: Slice | null;
+  radioOpen: boolean;
+  charOpen: boolean;
+  mapOpen: boolean;
+  playerTint: string;
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -20,6 +24,10 @@ interface GameState {
   togglePause: () => void;
   setPaused: (p: boolean) => void;
   setSlice: (s: Slice) => void;
+  toggleRadio: () => void;
+  toggleChar: () => void;
+  toggleMap: () => void;
+  setPlayerTint: (c: string) => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -29,6 +37,10 @@ export const useGame = create<GameState>((set) => ({
   weather: "clear",
   paused: false,
   slice: null,
+  radioOpen: true,
+  charOpen: false,
+  mapOpen: false,
+  playerTint: "#ffffff",
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -37,4 +49,8 @@ export const useGame = create<GameState>((set) => ({
   togglePause: () => set((s) => ({ paused: !s.paused })),
   setPaused: (paused) => set({ paused }),
   setSlice: (slice) => set({ slice }),
+  toggleRadio: () => set((s) => ({ radioOpen: !s.radioOpen })),
+  toggleChar: () => set((s) => ({ charOpen: !s.charOpen })),
+  toggleMap: () => set((s) => ({ mapOpen: !s.mapOpen })),
+  setPlayerTint: (playerTint) => set({ playerTint }),
 }));

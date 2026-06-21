@@ -5,6 +5,8 @@ import { Experience } from "./Experience";
 import { HUD } from "./HUD";
 import { Minimap } from "./Minimap";
 import { PauseMenu } from "./ui/PauseMenu";
+import { CharacterMenu } from "./ui/CharacterMenu";
+import { BigMap } from "./ui/BigMap";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
 
@@ -29,6 +31,8 @@ export default function App() {
       </Canvas>
       <HUD sliceName={sliceName} />
       <Minimap />
+      <BigMap />
+      <CharacterMenu />
       <PauseMenu />
       <Radio />
     </>

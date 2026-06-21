@@ -14,6 +14,7 @@ const ENTER_RADIUS = 4.5;
 export function Player() {
   const body = useRef<RapierRigidBody>(null);
   const mesh = useRef<THREE.Group>(null);
+  const playerTint = useGame((s) => s.playerTint);
 
   useEffect(() => {
     shared.player = body.current;
@@ -37,7 +38,7 @@ export function Player() {
     const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
     const dir = new THREE.Vector3()
       .addScaledVector(fwd, ax.y)
-      .addScaledVector(right, ax.x);
+      .addScaledVector(right, -ax.x); // A/D inverted for on-foot strafing
 
     const v = rb.linvel();
     if (dir.lengthSq() > 1e-4) {
@@ -101,6 +102,7 @@ export function Player() {
         {/* rigged human; feet at local 0, so drop by the capsule half-height */}
         <group position={[0, -0.9, 0]}>
           <ModelCharacter
+            tint={playerTint}
             moving={() => {
               const v = body.current?.linvel();
               return !!v && Math.hypot(v.x, v.z) > 0.6;

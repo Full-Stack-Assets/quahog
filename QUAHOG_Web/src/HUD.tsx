@@ -93,6 +93,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <br />
           <b>R</b> rain &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
           <br />
+          <b>C</b> character &nbsp;·&nbsp; <b>M</b> map
+          <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>
       </div>
@@ -132,6 +134,13 @@ export function HUD({ sliceName }: { sliceName: string }) {
         </div>
       )}
 
+      {/* menu launchers */}
+      <div style={{ position: "absolute", right: 12, bottom: 30, display: "flex", flexDirection: "column", gap: 8 }}>
+        <button style={launcher} onClick={() => useGame.getState().toggleMap()} title="Map (M)">🗺</button>
+        <button style={launcher} onClick={() => useGame.getState().toggleChar()} title="Character (C)">🧍</button>
+        <button style={launcher} onClick={() => useGame.getState().toggleRadio()} title="Radio">📻</button>
+      </div>
+
       <div
         style={{
           position: "absolute",
@@ -146,3 +155,9 @@ export function HUD({ sliceName }: { sliceName: string }) {
     </div>
   );
 }
+
+const launcher: React.CSSProperties = {
+  pointerEvents: "auto", cursor: "pointer", width: 40, height: 40,
+  border: "1px solid #3a2a5e", background: "rgba(12,15,26,.82)", color: "#e7e0ff",
+  borderRadius: 10, fontSize: 18,
+};
