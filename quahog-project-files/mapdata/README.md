@@ -109,6 +109,47 @@ npx serve .            # or any range-capable static server
 
 `file://` will not work (no range requests).
 
+## Baked game geometry
+
+The road and water geometry projected into a local metric space and turned into
+mesh data the engines can consume directly.
+
+- **`southcoast.obj`** — a ready-to-import mesh (y-up, meters). Two object
+  groups: `roads` (each centerline extruded to a flat ribbon, width by OSM
+  highway class) and `water` (closed `natural=water` polygons, ear-clipped to
+  triangles, dropped to `y = -0.2`). ~325k verts / ~161k tris, spanning roughly
+  24.6 × 20.4 km — both cities plus the gap between them. Import into Godot
+  (drag the `.obj` in) or Unity (drop into `Assets/`).
+- **`southcoast-roads.json`** — the road network as centerlines in the same
+  local meters, for the GeoAware Traffic / Pedestrian spawner and for runtime
+  mesh baking. Each road has `name`, `highway`, `city`, `width`, `oneway`, and a
+  `points: [[x, z], …]` polyline. Header carries the `origin` (lat/lon of the
+  local 0,0) and `meters_per_degree` so you can convert back to WGS84.
+
+### Coordinate system
+
+All baked coordinates are **meters** on a local equirectangular projection
+centered at the data's midpoint (`origin` in the JSON). `x` = east, `z` = north,
+`y` = up. To go from lon/lat: `x = (lon - origin.lon) * meters_per_degree.lon`,
+`z = (lat - origin.lat) * meters_per_degree.lat`.
+
+### Regenerate
+
+`bake_meshes.py` (in this folder) reads the two `*.geojson` files and writes both
+artifacts:
+
+```sh
+python3 bake_meshes.py
+```
+
+### Godot runtime baker
+
+[`QUAHOG_Godot/scripts/world/MapMeshBaker.gd`](../../QUAHOG_Godot/scripts/world/MapMeshBaker.gd)
+is a `@tool` `Node3D` that reads `res://data/southcoast-roads.json` (a copy of
+`southcoast-roads.json`) and builds the road ribbons into an `ArrayMesh` at
+runtime/edit time, with a neon-pink default material. Attach it to a scene, or
+flip **Bake Now** in the inspector.
+
 ## License / attribution
 
 Data © [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors,
