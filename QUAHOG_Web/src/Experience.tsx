@@ -24,6 +24,7 @@ import { Tracers } from "./world/Tracers";
 import { Police } from "./world/Police";
 import { Consequence } from "./world/Consequence";
 import { Safehouse } from "./world/Safehouse";
+import { Hospital } from "./world/Hospital";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
 import { GameSystems } from "./world/GameSystems";
@@ -98,6 +99,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
+      <Hospital />
       <Businesses />
       <Collectibles />
       <Posters />

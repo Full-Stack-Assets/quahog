@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useGame } from "./store";
 import { useMission } from "./mission";
 import { shared } from "./shared";
-import { POLICE_STATION } from "./places";
+import { CIVIC } from "./places";
 
 // Player-centered radar (§21): draws nearby roads, the objective, and a heading
 // arrow on a small canvas. North-up. Cheap 2D — no WebGL.
@@ -80,9 +80,11 @@ export function Minimap() {
         ctx.stroke();
       }
 
-      // police station marker (blue square)
-      ctx.fillStyle = "#3a6bff";
-      ctx.fillRect(R + (POLICE_STATION[0] - px) * PPM - 3, R + (POLICE_STATION[2] - pz) * PPM - 3, 6, 6);
+      // civic markers (police = blue, hospital = green)
+      for (const c of CIVIC) {
+        ctx.fillStyle = c.kind === "hospital" ? "#4ad66d" : "#3a6bff";
+        ctx.fillRect(R + (c.pos[0] - px) * PPM - 3, R + (c.pos[2] - pz) * PPM - 3, 6, 6);
+      }
 
       // cop blips (pulsing blue dots)
       const pulse = (Math.sin(performance.now() * 0.008) + 1) * 0.5;
