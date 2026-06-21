@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { shared } from "../shared";
@@ -15,6 +15,7 @@ const SPOTS: [number, number, number][] = [
   [-272, 1.2, 106], [-244, 1.2, 70], [-300, 1.2, 130], [-210, 1.2, 100],
   [-330, 1.2, 80], [-256, 1.2, 150], [-225, 1.2, 60], [-290, 1.2, 175],
 ];
+export const SCRIMSHAW_TOTAL = SPOTS.length;
 
 function loadGot(): boolean[] {
   try { const r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch { /* ignore */ }
@@ -24,6 +25,9 @@ function loadGot(): boolean[] {
 export function Collectibles() {
   const got = useRef<boolean[]>(loadGot());
   const meshes = useRef<(THREE.Mesh | null)[]>([]);
+
+  // publish the loaded count so the HUD can show a found/total tally
+  useEffect(() => { useGame.getState().setScrimshaw(got.current.filter(Boolean).length); }, []);
 
   useFrame((state, dt) => {
     if (useGame.getState().paused) return;
@@ -41,6 +45,7 @@ export function Collectibles() {
         useStats.getState().addCash(REWARD);
         sfx.cash();
         const n = got.current.filter(Boolean).length;
+        useGame.getState().setScrimshaw(n);
         useToasts.getState().push(`Scrimshaw ${n}/${SPOTS.length} · +$${REWARD}`, "#ffd24a");
         try { localStorage.setItem(KEY, JSON.stringify(got.current)); } catch { /* ignore */ }
       }

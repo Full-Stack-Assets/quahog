@@ -30,6 +30,7 @@ interface GameState {
   fxOn: boolean;
   reduceShake: boolean;
   photo: boolean;
+  scrimshaw: number; // collectibles found (for the HUD counter)
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -52,6 +53,7 @@ interface GameState {
   toggleFx: () => void;
   toggleReduceShake: () => void;
   togglePhoto: () => void;
+  setScrimshaw: (n: number) => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -76,6 +78,7 @@ export const useGame = create<GameState>((set) => ({
   fxOn: true,
   reduceShake: false,
   photo: false,
+  scrimshaw: 0,
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -98,6 +101,7 @@ export const useGame = create<GameState>((set) => ({
   toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),
   toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
+  setScrimshaw: (scrimshaw) => set({ scrimshaw }),
 }));
 
 // Lightweight toast notifications (§21).

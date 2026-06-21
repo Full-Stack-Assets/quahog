@@ -5,6 +5,7 @@ import { useMission } from "./mission";
 import { useEconomy, BUSINESSES } from "./economy";
 import { shared } from "./shared";
 import { radio } from "./audio/radioEngine";
+import { SCRIMSHAW_TOTAL } from "./world/Collectibles";
 
 const wrap: React.CSSProperties = {
   position: "fixed",
@@ -32,6 +33,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const down = useGame((s) => s.down);
   const nearLabel = useGame((s) => s.nearLabel);
   const photo = useGame((s) => s.photo);
+  const scrimshaw = useGame((s) => s.scrimshaw);
   const near = useEconomy((s) => s.near);
   const owned = useEconomy((s) => s.owned);
   const ownedCount = Object.keys(owned).length;
@@ -128,6 +130,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
       >
         <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${Math.floor(cash).toLocaleString()}</div>
         {ownedCount > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🏠 {ownedCount}/{BUSINESSES.length} fronts</div>}
+        {scrimshaw > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🦴 {scrimshaw}/{SCRIMSHAW_TOTAL} scrimshaw</div>}
         <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm}</div>
         <div style={{ fontSize: 12, marginTop: 4 }}>
           <span title="police" style={{ color: "#6cb6ff" }}>{stars(police)}</span>
