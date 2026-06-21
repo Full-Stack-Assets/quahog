@@ -110,6 +110,19 @@ export function Minimap() {
         ctx.fill();
       }
 
+      // player-placed waypoint (§21) — pink dot, clamped to the radar edge
+      const w = shared.waypoint;
+      if (w) {
+        let wx = (w.x - px) * PPM, wy = (w.z - pz) * PPM;
+        const m = Math.hypot(wx, wy);
+        if (m > R - 6) { const k = (R - 6) / m; wx *= k; wy *= k; } // clamp to ring
+        ctx.fillStyle = "#ff4fa3";
+        ctx.beginPath();
+        ctx.arc(R + wx, R + wy, 4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "#0a0e18"; ctx.lineWidth = 1; ctx.stroke();
+      }
+
       ctx.restore();
 
       // player heading arrow (always centered)

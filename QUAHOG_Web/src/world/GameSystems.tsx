@@ -43,6 +43,14 @@ export function GameSystems() {
 
     if (useGame.getState().paused) return; // freeze sim while paused
     if (shared.alarm.t > 0) shared.alarm.t = Math.max(0, shared.alarm.t - dt);
+    // arrive at a player-placed waypoint → clear it (§21)
+    if (shared.waypoint) {
+      const b = (useGame.getState().mode === "car" ? shared.car : shared.player)?.translation();
+      if (b && Math.hypot(b.x - shared.waypoint.x, b.z - shared.waypoint.z) < 9) {
+        shared.waypoint = null;
+        useToasts.getState().push("Waypoint reached", "#ff7ad9"); sfx.ui();
+      }
+    }
     const st = useStats.getState();
     // passive business revenue (§15 RevenueManager)
     const income = useEconomy.getState().incomePerSec(DAY_SECONDS);

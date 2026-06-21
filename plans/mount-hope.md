@@ -657,6 +657,8 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 4, +1):** **owned-front rest perk** — standing on foot inside a front you own now heals you fast (≈12/s) and bleeds off police + faction heat (a payoff for buying property), with a one-time "Resting at …" toast (Businesses §15). Shipped (`a8f1ddd`→`ac13bf1`).
 
-- **"Next 50" grind (part 5, +1):** **traffic obeys red lights** — TrafficLights now publishes its signal stop-lines to `shared.stopZones` with a live red flag (red + amber = stop); ambient traffic halts when a red stop-line is just ahead (≤8 m) and aligned with its travel direction, so cross-street cars ignore it and cars queue behind each other (StreetLife `redAhead`, §14). Shipped (`ac13bf1`→HEAD).
+- **"Next 50" grind (part 5, +1):** **traffic obeys red lights** — TrafficLights now publishes its signal stop-lines to `shared.stopZones` with a live red flag (red + amber = stop); ambient traffic halts when a red stop-line is just ahead (≤8 m) and aligned with its travel direction, so cross-street cars ignore it and cars queue behind each other (StreetLife `redAhead`, §14). Shipped (`ac13bf1`→`5038695`).
+
+- **"Next 50" grind (part 6, +2):** **waypoint on the radar** — the player-placed waypoint now shows as a pink dot on the minimap, clamped to the radar ring when off-range (Minimap §21); **waypoint auto-clear** — driving/walking within 9 m of it clears the pin with a "Waypoint reached" toast (GameSystems §21). Shipped (`5038695`→HEAD).
 
 <!-- Append new dated entries above this line as work lands. -->
