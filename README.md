@@ -1,12 +1,12 @@
-# QUAHOG (working title — name TBD)
+# Mount Hope
 
 An original 3D open-world game set on the **real Massachusetts South Coast**
 (New Bedford, Fall River, Brockton, Cape Cod) — walk real streets and real
 landmarks, populated by original characters, with GTA-style walk/drive
 mechanics. *GTA: Vice City is only a tonal reference; this is original work.*
 
-> The project name still needs to change off "Quahog" (Family Guy collision).
-> Seeds under consideration: Quequechan, Spindle City, Mount Hope.
+Named for **Mount Hope Bay** and Mount Hope, the historic seat of the region.
+*(Repo/dir names still use the old "QUAHOG" working title; a rename can follow.)*
 
 ## Engines — canonical vs. legacy
 

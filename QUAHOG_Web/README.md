@@ -1,7 +1,7 @@
-# South Coast — Web 3D Vertical Slice
+# Mount Hope — Web 3D Vertical Slice
 
-Working title: **Project QUAHOG** (name TBD). The browser-playable engine slice
-for an original open-world game set on the real Massachusetts South Coast.
+The browser-playable engine slice for **Mount Hope**, an original open-world game
+set on the real Massachusetts South Coast.
 
 This is the **plan-agnostic engine slice** (Step 3): third-person walk, car
 enter/drive, collision, on the real **New Bedford waterfront** street grid +

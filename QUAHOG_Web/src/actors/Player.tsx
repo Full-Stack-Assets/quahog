@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
+import { Character } from "../world/Character";
 import { consumeTap, moveAxis } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
@@ -64,22 +65,26 @@ export function Player() {
       ref={body}
       colliders={false}
       enabledRotations={[false, false, false]}
-      position={[0, 3, 12]}
+      position={[-256.2, 3, 106.5]}
       friction={0.6}
       linearDamping={0.2}
       mass={1}
     >
       <CapsuleCollider args={[0.5, 0.4]} />
       <group ref={mesh}>
-        <mesh castShadow position={[0, 0, 0]}>
-          <capsuleGeometry args={[0.4, 1.0, 4, 8]} />
-          <meshStandardMaterial color="#d9534f" roughness={0.6} />
-        </mesh>
-        {/* facing nub */}
-        <mesh position={[0, 0.2, 0.42]} castShadow>
-          <boxGeometry args={[0.5, 0.3, 0.2]} />
-          <meshStandardMaterial color="#f0c674" />
-        </mesh>
+        {/* humanoid; feet at local 0, so drop by the capsule half-height */}
+        <group position={[0, -0.9, 0]}>
+          <Character
+            skin="#caa07a"
+            shirt="#b23b34"
+            pants="#23344f"
+            hair="#2a2018"
+            moving={() => {
+              const v = body.current?.linvel();
+              return !!v && Math.hypot(v.x, v.z) > 0.6;
+            }}
+          />
+        </group>
       </group>
     </RigidBody>
   );

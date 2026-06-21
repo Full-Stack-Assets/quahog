@@ -19,12 +19,31 @@ HERO = {"Seamen's Bethel","New Bedford Whaling Museum","Mariner's Home",
         "Double Bank Building","Rodman Candleworks"}
 
 data = json.load(open(SRC))
-buildings, roads, landmarks = [], [], []
+buildings, roads, landmarks, water = [], [], [], []
 
 def way_xy(el): return [proj(p["lon"], p["lat"]) for p in el.get("geometry", [])]
+def pts_xy(geom): return [proj(p["lon"], p["lat"]) for p in geom]
 def centroid(ring):
     xs=[p[0] for p in ring]; ys=[p[1] for p in ring]
     return [round(sum(xs)/len(xs),2), round(sum(ys)/len(ys),2)]
+def _d(a,b): return math.hypot(a[0]-b[0], a[1]-b[1])
+
+def assemble_rings(segments):
+    """Stitch multipolygon member ways (lists of [e,n]) into closed rings."""
+    segs=[list(s) for s in segments if len(s)>=2]
+    rings=[]
+    while segs:
+        ring=segs.pop(0)
+        changed=True
+        while changed and _d(ring[0],ring[-1])>0.5:
+            changed=False
+            for i,s in enumerate(segs):
+                if   _d(ring[-1],s[0])<0.5:  ring+=s[1:];                 segs.pop(i); changed=True; break
+                elif _d(ring[-1],s[-1])<0.5: ring+=list(reversed(s))[1:]; segs.pop(i); changed=True; break
+                elif _d(ring[0],s[-1])<0.5:  ring=s[:-1]+ring;            segs.pop(i); changed=True; break
+                elif _d(ring[0],s[0])<0.5:   ring=list(reversed(s))[:-1]+ring; segs.pop(i); changed=True; break
+        if len(ring)>=3: rings.append(ring)
+    return rings
 
 for el in data["elements"]:
     t = el.get("tags", {})
@@ -47,6 +66,18 @@ for el in data["elements"]:
         if len(pts) < 2: continue
         roads.append({"highway":t["highway"],"width":ROAD_W.get(t["highway"],6),
                       "name":t.get("name"),"points":pts})
+    elif el["type"]=="way" and (t.get("natural")=="water" or t.get("waterway")=="riverbank"):
+        ring = way_xy(el)
+        if len(ring) >= 3:
+            if ring[0]==ring[-1]: ring=ring[:-1]
+            water.append(ring)
+    elif el["type"]=="relation" and t.get("natural")=="water":
+        members = el.get("members", [])
+        outer = [pts_xy(m["geometry"]) for m in members
+                 if m.get("type")=="way" and m.get("geometry")
+                 and m.get("role","outer") in ("outer","")]
+        for ring in assemble_rings(outer):
+            if len(ring) >= 3: water.append(ring)
     if t.get("name") and (t.get("historic") or t.get("tourism") or
                           t.get("amenity") in ("place_of_worship","ferry_terminal","theatre")):
         # point: node coords, or way centroid
@@ -77,10 +108,12 @@ slice_obj = {
     "attribution": "© OpenStreetMap contributors, ODbL",
     "buildings": buildings,
     "roads": roads,
+    "water": water,
     "landmarks": sorted(landmarks, key=lambda l:(not l.get('hero',False), l['name'])),
 }
 json.dump(slice_obj, open(OUT,"w"))
 import os
-print(f"buildings={len(buildings)} roads={len(roads)} landmarks={len(landmarks)}")
+print(f"buildings={len(buildings)} roads={len(roads)} water={len(water)} landmarks={len(landmarks)}")
 print(f"{OUT}: {os.path.getsize(OUT)/1024:.0f} KB")
 print("heroes:", [l['name'] for l in landmarks if l.get('hero')])
+print("water ring sizes:", [len(w) for w in water][:8])

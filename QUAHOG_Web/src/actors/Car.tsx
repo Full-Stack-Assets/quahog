@@ -73,7 +73,8 @@ export function Car() {
       ref={body}
       colliders={false}
       enabledRotations={[false, false, false]}
-      position={[4, 2, 14]}
+      position={[-249, 2, 108]}
+      rotation={[0, -Math.PI / 2, 0]}
       linearDamping={0.4}
       mass={1.2}
     >

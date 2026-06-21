@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { Character } from "./Character";
 import type { Road } from "../slice";
 
 // Ambient "street life" ported from the legacy Unity StreetLife.cs: wandering
@@ -21,6 +22,9 @@ const DRIVABLE = new Set([
 ]);
 
 const PED_COLORS = ["#c0563f", "#3f6cc0", "#4a8c52", "#b8a23a", "#7a4a8c", "#c87a3f"];
+const PANTS = ["#2c2f3a", "#3a3326", "#23344f", "#4a4a4a", "#5a3a2a"];
+const SKINS = ["#caa07a", "#e0b48c", "#a87a52", "#8a5a36", "#d8a87a"];
+const HAIRS = ["#2a2018", "#4a3422", "#1a1a1a", "#6a5a3a", "#8a8a8a"];
 const CAR_COLORS = ["#9c3a3a", "#2f6f7a", "#caa24a", "#3a5a9c", "#5a5a5a", "#8c6a3a"];
 
 interface Route {
@@ -30,7 +34,13 @@ interface Route {
 
 // ---------------------------------------------------------------------------
 
-export function StreetLife({ roads }: { roads: Road[] }) {
+export function StreetLife({
+  roads,
+  center = [0, 0],
+}: {
+  roads: Road[];
+  center?: [number, number];
+}) {
   const routes = useMemo<Route[]>(() => {
     const out: Route[] = [];
     for (const r of roads) {
@@ -46,7 +56,7 @@ export function StreetLife({ roads }: { roads: Road[] }) {
   if (routes.length === 0) return null;
   return (
     <group>
-      <Pedestrians />
+      <Pedestrians center={center} />
       <Traffic routes={routes} />
     </group>
   );
@@ -55,12 +65,12 @@ export function StreetLife({ roads }: { roads: Road[] }) {
 // ---------------------------------------------------------------------------
 // Pedestrians — wander between random points in a box around the district core.
 
-function Pedestrians() {
+function Pedestrians({ center }: { center: [number, number] }) {
   const refs = useRef<(THREE.Group | null)[]>([]);
   const state = useRef(
     Array.from({ length: PED_COUNT }, () => {
-      const pos = randInBox();
-      return { pos, goal: randInBox(), heading: 0, color: pick(PED_COLORS) };
+      const pos = randInBox(center);
+      return { pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS) };
     }),
   );
 
@@ -72,7 +82,7 @@ function Pedestrians() {
       const to = new THREE.Vector3().subVectors(p.goal, p.pos);
       to.y = 0;
       if (to.length() < 0.6) {
-        p.goal = randInBox();
+        p.goal = randInBox(center);
       } else {
         to.normalize();
         p.pos.addScaledVector(to, PED_SPEED * step);
@@ -87,10 +97,7 @@ function Pedestrians() {
     <group>
       {state.current.map((p, i) => (
         <group key={i} ref={(el) => (refs.current[i] = el)} position={p.pos}>
-          <mesh castShadow position={[0, 0.9, 0]}>
-            <capsuleGeometry args={[0.25, 0.8, 4, 8]} />
-            <meshStandardMaterial color={p.color} roughness={0.7} />
-          </mesh>
+          <Character shirt={p.color} pants={pick(PANTS)} skin={pick(SKINS)} hair={pick(HAIRS)} />
         </group>
       ))}
     </group>
@@ -168,11 +175,11 @@ function Traffic({ routes }: { routes: Route[] }) {
 // ---------------------------------------------------------------------------
 // helpers
 
-function randInBox() {
+function randInBox(center: [number, number] = [0, 0]) {
   return new THREE.Vector3(
-    (Math.random() * 2 - 1) * PED_WANDER,
+    center[0] + (Math.random() * 2 - 1) * PED_WANDER,
     0,
-    (Math.random() * 2 - 1) * PED_WANDER,
+    center[1] + (Math.random() * 2 - 1) * PED_WANDER,
   );
 }
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];

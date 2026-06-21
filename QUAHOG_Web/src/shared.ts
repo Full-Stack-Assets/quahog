@@ -5,10 +5,11 @@ import type { RapierRigidBody } from "@react-three/rapier";
 export const shared = {
   player: null as RapierRigidBody | null,
   car: null as RapierRigidBody | null,
+  // Initial facing = -x (west), looking toward Seamen's Bethel from the spawn.
   /** Camera azimuth (radians), eased toward the active target's heading. */
-  camYaw: 0,
+  camYaw: -Math.PI / 2,
   /** Active on-foot heading (radians). */
-  heading: 0,
+  heading: -Math.PI / 2,
   /** Car heading (radians). */
-  carYaw: 0,
+  carYaw: -Math.PI / 2,
 };

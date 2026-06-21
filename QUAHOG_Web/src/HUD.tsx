@@ -26,8 +26,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
           maxWidth: 280,
         }}
       >
-        <div style={{ color: "#ff7ad9", fontWeight: 700, letterSpacing: 1 }}>
-          SOUTH COAST — VERTICAL SLICE
+        <div style={{ color: "#ff7ad9", fontWeight: 700, letterSpacing: 2 }}>
+          MOUNT HOPE
         </div>
         <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>{sliceName}</div>
         <div style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>

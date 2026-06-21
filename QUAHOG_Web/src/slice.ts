@@ -24,6 +24,7 @@ export interface Slice {
   origin: { lat: number; lon: number };
   buildings: Building[];
   roads: Road[];
+  water: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }

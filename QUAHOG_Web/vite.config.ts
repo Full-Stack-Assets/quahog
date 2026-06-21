@@ -4,4 +4,12 @@ import react from "@vitejs/plugin-react";
 export default defineConfig({
   plugins: [react()],
   base: "./",
+  build: {
+    rollupOptions: {
+      input: {
+        main: "index.html", // the game slice
+        earth: "earth.html", // Google Photorealistic 3D Tiles test
+      },
+    },
+  },
 });
