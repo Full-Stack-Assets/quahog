@@ -52,7 +52,7 @@ export function SatelliteGround({ origin }: { origin?: { lat: number; lon: numbe
       {/* base: collider + procedural fallback look, always present */}
       <Ground />
       {tex && placement && (
-        <mesh position={[placement.x, 0.08, placement.z]} rotation-x={-Math.PI / 2} receiveShadow>
+        <mesh position={[placement.x, 0.03, placement.z]} rotation-x={-Math.PI / 2} receiveShadow>
           <planeGeometry args={[placement.size, placement.size]} />
           <meshBasicMaterial map={tex} toneMapped={false} />
         </mesh>

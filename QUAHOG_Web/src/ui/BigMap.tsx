@@ -158,8 +158,14 @@ export function BigMap() {
     const pl = shared.player;
     if (pl) {
       pl.setEnabled(true);
-      pl.setTranslation({ x, y: 3, z }, true);
+      pl.setTranslation({ x, y: 2, z }, true);
       pl.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+    // bring your car so there's always a ride at the destination
+    const car = shared.car;
+    if (car) {
+      car.setTranslation({ x: x + 6, y: 1.4, z: z + 4 }, true);
+      car.setLinvel({ x: 0, y: 0, z: 0 }, true);
     }
     useGame.getState().setMode("foot");
     cam.current.x = x; cam.current.z = z;
