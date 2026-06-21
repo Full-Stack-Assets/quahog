@@ -132,6 +132,18 @@ class Sfx {
     src.connect(f).connect(this.ambGain!);
     src.start();
     this.ambGain!.gain.setTargetAtTime(0.04, ctx.currentTime, 2);
+
+    // ocean wave wash: band-passed noise with a slow LFO swell (always present)
+    const wsrc = ctx.createBufferSource();
+    wsrc.buffer = this.noise!; wsrc.loop = true;
+    const wf = ctx.createBiquadFilter();
+    wf.type = "bandpass"; wf.frequency.value = 520; wf.Q.value = 0.5;
+    const wg = ctx.createGain(); wg.gain.value = 0.05;
+    const lfo = ctx.createOscillator(); lfo.frequency.value = 0.16; // ~6s swell
+    const lfoG = ctx.createGain(); lfoG.gain.value = 0.035;
+    lfo.connect(lfoG).connect(wg.gain);
+    wsrc.connect(wf).connect(wg).connect(this.ambGain!);
+    wsrc.start(); lfo.start();
   }
 }
 

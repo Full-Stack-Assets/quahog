@@ -13,7 +13,8 @@ const HIGHWAY = new Set([
 ]);
 const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
 const TILE = 8; // metres of road per texture repeat along length
-const BRIDGE_Y = 5.5; // deck height for bridges (Coggeshall St, JFK Hwy, the Acushnet crossings)
+const BRIDGE_Y = 0.25; // bridge deck just above the road grade — drivable at grade,
+                       // reads as a low causeway/trestle on pilings over the water
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
 // texture repeats (cobble repeats across the width; asphalt spans 0..1 for lanes).
@@ -129,10 +130,11 @@ export function Roads({ roads }: { roads: Road[] }) {
           <meshStandardMaterial map={highwayTex} color="#7a7c86" roughness={0.8} />
         </mesh>
       )}
+      {/* pilings: stubs from the deck down into the water */}
       {pylons.map(([x, z], i) => (
-        <mesh key={i} position={[x, BRIDGE_Y / 2, z]} castShadow>
-          <boxGeometry args={[1.2, BRIDGE_Y, 1.2]} />
-          <meshStandardMaterial color="#8a8276" roughness={0.9} />
+        <mesh key={i} position={[x, BRIDGE_Y - 0.95, z]} castShadow>
+          <boxGeometry args={[0.8, 1.9, 0.8]} />
+          <meshStandardMaterial color="#5c4a36" roughness={0.95} />
         </mesh>
       ))}
     </group>

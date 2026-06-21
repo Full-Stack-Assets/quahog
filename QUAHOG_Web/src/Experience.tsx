@@ -23,6 +23,8 @@ import { Rain } from "./world/Rain";
 import { Tracers } from "./world/Tracers";
 import { Police } from "./world/Police";
 import { Consequence } from "./world/Consequence";
+import { Hazards } from "./world/Hazards";
+import { setWaterZones } from "./world/waterZones";
 import { Safehouse } from "./world/Safehouse";
 import { Hospital } from "./world/Hospital";
 import { Ambient } from "./earth/Ambient";
@@ -55,6 +57,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         if (!alive) return;
         setSlice(s);
         useGame.getState().setSlice(s);
+        setWaterZones(s.water ?? [], s.roads);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
@@ -69,6 +72,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <GameSystems />
       <MissionRunner />
       <Consequence />
+      <Hazards />
 
       <Physics gravity={[0, -9.81, 0]}>
         <SatelliteGround origin={slice?.origin} />
