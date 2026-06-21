@@ -14,9 +14,10 @@ import { WGS84_ELLIPSOID } from "3d-tiles-renderer/three";
 import { loadSlice, type Slice } from "../slice";
 import { installInput } from "../input";
 import { computeSpawn } from "./follow";
+import { useContext } from "react";
+import { TilesRendererContext } from "3d-tiles-renderer/r3f";
 import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
-import { TilesBVH } from "./bvh";
 import { Radio } from "../audio/Radio";
 
 // Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
@@ -55,10 +56,11 @@ export function EarthApp() {
   const [spotIdx, setSpotIdx] = useState(0);
   const [weather, setWeather] = useState<Weather>("clear");
   const [ready, setReady] = useState(false);
+  const [tilesProblem, setTilesProblem] = useState(false);
 
   useEffect(() => installInput(), []);
   useEffect(() => { loadSlice().then(setSlice).catch((e) => console.error(e)); }, []);
-  useEffect(() => setReady(false), [spotIdx, mode]); // re-gate on teleport
+  useEffect(() => { setReady(false); setTilesProblem(false); }, [spotIdx, mode]); // re-gate on teleport
   useEffect(() => {
     const order: Weather[] = ["clear", "clear", "cloudy", "rain", "cloudy"];
     let i = 0;
@@ -84,10 +86,9 @@ export function EarthApp() {
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
 
         <Suspense fallback={null}>
-        {/* errorTarget: higher = coarser tiles = far less geometry/memory (stability) */}
-        <TilesRenderer key={apiKey} errorTarget={16}>
+        <TilesRenderer key={apiKey}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
-          <TilesBVH />
+          <TilesDiag onMissing={() => setTilesProblem(true)} onOk={() => setTilesProblem(false)} />
 
           {mode === "orbit" ? (
             <>
@@ -118,8 +119,37 @@ export function EarthApp() {
         weather={weather}
       />
       <Radio />
-      {mode === "play" && !ready && <Loading />}
+      {mode === "play" && !ready && !tilesProblem && <Loading />}
+      {tilesProblem && <TilesProblem />}
     </>
+  );
+}
+
+// Watches the tile renderer: logs load errors and, if no tiles have appeared
+// after a grace period, flags a likely key/quota/billing problem (vs. our code).
+function TilesDiag({ onMissing, onOk }: { onMissing: () => void; onOk: () => void }) {
+  const tiles = useContext(TilesRendererContext);
+  useEffect(() => {
+    if (!tiles) return;
+    const t = tiles as unknown as { group?: { children?: unknown[] }; addEventListener: (k: string, f: (e: unknown) => void) => void; removeEventListener: (k: string, f: (e: unknown) => void) => void };
+    const onErr = (e: unknown) => console.warn("[tiles] load-error:", (e as { error?: unknown })?.error ?? e);
+    t.addEventListener("load-error", onErr);
+    const id = window.setInterval(() => {
+      const n = t.group?.children?.length ?? 0;
+      if (n > 0) { onOk(); } else { onMissing(); }
+    }, 6000);
+    return () => { t.removeEventListener("load-error", onErr); clearInterval(id); };
+  }, [tiles, onMissing, onOk]);
+  return null;
+}
+
+function TilesProblem() {
+  return (
+    <div style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 5, maxWidth: 460, background: "rgba(40,10,10,.9)", border: "1px solid #7a2c2c", borderRadius: 8, padding: "10px 14px", color: "#ffd9d9", font: "12px/1.5 'Courier New', monospace", textAlign: "center" }}>
+      <b>Photoreal tiles aren't loading.</b> The map data isn't coming back from Google —
+      almost always the API key: Map Tiles API not enabled, billing off, or over quota.
+      Check the key in Google Cloud, then reload. (Movement still works; you're just on an empty surface.)
+    </div>
   );
 }
 
