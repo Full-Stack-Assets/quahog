@@ -18,11 +18,12 @@ const PIER_EVERY = 16;
 type Pt = [number, number]; // slice [east, north]
 
 // stitch bridge polylines that share endpoints into longer chains
-function stitchSpans(roads: Road[]): { pts: Pt[]; width: number }[] {
+function stitchSpans(roads: Road[]): { pts: Pt[]; width: number; green: boolean }[] {
+  const isGreen = (n: string | null) => !!n && /braga/i.test(n); // the iconic green bridge
   const lines = roads.filter((r) => r.bridge && r.points.length >= 2)
-    .map((r) => ({ pts: r.points.slice() as Pt[], width: r.width }));
+    .map((r) => ({ pts: r.points.slice() as Pt[], width: r.width, green: isGreen(r.name) }));
   const d = (a: Pt, b: Pt) => Math.hypot(a[0] - b[0], a[1] - b[1]);
-  const out: { pts: Pt[]; width: number }[] = [];
+  const out: { pts: Pt[]; width: number; green: boolean }[] = [];
   while (lines.length) {
     const cur = lines.shift()!;
     let changed = true;
@@ -37,6 +38,7 @@ function stitchSpans(roads: Road[]): { pts: Pt[]; width: number }[] {
         else if (d(head, l.pts[0]) < 2) { cur.pts.unshift(...l.pts.slice().reverse().slice(0, -1)); }
         else continue;
         cur.width = Math.max(cur.width, l.width);
+        cur.green = cur.green || l.green;
         lines.splice(i, 1); changed = true; break;
       }
     }
@@ -105,7 +107,11 @@ function buildSpan(pts: Pt[], width: number): Built | null {
 
 export function Bridges({ roads }: { roads: Road[] }) {
   const tex = useMemo(() => makeAsphaltTexture(true), []);
-  const spans = useMemo(() => stitchSpans(roads).map((s) => buildSpan(s.pts, s.width)).filter(Boolean) as Built[], [roads]);
+  const spans = useMemo(() =>
+    stitchSpans(roads)
+      .map((s) => { const b = buildSpan(s.pts, s.width); return b ? { ...b, green: s.green } : null; })
+      .filter(Boolean) as (Built & { green: boolean })[],
+  [roads]);
 
   return (
     <group>
@@ -118,9 +124,16 @@ export function Bridges({ roads }: { roads: Road[] }) {
           </RigidBody>
           {s.rail && (
             <mesh geometry={s.rail} castShadow>
-              <meshStandardMaterial color="#3a3e44" metalness={0.5} roughness={0.5} side={THREE.DoubleSide} />
+              <meshStandardMaterial color={s.green ? "#3f7a3a" : "#3a3e44"} metalness={0.5} roughness={0.5} side={THREE.DoubleSide} />
             </mesh>
           )}
+          {/* green truss towers for the iconic Braga cantilever */}
+          {s.green && s.piers.filter((_, k) => k % 3 === 0).map((p, k) => (
+            <mesh key={`t${k}`} position={[p[0], p[1] + 7, p[2]]} castShadow>
+              <boxGeometry args={[2, 16, 2]} />
+              <meshStandardMaterial color="#3f7a3a" metalness={0.4} roughness={0.5} />
+            </mesh>
+          ))}
           {s.piers.map((p, k) => (
             <mesh key={k} position={[p[0], p[1] / 2 - 0.75, p[2]]} castShadow>
               <boxGeometry args={[1.1, p[1] + 1.5, 1.1]} />
