@@ -8,6 +8,8 @@ import { PauseMenu } from "./ui/PauseMenu";
 import { CharacterMenu } from "./ui/CharacterMenu";
 import { BigMap } from "./ui/BigMap";
 import { TouchControls } from "./ui/TouchControls";
+import { Toasts } from "./ui/Toasts";
+import { StartMenu } from "./ui/StartMenu";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
 
@@ -36,7 +38,9 @@ export default function App() {
       <CharacterMenu />
       <PauseMenu />
       <TouchControls />
+      <Toasts />
       <Radio />
+      <StartMenu sliceName={sliceName} />
     </>
   );
 }

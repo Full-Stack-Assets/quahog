@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { shared } from "../shared";
 import { useStats } from "../game";
-import { useGame } from "../store";
+import { useGame, useToasts } from "../store";
 import { sfx } from "../audio/sfx";
 import { HOSPITAL, POLICE_STATION } from "../places";
 
@@ -47,6 +47,7 @@ export function Consequence() {
     }
     // clear any active pursuit so you actually get a fresh start
     for (const c of shared.cops) c.dead = true;
+    useToasts.getState().push(`-$${penalty} · ${game.down === "wasted" ? "hospital" : "released"}`, "#ff8a8a");
     useGame.getState().setDown(null);
     timer.current = 0;
   });

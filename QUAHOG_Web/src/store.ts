@@ -21,6 +21,8 @@ interface GameState {
   playerCarColor: string;
   armed: boolean;
   down: Down;
+  started: boolean;
+  fxOn: boolean;
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -36,6 +38,8 @@ interface GameState {
   setPlayerCar: (type: string, color: string) => void;
   toggleArmed: () => void;
   setDown: (d: Down) => void;
+  setStarted: (v: boolean) => void;
+  toggleFx: () => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -53,6 +57,8 @@ export const useGame = create<GameState>((set) => ({
   playerCarColor: "#b81d24",
   armed: false,
   down: null,
+  started: false,
+  fxOn: true,
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -68,4 +74,19 @@ export const useGame = create<GameState>((set) => ({
   setPlayerCar: (playerCarType, playerCarColor) => set({ playerCarType, playerCarColor }),
   toggleArmed: () => set((s) => ({ armed: !s.armed })),
   setDown: (down) => set({ down }),
+  setStarted: (started) => set({ started }),
+  toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),
+}));
+
+// Lightweight toast notifications (§21).
+export interface Toast { id: number; text: string; color: string }
+interface ToastState { items: Toast[]; push: (text: string, color?: string) => void }
+let toastId = 0;
+export const useToasts = create<ToastState>((set) => ({
+  items: [],
+  push: (text, color = "#ffcf4a") => {
+    const t = { id: toastId++, text, color };
+    set((s) => ({ items: [...s.items, t].slice(-4) }));
+    setTimeout(() => set((s) => ({ items: s.items.filter((x) => x.id !== t.id) })), 3200);
+  },
 }));

@@ -116,6 +116,7 @@ class Sfx {
     if (!this.ctx) { if (on) this.ensure(); else return; }
     this.sirenGain!.gain.setTargetAtTime(on ? 0.05 : 0, this.ctx!.currentTime, 0.2);
   }
+  setVolume(v: number) { this.ensure(); this.master!.gain.setTargetAtTime(Math.max(0, Math.min(1, v)), this.ctx!.currentTime, 0.05); }
 
   /** Start the harbor ambience bed + periodic gull cries. */
   startAmbience() {

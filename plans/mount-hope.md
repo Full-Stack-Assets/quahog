@@ -120,10 +120,10 @@ time; keep the build green; be honest about status.
 - [x] Moon + star sky at night; sunrise/sunset gradients — drei <Stars> + Sky sunPosition + fog/bg gradient by hour
 
 ## 5. Weather & VFX
-- [~] **WeatherController** state machine: Clear / Dense Fog / Coastal Rain / Nor’easter — Clear/Rain toggle (store.ts weather, key R); Fog/Nor’easter states TODO
+- [~] **WeatherController** state machine: Clear / Dense Fog / Coastal Rain / Nor’easter — Clear/Rain/**Fog** cycle (store.ts, key R); Nor’easter TODO
 - [~] Rain particles + screen rain droplets + ripples/puddles — falling rain streaks (Rain.tsx) + grey grade/closer fog (DayNight); droplets/puddles TODO
-- [ ] Wet-surface shader blend (roads darken/shine when wet)
-- [ ] Fog volumes (dense coastal fog), variable density
+- [x] Wet-surface shader blend (roads darken/shine when wet) — roads drop roughness + gain metalness in rain (Roads.tsx)
+- [x] Fog volumes (dense coastal fog), variable density — FOG weather state pulls scene fog near/far right in (DayNight.tsx)
 - [ ] Wind (sway on trees/flags/signs; blowing litter/leaves)
 - [ ] Lightning + thunder (Nor’easter)
 - [ ] Snow/sleet variant; splash particles in puddles
@@ -132,7 +132,7 @@ time; keep the build green; be honest about status.
 
 ## 6. Ocean & harbor
 - [x] Static harbor water surface
-- [ ] Animated waves (Gerstner) + foam at shoreline/piers
+- [~] Animated waves (Gerstner) + foam at shoreline/piers — crossing-sine ocean swell on the harbor surface (Water.tsx); true Gerstner + shoreline foam TODO
 - [ ] Reflections + fresnel + depth-based color
 - [~] Boats bobbing; ferries; fishing vessels with wakes — bobbing fishing boats (HarborProps.tsx); ferries/wakes TODO
 - [~] Buoys, nets, lobster traps, dock pilings — dock pilings + bobbing buoys along the OSM shoreline (HarborProps.tsx); nets/traps TODO
@@ -141,7 +141,7 @@ time; keep the build green; be honest about status.
 
 ## 7. World props & set dressing
 - [~] Street furniture: lamp posts, benches, trash cans, hydrants, mailboxes, bus stops, phone booths (1986) — instanced lamp posts/benches/hydrants/mailboxes along road edges (Props.tsx); trash cans/bus stops/phone booths TODO
-- [ ] Traffic lights + stop signs (functional + decorative)
+- [~] Traffic lights + stop signs (functional + decorative) — decorative signal heads cycling R/G/A near the core (TrafficLights.tsx); functional stop-at-light + stop signs TODO
 - [ ] Power lines / utility poles, dumpsters, crates, pallets
 - [ ] Storefront awnings, signage, A-frame signs, window displays
 - [x] Parked cars lining streets — static vehicles tucked against the curb near the core (ParkedCars.tsx)
@@ -394,7 +394,7 @@ modular kits + procedural placement driven by OSM data.
 - [ ] **Road geometry polish** — crown/camber, banking on ramps, expansion joints on bridges, smooth spline tangents at corners (no hard kinks)
 
 ## 33. Intersections, signage & street systems
-- [ ] **Traffic control** — period (1980s) signal heads on mast arms + pedestal, walk/don’t-walk, blinking-yellow at night, stop/yield signs, all-way stops
+- [~] **Traffic control** — period (1980s) signal heads on mast arms + pedestal, walk/don’t-walk, blinking-yellow at night, stop/yield signs, all-way stops — cycling signal heads near the core (TrafficLights.tsx); walk signals/stop signs/blinking-night TODO
 - [ ] **Rotaries/traffic circles** — President Ave rotary (FR) and others, yield geometry, central island landscaping
 - [~] **Signage kit** — green street-name signs, one-way, no-parking, speed limit, school zone, route shields (**I-195, US-6, MA-18, MA-24, MA-79, MA-138**), overhead guide signs on highways — 3D green street-name blades on poles at named-road endpoints (StreetSigns.tsx, real OSM names); regulatory/route shields TODO
 - [ ] **Street lighting** — cobra-head sodium (amber) on arterials; historic acorn/harbor lamps in the cobblestone district; auto-on at dusk; pools of warm light

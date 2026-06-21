@@ -31,6 +31,12 @@ import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
 import { FollowCamera } from "./actors/FollowCamera";
 
+// Post-processing, toggleable from settings (§26).
+function FxGate() {
+  const on = useGame((s) => s.fxOn);
+  return on ? <Effects /> : null;
+}
+
 // Landmarks rendered as hand-detailed models (so the generic beam/label is skipped).
 const MODELED = new Set(["Seamen's Bethel"]);
 // Playable core (slice-local east, north) — drives building colliders + ped density.
@@ -99,7 +105,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Ambient weather="clear" />
 
       <FollowCamera />
-      <Effects />
+      <FxGate />
     </>
   );
 }

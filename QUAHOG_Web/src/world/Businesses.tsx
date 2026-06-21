@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { Text } from "@react-three/drei";
 import { shared } from "../shared";
-import { useGame } from "../store";
+import { useGame, useToasts } from "../store";
 import { useStats } from "../game";
 import { useEconomy, BUSINESSES } from "../economy";
 import { consumeTap } from "../input";
@@ -43,6 +43,7 @@ export function Businesses() {
         useEconomy.getState().buy(b);
         useEconomy.getState().save();
         sfx.cash();
+        useToasts.getState().push(`Bought ${b.name} — +$${b.perDay}/day`, "#4ad66d");
       }
     }
   });

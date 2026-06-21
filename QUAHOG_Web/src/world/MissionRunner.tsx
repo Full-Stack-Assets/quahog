@@ -1,6 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { shared } from "../shared";
-import { useGame } from "../store";
+import { useGame, useToasts } from "../store";
 import { useStats } from "../game";
 import { useMission } from "../mission";
 import { sfx } from "../audio/sfx";
@@ -30,9 +30,11 @@ export function MissionRunner() {
     }
 
     if (complete) {
-      if (cur.reward) { useStats.getState().addCash(cur.reward); sfx.cash(); }
+      if (cur.reward) { useStats.getState().addCash(cur.reward); sfx.cash(); useToasts.getState().push(`+$${cur.reward}`, "#7CFC00"); }
       else sfx.ui();
       ms.advance();
+      const ns = useMission.getState();
+      useToasts.getState().push(ns.done ? "Mission complete" : ns.objective, "#ffcf4a");
     }
   });
 

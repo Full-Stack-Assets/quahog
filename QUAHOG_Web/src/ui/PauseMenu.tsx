@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useGame } from "../store";
 import { useStats } from "../game";
 import { useMission } from "../mission";
+import { sfx } from "../audio/sfx";
 
 // Pause / settings overlay (§26). Opens on Esc/P (handled in GameSystems).
 // Freezes the sim loops and exposes quick settings + a save reset.
@@ -24,7 +26,10 @@ export function PauseMenu() {
   const paused = useGame((s) => s.paused);
   const view = useGame((s) => s.view);
   const weather = useGame((s) => s.weather);
+  const fxOn = useGame((s) => s.fxOn);
+  const [vol, setVol] = useState(0.5);
   if (!paused) return null;
+  const wlabel = weather === "rain" ? "Rain" : weather === "fog" ? "Fog" : "Clear";
 
   return (
     <div
@@ -53,8 +58,19 @@ export function PauseMenu() {
           View: {view === "first" ? "First-person" : "Third-person"}
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleWeather()}>
-          Weather: {weather === "rain" ? "Rain" : "Clear"}
+          Weather: {wlabel}
         </button>
+        <button style={btn} onClick={() => useGame.getState().toggleFx()}>
+          Effects: {fxOn ? "On" : "Off"}
+        </button>
+        <div style={{ margin: "8px 0", textAlign: "left", color: "#cfc8e6", fontFamily: "'Courier New', monospace", fontSize: 12 }}>
+          Sound volume
+          <input
+            type="range" min={0} max={1} step={0.05} value={vol}
+            onChange={(e) => { const v = parseFloat(e.target.value); setVol(v); sfx.setVolume(v); }}
+            style={{ width: "100%", marginTop: 4 }}
+          />
+        </div>
         <button
           style={{ ...btn, borderColor: "#8e3a3a", color: "#ffb0b0" }}
           onClick={() => {
