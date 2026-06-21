@@ -16,6 +16,7 @@ import { installInput } from "../input";
 import { computeSpawn } from "./follow";
 import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
+import { Radio } from "../audio/Radio";
 
 // Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
 // tile.googleapis.com. Provide a Google Maps key (Map Tiles API) via
@@ -73,7 +74,8 @@ export function EarthApp() {
 
   return (
     <>
-      <Canvas shadows camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
+      <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
+        <ContextGuard />
         <color attach="background" args={[wx.bg]} />
         {mode === "play" && <fog attach="fog" args={[wx.bg, wx.fog[0], wx.fog[1]]} />}
         {wx.sky && <Sky sunPosition={[120, 80, 60]} turbidity={weather === "cloudy" ? 8 : 3} rayleigh={1.2} />}
@@ -81,7 +83,8 @@ export function EarthApp() {
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
 
         <Suspense fallback={null}>
-        <TilesRenderer key={apiKey}>
+        {/* errorTarget: higher = coarser tiles = far less geometry/memory (stability) */}
+        <TilesRenderer key={apiKey} errorTarget={16}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
 
           {mode === "orbit" ? (
@@ -112,9 +115,24 @@ export function EarthApp() {
         spotIdx={spotIdx} setSpotIdx={setSpotIdx}
         weather={weather}
       />
+      <Radio />
       {mode === "play" && !ready && <Loading />}
     </>
   );
+}
+
+// Recover from (rather than hard-crash on) a lost WebGL context.
+function ContextGuard() {
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    const c = gl.domElement;
+    const onLost = (e: Event) => { e.preventDefault(); console.warn("[earth] WebGL context lost — attempting restore"); };
+    const onRestored = () => console.warn("[earth] WebGL context restored");
+    c.addEventListener("webglcontextlost", onLost);
+    c.addEventListener("webglcontextrestored", onRestored);
+    return () => { c.removeEventListener("webglcontextlost", onLost); c.removeEventListener("webglcontextrestored", onRestored); };
+  }, [gl]);
+  return null;
 }
 
 function FlyTo({ lat, lon }: { lat: number; lon: number }) {

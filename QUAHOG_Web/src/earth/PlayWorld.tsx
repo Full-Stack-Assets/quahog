@@ -239,7 +239,7 @@ export function TileNpcs({ slice, center }: { slice: Slice; center: [number, num
   const pedRefs = useRef<(THREE.Group | null)[]>([]);
   const carRefs = useRef<(THREE.Group | null)[]>([]);
   const peds = useRef(
-    Array.from({ length: 8 }, () => ({
+    Array.from({ length: 6 }, () => ({
       pos: rand(center, 30), goal: rand(center, 30), heading: 0, y: 0, t: Math.random(),
       down: 0, dead: false,
       shirt: pick(PED_COLORS), pants: pick(PANTS), skin: pick(SKINS),
@@ -247,7 +247,7 @@ export function TileNpcs({ slice, center }: { slice: Slice; center: [number, num
     })),
   );
   const cars = useRef(
-    Array.from({ length: 4 }, () => ({
+    Array.from({ length: 3 }, () => ({
       route: routes.length ? Math.floor(Math.random() * routes.length) : 0,
       fwd: Math.random() < 0.5, dist: 0, y: 0, t: Math.random(), heading: 0,
       offset: new THREE.Vector3(), color: pick(CAR_COLORS), vtype: pick(VEHICLE_TYPES),
