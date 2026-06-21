@@ -31,6 +31,18 @@ export function makeNoiseNormal(): THREE.Texture {
   return t;
 }
 
+// Zebra crosswalk patch (Phase 2) — white bars on transparent, for intersections.
+let _zebra: THREE.Texture | null = null;
+export function makeZebra(): THREE.Texture {
+  if (_zebra) return _zebra;
+  const [c, x] = canvas(128);
+  x.clearRect(0, 0, 128, 128);
+  x.fillStyle = "rgba(236,236,228,0.9)";
+  for (let i = 8; i < 128; i += 22) x.fillRect(i, 6, 11, 116);
+  const t = new THREE.Texture(c); t.needsUpdate = true;
+  _zebra = t; return t;
+}
+
 // Façade maps (§ Phase 1): one tileable cell ≈ one floor (~3.2 m). `albedo` is
 // white wall + dark glass window (multiplies the per-building base colour);
 // `emissive` is black wall + warm lit window (glows at night). Shared singletons.
