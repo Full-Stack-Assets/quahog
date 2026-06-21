@@ -11,6 +11,7 @@ import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Props } from "./world/Props";
+import { Awnings } from "./world/Awnings";
 import { Businesses } from "./world/Businesses";
 import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
@@ -108,6 +109,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       )}
       <Marina />
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Awnings roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
