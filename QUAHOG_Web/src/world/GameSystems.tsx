@@ -30,10 +30,10 @@ export function GameSystems() {
   }, []);
   useFrame((_, dt) => {
     // global hotkeys
-    if (consumeTap("KeyR")) useGame.getState().toggleWeather();
-    if (consumeTap("KeyP") || consumeTap("Escape")) useGame.getState().togglePause();
-    if (consumeTap("KeyC")) useGame.getState().toggleChar();
-    if (consumeTap("KeyM")) useGame.getState().toggleMap();
+    if (consumeTap("KeyR")) { useGame.getState().toggleWeather(); sfx.ui(); }
+    if (consumeTap("KeyP") || consumeTap("Escape")) { useGame.getState().togglePause(); sfx.ui(); }
+    if (consumeTap("KeyC")) { useGame.getState().toggleChar(); sfx.ui(); }
+    if (consumeTap("KeyM")) { useGame.getState().toggleMap(); sfx.ui(); }
     if (consumeTap("KeyG")) useGame.getState().toggleArmed();
     if (consumeTap("Digit1") && useGame.getState().armed) useGame.getState().toggleArmed(); // fists
     if (consumeTap("Digit2")) useGame.getState().setWeapon("pistol");
