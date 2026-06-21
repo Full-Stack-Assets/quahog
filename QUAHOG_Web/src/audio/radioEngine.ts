@@ -198,6 +198,8 @@ class RadioEngine {
   private lineIdx = 0;
   private seg = 0;
   private station: Station | null = null;
+  private music?: HTMLAudioElement;   // real licensed/generated tracks (§19 music)
+  private musicTracks: string[] = [];
   vol = 0.5;
   muted = false;
 
@@ -226,17 +228,48 @@ class RadioEngine {
     this.step = 0;
     this.lineIdx = 0;
     this.seg = 0;
-    if (s.kind === "music") {
-      const beatMs = (60 / s.tempo) * 1000;
-      this.timer = window.setInterval(() => this.tick(), beatMs);
-    }
+    if (s.kind === "music") this.loadMusic(s);
     // talk stations start talking almost immediately; music stations after a bed
     this.scheduleTalk(s.kind === "talk" ? 600 : s.talkGapMs);
+  }
+
+  // Real music when public/music/<id>/manifest.json exists; else procedural synth.
+  private startSynth(s: Station) {
+    const beatMs = (60 / s.tempo) * 1000;
+    this.timer = window.setInterval(() => this.tick(), beatMs);
+  }
+  private loadMusic(s: Station) {
+    this.musicTracks = [];
+    fetch(`music/${s.id}/manifest.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((mf: { tracks?: string[] } | null) => {
+        if (this.station !== s) return;
+        const tracks = mf?.tracks;
+        if (tracks && tracks.length) {
+          this.musicTracks = tracks.map((f) => `music/${s.id}/${f}`);
+          this.playTrack();
+        } else {
+          this.startSynth(s); // no tracks yet → procedural bed
+        }
+      })
+      .catch(() => { if (this.station === s) this.startSynth(s); });
+  }
+  private playTrack() {
+    const url = pick(this.musicTracks);
+    if (!this.music) this.music = new Audio();
+    this.music.src = url;
+    this.music.loop = false;
+    this.music.muted = this.muted;
+    this.music.volume = this.vol;
+    this.music.onended = () => { if (this.musicTracks.length) this.playTrack(); };
+    this.music.play().catch(() => {});
   }
 
   stop() {
     if (this.timer) { clearInterval(this.timer); this.timer = undefined; }
     if (this.talkTimer) { clearTimeout(this.talkTimer); this.talkTimer = undefined; }
+    if (this.music) { this.music.pause(); this.music.onended = null; }
+    this.musicTracks = [];
     stopVO();
     this.station = null;
   }
@@ -244,7 +277,14 @@ class RadioEngine {
   setMuted(m: boolean) {
     this.muted = m;
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : this.vol, this.ctx.currentTime, 0.05);
+    if (this.music) this.music.muted = m;
     if (m) stopVO();
+  }
+
+  setVolume(v: number) {
+    this.vol = Math.max(0, Math.min(1, v));
+    if (this.master && this.ctx && !this.muted) this.master.gain.setTargetAtTime(this.vol, this.ctx.currentTime, 0.05);
+    if (this.music) this.music.volume = this.vol;
   }
 
   // --- music ---
@@ -294,10 +334,12 @@ class RadioEngine {
       return;
     }
     const line = this.chooseSegment(s);
-    // duck the music bed while the host talks
+    // duck the music bed (synth + real track) while the host talks
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol * 0.28, this.ctx.currentTime, 0.08);
+    if (this.music) this.music.volume = this.muted ? 0 : this.vol * 0.2;
     const done = () => {
       if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol, this.ctx.currentTime, 0.2);
+      if (this.music) this.music.volume = this.muted ? 0 : this.vol;
       if (this.station === s) this.scheduleTalk(s.talkGapMs);
     };
     // real ElevenLabs voice when configured, else Web Speech (vo.ts handles both)

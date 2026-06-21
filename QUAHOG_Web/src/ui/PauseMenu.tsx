@@ -3,6 +3,7 @@ import { useGame } from "../store";
 import { useStats } from "../game";
 import { useMission } from "../mission";
 import { sfx } from "../audio/sfx";
+import { radio } from "../audio/radioEngine";
 
 // Pause / settings overlay (§26). Opens on Esc/P (handled in GameSystems).
 // Freezes the sim loops and exposes quick settings + a save reset.
@@ -67,7 +68,7 @@ export function PauseMenu() {
           Sound volume
           <input
             type="range" min={0} max={1} step={0.05} value={vol}
-            onChange={(e) => { const v = parseFloat(e.target.value); setVol(v); sfx.setVolume(v); }}
+            onChange={(e) => { const v = parseFloat(e.target.value); setVol(v); sfx.setVolume(v); radio.setVolume(v); }}
             style={{ width: "100%", marginTop: 4 }}
           />
         </div>
