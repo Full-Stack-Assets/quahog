@@ -101,7 +101,7 @@ func _density_for_preset(preset_name: String) -> float:
 	match preset_name.to_upper():
 		"CLEAR":        return clear_density
 		"DENSE_FOG":    return dense_fog_density
-		"RAIN":         return rain_fog_density
+		"COASTAL_RAIN", "RAIN": return rain_fog_density
 		"NOREASTER":    return noreaster_fog_density
 	push_warning("FogController: Unknown preset '%s' — using 0.0." % preset_name)
 	return 0.0
