@@ -98,7 +98,7 @@ time; keep the build green; be honest about status.
 - [ ] Define a **style guide** (palette, era 1986, materials, signage fonts, mood boards) in `quahog-project-files/`
 - [ ] Time-of-day color grading (dawn/day/golden hour/dusk/night palettes)
 - [x] Filmic tone mapping (ACES) + exposure
-- [~] Post FX: bloom, SSAO/GTAO, vignette, subtle film grain, chromatic aberration, sharpen — bloom + vignette + SMAA live (Effects.tsx); SSAO/grain/CA/sharpen TODO
+- [~] Post FX: bloom, SSAO/GTAO, vignette, subtle film grain, chromatic aberration, sharpen — bloom + vignette + SMAA + **chromatic aberration + film grain** live (Effects.tsx); SSAO/sharpen TODO
 - [ ] Depth of field (cinematic + photo mode), motion blur (camera + object)
 - [ ] **“Coastal Neon” dusk**: glowing tavern/shop signs, wet-surface reflections, neon spill light
 - [ ] Screen-space reflections / reflective wet roads
@@ -174,7 +174,7 @@ time; keep the build green; be honest about status.
 - [x] Enter/exit + drive car (E)
 - [x] Melee punch (F) → KO/kill
 - [x] 1st/3rd-person toggle (V)
-- [ ] Jump, crouch, sprint stamina, cover, vault, climb, swim
+- [~] Jump, crouch, sprint stamina, cover, vault, climb, swim — sprint (Shift) with a draining stamina bar; jump/crouch/cover/vault/climb/swim TODO
 - [ ] Mouse-look / pointer-lock aim; gamepad support; remappable controls
 - [ ] Interaction system (prompts: enter, talk, pick up, sit, sleep)
 - [ ] Inventory + weapon wheel
@@ -207,7 +207,7 @@ time; keep the build green; be honest about status.
 - [~] Camera FOV/shake scaling with speed; speed lines — FOV widens + subtle shake with car speed (FollowCamera); speed lines TODO
 - [~] Engine audio with RPM/gears; backfire — procedural engine note tracks speed (audio/sfx.ts); gears/backfire TODO
 - [~] Collision crunch sfx + sparks; ragdoll peds on impact — ram crunch sfx (sfx.ts); sparks/ragdoll TODO
-- [ ] Handbrake, drift, boost feel tuning
+- [~] Handbrake, drift, boost feel tuning — Space handbrake scrubs speed + loosens steering for a drift (Car.tsx); boost TODO
 
 ## 14. NPCs & living city
 - [x] Wandering pedestrians (kinematic) + contact/knockback
@@ -282,7 +282,7 @@ time; keep the build green; be honest about status.
 - [x] Basic HUD (title, controls, mode)
 - [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health bar + police/faction badges + wallet + clock (HUD.tsx); armor/stamina/ammo/weapon TODO
-- [ ] Objective markers + waypoints + on-screen distance
+- [~] Objective markers + waypoints + on-screen distance — world beam/ring marker + map blip + **on-screen metres** to objective (HUD); off-screen waypoint arrow TODO
 - [ ] Interaction prompts + context hints
 - [~] Big map screen (set waypoint, fast-travel, legend) — full-screen pannable/zoomable map with real street-name labels, water, player heading + objective (BigMap.tsx, M to open); waypoint/fast-travel TODO
 - [ ] Subtitles + dialogue UI + phone/contacts

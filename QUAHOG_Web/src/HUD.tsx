@@ -140,7 +140,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <br />
           <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
           <br />
-          <b>R</b> rain &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
+          <b>R</b> weather &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
           <br />
           <b>C</b> character &nbsp;·&nbsp; <b>M</b> map
           <br />

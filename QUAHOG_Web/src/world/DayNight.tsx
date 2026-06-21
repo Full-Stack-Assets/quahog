@@ -17,6 +17,7 @@ const dayFog = new THREE.Color("#c4d6e6");
 const nightFog = new THREE.Color("#0c1530");
 const warm = new THREE.Color("#ffb066"); // dusk/dawn tint
 const storm = new THREE.Color("#5a6470"); // rain grade
+const fogGrey = new THREE.Color("#aeb6bd"); // dense coastal fog
 
 export function DayNight() {
   const { scene } = useThree();
@@ -38,26 +39,30 @@ export function DayNight() {
     const dusk = THREE.MathUtils.clamp(1 - Math.abs(elev) * 4, 0, 1); // peaks near horizon
     shared.dayT = dayT;
     shared.hour = hour.current;
-    const rain = useGame.getState().weather === "rain" ? 1 : 0;
+    const weather = useGame.getState().weather;
+    const rain = weather === "rain" ? 1 : 0;
+    const fogW = weather === "fog" ? 1 : 0;
 
     const sx = Math.cos(a) * 150, sy = elev * 170, sz = 60;
 
     if (sun.current) {
       sun.current.position.set(sx, Math.max(sy, 1.5), sz);
-      sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65);
+      sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65 - fogW * 0.5);
       cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
       sun.current.color.copy(cSun);
     }
     if (hemi.current) hemi.current.intensity = (0.22 + dayT * 0.8) * (1 - rain * 0.25);
 
-    // sky/fog/background lerp night→day with a warm dusk push, grey in rain
-    bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6);
-    fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7);
+    // sky/fog/background lerp night→day with a warm dusk push, grey in rain/fog
+    bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6).lerp(fogGrey, fogW * 0.8);
+    fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7).lerp(fogGrey, fogW * 0.85);
     scene.background = bg;
     if (scene.fog) {
       const f = scene.fog as THREE.Fog;
       f.color.copy(fogC);
-      f.far = rain ? 700 : 1500; // rain closes in the view distance
+      // dense coastal fog pulls the view right in; rain less so; clear is open
+      f.near = fogW ? 12 : 350;
+      f.far = fogW ? 180 : rain ? 700 : 1500;
     }
 
     skyThrottle.current += dt;

@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { makeAsphaltTexture, makeCobbleTexture } from "./textures";
+import { useGame } from "../store";
 import type { Road } from "../slice";
 
 // Road classes → surface material. Highways get lane markings; vehicular streets
@@ -75,21 +77,33 @@ export function Roads({ roads }: { roads: Road[] }) {
     };
   }, [roads]);
 
+  // wet-road sheen: drop roughness + darken when it's raining (§5)
+  const mats = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  const baseRough = [0.95, 0.9, 0.82];
+  useFrame(() => {
+    const wet = useGame.getState().weather === "rain" ? 1 : 0;
+    mats.current.forEach((m, i) => {
+      if (!m) return;
+      m.roughness = baseRough[i] - wet * 0.55;
+      m.metalness = wet * 0.5;
+    });
+  });
+
   return (
     <group>
       {cobble && (
         <mesh geometry={cobble} receiveShadow>
-          <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} />
+          <meshStandardMaterial ref={(m) => (mats.current[0] = m)} map={cobbleTex} color="#8a8580" roughness={0.95} />
         </mesh>
       )}
       {surface && (
         <mesh geometry={surface} receiveShadow>
-          <meshStandardMaterial map={surfaceTex} color="#5a5c66" roughness={0.9} />
+          <meshStandardMaterial ref={(m) => (mats.current[1] = m)} map={surfaceTex} color="#5a5c66" roughness={0.9} />
         </mesh>
       )}
       {highway && (
         <mesh geometry={highway} receiveShadow>
-          <meshStandardMaterial map={highwayTex} color="#6a6c76" roughness={0.82} />
+          <meshStandardMaterial ref={(m) => (mats.current[2] = m)} map={highwayTex} color="#6a6c76" roughness={0.82} />
         </mesh>
       )}
     </group>

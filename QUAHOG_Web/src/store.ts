@@ -3,7 +3,7 @@ import type { Slice } from "./slice";
 
 export type Mode = "foot" | "car";
 export type View = "third" | "first";
-export type Weather = "clear" | "rain";
+export type Weather = "clear" | "rain" | "fog";
 export type Down = null | "busted" | "wasted";
 
 interface GameState {
@@ -57,7 +57,7 @@ export const useGame = create<GameState>((set) => ({
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
   setNearCar: (nearCar) => set((s) => (s.nearCar === nearCar ? s : { nearCar })),
-  toggleWeather: () => set((s) => ({ weather: s.weather === "clear" ? "rain" : "clear" })),
+  toggleWeather: () => set((s) => ({ weather: s.weather === "clear" ? "rain" : s.weather === "rain" ? "fog" : "clear" })),
   togglePause: () => set((s) => ({ paused: !s.paused })),
   setPaused: (paused) => set({ paused }),
   setSlice: (slice) => set({ slice }),

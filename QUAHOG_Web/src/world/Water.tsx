@@ -47,17 +47,32 @@ export function Water({ polys }: { polys: [number, number][][] }) {
     return merged;
   }, [polys]);
 
+  // cache base vertex positions so we can ripple them each frame (§6 waves)
+  const base = useMemo(() => (geometry ? (geometry.attributes.position.array as Float32Array).slice() : null), [geometry]);
+
   const matRef = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame((_, dt) => {
+  const meshRef = useRef<THREE.Mesh>(null);
+  useFrame((state, dt) => {
     if (matRef.current?.normalMap) {
       matRef.current.normalMap.offset.x += dt * 0.012;
       matRef.current.normalMap.offset.y += dt * 0.006;
+    }
+    // gentle swell: displace Y by crossing sine waves over world x/z
+    if (base && meshRef.current) {
+      const t = state.clock.elapsedTime;
+      const pos = meshRef.current.geometry.attributes.position as THREE.BufferAttribute;
+      const arr = pos.array as Float32Array;
+      for (let i = 0; i < arr.length; i += 3) {
+        const x = base[i], z = base[i + 2];
+        arr[i + 1] = base[i + 1] + Math.sin(x * 0.08 + t * 1.1) * 0.18 + Math.cos(z * 0.06 - t * 0.8) * 0.14;
+      }
+      pos.needsUpdate = true;
     }
   });
 
   if (!geometry) return null;
   return (
-    <mesh geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
+    <mesh ref={meshRef} geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
       <meshStandardMaterial
         ref={matRef}
         color="#16384a"
