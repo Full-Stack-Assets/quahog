@@ -72,3 +72,16 @@ Hand-detailed Seamen's Bethel, fish-pier ambush mission scaffold, weather +
 friction, audio, smarter pedestrian/traffic AI (collision avoidance, traffic
 signals). The project name still needs to change off "Quahog" (seeds:
 Quequechan, Spindle City, Mount Hope).
+
+## Satellite ground (Google Static Maps, signed)
+
+The world can drape a real aerial image over the streets via the Google Maps
+**Static** API, signed server-side by `api/staticmap.ts` (a Vercel function) so the
+key/secret never reach the browser. To enable, set in **Vercel → Project →
+Settings → Environment Variables** and redeploy:
+
+- `GOOGLE_MAPS_API_KEY` — your key (Maps Static API enabled, billing on)
+- `GOOGLE_MAPS_URL_SIGNING_SECRET` — the "URL signing secret" for that key
+
+Without these (or on local `vite dev`, which doesn't run the function) it falls
+back silently to the procedural ground. Imagery © Google.

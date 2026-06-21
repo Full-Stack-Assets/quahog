@@ -3,23 +3,14 @@ import * as THREE from "three";
 import { Ground } from "./Ground";
 
 // Drapes a real aerial image over the playable area using the Google Maps
-// **Static** API (a single image request — different API from the 3D tiles that
-// were failing). The browser fetches it directly, so the build container's egress
-// doesn't matter. Falls back silently to the procedural ground if there's no key,
-// or the request/CORS/billing fails.
-//
-// Provide a key via ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
+// **Static** API, fetched through our own signed serverless proxy (/api/staticmap)
+// so the key/secret stay server-side and the image is same-origin (no CORS taint).
+// Falls back silently to the procedural ground if the proxy isn't configured
+// (e.g. local `vite dev`, or missing env vars) or the request fails.
 
 const CENTER = { lat: 41.638, lon: -70.919 }; // New Bedford slice center
 const ZOOM = 16;
 const PX = 1280; // 640 * scale 2
-
-function getKey(): string | null {
-  if (typeof window === "undefined") return null;
-  const u = new URLSearchParams(window.location.search).get("key");
-  const e = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  return u || e || null;
-}
 
 export function SatelliteGround({ origin }: { origin?: { lat: number; lon: number } }) {
   const [tex, setTex] = useState<THREE.Texture | null>(null);
@@ -37,13 +28,10 @@ export function SatelliteGround({ origin }: { origin?: { lat: number; lon: numbe
   }, [origin]);
 
   useEffect(() => {
-    const key = getKey();
-    if (!key) return;
     const url =
-      `https://maps.googleapis.com/maps/api/staticmap?center=${CENTER.lat},${CENTER.lon}` +
-      `&zoom=${ZOOM}&size=640x640&scale=2&maptype=satellite&key=${key}`;
+      `/api/staticmap?center=${CENTER.lat},${CENTER.lon}` +
+      `&zoom=${ZOOM}&size=640x640&scale=2&maptype=satellite`;
     const loader = new THREE.TextureLoader();
-    loader.setCrossOrigin("anonymous");
     let alive = true;
     loader.load(
       url,
@@ -54,7 +42,7 @@ export function SatelliteGround({ origin }: { origin?: { lat: number; lon: numbe
         setTex(t);
       },
       undefined,
-      () => console.warn("[satellite] Static Maps image failed (key/billing/CORS) — using procedural ground"),
+      () => console.warn("[satellite] /api/staticmap unavailable — using procedural ground"),
     );
     return () => { alive = false; };
   }, []);
