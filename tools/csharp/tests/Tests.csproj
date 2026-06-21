@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Runnable test harness. Links the UnityEngine shim with the project scripts and
+    executes pure-logic code paths (GeoJSON parsing, ear-clipping, GIS city build)
+    so we can VERIFY behaviour in the sandbox, not just compile it.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>9</LangVersion>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>QuahogTests</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../shim/**/*.cs" />
+    <Compile Include="../../../QUAHOG_Unity/Assets/Scripts/**/*.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+
+</Project>

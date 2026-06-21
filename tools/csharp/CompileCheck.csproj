@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Headless type-check for the Unity gameplay scripts. This compiles the project's
+    C# against the local UnityEngine shim (shim/) so we can catch syntax / type /
+    signature errors in this sandbox without Unity. It is never used by the real
+    Unity build (it lives outside QUAHOG_Unity/Assets).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <LangVersion>9</LangVersion>                <!-- match Unity 2021/2022 -->
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AssemblyName>QuahogCompileCheck</AssemblyName>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Deterministic>true</Deterministic>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="shim/**/*.cs" />
+    <Compile Include="../../QUAHOG_Unity/Assets/Scripts/**/*.cs" />
+  </ItemGroup>
+
+</Project>

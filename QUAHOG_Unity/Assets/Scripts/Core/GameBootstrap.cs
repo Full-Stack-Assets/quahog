@@ -52,6 +52,33 @@ namespace Quahog.SouthCoast
             // Living-world HUD: day/time clock, weather, and wanted-level stars.
             root.AddComponent<WorldHud>();
 
+            // ----- Playable slice: real GIS city block (map-accurate) + on-foot player
+            // + drivable car. We try to build the city from real GeoJSON data
+            // (Resources/gis/newbedford.json); if that asset is missing or invalid we
+            // fall back to the procedural greybox so a build is never empty.
+            Vector3 playerSpawn, vehicleSpawn;
+            var gis = Quahog.SouthCoast.Gis.GisCity.TryBuildFromResources("gis/newbedford");
+            if (gis != null)
+            {
+                playerSpawn = gis.PlayerSpawn;
+                vehicleSpawn = gis.VehicleSpawn;
+            }
+            else
+            {
+                var town = TownGreybox.Build();
+                playerSpawn = town.PlayerSpawn;
+                vehicleSpawn = town.VehicleSpawn;
+            }
+
+            var player = PlayerCharacter.Spawn(playerSpawn);
+            var followCam = ThirdPersonCamera.Attach(player.transform);
+            var car = CarController.Spawn(vehicleSpawn);
+            root.AddComponent<PlayerVehicleInteractor>().Init(player, followCam, car);
+
+            // Street life: wandering pedestrians + a few decorative AI cars (kinematic,
+            // so they never disturb the player's physics car).
+            StreetLife.Spawn();
+
             Debug.Log("[GameBootstrap] QUAHOG online — managers spawned, HUD up, $500 in the wallet.");
         }
     }
