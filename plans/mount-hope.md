@@ -638,4 +638,6 @@ blood states, price, vendor, unlock.
 
 - **Drivable bridges + Sconticut/boats:** ① **drivable elevated bridges** (Bridges.tsx stitches OSM bridge ways into spans, ramps grade→7 m crest→grade with a trimesh collider + piers). ② Fixed the **floating hospital** placeholder. ③ Extended the slice SE down **Sconticut Neck → West Island/Long Island** (36k buildings / 398 tiles, slice still 1.79 MB). ④ **Off the Hook Bar and Grill** purchasable at 56 Goulart Memorial Dr, doubling as the boat dock. ⑤ **Pilotable yacht** (Boat.tsx — board with E, drive on water, exempt from the water barrier) + moored-yacht **Marina** at Long Island (wealthy area = yachts; NB harbor keeps trawlers). Noted **Dartmouth Mall** as a hub for the Fall River push. Shipped (`d065234`→`dd0bcbd`).
 
+- **Phase 2 + 3 visual:** **IBL** (procedural PMREM env → real reflections/ambient on glass, wet roads, cars, water), asphalt **normal maps**, **Gerstner ocean** (multi-wave + reflective); **time-of-day colour grade** (warm dusk / cool night), a **sun-glow** sprite (bloom haze), **coastal-neon dusk signs** on every business front. Shipped (`108402d`, `af4771c`).
+
 <!-- Append new dated entries above this line as work lands. -->

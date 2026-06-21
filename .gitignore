@@ -2,3 +2,7 @@
 /quahog_slice_scripts.zip
 /quahog_gis_city.zip
 *.zip
+
+# large raw OSM source (re-pullable; baked outputs are committed)
+quahog-project-files/mapdata/nb_slice.osm.json
+*.osm.json.bak
