@@ -97,8 +97,8 @@ time; keep the build green; be honest about status.
 ## 3. Aesthetics & art direction
 - [ ] Define a **style guide** (palette, era 1986, materials, signage fonts, mood boards) in `quahog-project-files/`
 - [ ] Time-of-day color grading (dawn/day/golden hour/dusk/night palettes)
-- [ ] Filmic tone mapping (ACES) + exposure
-- [ ] Post FX: bloom, SSAO/GTAO, vignette, subtle film grain, chromatic aberration, sharpen
+- [x] Filmic tone mapping (ACES) + exposure
+- [~] Post FX: bloom, SSAO/GTAO, vignette, subtle film grain, chromatic aberration, sharpen — bloom + vignette + SMAA live (Effects.tsx); SSAO/grain/CA/sharpen TODO
 - [ ] Depth of field (cinematic + photo mode), motion blur (camera + object)
 - [ ] **“Coastal Neon” dusk**: glowing tavern/shop signs, wet-surface reflections, neon spill light
 - [ ] Screen-space reflections / reflective wet roads
@@ -109,15 +109,15 @@ time; keep the build green; be honest about status.
 - [ ] Consistent PBR material library (asphalt, cobble, brick, granite, wood, metal, glass, water)
 
 ## 4. Lighting
-- [ ] Day/night dynamic sun/moon + ambient changes
+- [x] Day/night dynamic sun/moon + ambient changes — DayNight.tsx, 600s cycle, sun pos/intensity/color + hemisphere + ambient + fog/bg drive
 - [ ] Street lights (auto on at dusk), warm sodium glow
 - [ ] Lit building windows at night (emissive, randomized)
 - [ ] Neon/shop signs as light sources
 - [ ] Vehicle headlights/taillights/brake lights as real lights
 - [ ] Emergency lights (police) flashing
-- [ ] **Palmer’s Island Lighthouse** rotating beam
+- [x] **Palmer’s Island Lighthouse** rotating beam — Lighthouse() in DayNight.tsx, beam brighter at night
 - [ ] Light probes / baked GI for interiors; shadow cascades tuning
-- [ ] Moon + star sky at night; sunrise/sunset gradients
+- [x] Moon + star sky at night; sunrise/sunset gradients — drei <Stars> + Sky sunPosition + fog/bg gradient by hour
 
 ## 5. Weather & VFX
 - [ ] **WeatherController** state machine: Clear / Dense Fog / Coastal Rain / Nor’easter
@@ -222,23 +222,23 @@ time; keep the build green; be honest about status.
 - [ ] Performance: instanced/pooled crowds + LOD
 
 ## 15. Gameplay systems (canon)
-- [ ] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints
-- [ ] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states
+- [x] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints — mission.ts + MissionRunner.tsx (objective beam/ring); waypoint trail TODO
+- [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — game.ts police+faction 0–5 + decay; busted/wasted TODO
 - [ ] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip
-- [ ] **PlayerWallet** + currency UI
+- [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [ ] **AcquisitionEngine** (5 businesses) + property ownership/markers
 - [ ] **RevenueManager** (daily yields, margin-leak events)
 - [ ] **ChopShopArmsManager** (weapons gated to Quequechan Mill #4 tier)
 - [ ] **WeatherController** ↔ vehicle friction
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
 - [ ] **RadioManager** integration with story milestones
-- [ ] Save/load (IndexedDB/localStorage) + autosave + multiple slots
-- [ ] Time of day clock + day counter; time-skip
+- [~] Save/load (IndexedDB/localStorage) + autosave + multiple slots — localStorage save + 20s autosave (GameSystems.tsx); multi-slot TODO
+- [~] Time of day clock + day counter; time-skip — HUD clock from shared.hour; day counter + time-skip TODO
 - [ ] Respect/reputation + faction standing
 
 ## 16. Missions & content
-- [ ] **“Off the Boat”** opener (arrival → Bethel → fish-pier ambush → fog getaway → safehouse)
-- [ ] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth
+- [~] **“Off the Boat”** opener (arrival → Bethel → fish-pier ambush → fog getaway → safehouse) — 3-step playable version (Bethel → steal car → safehouse); ambush/fog beats TODO
+- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar live; remaining primitives TODO
 - [ ] Cutscene system (scripted camera + dialogue + subtitles)
 - [ ] Act I (New Bedford): harbor takeover arc
 - [ ] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing)
@@ -377,15 +377,15 @@ South Coast (real roads, real architecture). All achievable in the web engine vi
 modular kits + procedural placement driven by OSM data.
 
 ## 32. Roads & paving (surface system, all cities)
-- [ ] **Road-class material set** — distinct look per OSM class
+- [~] **Road-class material set** — distinct look per OSM class — Roads.tsx 3 classes (highway/surface/cobble); per-class wear sub-bullets TODO
   - motorway/trunk: smooth dark highway asphalt + rumble strips, wide lanes
   - primary/secondary: city asphalt, patched, oil-stained centerlines
   - residential: narrower, cracked, frost-heaved, tar crack-seal “snakes”
   - service/alley: broken asphalt, gravel patches, weeds in seams
-- [ ] **Historic cobblestone & brick** — Johnny Cake Hill / NB historic district
+- [~] **Historic cobblestone & brick** — Johnny Cake Hill / NB historic district — makeCobbleTexture() running-bond granite setts on footway/path/steps
   - rounded granite setts, uneven height, moss in joints, wet-shine, cart-rut wear
   - brick-paved crosswalks & plazas; herringbone vs running-bond patterns
-- [ ] **Lane & road markings** — double-yellow, dashed white, turn arrows, stop bars, “ONLY”, crosswalk zebra/ladder, faded/repainted, plow-scraped
+- [~] **Lane & road markings** — double-yellow, dashed white, turn arrows, stop bars, “ONLY”, crosswalk zebra/ladder, faded/repainted, plow-scraped — center/edge lines baked into highway asphalt texture; arrows/stop-bars/crosswalks TODO
 - [ ] **Curbs & edges** — granite curbstones (NB/FR signature), curb cuts, ADA ramps, rolled curbs in suburbs, painted (yellow no-park / blue handicap)
 - [ ] **Drainage & utilities in-road** — catch-basin grates, manhole covers (city seal), water/gas valve caps, sewer steam, gutter flow in rain
 - [ ] **Wear & grime decals** — potholes (patched/open), tar seams, oil drips at stop lines, skid marks, manhole settling rings, salt-stain whitening
@@ -615,5 +615,6 @@ blood states, price, vendor, unlock.
 - Added **Part II — World Detail Atlas**: intricate per-city mapping & aesthetic tasks — road/paving system, intersections & signage, modular building/façade kit, NE residential typologies (triple-deckers, mansions, Cape cottages), storefronts & signage, granite mills/churches/civic, ocean & working-waterfront detail, the **inter-city highway network (I-195, MA-24, US-6, MA-18)**, hero **bridges (Braga/“Verde”, Fairhaven, Sagamore/Bourne)**, per-city aesthetic packs (NB/FR/Brockton/Cape), and major systems upgrades (typology classifier, procedural city-gen, navmesh, streaming/LOD, living economy).
 - Added **Part III — System Detail Atlases**: exhaustive **vehicle atlas** (the 1980s market by category, fictionalized for ship), plus **character**, **elevated pedestrian-AI**, **interiors**, **weapons**, **clothing/wardrobe**, and **radio & VO** atlases — the radio/VO atlas specifies an **ElevenLabs** pipeline (server-proxied key, subtitles, per-host/character voices, more stations, ads/news/music).
 - Added the **Working loop** process (read → scope → build → verify → review → check off → log → commit → repeat) as the canonical execution protocol.
+- **Execution batch (§32/§3/§4/§15/§16):** rewrote `Roads.tsx` into a 3-class surface system (highway w/ lane markings · asphalt streets · historic granite cobblestone via new `makeCobbleTexture`); added `Effects.tsx` (bloom + vignette + SMAA) + **ACES tone mapping**; added `DayNight.tsx` (600 s day/night cycle driving sun/hemisphere/ambient/fog/bg + drei `<Stars>` + **Palmer’s Island lighthouse beam**); added `game.ts` **PlayerWallet + dual-axis Heat/Wanted** (police + faction 0–5, decay) with `GameSystems.tsx` autosave/load; added `mission.ts` + `MissionRunner.tsx` **mission engine** with a 3-step playable **“Off the Boat”** opener (Bethel → steal car → safehouse) + objective beam/ring marker; HUD gained cash/clock/stars/health panel + objective banner. Shipped (`39ece9e`, `80a05b8`).
 
 <!-- Append new dated entries above this line as work lands. -->
