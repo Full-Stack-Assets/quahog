@@ -110,8 +110,8 @@ time; keep the build green; be honest about status.
 
 ## 4. Lighting
 - [x] Day/night dynamic sun/moon + ambient changes — DayNight.tsx, 600s cycle, sun pos/intensity/color + hemisphere + ambient + fog/bg drive
-- [ ] Street lights (auto on at dusk), warm sodium glow
-- [ ] Lit building windows at night (emissive, randomized)
+- [~] Street lights (auto on at dusk), warm sodium glow — lamp-head emissive ramps with night (Props.tsx); real per-lamp point lights TODO
+- [~] Lit building windows at night (emissive, randomized) — warm emissive glow ramps at night across all building materials (Buildings.tsx); per-window mask/randomization TODO
 - [ ] Neon/shop signs as light sources
 - [ ] Vehicle headlights/taillights/brake lights as real lights
 - [ ] Emergency lights (police) flashing
@@ -120,8 +120,8 @@ time; keep the build green; be honest about status.
 - [x] Moon + star sky at night; sunrise/sunset gradients — drei <Stars> + Sky sunPosition + fog/bg gradient by hour
 
 ## 5. Weather & VFX
-- [ ] **WeatherController** state machine: Clear / Dense Fog / Coastal Rain / Nor’easter
-- [ ] Rain particles + screen rain droplets + ripples/puddles
+- [~] **WeatherController** state machine: Clear / Dense Fog / Coastal Rain / Nor’easter — Clear/Rain toggle (store.ts weather, key R); Fog/Nor’easter states TODO
+- [~] Rain particles + screen rain droplets + ripples/puddles — falling rain streaks (Rain.tsx) + grey grade/closer fog (DayNight); droplets/puddles TODO
 - [ ] Wet-surface shader blend (roads darken/shine when wet)
 - [ ] Fog volumes (dense coastal fog), variable density
 - [ ] Wind (sway on trees/flags/signs; blowing litter/leaves)
@@ -134,19 +134,19 @@ time; keep the build green; be honest about status.
 - [x] Static harbor water surface
 - [ ] Animated waves (Gerstner) + foam at shoreline/piers
 - [ ] Reflections + fresnel + depth-based color
-- [ ] Boats bobbing; ferries; fishing vessels with wakes
-- [ ] Buoys, nets, lobster traps, dock pilings
+- [~] Boats bobbing; ferries; fishing vessels with wakes — bobbing fishing boats (HarborProps.tsx); ferries/wakes TODO
+- [~] Buoys, nets, lobster traps, dock pilings — dock pilings + bobbing buoys along the OSM shoreline (HarborProps.tsx); nets/traps TODO
 - [ ] Splashes when entering water; swim/drown logic
 - [ ] Tide / “Gloria” flood level change
 
 ## 7. World props & set dressing
-- [ ] Street furniture: lamp posts, benches, trash cans, hydrants, mailboxes, bus stops, phone booths (1986)
+- [~] Street furniture: lamp posts, benches, trash cans, hydrants, mailboxes, bus stops, phone booths (1986) — instanced lamp posts/benches/hydrants/mailboxes along road edges (Props.tsx); trash cans/bus stops/phone booths TODO
 - [ ] Traffic lights + stop signs (functional + decorative)
 - [ ] Power lines / utility poles, dumpsters, crates, pallets
 - [ ] Storefront awnings, signage, A-frame signs, window displays
 - [ ] Parked cars lining streets
 - [ ] Harbor props: nets, traps, barrels, forklifts, shipping containers
-- [ ] Vegetation: street trees, weeds in cracks, harbor grass
+- [~] Vegetation: street trees, weeds in cracks, harbor grass — instanced street trees (Props.tsx); weeds/harbor grass TODO
 - [ ] Litter/newspapers/leaves (wind-driven), puddles
 - [ ] Birds: gulls (flocking near harbor), pigeons; stray dogs/cats
 
@@ -202,9 +202,9 @@ time; keep the build green; be honest about status.
 - [ ] Car radio audible inside; horn
 
 ## 13. Driving feel & vehicle FX
-- [ ] Tire skid marks (decals) + skid/screech audio
+- [~] Tire skid marks (decals) + skid/screech audio — skid-mark decal ring buffer on hard cornering (SkidMarks.tsx); screech audio TODO
 - [ ] Tire smoke, dust on dirt, water spray in rain/puddles
-- [ ] Camera FOV/shake scaling with speed; speed lines
+- [~] Camera FOV/shake scaling with speed; speed lines — FOV widens + subtle shake with car speed (FollowCamera); speed lines TODO
 - [ ] Engine audio with RPM/gears; backfire
 - [ ] Collision crunch sfx + sparks; ragdoll peds on impact
 - [ ] Handbrake, drift, boost feel tuning
@@ -280,8 +280,8 @@ time; keep the build green; be honest about status.
 
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
-- [ ] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective)
-- [ ] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon
+- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading arrow); blips/property icons/rotation TODO
+- [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health bar + police/faction badges + wallet + clock (HUD.tsx); armor/stamina/ammo/weapon TODO
 - [ ] Objective markers + waypoints + on-screen distance
 - [ ] Interaction prompts + context hints
 - [ ] Big map screen (set waypoint, fast-travel, legend)
@@ -291,17 +291,17 @@ time; keep the build green; be honest about status.
 ## 22. UI aesthetics & menus
 - [ ] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit
 - [ ] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene
-- [ ] Pause menu, mission screen, stats/progress screen
+- [~] Pause menu, mission screen, stats/progress screen — pause/settings overlay (PauseMenu.tsx: resume, view, weather, reset); mission/stats screens TODO
 - [ ] Loading screens with art + tips/lore
 - [ ] Map/HUD icon set; mission-text styling; credits
 - [ ] Photo-mode UI (filters, frames, stickers)
 
 ## 23. Game feel / juice
-- [ ] Camera shake (impacts, explosions, engine, gunfire)
+- [~] Camera shake (impacts, explosions, engine, gunfire) — melee + speed shake (shared.shake/addShake, FollowCamera); explosions/gunfire TODO
 - [ ] Hit-stop / time-dilation on big hits; slow-mo finishers (optional)
 - [ ] Impact particles (sparks, dust, debris, blood toggle), screen-space hit FX
 - [ ] Controller rumble / gamepad haptics
-- [ ] Damage/low-health screen FX (desaturate, pulse, blur)
+- [x] Damage/low-health screen FX (desaturate, pulse, blur) — red inset damage vignette scaling with low health (HUD.tsx)
 - [ ] Pickup/cash pop FX + sound; wanted-up sting
 - [ ] Foot dust, splash, footstep decals
 
@@ -615,6 +615,7 @@ blood states, price, vendor, unlock.
 - Added **Part II — World Detail Atlas**: intricate per-city mapping & aesthetic tasks — road/paving system, intersections & signage, modular building/façade kit, NE residential typologies (triple-deckers, mansions, Cape cottages), storefronts & signage, granite mills/churches/civic, ocean & working-waterfront detail, the **inter-city highway network (I-195, MA-24, US-6, MA-18)**, hero **bridges (Braga/“Verde”, Fairhaven, Sagamore/Bourne)**, per-city aesthetic packs (NB/FR/Brockton/Cape), and major systems upgrades (typology classifier, procedural city-gen, navmesh, streaming/LOD, living economy).
 - Added **Part III — System Detail Atlases**: exhaustive **vehicle atlas** (the 1980s market by category, fictionalized for ship), plus **character**, **elevated pedestrian-AI**, **interiors**, **weapons**, **clothing/wardrobe**, and **radio & VO** atlases — the radio/VO atlas specifies an **ElevenLabs** pipeline (server-proxied key, subtitles, per-host/character voices, more stations, ads/news/music).
 - Added the **Working loop** process (read → scope → build → verify → review → check off → log → commit → repeat) as the canonical execution protocol.
+- **Execution batch (+10 items, recommended order):** ① `Props.tsx` — instanced street furniture (lamp posts, hydrants, mailboxes, benches) along road edges (§7); ② lamp-head + building **lit-window glow** ramping at night (§4); ③ **camera FOV scales with car speed** (§13); ④ `SkidMarks.tsx` tire-mark decals on hard cornering (§13); ⑤ **camera shake** (melee + speed via `addShake`) + **low-health damage vignette** (§23); ⑥ `Minimap.tsx` player-centered **radar** (roads/water/objective/heading) (§21); ⑦ `Rain.tsx` + storm grade/closer fog, **R** toggles rain (§5); ⑧ `HarborProps.tsx` — dock pilings + bobbing buoys/fishing boats on the OSM shoreline (§6); ⑨ instanced **street trees** (§7); ⑩ `PauseMenu.tsx` — **Esc/P pause** (resume/view/weather/reset) freezing player/car/time (§26). Added `shared.carSpeed/skid/shake` + `store.ts` weather/paused/slice. Shipped (`d238002`).
 - **Execution batch (§32/§3/§4/§15/§16):** rewrote `Roads.tsx` into a 3-class surface system (highway w/ lane markings · asphalt streets · historic granite cobblestone via new `makeCobbleTexture`); added `Effects.tsx` (bloom + vignette + SMAA) + **ACES tone mapping**; added `DayNight.tsx` (600 s day/night cycle driving sun/hemisphere/ambient/fog/bg + drei `<Stars>` + **Palmer’s Island lighthouse beam**); added `game.ts` **PlayerWallet + dual-axis Heat/Wanted** (police + faction 0–5, decay) with `GameSystems.tsx` autosave/load; added `mission.ts` + `MissionRunner.tsx` **mission engine** with a 3-step playable **“Off the Boat”** opener (Bethel → steal car → safehouse) + objective beam/ring marker; HUD gained cash/clock/stars/health panel + objective banner. Shipped (`39ece9e`, `80a05b8`).
 
 <!-- Append new dated entries above this line as work lands. -->
