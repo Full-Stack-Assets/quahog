@@ -167,7 +167,7 @@ time; keep the build green; be honest about status.
 - [ ] Multiple ped models + wardrobe/skin variety; gender mix
 - [ ] Named character models (Vinny, allies, antagonists) + portraits
 - [ ] Facial animation / lipsync for cutscenes & dialogue
-- [ ] Player outfit changes; wet/dirty clothing states
+- [~] Player outfit changes; wet/dirty clothing states — character menu outfit-colour picker tints the player model live (CharacterMenu.tsx); wet/dirty states TODO
 
 ## 10. Player & controls
 - [x] Rapier character controller: walk/sprint, collision
@@ -192,7 +192,7 @@ time; keep the build green; be honest about status.
 
 ## 12. Vehicles
 - [x] Real car models (Bronco/Mustang/G/Z/RAV4) — player + traffic
-- [x] Arcade driving (accel/brake/steer/reverse), enter/exit, collision
+- [x] Arcade driving (accel/brake/steer/reverse), enter/exit, collision — faster top speed + speed-scaled steering; ram traffic to halt it; **carjack** traffic on foot (E) with model/colour swap
 - [ ] Wheel rotation + steering animation; suspension travel
 - [ ] Working lights (head/tail/brake/reverse/turn signals)
 - [ ] Damage/deformation, smoke when wrecked, explosions
@@ -284,7 +284,7 @@ time; keep the build green; be honest about status.
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health bar + police/faction badges + wallet + clock (HUD.tsx); armor/stamina/ammo/weapon TODO
 - [ ] Objective markers + waypoints + on-screen distance
 - [ ] Interaction prompts + context hints
-- [ ] Big map screen (set waypoint, fast-travel, legend)
+- [~] Big map screen (set waypoint, fast-travel, legend) — full-screen pannable/zoomable map with real street-name labels, water, player heading + objective (BigMap.tsx, M to open); waypoint/fast-travel TODO
 - [ ] Subtitles + dialogue UI + phone/contacts
 - [ ] Notifications (mission, cash, busted/wasted), damage vignette + directional hit indicators
 
@@ -315,7 +315,7 @@ time; keep the build green; be honest about status.
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
-- [ ] Full control remap; gamepad + KB/M
+- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons for phones/tablets (TouchControls.tsx, coarse-pointer only); remap + gamepad TODO
 - [ ] Colorblind modes; UI scale; high-contrast
 - [ ] Aim assist; difficulty options; hold-vs-toggle
 - [ ] Reduce-motion / camera-shake toggle; flashing-lights warning
@@ -396,7 +396,7 @@ modular kits + procedural placement driven by OSM data.
 ## 33. Intersections, signage & street systems
 - [ ] **Traffic control** — period (1980s) signal heads on mast arms + pedestal, walk/don’t-walk, blinking-yellow at night, stop/yield signs, all-way stops
 - [ ] **Rotaries/traffic circles** — President Ave rotary (FR) and others, yield geometry, central island landscaping
-- [ ] **Signage kit** — green street-name signs, one-way, no-parking, speed limit, school zone, route shields (**I-195, US-6, MA-18, MA-24, MA-79, MA-138**), overhead guide signs on highways
+- [~] **Signage kit** — green street-name signs, one-way, no-parking, speed limit, school zone, route shields (**I-195, US-6, MA-18, MA-24, MA-79, MA-138**), overhead guide signs on highways — 3D green street-name blades on poles at named-road endpoints (StreetSigns.tsx, real OSM names); regulatory/route shields TODO
 - [ ] **Street lighting** — cobra-head sodium (amber) on arterials; historic acorn/harbor lamps in the cobblestone district; auto-on at dusk; pools of warm light
 - [ ] **Roadside furniture** — utility poles with sagging wires + transformers + pole-mounted signs, fire hydrants, USPS blue mailboxes, newspaper boxes, bus shelters, phone booths, parking meters, benches, bike racks
 - [ ] **Wires & overhead** — power/phone line spans pole-to-pole, service drops to houses, traffic-signal span wires, slight catenary sag + wind sway
@@ -617,5 +617,7 @@ blood states, price, vendor, unlock.
 - Added the **Working loop** process (read → scope → build → verify → review → check off → log → commit → repeat) as the canonical execution protocol.
 - **Execution batch (+10 items, recommended order):** ① `Props.tsx` — instanced street furniture (lamp posts, hydrants, mailboxes, benches) along road edges (§7); ② lamp-head + building **lit-window glow** ramping at night (§4); ③ **camera FOV scales with car speed** (§13); ④ `SkidMarks.tsx` tire-mark decals on hard cornering (§13); ⑤ **camera shake** (melee + speed via `addShake`) + **low-health damage vignette** (§23); ⑥ `Minimap.tsx` player-centered **radar** (roads/water/objective/heading) (§21); ⑦ `Rain.tsx` + storm grade/closer fog, **R** toggles rain (§5); ⑧ `HarborProps.tsx` — dock pilings + bobbing buoys/fishing boats on the OSM shoreline (§6); ⑨ instanced **street trees** (§7); ⑩ `PauseMenu.tsx` — **Esc/P pause** (resume/view/weather/reset) freezing player/car/time (§26). Added `shared.carSpeed/skid/shake` + `store.ts` weather/paused/slice. Shipped (`d238002`).
 - **Execution batch (§32/§3/§4/§15/§16):** rewrote `Roads.tsx` into a 3-class surface system (highway w/ lane markings · asphalt streets · historic granite cobblestone via new `makeCobbleTexture`); added `Effects.tsx` (bloom + vignette + SMAA) + **ACES tone mapping**; added `DayNight.tsx` (600 s day/night cycle driving sun/hemisphere/ambient/fog/bg + drei `<Stars>` + **Palmer’s Island lighthouse beam**); added `game.ts` **PlayerWallet + dual-axis Heat/Wanted** (police + faction 0–5, decay) with `GameSystems.tsx` autosave/load; added `mission.ts` + `MissionRunner.tsx` **mission engine** with a 3-step playable **“Off the Boat”** opener (Bethel → steal car → safehouse) + objective beam/ring marker; HUD gained cash/clock/stars/health panel + objective banner. Shipped (`39ece9e`, `80a05b8`).
+
+- **Player-request batch (UX/driving/map/mobile):** ① collapsible **radio menu** + new **character menu** (outfit-colour tint applied live to the player model) with launcher buttons (§9/§22); ② **inverted A/D** on-foot strafing (§10); ③ **large map** screen — full-screen pannable/zoomable, real OSM **street-name labels**, water, player heading + objective (BigMap.tsx, M), plus **3D street-name signs** in-world (StreetSigns.tsx) (§21/§33); ④ **faster + smoother driving** (top speed 22→44, speed-scaled steering, removed the continuous camera speed-shake that caused the "shaky/bumpy" feel) and **vehicle combat/theft** — ram a traffic car to stop it, **carjack** it on foot (E) with model/colour swap + heat (§12/§13); ⑤ **touch controls** — on-screen thumb-stick + action buttons for phones (TouchControls.tsx, coarse-pointer only) (§25). Shipped (`1800e75`, `91a9e50`, `0aee2eb`).
 
 <!-- Append new dated entries above this line as work lands. -->
