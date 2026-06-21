@@ -12,6 +12,7 @@ import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Props } from "./world/Props";
 import { Businesses } from "./world/Businesses";
+import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
 import { TrafficLights } from "./world/TrafficLights";
 import { ParkedCars } from "./world/ParkedCars";
@@ -113,6 +114,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Safehouse />
       <Hospital />
       <Businesses />
+      <NeonSigns />
       <Collectibles />
       <Posters />
       <Police />

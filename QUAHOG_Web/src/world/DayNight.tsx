@@ -16,6 +16,18 @@ const nightBg = new THREE.Color("#0a1124");
 const dayFog = new THREE.Color("#c4d6e6");
 const nightFog = new THREE.Color("#0c1530");
 const warm = new THREE.Color("#ffb066"); // dusk/dawn tint
+
+// soft radial sprite the bloom turns into a sun + atmospheric haze
+function makeGlow(): THREE.Texture {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d")!;
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(255,244,214,1)");
+  g.addColorStop(0.25, "rgba(255,224,160,0.7)");
+  g.addColorStop(1, "rgba(255,210,140,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  const t = new THREE.Texture(c); t.needsUpdate = true; return t;
+}
 const storm = new THREE.Color("#5a6470"); // rain grade
 const fogGrey = new THREE.Color("#aeb6bd"); // dense coastal fog
 
@@ -29,6 +41,8 @@ export function DayNight() {
   const bg = useMemo(() => dayBg.clone(), []);
   const fogC = useMemo(() => dayFog.clone(), []);
   const cSun = useMemo(() => new THREE.Color(), []);
+  const glowTex = useMemo(() => makeGlow(), []);
+  const glow = useRef<THREE.Sprite>(null);
 
   // the directional light's target must live in the scene to steer shadows
   useEffect(() => {
@@ -64,6 +78,14 @@ export function DayNight() {
       sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65 - fogW * 0.5);
       cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
       sun.current.color.copy(cSun);
+      // sun-glow sprite rides the sun direction, far out from the player
+      if (glow.current) {
+        const len = Math.hypot(sx, sy, sz) || 1;
+        glow.current.position.set(px + (sx / len) * 760, Math.max(sy, 20) + 40, pz + (sz / len) * 760);
+        const m = glow.current.material as THREE.SpriteMaterial;
+        m.opacity = dayT * (1 - rain * 0.7 - fogW * 0.6) * 0.9;
+        m.color.copy(cSun);
+      }
     }
     if (hemi.current) hemi.current.intensity = (0.22 + dayT * 0.8) * (1 - rain * 0.25);
 
@@ -91,6 +113,9 @@ export function DayNight() {
       <fog attach="fog" args={["#c4d6e6", 350, 1500]} />
       <Sky sunPosition={sunPos} turbidity={5} rayleigh={2.2} mieCoefficient={0.005} />
       <Stars radius={400} depth={60} count={1500} factor={6} fade speed={0.3} />
+      <sprite ref={glow} scale={[180, 180, 1]}>
+        <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
+      </sprite>
       <ambientLight intensity={0.14} />
       <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
       <directionalLight

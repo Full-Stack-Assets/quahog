@@ -1,20 +1,40 @@
-import { EffectComposer, Bloom, Vignette, SMAA, ChromaticAberration, Noise } from "@react-three/postprocessing";
+import { useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import {
+  EffectComposer, Bloom, Vignette, SMAA, ChromaticAberration, Noise,
+  HueSaturation, BrightnessContrast,
+} from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
+import { shared } from "./../shared";
 
-// Cinematic post-processing stack (§3). ACES tone mapping is set on the renderer
-// (App.tsx); here we add bloom (neon/headlights/sun glints), a soft vignette,
-// subtle lens chromatic aberration + film grain, and SMAA anti-aliasing.
+// Cinematic post stack (§3 + Phase 3). ACES tone-map is on the renderer; here:
+// bloom, chromatic aberration, film grain, a time-of-day colour grade (warm at
+// dusk, cool + desaturated at night), vignette, SMAA.
 export function Effects() {
+  const hs = useRef<any>(null);     // eslint-disable-line @typescript-eslint/no-explicit-any
+  const bc = useRef<any>(null);     // eslint-disable-line @typescript-eslint/no-explicit-any
+
+  useFrame(() => {
+    const day = shared.dayT;          // 1 noon .. 0 night
+    const night = 1 - day;
+    const dusk = THREE.MathUtils.clamp(1 - Math.abs(day - 0.18) * 4, 0, 1);
+    if (hs.current) {
+      hs.current.saturation = -0.18 * night + 0.12 * dusk; // desat at night, pop at dusk
+      hs.current.hue = 0.05 * dusk;                          // warm push at dusk
+    }
+    if (bc.current) {
+      bc.current.brightness = -0.05 * night;
+      bc.current.contrast = 0.06 + 0.05 * night;
+    }
+  });
+
   return (
     <EffectComposer multisampling={0}>
-      <Bloom
-        intensity={0.55}
-        luminanceThreshold={0.78}
-        luminanceSmoothing={0.25}
-        mipmapBlur
-      />
+      <Bloom intensity={0.55} luminanceThreshold={0.78} luminanceSmoothing={0.25} mipmapBlur />
       <ChromaticAberration offset={new THREE.Vector2(0.0008, 0.0008)} radialModulation modulationOffset={0.4} />
+      <HueSaturation ref={hs} hue={0} saturation={0} />
+      <BrightnessContrast ref={bc} brightness={0} contrast={0.06} />
       <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.16} />
       <Vignette eskil={false} offset={0.28} darkness={0.68} />
       <SMAA />
