@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useGame } from "./store";
 import { useStats } from "./game";
+import { useMission } from "./mission";
 import { shared } from "./shared";
 
 const wrap: React.CSSProperties = {
@@ -20,6 +21,9 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const health = useStats((s) => s.health);
   const police = useStats((s) => s.police);
   const faction = useStats((s) => s.faction);
+  const objective = useMission((s) => s.objective);
+  const missionTitle = useMission((s) => s.title);
+  const missionDone = useMission((s) => s.done);
   const [hhmm, setHhmm] = useState("09:00");
   useEffect(() => {
     const id = setInterval(() => {
@@ -75,6 +79,22 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
           <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
+        </div>
+      </div>
+
+      {/* mission objective */}
+      <div
+        style={{
+          position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(12,15,26,.72)", border: "1px solid #3a2a5e", borderRadius: 8,
+          padding: "8px 16px", textAlign: "center", maxWidth: 520,
+        }}
+      >
+        <div style={{ fontSize: 10, letterSpacing: 1, color: "#ffcf4a", opacity: 0.9 }}>
+          {missionDone ? "MISSION" : missionTitle.toUpperCase()}
+        </div>
+        <div style={{ fontSize: 13, marginTop: 2, color: missionDone ? "#7CFC00" : "#e7e0ff" }}>
+          {missionDone ? "✓ " : "► "}{objective}
         </div>
       </div>
 

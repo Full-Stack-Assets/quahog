@@ -11,6 +11,7 @@ import { SeamensBethel } from "./world/SeamensBethel";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
 import { GameSystems } from "./world/GameSystems";
+import { MissionRunner } from "./world/MissionRunner";
 import { Effects } from "./world/Effects";
 import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
@@ -42,6 +43,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
     <>
       <DayNight />
       <GameSystems />
+      <MissionRunner />
 
       <Physics gravity={[0, -9.81, 0]}>
         <SatelliteGround origin={slice?.origin} />
