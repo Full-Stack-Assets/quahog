@@ -32,10 +32,12 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+// NOTE: no React.StrictMode here. StrictMode double-mounts every component
+// (mount → unmount → mount), which tears down the imperative 3D-tiles plugins
+// before they finish init — GoogleCloudAuthPlugin.dispose() then hits a null
+// this.tiles. Rendering once avoids that.
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <EarthApp />
-    </ErrorBoundary>
-  </React.StrictMode>,
+  <ErrorBoundary>
+    <EarthApp />
+  </ErrorBoundary>,
 );
