@@ -71,7 +71,7 @@ func _on_weather_changed(state: String) -> void:
 	match state:
 		"CLEAR":
 			_current_friction_multiplier = clear_friction
-		"FOG":
+		"DENSE_FOG", "FOG":
 			_current_friction_multiplier = fog_friction
 		"RAIN", "COASTAL_RAIN":
 			_current_friction_multiplier = rain_friction
