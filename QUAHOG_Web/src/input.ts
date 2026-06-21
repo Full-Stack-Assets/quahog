@@ -2,7 +2,8 @@
 // (touch) layer so on-screen controls feed the same movement/tap pipeline.
 const pressed = new Set<string>();
 const taps = new Set<string>();
-const virtual = { x: 0, y: 0 }; // touch joystick, each axis -1..1
+const virtual = { x: 0, y: 0 };     // touch joystick, each axis -1..1
+const gamepadMove = { x: 0, y: 0 }; // gamepad left stick
 
 let installed = false;
 export function installInput() {
@@ -21,6 +22,36 @@ export function installInput() {
     if (el && el.closest("button")) return; // don't fire when clicking a button
     taps.add("Mouse0");
   });
+
+  // gamepad: left stick → movement, face/shoulder buttons → taps (§25/§47)
+  const prevBtn: boolean[] = [];
+  const BTN_TAP: Record<number, string> = {
+    0: "KeyE",   // A — enter/exit
+    1: "Space",  // B — handbrake / fire
+    2: "KeyF",   // X — punch
+    3: "KeyV",   // Y — view
+    4: "KeyG",   // LB — gun
+    5: "Mouse0", // RB — fire
+    9: "KeyP",   // start — pause
+  };
+  const dz = (n: number) => (Math.abs(n) < 0.18 ? 0 : n);
+  const poll = () => {
+    const pads = navigator.getGamepads?.() ?? [];
+    const gp = pads.find((p) => p);
+    if (gp) {
+      gamepadMove.x = dz(gp.axes[0] ?? 0);
+      gamepadMove.y = -dz(gp.axes[1] ?? 0); // stick up = forward
+      gp.buttons.forEach((b, i) => {
+        const code = BTN_TAP[i];
+        if (code && b.pressed && !prevBtn[i]) taps.add(code);
+        prevBtn[i] = b.pressed;
+      });
+    } else {
+      gamepadMove.x = 0; gamepadMove.y = 0;
+    }
+    requestAnimationFrame(poll);
+  };
+  requestAnimationFrame(poll);
 }
 
 export const isDown = (code: string) => pressed.has(code);
@@ -44,5 +75,5 @@ export function moveAxis(): { x: number; y: number } {
   if (isDown("KeyS") || isDown("ArrowDown")) y -= 1;
   if (isDown("KeyD") || isDown("ArrowRight")) x += 1;
   if (isDown("KeyA") || isDown("ArrowLeft")) x -= 1;
-  return { x: clamp1(x + virtual.x), y: clamp1(y + virtual.y) };
+  return { x: clamp1(x + virtual.x + gamepadMove.x), y: clamp1(y + virtual.y + gamepadMove.y) };
 }

@@ -17,6 +17,7 @@ export function Player() {
   const mesh = useRef<THREE.Group>(null);
   const playerTint = useGame((s) => s.playerTint);
   const armed = useGame((s) => s.armed);
+  const stride = useRef(0);
 
   useEffect(() => {
     shared.player = body.current;
@@ -56,6 +57,16 @@ export function Player() {
       rb.setLinvel({ x: 0, y: v.y, z: 0 }, true);
     }
     if (mesh.current) mesh.current.rotation.y = shared.heading;
+
+    // footsteps + foot dust while moving (§20/§23)
+    if (moving) {
+      stride.current -= dt;
+      if (stride.current <= 0) {
+        sfx.step();
+        stride.current = wantSprint ? 0.28 : 0.42;
+        if (wantSprint) { const p = rb.translation(); addImpact(new THREE.Vector3(p.x, 0.15, p.z), "#8c7d63"); }
+      }
+    } else stride.current = 0;
 
     // proximity to a car + enter / carjack
     {

@@ -103,6 +103,7 @@ class Sfx {
   cash() { this.ensure(); this.tone(880, 0.08, 0.25, "square"); setTimeout(() => this.tone(1320, 0.12, 0.25, "square"), 70); }
   ui() { this.ensure(); this.tone(600, 0.05, 0.15, "square"); }
   bust() { this.ensure(); this.tone(300, 0.5, 0.3, "sawtooth", 120); }
+  step() { this.ensure(); this.burst(240, 0.5, 0.07, 0.05, "lowpass"); }
 
   // ---- continuous beds (call each frame) ----
   engine(speed01: number, on: boolean) {

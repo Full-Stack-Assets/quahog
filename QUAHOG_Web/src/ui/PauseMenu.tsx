@@ -28,6 +28,7 @@ export function PauseMenu() {
   const view = useGame((s) => s.view);
   const weather = useGame((s) => s.weather);
   const fxOn = useGame((s) => s.fxOn);
+  const reduceShake = useGame((s) => s.reduceShake);
   const [vol, setVol] = useState(0.5);
   if (!paused) return null;
   const wlabel = weather === "rain" ? "Rain" : weather === "fog" ? "Fog" : "Clear";
@@ -63,6 +64,9 @@ export function PauseMenu() {
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleFx()}>
           Effects: {fxOn ? "On" : "Off"}
+        </button>
+        <button style={btn} onClick={() => useGame.getState().toggleReduceShake()}>
+          Camera shake: {reduceShake ? "Off" : "On"}
         </button>
         <div style={{ margin: "8px 0", textAlign: "left", color: "#cfc8e6", fontFamily: "'Courier New', monospace", fontSize: 12 }}>
           Sound volume

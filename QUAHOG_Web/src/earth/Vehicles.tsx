@@ -17,6 +17,8 @@ interface Spec {
   glass: string; hood?: number; // optional long-hood block length
 }
 
+const _wp = new THREE.Vector3();
+
 const SPECS: Record<VehicleType, Spec> = {
   bronco:   { L: 4.3, W: 2.0, H: 1.3, y: 1.15, cabL: 2.4, cabH: 0.9, cabZ: -0.2, ride: 0.55, wheelR: 0.52, glass: "#20303a" },
   mustang:  { L: 4.7, W: 1.95, H: 0.8, y: 0.78, cabL: 1.7, cabH: 0.62, cabZ: -0.7, ride: 0.34, wheelR: 0.46, glass: "#141a1f", hood: 1.6 },
@@ -33,16 +35,28 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
   const cabW = s.cabW ?? s.W - 0.25;
   const head = useRef<THREE.MeshStandardMaterial>(null);
   const tail = useRef<THREE.MeshStandardMaterial>(null);
+  const root = useRef<THREE.Group>(null);
+  const wheels = useRef<(THREE.Group | null)[]>([]);
+  const prev = useRef<THREE.Vector3 | null>(null);
 
-  // headlights/taillights come up at dusk; taillights flare under braking
+  // headlights/taillights come up at dusk; taillights flare under braking; and
+  // wheels roll by self-measured world speed (works for any vehicle).
   useFrame(() => {
     const night = 1 - shared.dayT;
     if (head.current) head.current.emissiveIntensity = 0.3 + night * 1.6;
     if (tail.current) tail.current.emissiveIntensity = 0.3 + night * 0.9 + (brake?.() ? 2.2 : 0);
+    if (root.current) {
+      root.current.getWorldPosition(_wp);
+      if (prev.current) {
+        const roll = prev.current.distanceTo(_wp) / s.wheelR;
+        if (roll > 1e-4) for (const w of wheels.current) if (w) w.rotation.x += roll;
+        prev.current.copy(_wp);
+      } else prev.current = _wp.clone();
+    }
   });
 
   return (
-    <group position={[0, s.ride - s.wheelR, 0]}>
+    <group ref={root} position={[0, s.ride - s.wheelR, 0]}>
       {/* body */}
       <mesh position={[0, s.y, 0]} castShadow>
         <boxGeometry args={[s.W, s.H, s.L]} />
@@ -80,10 +94,12 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
         [-wheelX, 0, wheelZ], [wheelX, 0, wheelZ],
         [-wheelX, 0, -wheelZ], [wheelX, 0, -wheelZ],
       ].map((p, i) => (
-        <mesh key={i} position={[p[0], s.wheelR, p[2]]} rotation-z={Math.PI / 2}>
-          <cylinderGeometry args={[s.wheelR, s.wheelR, 0.32, 14]} />
-          <meshStandardMaterial color="#0d0d0f" roughness={0.9} />
-        </mesh>
+        <group key={i} ref={(el) => (wheels.current[i] = el)} position={[p[0], s.wheelR, p[2]]}>
+          <mesh rotation-z={Math.PI / 2}>
+            <cylinderGeometry args={[s.wheelR, s.wheelR, 0.32, 14]} />
+            <meshStandardMaterial color="#0d0d0f" roughness={0.9} />
+          </mesh>
+        </group>
       ))}
     </group>
   );

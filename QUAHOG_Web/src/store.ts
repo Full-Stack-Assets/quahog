@@ -25,6 +25,7 @@ interface GameState {
   down: Down;
   started: boolean;
   fxOn: boolean;
+  reduceShake: boolean;
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -43,6 +44,7 @@ interface GameState {
   setDown: (d: Down) => void;
   setStarted: (v: boolean) => void;
   toggleFx: () => void;
+  toggleReduceShake: () => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -63,6 +65,7 @@ export const useGame = create<GameState>((set) => ({
   down: null,
   started: false,
   fxOn: true,
+  reduceShake: false,
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -81,6 +84,7 @@ export const useGame = create<GameState>((set) => ({
   setDown: (down) => set({ down }),
   setStarted: (started) => set({ started }),
   toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),
+  toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
 }));
 
 // Lightweight toast notifications (§21).
