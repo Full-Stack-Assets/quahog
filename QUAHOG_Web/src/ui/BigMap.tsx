@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGame } from "../store";
 import { useMission } from "../mission";
 import { shared } from "../shared";
+import { sfx } from "../audio/sfx";
 import { CIVIC, FAST_TRAVEL } from "../places";
 
 // Large map screen (§21): full-window pannable/zoomable map of the slice drawn
@@ -17,6 +18,7 @@ export function BigMap() {
   const cam = useRef({ x: 0, z: 0, scale: 2.2 }); // world center + px/m
   const drag = useRef<{ x: number; y: number } | null>(null);
   const inited = useRef(false);
+  const [, force] = useState(0); // re-render the clear button when the waypoint changes
 
   useEffect(() => {
     if (!open || !slice) return;
@@ -120,6 +122,21 @@ export function BigMap() {
         ctx.fill();
       }
 
+      // player-placed waypoint (§21) — pink pin
+      const w = shared.waypoint;
+      if (w) {
+        const wx = sx(w.x), wy = sy(w.z);
+        ctx.fillStyle = "#ff4fa3";
+        ctx.beginPath();
+        ctx.moveTo(wx, wy);
+        ctx.lineTo(wx - 6, wy - 13);
+        ctx.lineTo(wx + 6, wy - 13);
+        ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.arc(wx, wy - 13, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#0a0e18";
+        ctx.beginPath(); ctx.arc(wx, wy - 13, 2, 0, Math.PI * 2); ctx.fill();
+      }
+
       // objective
       const ms = useMission.getState();
       const step = ms.done ? null : ms.steps[ms.step];
@@ -186,6 +203,16 @@ export function BigMap() {
           drag.current = { x: e.clientX, y: e.clientY };
         }}
         onPointerUp={() => { drag.current = null; }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          const cvs = canvasRef.current; if (!cvs) return;
+          const { x: cx, z: cz, scale } = cam.current;
+          shared.waypoint = {
+            x: cx + (e.clientX - cvs.width / 2) / scale,
+            z: cz + (e.clientY - cvs.height / 2) / scale,
+          };
+          sfx.ui(); force((n) => n + 1);
+        }}
       />
       {/* title */}
       <div style={{ position: "absolute", top: 16, left: 16, color: "#ff7ad9", fontWeight: 700, letterSpacing: 2, background: "rgba(10,14,24,.7)", padding: "6px 12px", borderRadius: 8 }}>
@@ -199,6 +226,10 @@ export function BigMap() {
           const t = (useGame.getState().mode === "car" ? shared.car : shared.player)?.translation();
           if (t) { cam.current.x = t.x; cam.current.z = t.z; }
         }} title="Recenter on player">◎</button>
+        {shared.waypoint && (
+          <button style={{ ...mapBtn, color: "#ff8fd0", borderColor: "#7a3a6a" }} title="Clear waypoint"
+            onClick={() => { shared.waypoint = null; sfx.ui(); force((n) => n + 1); }}>📍</button>
+        )}
         <button style={{ ...mapBtn, color: "#ffb0b0", borderColor: "#8e3a3a" }} onClick={() => useGame.getState().toggleMap()}>✕</button>
       </div>
       {/* fast travel */}
@@ -212,7 +243,7 @@ export function BigMap() {
         ))}
       </div>
       <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", color: "#9a93b8", fontSize: 11, background: "rgba(10,14,24,.7)", padding: "5px 12px", borderRadius: 8 }}>
-        drag to pan · wheel / ＋－ zoom · click a destination to fast-travel · M / ✕ close
+        drag to pan · wheel / ＋－ zoom · right-click to set a waypoint · click a destination to fast-travel · M / ✕ close
       </div>
     </div>
   );

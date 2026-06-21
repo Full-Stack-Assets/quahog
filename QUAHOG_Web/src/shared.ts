@@ -76,6 +76,8 @@ export const shared = {
   alarm: { pos: new THREE.Vector3(), t: 0 },
   /** Pending impact bursts (blood/dust) drained by the particle renderer. */
   impacts: [] as Impact[],
+  /** Player-placed map waypoint (world x/z) — guides the HUD arrow when set. */
+  waypoint: null as { x: number; z: number } | null,
 };
 
 /** Add a one-shot camera shake (juice §23). */

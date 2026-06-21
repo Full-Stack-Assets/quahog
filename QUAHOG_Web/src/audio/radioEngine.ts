@@ -203,6 +203,9 @@ class RadioEngine {
   vol = 0.5;
   muted = false;
   private duck = 1; // adaptive ducking (lowered under police heat)
+  /** Subtitle sink (§33): set by the HUD to caption the currently spoken line. */
+  onSubtitle: ((s: { name: string; text: string } | null) => void) | null = null;
+  private emitSub(s: { name: string; text: string } | null) { try { this.onSubtitle?.(s); } catch { /* no sink */ } }
 
   setDuck(d: number) {
     this.duck = d;
@@ -278,6 +281,7 @@ class RadioEngine {
     if (this.music) { this.music.pause(); this.music.onended = null; }
     this.musicTracks = [];
     stopVO();
+    this.emitSub(null);
     this.station = null;
   }
 
@@ -285,7 +289,7 @@ class RadioEngine {
     this.muted = m;
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : this.vol, this.ctx.currentTime, 0.05);
     if (this.music) this.music.muted = m;
-    if (m) stopVO();
+    if (m) { stopVO(); this.emitSub(null); }
   }
 
   setVolume(v: number) {
@@ -344,9 +348,11 @@ class RadioEngine {
     // duck the music bed (synth + real track) while the host talks
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol * 0.28, this.ctx.currentTime, 0.08);
     if (this.music) this.music.volume = this.muted ? 0 : this.vol * 0.2;
+    this.emitSub({ name: s.host.name, text: line }); // caption (§33)
     const done = () => {
       if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol, this.ctx.currentTime, 0.2);
       if (this.music) this.music.volume = this.muted ? 0 : this.vol;
+      this.emitSub(null);
       if (this.station === s) this.scheduleTalk(s.talkGapMs);
     };
     // real ElevenLabs voice when configured, else Web Speech (vo.ts handles both)

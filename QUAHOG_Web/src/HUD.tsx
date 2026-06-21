@@ -4,6 +4,7 @@ import { useStats } from "./game";
 import { useMission } from "./mission";
 import { useEconomy, BUSINESSES } from "./economy";
 import { shared } from "./shared";
+import { radio } from "./audio/radioEngine";
 
 const wrap: React.CSSProperties = {
   position: "fixed",
@@ -37,23 +38,34 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const [stamina, setStamina] = useState(100);
   const [dist, setDist] = useState<number | null>(null);
   const [bearing, setBearing] = useState(0); // radians, target dir relative to camera
+  const [wp, setWp] = useState<{ dist: number; bearing: number } | null>(null);
+  const [sub, setSub] = useState<{ name: string; text: string } | null>(null);
   useEffect(() => {
     const id = setInterval(() => {
       const h = Math.floor(shared.hour);
       const m = Math.floor((shared.hour - h) * 60);
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
       setStamina(shared.stamina);
+      const body = useGame.getState().mode === "car" ? shared.car : shared.player;
+      const t = body?.translation();
       // distance + bearing to the active objective
       const ms = useMission.getState();
       const step = ms.done ? null : ms.steps[ms.step];
-      const body = useGame.getState().mode === "car" ? shared.car : shared.player;
-      const t = body?.translation();
       if (step?.target && t) {
         setDist(Math.round(Math.hypot(t.x - step.target[0], t.z - step.target[2])));
         setBearing(Math.atan2(step.target[0] - t.x, step.target[2] - t.z) - shared.camYaw);
       } else setDist(null);
+      // player-placed waypoint (§21)
+      const w = shared.waypoint;
+      if (w && t) {
+        setWp({
+          dist: Math.round(Math.hypot(t.x - w.x, t.z - w.z)),
+          bearing: Math.atan2(w.x - t.x, w.z - t.z) - shared.camYaw,
+        });
+      } else setWp(null);
     }, 200);
-    return () => clearInterval(id);
+    radio.onSubtitle = setSub;
+    return () => { clearInterval(id); if (radio.onSubtitle === setSub) radio.onSubtitle = null; };
   }, []);
 
   const hurt = Math.max(0, (40 - health) / 40); // 0 healthy → 1 near-death
@@ -163,6 +175,29 @@ export function HUD({ sliceName }: { sliceName: string }) {
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>
       </div>
+
+      {/* player waypoint guide (§21) — top-center */}
+      {wp && (
+        <div style={{
+          position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(12,15,26,.72)", border: "1px solid #3a2a5e", borderRadius: 8,
+          padding: "5px 12px", textAlign: "center", color: "#ff7ad9",
+        }}>
+          <span style={{ display: "inline-block", transform: `rotate(${wp.bearing}rad)`, fontSize: 16, lineHeight: 1 }}>▲</span>
+          <span style={{ fontSize: 12, marginLeft: 6 }}>📍 {wp.dist} m</span>
+        </div>
+      )}
+
+      {/* radio subtitle caption (§33) */}
+      {sub && (
+        <div style={{
+          position: "absolute", bottom: 84, left: "50%", transform: "translateX(-50%)",
+          maxWidth: 620, textAlign: "center", textShadow: "0 1px 6px rgba(0,0,0,.9)",
+        }}>
+          <span style={{ color: "#ffcf4a", fontWeight: 700, fontSize: 12 }}>{sub.name}: </span>
+          <span style={{ color: "#f0ecff", fontSize: 14 }}>{sub.text}</span>
+        </div>
+      )}
 
       {/* mission objective */}
       <div

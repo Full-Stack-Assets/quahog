@@ -653,4 +653,6 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 2, ~5 items):** adaptive **chase-music duck** under police heat (§19); ground **grime/oil decals** (§32); **street race** side activity with checkpoints + best time (§18); title-screen **New Game / Continue** (§22). Shipped (`ea67a17`→`b79e06c`).
 
+- **"Next 50" grind (part 3, ~3 items):** harbor **gulls** + **photo mode** (O, cinematic orbit, HUD hidden); **radio subtitles** — the dial now captions the currently spoken host/ad line in the active host's name (radioEngine `onSubtitle` → HUD §33); **custom map waypoint** — right-click the big map to drop a pink pin, the HUD shows a pink bearing arrow + distance to it, clear via the 📍 button (BigMap/HUD/shared §21). Shipped (`1c53cd0`→HEAD).
+
 <!-- Append new dated entries above this line as work lands. -->
