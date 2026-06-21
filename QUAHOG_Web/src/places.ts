@@ -16,6 +16,17 @@ export const CIVIC: Civic[] = [
   { name: "New Bedford Police Station", kind: "police", pos: POLICE_STATION },
 ];
 
+// Fast-travel destinations (world x,z) — town centers + hero spots.
+export const FAST_TRAVEL: { name: string; pos: [number, number] }[] = [
+  { name: "New Bedford Waterfront", pos: [-256, 106] },
+  { name: "Downtown New Bedford", pos: [-560, 90] },
+  { name: "Off the Hook (Long Island)", pos: [6092, 4470] },
+  { name: "Dartmouth Mall", pos: [-3921, 360] },
+  { name: "Westport", pos: [-13280, 1781] },
+  { name: "Fall River — Battleship Cove", pos: [-20000, -7400] },
+  { name: "Lizzie Borden House", pos: [-19599, -7060] },
+];
+
 // Hero landmarks (world coords from real lat/lon via the slice origin).
 export const BATTLESHIP_COVE: [number, number, number] = [-20273, 0, -7625]; // USS Massachusetts, Fall River
 export const LIZZIE_BORDEN: [number, number, number] = [-19599, 0, -7080];   // 92 Second St, Fall River

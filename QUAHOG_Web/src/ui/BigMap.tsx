@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useGame } from "../store";
 import { useMission } from "../mission";
 import { shared } from "../shared";
-import { CIVIC } from "../places";
+import { CIVIC, FAST_TRAVEL } from "../places";
 
 // Large map screen (§21): full-window pannable/zoomable map of the slice drawn
 // from real OSM geometry, with real street-name labels, water, the player, and
@@ -154,6 +154,18 @@ export function BigMap() {
 
   const zoom = (f: number) => { cam.current.scale = Math.max(0.5, Math.min(12, cam.current.scale * f)); };
 
+  const travel = (x: number, z: number) => {
+    const pl = shared.player;
+    if (pl) {
+      pl.setEnabled(true);
+      pl.setTranslation({ x, y: 3, z }, true);
+      pl.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    }
+    useGame.getState().setMode("foot");
+    cam.current.x = x; cam.current.z = z;
+    useGame.getState().toggleMap();
+  };
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 18, fontFamily: "'Courier New', monospace" }}>
       <canvas
@@ -183,8 +195,18 @@ export function BigMap() {
         }} title="Recenter on player">◎</button>
         <button style={{ ...mapBtn, color: "#ffb0b0", borderColor: "#8e3a3a" }} onClick={() => useGame.getState().toggleMap()}>✕</button>
       </div>
+      {/* fast travel */}
+      <div style={{ position: "absolute", left: 16, top: 60, display: "flex", flexDirection: "column", gap: 6, maxWidth: 220 }}>
+        <div style={{ color: "#ffcf4a", fontSize: 11, letterSpacing: 1, marginBottom: 2 }}>FAST TRAVEL</div>
+        {FAST_TRAVEL.map((d) => (
+          <button key={d.name} onClick={() => travel(d.pos[0], d.pos[1])}
+            style={{ pointerEvents: "auto", cursor: "pointer", textAlign: "left", background: "rgba(12,15,26,.85)", border: "1px solid #3a2a5e", color: "#e7e0ff", borderRadius: 6, padding: "6px 9px", font: "11px 'Courier New', monospace" }}>
+            ➤ {d.name}
+          </button>
+        ))}
+      </div>
       <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", color: "#9a93b8", fontSize: 11, background: "rgba(10,14,24,.7)", padding: "5px 12px", borderRadius: 8 }}>
-        drag to pan · wheel / ＋－ to zoom · M or ✕ to close
+        drag to pan · wheel / ＋－ zoom · click a destination to fast-travel · M / ✕ close
       </div>
     </div>
   );
