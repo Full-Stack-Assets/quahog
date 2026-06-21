@@ -205,8 +205,8 @@ time; keep the build green; be honest about status.
 - [~] Tire skid marks (decals) + skid/screech audio — skid-mark decal ring buffer on hard cornering (SkidMarks.tsx); screech audio TODO
 - [ ] Tire smoke, dust on dirt, water spray in rain/puddles
 - [~] Camera FOV/shake scaling with speed; speed lines — FOV widens + subtle shake with car speed (FollowCamera); speed lines TODO
-- [ ] Engine audio with RPM/gears; backfire
-- [ ] Collision crunch sfx + sparks; ragdoll peds on impact
+- [~] Engine audio with RPM/gears; backfire — procedural engine note tracks speed (audio/sfx.ts); gears/backfire TODO
+- [~] Collision crunch sfx + sparks; ragdoll peds on impact — ram crunch sfx (sfx.ts); sparks/ragdoll TODO
 - [ ] Handbrake, drift, boost feel tuning
 
 ## 14. NPCs & living city
@@ -270,17 +270,17 @@ time; keep the build green; be honest about status.
 - [ ] Mission/score adaptive music layers (calm/tension/chase)
 
 ## 20. Audio aesthetics & ambience
-- [ ] Per-district ambient beds (harbor gulls/waves, mill hum, downtown traffic, Cape calm)
+- [~] Per-district ambient beds (harbor gulls/waves, mill hum, downtown traffic, Cape calm) — harbor wind + gull-cry bed (sfx.ts); per-district variation TODO
 - [ ] Time-of-day ambience (dawn birds, night crickets/quiet)
 - [ ] Weather audio (rain, wind, thunder, foghorn)
-- [ ] SFX: footsteps by surface, doors, punches/impacts, gunfire, glass, car crunch, horns
+- [x] SFX: footsteps by surface, doors, punches/impacts, gunfire, glass, car crunch, horns — punches, gunfire, car crunch, horn via procedural Web Audio (sfx.ts); footsteps/doors/glass TODO
 - [ ] 3D spatialization + reverb zones (alleys, interiors, under bridges) + occlusion
 - [ ] Doppler on passing vehicles; distance attenuation
-- [ ] UI sfx (menu, mission start/complete, cash, wanted-up)
+- [~] UI sfx (menu, mission start/complete, cash, wanted-up) — mission-advance/cash + bust stings (sfx.ts); menu/wanted-up TODO
 
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
-- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading arrow); blips/property icons/rotation TODO
+- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health bar + police/faction badges + wallet + clock (HUD.tsx); armor/stamina/ammo/weapon TODO
 - [ ] Objective markers + waypoints + on-screen distance
 - [ ] Interaction prompts + context hints
@@ -315,7 +315,7 @@ time; keep the build green; be honest about status.
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
-- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons for phones/tablets (TouchControls.tsx, coarse-pointer only); remap + gamepad TODO
+- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons (incl. gun + fire) for phones, **drag-to-move + resize with persisted layout** (TouchControls.tsx); KB/M remap + gamepad TODO
 - [ ] Colorblind modes; UI scale; high-contrast
 - [ ] Aim assist; difficulty options; hold-vs-toggle
 - [ ] Reduce-motion / camera-shake toggle; flashing-lights warning
@@ -623,5 +623,7 @@ blood states, price, vendor, unlock.
 - **"Heat has teeth" batch:** added **gunplay** — G draws a pistol, click/Space fires a hitscan along the aim with tracer + muzzle flash (Tracers.tsx), dropping peds and damaging cops (§11); **police pursuit** — cop cars spawn and escalate with the police-heat axis, home in with a flashing lightbar, drain health on contact and arrest the player on foot, and are shootable for a payout (Police.tsx, §14); the **busted/wasted** loop — black-out → cash penalty → heat cleared → respawn at the Bethel (Consequence.tsx, §15); a **safehouse** zone that bleeds off heat and autosaves (Safehouse.tsx, §15); and dynamic **vehicle head/tail/brake lights** (dusk + braking, §12). Shipped (`d8884af`).
 
 - **"World reacts" batch:** pedestrians now **flee/panic** from gunfire, melee, and oncoming fast cars (shared.alarm threat model, StreetLife §14); **impact particles** — pooled blood/dust bursts at every melee + gun hit (Impacts.tsx §23); an **aiming reticle** appears when the pistol is drawn (§11/§21); and **parked cars** line the curbs near the core (ParkedCars.tsx §7/§12). Shipped (`34967af`).
+
+- **Audio + police-fairness batch:** procedural **SFX** (gunshot, punch, car crunch, horn-H, cash/UI/bust stings), a **speed-tracked engine note**, a **police siren**, and a **harbor wind + gull ambience** bed (audio/sfx.ts §19/§20/§13). Reworked **police** to be fair (chase at 3★+, slower/fewer units, spawn a few streets away, **losable**, no accidental kills, **5 s arrest grace**) and fixed the **busted/wasted respawn** → BUSTED to the **police station**, WASTED to the **hospital** (places.ts §14/§15). Added **cop blips + police-station markers** to the minimap and big map, and made the **touch controls drag-to-move + resizable** with persisted layout plus gun/fire buttons (§21/§25). Hook false-positive removed (option A). Shipped (`ef1a38e`, `d8fe418`).
 
 <!-- Append new dated entries above this line as work lands. -->
