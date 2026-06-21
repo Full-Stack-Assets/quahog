@@ -1,6 +1,6 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
@@ -9,10 +9,13 @@ import type { Building } from "../slice";
 const WINDOW_GLOW = new THREE.Color("#ffcf8a");
 
 // Auto-extruded OSM footprints. Buildings within COLLIDER_RADIUS of the playable
-// core get individual hull colliders; the rest are merged into one mesh (no
-// collider) so 1000+ footprints stay performant. Colors vary for a real-city mix.
+// core get individual hull colliders; the rest are merged per spatial CELL so
+// the renderer can frustum-cull off-screen chunks and distance-cull far ones —
+// essential now the slice carries 10k+ footprints (NB + Fairhaven).
 
-const COLLIDER_RADIUS = 230; // metres from `center`
+const COLLIDER_RADIUS = 230; // metres from `center` — gets real colliders
+const CELL = 160;            // far-building chunk size (metres)
+const DRAW_DIST = 1050;      // hide far chunks beyond this from the camera
 const HERO = new Set([
   "Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home",
   "Double Bank Building", "Rodman Candleworks",
@@ -41,6 +44,8 @@ function colorFor(b: Building, i: number): string {
   return PALETTE[i % PALETTE.length];
 }
 
+interface Chunk { geom: THREE.BufferGeometry; cx: number; cz: number }
+
 export function Buildings({
   buildings,
   center = [0, 0],
@@ -48,10 +53,9 @@ export function Buildings({
   buildings: Building[];
   center?: [number, number];
 }) {
-  // near buildings -> individual colliders; far -> one merged mesh
-  const { near, merged } = useMemo(() => {
+  const { near, chunks } = useMemo(() => {
     const near: { geom: THREE.BufferGeometry; color: string }[] = [];
-    const far: THREE.BufferGeometry[] = [];
+    const cells = new Map<string, THREE.BufferGeometry[]>();
     buildings.forEach((b, i) => {
       const [cx, cy] = centroid(b);
       const d = Math.hypot(cx - center[0], cy - center[1]);
@@ -64,23 +68,37 @@ export function Buildings({
         const colors = new Float32Array(n * 3);
         for (let k = 0; k < n; k++) colors.set([col.r, col.g, col.b], k * 3);
         geom.setAttribute("color", new THREE.BufferAttribute(colors, 3));
-        far.push(geom);
+        const key = `${Math.floor(cx / CELL)},${Math.floor(cy / CELL)}`;
+        (cells.get(key) ?? cells.set(key, []).get(key)!).push(geom);
       }
     });
-    const merged = far.length ? mergeGeometries(far, false) : null;
-    return { near, merged };
+    const chunks: Chunk[] = [];
+    for (const [key, list] of cells) {
+      const merged = mergeGeometries(list, false);
+      if (!merged) continue;
+      const [gx, gy] = key.split(",").map(Number);
+      // chunk centre in world coords (x=east, z=-north)
+      chunks.push({ geom: merged, cx: (gx + 0.5) * CELL, cz: -(gy + 0.5) * CELL });
+    }
+    return { near, chunks };
   }, [buildings, center]);
 
-  // Lit-window glow at night (§4): ramp a warm emissive on every building
-  // material as the day factor drops. Bloom (Effects) makes it read as occupancy.
+  // Per-frame: lit-window night glow + distance-cull far chunks (frustum culling
+  // of each chunk is automatic since they're separate objects).
   const root = useRef<THREE.Group>(null);
+  const chunkRefs = useRef<(THREE.Mesh | null)[]>([]);
+  const camera = useThree((s) => s.camera);
   useFrame(() => {
-    const g = root.current;
-    if (!g) return;
     const night = 1 - shared.dayT;
-    g.traverse((o) => {
+    const g = root.current;
+    if (g) g.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
       if (m && m.isMeshStandardMaterial) m.emissiveIntensity = night * 0.4;
+    });
+    const cp = camera.position;
+    chunks.forEach((c, i) => {
+      const mesh = chunkRefs.current[i];
+      if (mesh) mesh.visible = Math.hypot(cp.x - c.cx, cp.z - c.cz) < DRAW_DIST;
     });
   });
 
@@ -93,11 +111,12 @@ export function Buildings({
           </mesh>
         </RigidBody>
       ))}
-      {merged && (
-        <mesh geometry={merged} castShadow receiveShadow>
+      {/* far buildings: per-cell merged meshes, no shadow casting (cheap) */}
+      {chunks.map((c, i) => (
+        <mesh key={i} ref={(el) => (chunkRefs.current[i] = el)} geometry={c.geom} receiveShadow>
           <meshStandardMaterial vertexColors emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.85} flatShading />
         </mesh>
-      )}
+      ))}
     </group>
   );
 }
