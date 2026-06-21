@@ -659,6 +659,8 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 5, +1):** **traffic obeys red lights** — TrafficLights now publishes its signal stop-lines to `shared.stopZones` with a live red flag (red + amber = stop); ambient traffic halts when a red stop-line is just ahead (≤8 m) and aligned with its travel direction, so cross-street cars ignore it and cars queue behind each other (StreetLife `redAhead`, §14). Shipped (`ac13bf1`→`5038695`).
 
-- **"Next 50" grind (part 6, +2):** **waypoint on the radar** — the player-placed waypoint now shows as a pink dot on the minimap, clamped to the radar ring when off-range (Minimap §21); **waypoint auto-clear** — driving/walking within 9 m of it clears the pin with a "Waypoint reached" toast (GameSystems §21). Shipped (`5038695`→HEAD).
+- **"Next 50" grind (part 6, +2):** **waypoint on the radar** — the player-placed waypoint now shows as a pink dot on the minimap, clamped to the radar ring when off-range (Minimap §21); **waypoint auto-clear** — driving/walking within 9 m of it clears the pin with a "Waypoint reached" toast (GameSystems §21). Shipped (`5038695`→`5115727`).
+
+- **"Next 50" grind (part 7, +1):** **baseball bat melee** — key **4** equips a bat (key **1** back to bare fists); the bat reaches farther (2.8 m), hits harder, and knocks pedestrians flying with a heavier camera punch; it renders in the player's hand and reads on the HUD as 🏏 BAT (store `melee`, GameSystems, Player, HUD §10/§11). Shipped (`5115727`→HEAD).
 
 <!-- Append new dated entries above this line as work lands. -->

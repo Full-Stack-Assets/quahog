@@ -17,6 +17,7 @@ export function Player() {
   const mesh = useRef<THREE.Group>(null);
   const playerTint = useGame((s) => s.playerTint);
   const armed = useGame((s) => s.armed);
+  const melee = useGame((s) => s.melee);
   const stride = useRef(0);
 
   useEffect(() => {
@@ -123,24 +124,27 @@ export function Player() {
       }
     }
 
-    // melee: punch the nearest pedestrian in front (F)
+    // melee: swing at the nearest pedestrian in front (F). A bat (key 4) hits
+    // harder, reaches farther, and knocks them flying.
     if (consumeTap("KeyF")) {
+      const bat = game.melee === "bat";
       const p = rb.translation();
       const fx = Math.sin(shared.heading), fz = Math.cos(shared.heading);
       let best: (typeof shared.peds)[number] | null = null;
-      let bestD = 2.0;
+      let bestD = bat ? 2.8 : 2.0;
       for (const ped of shared.peds) {
         const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
         const dd = Math.hypot(dx, dz) || 1;
         if (dd < bestD && (dx * fx + dz * fz) / dd > 0.25) { best = ped; bestD = dd; }
       }
       if (best) {
-        best.hit += 1;
+        best.hit += bat ? 2 : 1;
         const ax = best.pos.x - p.x, az = best.pos.z - p.z;
         const m = Math.hypot(ax, az) || 1;
-        best.push.x += ax / m; best.push.z += az / m;
-        useStats.getState().heat(0.4, 0.9); // assault draws police + faction heat
-        addShake(0.5); // impact juice
+        const kb = bat ? 2.4 : 1;
+        best.push.x += (ax / m) * kb; best.push.z += (az / m) * kb;
+        useStats.getState().heat(bat ? 0.5 : 0.4, bat ? 1.1 : 0.9); // assault heat
+        addShake(bat ? 0.75 : 0.5); // impact juice
         addImpact(new THREE.Vector3(best.pos.x, 1.1, best.pos.z), "#9a2a2a");
         raiseAlarm(p.x, p.z, 5);
       }
@@ -239,6 +243,19 @@ export function Player() {
               <mesh castShadow>
                 <boxGeometry args={[0.08, 0.12, 0.28]} />
                 <meshStandardMaterial color="#1a1a1d" roughness={0.5} metalness={0.6} />
+              </mesh>
+            </group>
+          )}
+          {/* baseball bat in hand when chosen (and not holding a gun) */}
+          {!armed && melee === "bat" && (
+            <group position={[0.3, 1.0, 0.18]} rotation={[0.5, 0, -0.3]}>
+              <mesh castShadow position={[0, 0.35, 0]}>
+                <cylinderGeometry args={[0.05, 0.035, 0.7, 8]} />
+                <meshStandardMaterial color="#b08543" roughness={0.7} />
+              </mesh>
+              <mesh position={[0, -0.02, 0]}>
+                <cylinderGeometry args={[0.028, 0.028, 0.12, 8]} />
+                <meshStandardMaterial color="#3a2a1a" roughness={0.8} />
               </mesh>
             </group>
           )}

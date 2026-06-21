@@ -28,6 +28,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const missionDone = useMission((s) => s.done);
   const armed = useGame((s) => s.armed);
   const weapon = useGame((s) => s.weapon);
+  const melee = useGame((s) => s.melee);
   const down = useGame((s) => s.down);
   const nearLabel = useGame((s) => s.nearLabel);
   const photo = useGame((s) => s.photo);
@@ -137,7 +138,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ marginTop: 4, height: 6, background: "#3a2a3a", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ width: `${health}%`, height: "100%", background: health > 30 ? "#4ad66d" : "#e23b3b" }} />
         </div>
-        {armed && <div style={{ fontSize: 11, marginTop: 4, color: "#ffcf4a" }}>🔫 {weapon.toUpperCase()}</div>}
+        {armed ? <div style={{ fontSize: 11, marginTop: 4, color: "#ffcf4a" }}>🔫 {weapon.toUpperCase()}</div>
+          : melee === "bat" && <div style={{ fontSize: 11, marginTop: 4, color: "#ffcf4a" }}>🏏 BAT</div>}
         {stamina < 99.5 && (
           <div style={{ marginTop: 4, height: 4, background: "#2a2a3a", borderRadius: 2, overflow: "hidden" }}>
             <div style={{ width: `${stamina}%`, height: "100%", background: "#5ad0ff" }} />
@@ -164,13 +166,13 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ fontSize: 12, marginTop: 8, lineHeight: 1.5 }}>
           <b>WASD</b> move &nbsp;·&nbsp; {mode === "car" ? <><b>Space</b> handbrake</> : <><b>Shift</b> sprint</>} &nbsp;·&nbsp; <b>E</b> {mode === "car" ? "exit car" : "enter car"}
           <br />
-          <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
+          <b>F</b> melee &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
           <br />
           <b>R</b> weather &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
           <br />
           <b>C</b> character &nbsp;·&nbsp; <b>M</b> map
           <br />
-          <b>G</b> draw &nbsp;·&nbsp; <b>1/2/3</b> fists/pistol/shotgun &nbsp;·&nbsp; <b>click</b> fire &nbsp;·&nbsp; <b>H</b> horn
+          <b>G</b> draw &nbsp;·&nbsp; <b>1/2/3/4</b> fists/pistol/shotgun/bat &nbsp;·&nbsp; <b>click</b> fire &nbsp;·&nbsp; <b>H</b> horn
           <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>

@@ -37,9 +37,10 @@ export function GameSystems() {
     if (consumeTap("KeyM")) { useGame.getState().toggleMap(); sfx.ui(); }
     if (consumeTap("KeyO")) { useGame.getState().togglePhoto(); sfx.ui(); }
     if (consumeTap("KeyG")) useGame.getState().toggleArmed();
-    if (consumeTap("Digit1") && useGame.getState().armed) useGame.getState().toggleArmed(); // fists
+    if (consumeTap("Digit1")) { const g = useGame.getState(); g.setMelee("fists"); if (g.armed) g.toggleArmed(); } // bare fists
     if (consumeTap("Digit2")) useGame.getState().setWeapon("pistol");
     if (consumeTap("Digit3")) useGame.getState().setWeapon("shotgun");
+    if (consumeTap("Digit4")) { const g = useGame.getState(); g.setMelee("bat"); if (g.armed) g.toggleArmed(); } // baseball bat
 
     if (useGame.getState().paused) return; // freeze sim while paused
     if (shared.alarm.t > 0) shared.alarm.t = Math.max(0, shared.alarm.t - dt);
