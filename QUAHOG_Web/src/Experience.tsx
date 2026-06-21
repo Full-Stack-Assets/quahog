@@ -30,6 +30,7 @@ import { Hazards } from "./world/Hazards";
 import { setWaterZones } from "./world/waterZones";
 import { Safehouse } from "./world/Safehouse";
 import { Hospital } from "./world/Hospital";
+import { Heroes } from "./world/Heroes";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
 import { EnvLight } from "./world/EnvLight";
@@ -113,6 +114,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />
+      <Heroes />
       <Businesses />
       <NeonSigns />
       <Collectibles />

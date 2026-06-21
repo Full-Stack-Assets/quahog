@@ -21,6 +21,7 @@ export const BUSINESSES: Business[] = [
   { id: "whalingcab", name: "Whaling City Cab", blurb: "taxi depot", pos: [-220, 0, 176], cost: 900, perDay: 360 },
   // out on Sconticut Neck toward Long Island — 56 Goulart Memorial Drive
   { id: "longisland", name: "Off the Hook Bar and Grill", blurb: "Long Island waterfront bar & marina", pos: [6092, 0, 4485], cost: 1800, perDay: 600 },
+  { id: "dartmall", name: "Dartmouth Mall", blurb: "Route 6 retail hub", pos: [-3921, 0, 398], cost: 2500, perDay: 850 },
 ];
 
 // Where the pilotable boat is moored (just off the Long Island marina).

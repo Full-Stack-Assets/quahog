@@ -15,3 +15,8 @@ export const CIVIC: Civic[] = [
   { name: "St. Luke's Hospital", kind: "hospital", pos: HOSPITAL },
   { name: "New Bedford Police Station", kind: "police", pos: POLICE_STATION },
 ];
+
+// Hero landmarks (world coords from real lat/lon via the slice origin).
+export const BATTLESHIP_COVE: [number, number, number] = [-20273, 0, -7625]; // USS Massachusetts, Fall River
+export const LIZZIE_BORDEN: [number, number, number] = [-19599, 0, -7080];   // 92 Second St, Fall River
+export const DARTMOUTH_MALL: [number, number, number] = [-3921, 0, 378];     // Route 6, Dartmouth
