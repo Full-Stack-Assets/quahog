@@ -33,6 +33,34 @@ export function makeGroundTexture(): THREE.Texture {
   return t;
 }
 
+/** Cobblestone texture for the historic district (rounded granite setts). */
+export function makeCobbleTexture(): THREE.Texture {
+  const [c, ctx] = canvas(256);
+  ctx.fillStyle = "#4a4742";
+  ctx.fillRect(0, 0, 256, 256);
+  const S = 22; // sett spacing
+  for (let y = -S; y < 256 + S; y += S) {
+    const row = Math.round(y / S);
+    for (let x = -S; x < 256 + S; x += S) {
+      const ox = (row % 2) * (S / 2); // running-bond offset
+      const cx = x + ox + (Math.random() * 4 - 2);
+      const cy = y + (Math.random() * 4 - 2);
+      const r = S * 0.46 + Math.random() * 2;
+      const tone = 70 + Math.random() * 55;
+      const g = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 1, cx, cy, r);
+      g.addColorStop(0, `rgb(${tone + 22},${tone + 18},${tone + 12})`);
+      g.addColorStop(1, `rgb(${tone - 20},${tone - 22},${tone - 26})`);
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = "rgba(20,18,16,0.6)"; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = 8;
+  return t;
+}
+
 /** Asphalt texture for road ribbons (u across width, v along length). */
 export function makeAsphaltTexture(withLanes: boolean): THREE.Texture {
   const [c, ctx] = canvas(128);

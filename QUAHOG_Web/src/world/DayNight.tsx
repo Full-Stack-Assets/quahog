@@ -1,0 +1,120 @@
+import { useMemo, useRef, useState } from "react";
+import * as THREE from "three";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Sky, Stars } from "@react-three/drei";
+import { shared } from "../shared";
+
+// Day/night cycle (§4): drives the sun, sky, ambient/hemisphere, fog, and
+// background through a full day on a loop. Exposes shared.dayT / shared.hour so
+// other systems (lighthouse, future street lights/lit windows) can react.
+
+const DAY_LENGTH = 600; // seconds for a full 24h cycle (10 min)
+
+const dayBg = new THREE.Color("#bcd4ea");
+const nightBg = new THREE.Color("#0a1124");
+const dayFog = new THREE.Color("#c4d6e6");
+const nightFog = new THREE.Color("#0c1530");
+const warm = new THREE.Color("#ffb066"); // dusk/dawn tint
+
+export function DayNight() {
+  const { scene } = useThree();
+  const sun = useRef<THREE.DirectionalLight>(null);
+  const hemi = useRef<THREE.HemisphereLight>(null);
+  const hour = useRef(9);
+  const skyThrottle = useRef(0);
+  const [sunPos, setSunPos] = useState<[number, number, number]>([120, 120, 60]);
+  const bg = useMemo(() => dayBg.clone(), []);
+  const fogC = useMemo(() => dayFog.clone(), []);
+  const cSun = useMemo(() => new THREE.Color(), []);
+
+  useFrame((_, dt) => {
+    hour.current = (hour.current + dt * (24 / DAY_LENGTH)) % 24;
+    const a = ((hour.current - 6) / 12) * Math.PI; // 6am rise → 6pm set
+    const elev = Math.sin(a);
+    const dayT = THREE.MathUtils.clamp(elev, 0, 1);
+    const dusk = THREE.MathUtils.clamp(1 - Math.abs(elev) * 4, 0, 1); // peaks near horizon
+    shared.dayT = dayT;
+    shared.hour = hour.current;
+
+    const sx = Math.cos(a) * 150, sy = elev * 170, sz = 60;
+
+    if (sun.current) {
+      sun.current.position.set(sx, Math.max(sy, 1.5), sz);
+      sun.current.intensity = 0.05 + dayT * 2.1;
+      cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
+      sun.current.color.copy(cSun);
+    }
+    if (hemi.current) hemi.current.intensity = 0.22 + dayT * 0.8;
+
+    // sky/fog/background lerp night→day with a warm dusk push
+    bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25);
+    fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18);
+    scene.background = bg;
+    if (scene.fog) (scene.fog as THREE.Fog).color.copy(fogC);
+
+    skyThrottle.current += dt;
+    if (skyThrottle.current > 0.25) {
+      skyThrottle.current = 0;
+      setSunPos([sx, Math.max(sy, 0.5), sz]);
+    }
+  });
+
+  return (
+    <>
+      <fog attach="fog" args={["#c4d6e6", 350, 1500]} />
+      <Sky sunPosition={sunPos} turbidity={5} rayleigh={2.2} mieCoefficient={0.005} />
+      <Stars radius={400} depth={60} count={1500} factor={6} fade speed={0.3} />
+      <ambientLight intensity={0.14} />
+      <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
+      <directionalLight
+        ref={sun}
+        position={[120, 160, 60]}
+        intensity={2.0}
+        color="#fff2dc"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-camera-near={1}
+        shadow-camera-far={600}
+        shadow-camera-left={-250}
+        shadow-camera-right={250}
+        shadow-camera-top={250}
+        shadow-camera-bottom={-250}
+      />
+      <Lighthouse position={[40, 0, 240]} />
+    </>
+  );
+}
+
+// Palmer's Island-style rotating beam — bright at night, off by day.
+function Lighthouse({ position }: { position: [number, number, number] }) {
+  const beam = useRef<THREE.Group>(null);
+  const spot = useRef<THREE.SpotLight>(null);
+  const cone = useRef<THREE.Mesh>(null);
+  useFrame((_, dt) => {
+    if (beam.current) beam.current.rotation.y += dt * 0.6;
+    const night = 1 - shared.dayT;
+    if (spot.current) spot.current.intensity = night * 6;
+    if (cone.current) (cone.current.material as THREE.MeshBasicMaterial).opacity = night * 0.18;
+  });
+  return (
+    <group position={position}>
+      {/* tower */}
+      <mesh position={[0, 8, 0]} castShadow>
+        <cylinderGeometry args={[1.6, 2.2, 16, 12]} />
+        <meshStandardMaterial color="#e8e4dc" roughness={0.8} />
+      </mesh>
+      <mesh position={[0, 16.5, 0]}>
+        <cylinderGeometry args={[1.3, 1.3, 2.2, 12]} />
+        <meshStandardMaterial color="#7a1f1f" emissive="#ffcf6a" emissiveIntensity={0.6} />
+      </mesh>
+      {/* rotating beam */}
+      <group ref={beam} position={[0, 16.5, 0]}>
+        <mesh ref={cone} position={[60, 0, 0]} rotation-z={Math.PI / 2}>
+          <coneGeometry args={[10, 120, 16, 1, true]} />
+          <meshBasicMaterial color="#fff2c0" transparent opacity={0.15} side={THREE.DoubleSide} depthWrite={false} />
+        </mesh>
+        <spotLight ref={spot} position={[0, 0, 0]} target-position={[120, 0, 0]} angle={0.18} penumbra={0.4} distance={220} intensity={4} color="#fff2c0" />
+      </group>
+    </group>
+  );
+}

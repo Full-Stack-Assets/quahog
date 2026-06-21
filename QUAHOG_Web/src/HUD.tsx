@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
 import { useGame } from "./store";
+import { useStats } from "./game";
+import { shared } from "./shared";
 
 const wrap: React.CSSProperties = {
   position: "fixed",
@@ -8,12 +11,48 @@ const wrap: React.CSSProperties = {
   color: "#e7e0ff",
 };
 
+const stars = (n: number) => "★".repeat(Math.round(n)) + "☆".repeat(Math.max(0, 5 - Math.round(n)));
+
 export function HUD({ sliceName }: { sliceName: string }) {
   const mode = useGame((s) => s.mode);
   const nearCar = useGame((s) => s.nearCar);
+  const cash = useStats((s) => s.cash);
+  const health = useStats((s) => s.health);
+  const police = useStats((s) => s.police);
+  const faction = useStats((s) => s.faction);
+  const [hhmm, setHhmm] = useState("09:00");
+  useEffect(() => {
+    const id = setInterval(() => {
+      const h = Math.floor(shared.hour);
+      const m = Math.floor((shared.hour - h) * 60);
+      setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+    }, 250);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div style={wrap}>
+      {/* status panel (top-right under the radio is fine; use top-center-right) */}
+      <div
+        style={{
+          position: "absolute", top: 14, right: 240,
+          background: "rgba(12,15,26,.7)", border: "1px solid #3a2a5e",
+          borderRadius: 8, padding: "8px 12px", textAlign: "right", minWidth: 150,
+        }}
+      >
+        <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${cash.toLocaleString()}</div>
+        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm}</div>
+        <div style={{ fontSize: 12, marginTop: 4 }}>
+          <span title="police" style={{ color: "#6cb6ff" }}>{stars(police)}</span>
+        </div>
+        <div style={{ fontSize: 12 }}>
+          <span title="faction heat" style={{ color: "#ff5c5c" }}>{stars(faction)}</span>
+        </div>
+        <div style={{ marginTop: 4, height: 6, background: "#3a2a3a", borderRadius: 3, overflow: "hidden" }}>
+          <div style={{ width: `${health}%`, height: "100%", background: health > 30 ? "#4ad66d" : "#e23b3b" }} />
+        </div>
+      </div>
+
       <div
         style={{
           position: "absolute",

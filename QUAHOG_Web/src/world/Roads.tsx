@@ -1,22 +1,27 @@
 import { useMemo } from "react";
 import * as THREE from "three";
-import { makeAsphaltTexture } from "./textures";
+import { makeAsphaltTexture, makeCobbleTexture } from "./textures";
 import type { Road } from "../slice";
 
+// Road classes → surface material. Highways get lane markings; vehicular streets
+// get plain asphalt; footways/pedestrian/steps get historic cobblestone.
 const HIGHWAY = new Set([
   "motorway", "trunk", "primary",
   "motorway_link", "trunk_link", "primary_link",
 ]);
-const TILE = 8; // metres of road per texture repeat (controls lane-dash spacing)
+const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
+const TILE = 8; // metres of road per texture repeat along length
 
-// Builds one merged ribbon geometry (with UVs) for a set of roads.
-function buildRibbon(roads: Road[], y: number): THREE.BufferGeometry | null {
+// Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
+// texture repeats (cobble repeats across the width; asphalt spans 0..1 for lanes).
+function buildRibbon(roads: Road[], y: number, uScale: number): THREE.BufferGeometry | null {
   const pos: number[] = [];
   const uv: number[] = [];
   const idx: number[] = [];
   let v = 0;
   for (const r of roads) {
     const half = r.width / 2;
+    const u = uScale === 0 ? 1 : r.width / uScale; // tiles across the width
     let len = 0;
     for (let i = 0; i < r.points.length - 1; i++) {
       const [ax, an] = r.points[i];
@@ -35,7 +40,7 @@ function buildRibbon(roads: Road[], y: number): THREE.BufferGeometry | null {
         x2 - nx, y, z2 - nz,
         x1 - nx, y, z1 - nz,
       );
-      uv.push(0, v0, 0, v1, 1, v1, 1, v0);
+      uv.push(0, v0, 0, v1, u, v1, u, v0);
       idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
       v += 4;
       len += segLen;
@@ -53,26 +58,38 @@ function buildRibbon(roads: Road[], y: number): THREE.BufferGeometry | null {
 export function Roads({ roads }: { roads: Road[] }) {
   const surfaceTex = useMemo(() => makeAsphaltTexture(false), []);
   const highwayTex = useMemo(() => makeAsphaltTexture(true), []);
+  const cobbleTex = useMemo(() => {
+    const t = makeCobbleTexture();
+    t.repeat.set(1, 0.5); // bigger cobbles along length
+    return t;
+  }, []);
 
-  const { surface, highway } = useMemo(() => {
+  const { surface, highway, cobble } = useMemo(() => {
     const hw = roads.filter((r) => HIGHWAY.has(r.highway));
-    const sf = roads.filter((r) => !HIGHWAY.has(r.highway));
+    const cb = roads.filter((r) => COBBLE.has(r.highway));
+    const sf = roads.filter((r) => !HIGHWAY.has(r.highway) && !COBBLE.has(r.highway));
     return {
-      surface: buildRibbon(sf, 0.06),
-      highway: buildRibbon(hw, 0.08), // sit slightly above surface streets
+      surface: buildRibbon(sf, 0.06, 0),
+      highway: buildRibbon(hw, 0.08, 0),
+      cobble: buildRibbon(cb, 0.05, 1.2), // setts tile across width every ~1.2m
     };
   }, [roads]);
 
   return (
     <group>
+      {cobble && (
+        <mesh geometry={cobble} receiveShadow>
+          <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} />
+        </mesh>
+      )}
       {surface && (
         <mesh geometry={surface} receiveShadow>
-          <meshStandardMaterial map={surfaceTex} color="#5a5c66" roughness={0.85} />
+          <meshStandardMaterial map={surfaceTex} color="#5a5c66" roughness={0.9} />
         </mesh>
       )}
       {highway && (
         <mesh geometry={highway} receiveShadow>
-          <meshStandardMaterial map={highwayTex} color="#6a6c76" roughness={0.8} />
+          <meshStandardMaterial map={highwayTex} color="#6a6c76" roughness={0.82} />
         </mesh>
       )}
     </group>

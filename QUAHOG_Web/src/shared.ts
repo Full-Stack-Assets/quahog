@@ -22,4 +22,8 @@ export const shared = {
   carYaw: -Math.PI / 2,
   /** Pedestrian bodies registered by StreetLife, for melee contact. */
   peds: [] as Body[],
+  /** Day factor 0 (night) .. 1 (noon), driven by the day/night cycle. */
+  dayT: 1,
+  /** Current in-game hour 0..24. */
+  hour: 9,
 };

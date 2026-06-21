@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useState } from "react";
+import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./Experience";
 import { HUD } from "./HUD";
@@ -18,6 +19,7 @@ export default function App() {
         shadows
         camera={{ fov: 60, near: 0.3, far: 1000, position: [0, 10, 24] }}
         dpr={[1, 2]}
+        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       >
         <Suspense fallback={null}>
           <Experience onReady={(s) => setSliceName(s.name)} />

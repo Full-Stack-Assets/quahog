@@ -6,6 +6,7 @@ import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
+import { useStats } from "../game";
 
 const WALK_SPEED = 6.5;
 const ENTER_RADIUS = 4.5;
@@ -58,6 +59,7 @@ export function Player() {
         rb.setEnabled(false);
         game.setNearCar(false);
         game.setMode("car");
+        useStats.getState().heat(0.5, 0); // grand theft auto
       }
     }
 
@@ -77,6 +79,7 @@ export function Player() {
         const ax = best.pos.x - p.x, az = best.pos.z - p.z;
         const m = Math.hypot(ax, az) || 1;
         best.push.x += ax / m; best.push.z += az / m;
+        useStats.getState().heat(0.4, 0.9); // assault draws police + faction heat
       }
     }
   });

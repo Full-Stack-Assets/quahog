@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Sky } from "@react-three/drei";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
 import { SatelliteGround } from "./world/SatelliteGround";
@@ -10,6 +9,9 @@ import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
 import { Ambient } from "./earth/Ambient";
+import { DayNight } from "./world/DayNight";
+import { GameSystems } from "./world/GameSystems";
+import { Effects } from "./world/Effects";
 import { Player } from "./actors/Player";
 import { Car } from "./actors/Car";
 import { FollowCamera } from "./actors/FollowCamera";
@@ -38,25 +40,8 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
 
   return (
     <>
-      {/* daytime, realistic look */}
-      <color attach="background" args={["#bcd4ea"]} />
-      <fog attach="fog" args={["#c4d6e6", 350, 1400]} />
-      <Sky sunPosition={[120, 80, 60]} turbidity={4} rayleigh={1.2} />
-
-      <hemisphereLight args={["#dceaff", "#8a8678", 1.0]} />
-      <directionalLight
-        position={[120, 160, 80]}
-        intensity={2.0}
-        color="#fff6e8"
-        castShadow
-        shadow-mapSize={[2048, 2048]}
-        shadow-camera-near={1}
-        shadow-camera-far={600}
-        shadow-camera-left={-250}
-        shadow-camera-right={250}
-        shadow-camera-top={250}
-        shadow-camera-bottom={-250}
-      />
+      <DayNight />
+      <GameSystems />
 
       <Physics gravity={[0, -9.81, 0]}>
         <SatelliteGround origin={slice?.origin} />
@@ -82,6 +67,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Ambient weather="clear" />
 
       <FollowCamera />
+      <Effects />
     </>
   );
 }
