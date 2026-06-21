@@ -26,7 +26,8 @@ export function Car() {
     const rb = body.current;
     if (!rb) return;
     const game = useGame.getState();
-    if (game.mode !== "car") return;
+    if (game.paused) { shared.skid = false; return; }
+    if (game.mode !== "car") { shared.skid = false; shared.carSpeed = 0; return; }
 
     const ax = moveAxis();
     let yaw = shared.carYaw;
@@ -36,7 +37,12 @@ export function Car() {
 
     // steering scales with speed; invert while reversing
     const grip = THREE.MathUtils.clamp(Math.abs(vForward) / 5, 0, 1);
-    yaw -= ax.x * 1.7 * dt * grip * (vForward < -0.1 ? -1 : 1);
+    const steer = ax.x * 1.7 * dt * grip * (vForward < -0.1 ? -1 : 1);
+    yaw -= steer;
+
+    // publish driving signals (§13): speed for camera FOV, skid for tire marks
+    shared.carSpeed = vForward;
+    shared.skid = Math.abs(ax.x) > 0.55 && Math.abs(vForward) > 11;
 
     // throttle / brake / coast
     const target =

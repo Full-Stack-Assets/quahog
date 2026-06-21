@@ -3,6 +3,8 @@ import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./Experience";
 import { HUD } from "./HUD";
+import { Minimap } from "./Minimap";
+import { PauseMenu } from "./ui/PauseMenu";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
 
@@ -26,6 +28,8 @@ export default function App() {
         </Suspense>
       </Canvas>
       <HUD sliceName={sliceName} />
+      <Minimap />
+      <PauseMenu />
       <Radio />
     </>
   );

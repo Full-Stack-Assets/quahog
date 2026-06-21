@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Sky, Stars } from "@react-three/drei";
 import { shared } from "../shared";
+import { useGame } from "../store";
 
 // Day/night cycle (§4): drives the sun, sky, ambient/hemisphere, fog, and
 // background through a full day on a loop. Exposes shared.dayT / shared.hour so
@@ -15,6 +16,7 @@ const nightBg = new THREE.Color("#0a1124");
 const dayFog = new THREE.Color("#c4d6e6");
 const nightFog = new THREE.Color("#0c1530");
 const warm = new THREE.Color("#ffb066"); // dusk/dawn tint
+const storm = new THREE.Color("#5a6470"); // rain grade
 
 export function DayNight() {
   const { scene } = useThree();
@@ -28,6 +30,7 @@ export function DayNight() {
   const cSun = useMemo(() => new THREE.Color(), []);
 
   useFrame((_, dt) => {
+    if (useGame.getState().paused) return; // freeze time in the pause menu
     hour.current = (hour.current + dt * (24 / DAY_LENGTH)) % 24;
     const a = ((hour.current - 6) / 12) * Math.PI; // 6am rise → 6pm set
     const elev = Math.sin(a);
@@ -35,22 +38,27 @@ export function DayNight() {
     const dusk = THREE.MathUtils.clamp(1 - Math.abs(elev) * 4, 0, 1); // peaks near horizon
     shared.dayT = dayT;
     shared.hour = hour.current;
+    const rain = useGame.getState().weather === "rain" ? 1 : 0;
 
     const sx = Math.cos(a) * 150, sy = elev * 170, sz = 60;
 
     if (sun.current) {
       sun.current.position.set(sx, Math.max(sy, 1.5), sz);
-      sun.current.intensity = 0.05 + dayT * 2.1;
+      sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65);
       cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
       sun.current.color.copy(cSun);
     }
-    if (hemi.current) hemi.current.intensity = 0.22 + dayT * 0.8;
+    if (hemi.current) hemi.current.intensity = (0.22 + dayT * 0.8) * (1 - rain * 0.25);
 
-    // sky/fog/background lerp night→day with a warm dusk push
-    bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25);
-    fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18);
+    // sky/fog/background lerp night→day with a warm dusk push, grey in rain
+    bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6);
+    fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7);
     scene.background = bg;
-    if (scene.fog) (scene.fog as THREE.Fog).color.copy(fogC);
+    if (scene.fog) {
+      const f = scene.fog as THREE.Fog;
+      f.color.copy(fogC);
+      f.far = rain ? 700 : 1500; // rain closes in the view distance
+    }
 
     skyThrottle.current += dt;
     if (skyThrottle.current > 0.25) {

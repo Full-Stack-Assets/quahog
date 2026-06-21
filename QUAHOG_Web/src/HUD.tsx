@@ -34,8 +34,21 @@ export function HUD({ sliceName }: { sliceName: string }) {
     return () => clearInterval(id);
   }, []);
 
+  const hurt = Math.max(0, (40 - health) / 40); // 0 healthy → 1 near-death
+
   return (
     <div style={wrap}>
+      {/* low-health damage vignette (§23) */}
+      {hurt > 0 && (
+        <div
+          style={{
+            position: "absolute", inset: 0, pointerEvents: "none",
+            boxShadow: `inset 0 0 ${120 + hurt * 140}px rgba(170,10,10,${0.25 + hurt * 0.45})`,
+            transition: "box-shadow .2s linear",
+          }}
+        />
+      )}
+
       {/* status panel (top-right under the radio is fine; use top-center-right) */}
       <div
         style={{
@@ -77,6 +90,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <b>WASD</b> move &nbsp;·&nbsp; <b>E</b> {mode === "car" ? "exit car" : "enter car"}
           <br />
           <b>F</b> punch &nbsp;·&nbsp; <b>V</b> view &nbsp;·&nbsp; <b>[ ]</b> radio
+          <br />
+          <b>R</b> rain &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
           <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>

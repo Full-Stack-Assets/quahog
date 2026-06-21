@@ -1,8 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RigidBody } from "@react-three/rapier";
+import { shared } from "../shared";
 import type { Building } from "../slice";
+
+const WINDOW_GLOW = new THREE.Color("#ffcf8a");
 
 // Auto-extruded OSM footprints. Buildings within COLLIDER_RADIUS of the playable
 // core get individual hull colliders; the rest are merged into one mesh (no
@@ -67,18 +71,31 @@ export function Buildings({
     return { near, merged };
   }, [buildings, center]);
 
+  // Lit-window glow at night (§4): ramp a warm emissive on every building
+  // material as the day factor drops. Bloom (Effects) makes it read as occupancy.
+  const root = useRef<THREE.Group>(null);
+  useFrame(() => {
+    const g = root.current;
+    if (!g) return;
+    const night = 1 - shared.dayT;
+    g.traverse((o) => {
+      const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
+      if (m && m.isMeshStandardMaterial) m.emissiveIntensity = night * 0.4;
+    });
+  });
+
   return (
-    <group>
+    <group ref={root}>
       {near.map(({ geom, color }, i) => (
         <RigidBody key={i} type="fixed" colliders="hull">
           <mesh geometry={geom} castShadow receiveShadow>
-            <meshStandardMaterial color={color} roughness={0.85} flatShading />
+            <meshStandardMaterial color={color} emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.85} flatShading />
           </mesh>
         </RigidBody>
       ))}
       {merged && (
         <mesh geometry={merged} castShadow receiveShadow>
-          <meshStandardMaterial vertexColors roughness={0.85} flatShading />
+          <meshStandardMaterial vertexColors emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.85} flatShading />
         </mesh>
       )}
     </group>

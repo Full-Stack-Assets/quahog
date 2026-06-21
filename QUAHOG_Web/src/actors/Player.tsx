@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
-import { shared } from "../shared";
+import { shared, addShake } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
 
@@ -28,6 +28,7 @@ export function Player() {
     const game = useGame.getState();
     // hide the body in first-person, and while driving
     if (mesh.current) mesh.current.visible = game.mode === "foot" && game.view !== "first";
+    if (game.paused) return; // frozen in the pause menu
     if (game.mode === "car") return; // disabled while driving
 
     const ax = moveAxis();
@@ -80,6 +81,7 @@ export function Player() {
         const m = Math.hypot(ax, az) || 1;
         best.push.x += ax / m; best.push.z += az / m;
         useStats.getState().heat(0.4, 0.9); // assault draws police + faction heat
+        addShake(0.5); // impact juice
       }
     }
   });

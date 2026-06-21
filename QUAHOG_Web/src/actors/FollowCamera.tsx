@@ -4,6 +4,9 @@ import { consumeTap } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
 
+const BASE_FOV = 60;
+const _shake = new THREE.Vector3();
+
 function lerpAngle(a: number, b: number, t: number) {
   let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
   if (d < -Math.PI) d += Math.PI * 2;
@@ -23,6 +26,19 @@ export function FollowCamera() {
     const target = mode === "car" ? shared.car : shared.player;
     if (!target) return;
 
+    // FOV widens with car speed for a sense of velocity (§13)
+    const cam = camera as THREE.PerspectiveCamera;
+    const speedT = mode === "car" ? THREE.MathUtils.clamp(Math.abs(shared.carSpeed) / 22, 0, 1) : 0;
+    const wantFov = BASE_FOV + speedT * 14;
+    if (Math.abs(cam.fov - wantFov) > 0.05) {
+      cam.fov = THREE.MathUtils.lerp(cam.fov, wantFov, 1 - Math.exp(-dt * 4));
+      cam.updateProjectionMatrix();
+    }
+
+    // decaying camera shake (§23): melee hits, crashes, fast driving
+    shared.shake = Math.max(0, shared.shake - dt * 1.8);
+    const shakeAmt = shared.shake + speedT * 0.04;
+
     const tp = target.translation();
     const heading = mode === "car" ? shared.carYaw : shared.heading;
     shared.camYaw = lerpAngle(shared.camYaw, heading, 1 - Math.exp(-dt * 3));
@@ -31,6 +47,10 @@ export function FollowCamera() {
       const eyeH = mode === "car" ? 1.2 : 1.6;
       const f = new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading));
       camera.position.set(tp.x + f.x * 0.25, tp.y + eyeH, tp.z + f.z * 0.25);
+      if (shakeAmt > 0.001) {
+        _shake.set((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).multiplyScalar(shakeAmt * 0.4);
+        camera.position.add(_shake);
+      }
       camera.lookAt(tp.x + f.x * 12, tp.y + eyeH, tp.z + f.z * 12);
       return;
     }
@@ -45,6 +65,10 @@ export function FollowCamera() {
       tp.z - fwd.z * dist,
     );
     camera.position.lerp(want, 1 - Math.exp(-dt * 6));
+    if (shakeAmt > 0.001) {
+      _shake.set((Math.random() - 0.5), (Math.random() - 0.5), (Math.random() - 0.5)).multiplyScalar(shakeAmt * 0.6);
+      camera.position.add(_shake);
+    }
     camera.lookAt(tp.x, tp.y + 1.5, tp.z);
   });
 

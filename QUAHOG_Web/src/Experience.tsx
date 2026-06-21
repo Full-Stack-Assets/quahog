@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
+import { useGame } from "./store";
 import { SatelliteGround } from "./world/SatelliteGround";
 import { Roads } from "./world/Roads";
 import { Buildings } from "./world/Buildings";
@@ -8,6 +9,10 @@ import { Water } from "./world/Water";
 import { Landmarks } from "./world/Landmarks";
 import { StreetLife } from "./world/StreetLife";
 import { SeamensBethel } from "./world/SeamensBethel";
+import { Props } from "./world/Props";
+import { HarborProps } from "./world/HarborProps";
+import { SkidMarks } from "./world/SkidMarks";
+import { Rain } from "./world/Rain";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
 import { GameSystems } from "./world/GameSystems";
@@ -31,6 +36,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       .then((s) => {
         if (!alive) return;
         setSlice(s);
+        useGame.getState().setSlice(s);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
@@ -65,7 +71,13 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       </Physics>
 
       {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
+      {slice && slice.water?.length > 0 && (
+        <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
+      {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      <SkidMarks />
+      <Rain />
       <Ambient weather="clear" />
 
       <FollowCamera />

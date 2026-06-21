@@ -26,4 +26,15 @@ export const shared = {
   dayT: 1,
   /** Current in-game hour 0..24. */
   hour: 9,
+  /** Signed forward speed of the car (m/s), written by Car each frame. */
+  carSpeed: 0,
+  /** True while the car is cornering hard at speed (lays skid marks). */
+  skid: false,
+  /** Decaying camera-shake impulse; bump it to jolt the chase camera. */
+  shake: 0,
 };
+
+/** Add a one-shot camera shake (juice §23). */
+export function addShake(amount: number) {
+  shared.shake = Math.min(1.2, shared.shake + amount);
+}
