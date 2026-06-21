@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { useGame } from "../store";
+import { useStats } from "../game";
+import { useMission } from "../mission";
+import { useEconomy } from "../economy";
 import { sfx } from "../audio/sfx";
+
+const hasSave = () => { try { return !!localStorage.getItem("mounthope.save.v1"); } catch { return false; } };
 
 // Title / start screen (§22). Shown over the loading world until the player
 // presses Play; doubles as the first user gesture that unlocks audio.
@@ -17,8 +22,18 @@ const TIPS = [
 export function StartMenu({ sliceName }: { sliceName: string }) {
   const started = useGame((s) => s.started);
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
+  const [save] = useState(hasSave);
   const loaded = sliceName !== "loading…";
   if (started) return null;
+
+  const play = () => { sfx.setVolume(0.5); useGame.getState().setStarted(true); };
+  const newGame = () => {
+    try { ["mounthope.save.v1", "mounthope.economy.v1", "mounthope.scrimshaw.v1"].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+    useStats.getState().reset();
+    useMission.getState().reset();
+    useEconomy.setState({ owned: {} });
+    play();
+  };
 
   return (
     <div style={{
@@ -33,16 +48,14 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
       </div>
       <div style={{ fontSize: 14, opacity: 0.7, marginTop: 8 }}>New Bedford · the Whaling City</div>
 
-      <button
-        disabled={!loaded}
-        onClick={() => { sfx.setVolume(0.5); useGame.getState().setStarted(true); }}
-        style={{
-          marginTop: 34, padding: "14px 46px", fontFamily: "'Courier New', monospace",
-          fontSize: 20, fontWeight: 700, letterSpacing: 3, cursor: loaded ? "pointer" : "wait",
-          color: loaded ? "#1a1304" : "#888", background: loaded ? "#ffcf4a" : "#3a3a44",
-          border: "none", borderRadius: 10,
-        }}
-      >{loaded ? "▶ PLAY" : "LOADING…"}</button>
+      <div style={{ marginTop: 34, display: "flex", gap: 14 }}>
+        {save && (
+          <button disabled={!loaded} onClick={play} style={btn(loaded, true)}>{loaded ? "▶ CONTINUE" : "LOADING…"}</button>
+        )}
+        <button disabled={!loaded} onClick={newGame} style={btn(loaded, !save)}>
+          {loaded ? (save ? "✦ NEW GAME" : "▶ NEW GAME") : "LOADING…"}
+        </button>
+      </div>
 
       <div style={{ marginTop: 26, fontSize: 12, opacity: 0.6, maxWidth: 420 }}>TIP: {tip}</div>
       <div style={{ position: "absolute", bottom: 12, fontSize: 10, opacity: 0.5 }}>
@@ -50,4 +63,13 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
       </div>
     </div>
   );
+}
+
+function btn(loaded: boolean, primary: boolean): React.CSSProperties {
+  return {
+    padding: "14px 32px", fontFamily: "'Courier New', monospace", fontSize: 18, fontWeight: 700,
+    letterSpacing: 2, cursor: loaded ? "pointer" : "wait", borderRadius: 10, border: "none",
+    color: !loaded ? "#888" : primary ? "#1a1304" : "#e7e0ff",
+    background: !loaded ? "#3a3a44" : primary ? "#ffcf4a" : "rgba(40,30,70,.9)",
+  };
 }
