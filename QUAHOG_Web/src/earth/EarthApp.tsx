@@ -1,34 +1,37 @@
-import { useContext, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import * as THREE from "three";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Canvas, useThree } from "@react-three/fiber";
+import { Sky } from "@react-three/drei";
 import {
   TilesRenderer,
   TilesPlugin,
   GlobeControls,
   TilesAttributionOverlay,
   EastNorthUpFrame,
-  TilesRendererContext,
 } from "3d-tiles-renderer/r3f";
 import { GoogleCloudAuthPlugin } from "3d-tiles-renderer/plugins";
 import { WGS84_ELLIPSOID } from "3d-tiles-renderer/three";
-import { Character } from "../world/Character";
-import { installInput, isDown, moveAxis } from "../input";
+import { loadSlice, type Slice } from "../slice";
+import { installInput } from "../input";
+import { computeSpawn } from "./follow";
+import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
+import { Ambient, type Weather } from "./Ambient";
 
-// Isolated TEST page: Google Photorealistic 3D Tiles ("Google Earth" look) over
-// New Bedford. Two modes:
-//   • Orbit — fly around with globe controls
-//   • Walk  — drop the Mount Hope character in and walk the photoreal streets
-//             (third-person, ground-follow by raycasting the tile meshes)
-//
-// Browser fetches tiles from tile.googleapis.com directly (container egress N/A).
-// Provide a Google Maps key (Map Tiles API) via ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
+// Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
+// tile.googleapis.com. Provide a Google Maps key (Map Tiles API) via
+// ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
 
-const NB_LAT = 41.6358;
-const NB_LON = -70.9237; // by Seamen's Bethel / the historic waterfront
-const WALK_SPEED = 4.5;
-const RUN_SPEED = 9;
-const CAM_DIST = 8;
-const CAM_HEIGHT = 4;
+const FALLBACK = { lat: 41.636, lon: -70.9205 };
+const PED_CENTER: [number, number] = [-266, 100];
+
+// Spawn picker spots. New Bedford uses the slice origin (so the OSM road network
+// + NPCs line up); the others re-anchor the ENU frame on the landmark.
+const SPOTS = [
+  { name: "New Bedford", sub: "Seamen's Bethel", nb: true, lat: 41.636, lon: -70.9205 },
+  { name: "Battleship Cove", sub: "USS Massachusetts", nb: false, lat: 41.7044, lon: -71.1641 },
+  { name: "Lizzie Borden", sub: "230 Second St", nb: false, lat: 41.6993, lon: -71.1558 },
+  { name: "Fall River", sub: "Downtown", nb: false, lat: 41.7015, lon: -71.1547 },
+];
 
 function getApiKey(): string | null {
   const fromUrl = new URLSearchParams(window.location.search).get("key");
@@ -36,158 +39,143 @@ function getApiKey(): string | null {
   return fromUrl || fromEnv || null;
 }
 
-function lerpAngle(a: number, b: number, t: number) {
-  let d = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
-  if (d < -Math.PI) d += Math.PI * 2;
-  return a + d * t;
+const WX: Record<Weather, { sun: number; sunColor: string; bg: string; fog: [number, number]; sky: boolean }> = {
+  clear: { sun: 2.2, sunColor: "#fff6e8", bg: "#bcd4ea", fog: [600, 3200], sky: true },
+  cloudy: { sun: 1.4, sunColor: "#eef0f4", bg: "#c4ccd6", fog: [380, 2000], sky: true },
+  rain: { sun: 1.0, sunColor: "#cfd6dd", bg: "#9aa4ae", fog: [200, 1100], sky: false },
+};
+
+export function EarthApp() {
+  const apiKey = typeof window !== "undefined" ? getApiKey() : null;
+  const [slice, setSlice] = useState<Slice | null>(null);
+  const [mode, setMode] = useState<"play" | "orbit">("play");
+  const [view, setView] = useState<View>("third");
+  const [spotIdx, setSpotIdx] = useState(0);
+  const [weather, setWeather] = useState<Weather>("clear");
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => installInput(), []);
+  useEffect(() => { loadSlice().then(setSlice).catch((e) => console.error(e)); }, []);
+  useEffect(() => setReady(false), [spotIdx, mode]); // re-gate on teleport
+  useEffect(() => {
+    const order: Weather[] = ["clear", "clear", "cloudy", "rain", "cloudy"];
+    let i = 0;
+    const id = setInterval(() => { i = (i + 1) % order.length; setWeather(order[i]); }, 45000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!apiKey) return <NoKeyNotice />;
+
+  const spot = SPOTS[spotIdx];
+  const anchor = spot.nb && slice ? slice.origin : { lat: spot.lat, lon: spot.lon };
+  const spawn = spot.nb && slice ? computeSpawn(slice) : { x: 0, z: 0, heading: 0 };
+  const wx = WX[weather];
+
+  return (
+    <>
+      <Canvas shadows camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
+        <color attach="background" args={[wx.bg]} />
+        {mode === "play" && <fog attach="fog" args={[wx.bg, wx.fog[0], wx.fog[1]]} />}
+        {wx.sky && <Sky sunPosition={[120, 80, 60]} turbidity={weather === "cloudy" ? 8 : 3} rayleigh={1.2} />}
+        <hemisphereLight args={["#dceaff", "#8a8678", 0.9]} />
+        <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
+
+        <TilesRenderer key={apiKey}>
+          <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
+
+          {mode === "orbit" ? (
+            <>
+              <FlyTo lat={anchor.lat} lon={anchor.lon} />
+              <GlobeControls enableDamping />
+            </>
+          ) : (
+            (slice || !spot.nb) && (
+              <EastNorthUpFrame key={spot.name} lat={anchor.lat} lon={anchor.lon} height={0}>
+                <group rotation={[Math.PI / 2, 0, 0]}>
+                  <PlayerRig key={spot.name} spawn={spawn} view={view} onReady={() => setReady(true)} />
+                  {spot.nb && slice && <TileNpcs slice={slice} center={PED_CENTER} />}
+                  <Ambient weather={weather} />
+                </group>
+              </EastNorthUpFrame>
+            )
+          )}
+
+          <TilesAttributionOverlay />
+        </TilesRenderer>
+      </Canvas>
+
+      <Hud
+        mode={mode} setMode={setMode}
+        view={view} setView={setView}
+        spotIdx={spotIdx} setSpotIdx={setSpotIdx}
+        weather={weather}
+      />
+      {mode === "play" && !ready && <Loading />}
+    </>
+  );
 }
 
-// Orbit mode: position the camera obliquely over New Bedford once.
-function FlyToNewBedford() {
+function FlyTo({ lat, lon }: { lat: number; lon: number }) {
   const camera = useThree((s) => s.camera);
   useEffect(() => {
     const d2r = Math.PI / 180;
     const ground = new THREE.Vector3();
     const eye = new THREE.Vector3();
-    WGS84_ELLIPSOID.getCartographicToPosition(NB_LAT * d2r, NB_LON * d2r, 0, ground);
-    WGS84_ELLIPSOID.getCartographicToPosition((NB_LAT - 0.014) * d2r, NB_LON * d2r, 1400, eye);
+    WGS84_ELLIPSOID.getCartographicToPosition(lat * d2r, lon * d2r, 0, ground);
+    WGS84_ELLIPSOID.getCartographicToPosition((lat - 0.014) * d2r, lon * d2r, 1400, eye);
     camera.up.copy(ground).normalize();
     camera.position.copy(eye);
     camera.lookAt(ground);
     camera.updateProjectionMatrix();
-  }, [camera]);
+  }, [camera, lat, lon]);
   return null;
 }
 
-// Walk mode: a third-person character inside the ENU frame (y-up content group).
-// Moves in the local ground plane; height snaps to the photoreal surface via a
-// downward raycast against the loaded tile meshes.
-function WalkController() {
-  const camera = useThree((s) => s.camera);
-  const tiles = useContext(TilesRendererContext);
-  const char = useRef<THREE.Group>(null);
-  const pos = useRef(new THREE.Vector3(0, 40, 0));
-  const heading = useRef(0);
-  const camYaw = useRef(0);
-  const moving = useRef(false);
-  const ray = useRef(new THREE.Raycaster());
-  const q = useRef(new THREE.Quaternion());
-
-  useFrame((_, dt) => {
-    const c = char.current;
-    const parent = c?.parent;
-    if (!c || !parent) return;
-    const step = Math.min(dt, 0.05);
-
-    // camera-relative movement
-    const ax = moveAxis();
-    const fwd = new THREE.Vector3(Math.sin(camYaw.current), 0, Math.cos(camYaw.current));
-    const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
-    const dir = new THREE.Vector3().addScaledVector(fwd, ax.y).addScaledVector(right, ax.x);
-    const speed = isDown("ShiftLeft") || isDown("ShiftRight") ? RUN_SPEED : WALK_SPEED;
-    if (dir.lengthSq() > 1e-4) {
-      dir.normalize();
-      pos.current.addScaledVector(dir, speed * step);
-      heading.current = Math.atan2(dir.x, dir.z);
-      moving.current = true;
-    } else {
-      moving.current = false;
-    }
-
-    // ground-follow: raycast down (along ENU up) against the photoreal tiles
-    parent.updateWorldMatrix(true, false);
-    parent.getWorldQuaternion(q.current);
-    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(q.current);
-    const worldPos = parent.localToWorld(pos.current.clone());
-    ray.current.set(worldPos.clone().addScaledVector(up, 80), up.clone().negate());
-    const group = tiles?.group;
-    if (group) {
-      const hits = ray.current.intersectObject(group, true);
-      if (hits.length) {
-        const local = parent.worldToLocal(hits[0].point.clone());
-        pos.current.y = local.y;
-      }
-    }
-
-    c.position.copy(pos.current);
-    c.rotation.y = heading.current;
-
-    // third-person chase camera (world space)
-    camYaw.current = lerpAngle(camYaw.current, heading.current, 1 - Math.exp(-step * 3));
-    const off = new THREE.Vector3(
-      -Math.sin(camYaw.current) * CAM_DIST,
-      CAM_HEIGHT,
-      -Math.cos(camYaw.current) * CAM_DIST,
-    ).add(pos.current);
-    const camWorld = parent.localToWorld(off.clone());
-    const look = parent.localToWorld(pos.current.clone().add(new THREE.Vector3(0, 1.4, 0)));
-    camera.up.copy(up);
-    camera.position.lerp(camWorld, 1 - Math.exp(-step * 5));
-    camera.lookAt(look);
-  });
-
-  return (
-    <group ref={char}>
-      <Character skin="#caa07a" shirt="#b23b34" pants="#23344f" moving={() => moving.current} />
-    </group>
-  );
-}
-
-export function EarthApp() {
-  const apiKey = typeof window !== "undefined" ? getApiKey() : null;
-  const [mode, setMode] = useState<"orbit" | "walk">("orbit");
-
-  useEffect(() => installInput(), []);
-
-  if (!apiKey) return <NoKeyNotice />;
-
-  return (
-    <>
-      <Canvas camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
-        <hemisphereLight args={["#cfe2ff", "#5a5a4a", 1.0]} />
-        <directionalLight position={[1, 2, 1]} intensity={1.4} />
-        <TilesRenderer key={apiKey}>
-          <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
-          {mode === "orbit" ? (
-            <>
-              <FlyToNewBedford />
-              <GlobeControls enableDamping />
-            </>
-          ) : (
-            <EastNorthUpFrame lat={NB_LAT} lon={NB_LON} height={0}>
-              {/* ENU is z-up; rotate so the y-up character/content sits upright */}
-              <group rotation={[Math.PI / 2, 0, 0]}>
-                <WalkController />
-              </group>
-            </EastNorthUpFrame>
-          )}
-          <TilesAttributionOverlay />
-        </TilesRenderer>
-      </Canvas>
-      <Hud mode={mode} setMode={setMode} />
-    </>
-  );
-}
-
-function Hud({ mode, setMode }: { mode: "orbit" | "walk"; setMode: (m: "orbit" | "walk") => void }) {
+function Hud(props: {
+  mode: "play" | "orbit"; setMode: (m: "play" | "orbit") => void;
+  view: View; setView: (v: View) => void;
+  spotIdx: number; setSpotIdx: (i: number) => void;
+  weather: Weather;
+}) {
+  const { mode, setMode, view, setView, spotIdx, setSpotIdx, weather } = props;
   const btn = (active: boolean): React.CSSProperties => ({
     pointerEvents: "auto", cursor: "pointer", border: "1px solid #2c3a5e",
     background: active ? "#7ad9ff" : "rgba(5,7,13,.8)", color: active ? "#04121a" : "#e7e0ff",
-    font: "12px 'Courier New', monospace", fontWeight: 700, padding: "6px 12px", borderRadius: 6,
+    font: "11px 'Courier New', monospace", fontWeight: 700, padding: "5px 9px", borderRadius: 6,
   });
   return (
-    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", font: "13px/1.5 'Courier New', monospace", color: "#e7e0ff" }}>
-      <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(5,7,13,.8)", border: "1px solid #2c3a5e", borderRadius: 8, padding: "10px 13px", maxWidth: 320 }}>
-        <b style={{ color: "#7ad9ff" }}>MOUNT HOPE · PHOTOREAL 3D (test)</b>
-        <div style={{ opacity: 0.85, marginTop: 4 }}>
-          {mode === "orbit"
-            ? "Orbit: drag to look, scroll to zoom."
-            : "Walk: WASD to move, Shift to run. Camera trails you over the real streets."}
+    <div style={{ position: "fixed", inset: 0, pointerEvents: "none", font: "12px/1.5 'Courier New', monospace", color: "#e7e0ff" }}>
+      <div style={{ position: "absolute", top: 12, left: 12, background: "rgba(5,7,13,.82)", border: "1px solid #2c3a5e", borderRadius: 8, padding: "10px 12px", maxWidth: 340 }}>
+        <b style={{ color: "#7ad9ff" }}>MOUNT HOPE · photoreal</b>
+        <div style={{ opacity: 0.85, margin: "3px 0 8px" }}>
+          {mode === "play"
+            ? `WASD move · Shift run · E car · weather: ${weather}`
+            : "Orbit: drag to look, scroll to zoom."}
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+          <button style={btn(mode === "play")} onClick={() => setMode("play")}>PLAY</button>
           <button style={btn(mode === "orbit")} onClick={() => setMode("orbit")}>ORBIT</button>
-          <button style={btn(mode === "walk")} onClick={() => setMode("walk")}>WALK</button>
+          <button style={btn(view === "third")} onClick={() => setView("third")}>3RD</button>
+          <button style={btn(view === "first")} onClick={() => setView("first")}>1ST</button>
         </div>
+        <div style={{ opacity: 0.7, fontSize: 10, marginBottom: 3 }}>TELEPORT</div>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+          {SPOTS.map((sp, i) => (
+            <button key={sp.name} style={btn(spotIdx === i)} onClick={() => { setSpotIdx(i); setMode("play"); }} title={sp.sub}>
+              {sp.name.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Loading() {
+  return (
+    <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+      <div style={{ background: "rgba(5,7,13,.82)", border: "1px solid #2c3a5e", borderRadius: 10, padding: "16px 22px", color: "#e7e0ff", font: "14px 'Courier New', monospace" }}>
+        Streaming photoreal tiles… dropping you on the street.
       </div>
     </div>
   );
@@ -197,8 +185,8 @@ function NoKeyNotice() {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#e7e0ff", background: "#05070d", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
       <div style={{ maxWidth: 560 }}>
-        <h2 style={{ color: "#7ad9ff" }}>Photoreal 3D Tiles — needs a Google API key</h2>
-        <p>Renders Google's Photorealistic 3D Tiles of New Bedford. Needs a Google Maps Platform key with the <b>Map Tiles API</b> enabled.</p>
+        <h2 style={{ color: "#7ad9ff" }}>Mount Hope (photoreal) — needs a Google API key</h2>
+        <p>Renders Google's Photorealistic 3D Tiles. Needs a Google Maps Platform key with the <b>Map Tiles API</b> enabled.</p>
         <p style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8 }}>
           1. Google Cloud → enable <b>Map Tiles API</b>.<br />
           2. Restrict the key to your site's domain.<br />

@@ -1,0 +1,77 @@
+import * as THREE from "three";
+
+// Recognizable low-poly road cars built from primitives. Silhouettes are tuned
+// per model (ride height, hood/cabin proportions) so a Bronco reads boxy/tall, a
+// Mustang long-hood/low, the Z a wedge, etc.
+
+export type VehicleType = "bronco" | "mustang" | "infiniti" | "nissanz" | "rav4";
+export const VEHICLE_TYPES: VehicleType[] = ["bronco", "mustang", "infiniti", "nissanz", "rav4"];
+
+interface Spec {
+  L: number; W: number; H: number; y: number; // body box + center height
+  cabL: number; cabH: number; cabZ: number; cabW?: number; // greenhouse
+  ride: number; wheelR: number; // axle height + wheel radius
+  glass: string; hood?: number; // optional long-hood block length
+}
+
+const SPECS: Record<VehicleType, Spec> = {
+  bronco:   { L: 4.3, W: 2.0, H: 1.3, y: 1.15, cabL: 2.4, cabH: 0.9, cabZ: -0.2, ride: 0.55, wheelR: 0.52, glass: "#20303a" },
+  mustang:  { L: 4.7, W: 1.95, H: 0.8, y: 0.78, cabL: 1.7, cabH: 0.62, cabZ: -0.7, ride: 0.34, wheelR: 0.46, glass: "#141a1f", hood: 1.6 },
+  infiniti: { L: 4.7, W: 1.85, H: 0.85, y: 0.82, cabL: 2.1, cabH: 0.66, cabZ: -0.1, ride: 0.34, wheelR: 0.44, glass: "#1a2128" },
+  nissanz:  { L: 4.4, W: 1.85, H: 0.72, y: 0.7, cabL: 1.4, cabH: 0.55, cabZ: -0.6, ride: 0.3, wheelR: 0.45, glass: "#0f1418", hood: 1.7 },
+  rav4:     { L: 4.4, W: 1.9, H: 1.15, y: 1.0, cabL: 2.2, cabH: 0.82, cabZ: -0.15, ride: 0.48, wheelR: 0.48, glass: "#212a30" },
+};
+
+export function Vehicle({ type, color }: { type: VehicleType; color: string }) {
+  const s = SPECS[type];
+  const halfL = s.L / 2;
+  const wheelZ = halfL - 0.95;
+  const wheelX = s.W / 2 - 0.05;
+  const cabW = s.cabW ?? s.W - 0.25;
+  return (
+    <group position={[0, s.ride - s.wheelR, 0]}>
+      {/* body */}
+      <mesh position={[0, s.y, 0]} castShadow>
+        <boxGeometry args={[s.W, s.H, s.L]} />
+        <meshStandardMaterial color={color} metalness={0.35} roughness={0.42} />
+      </mesh>
+      {/* long hood accent for sports cars */}
+      {s.hood && (
+        <mesh position={[0, s.y + s.H / 2 - 0.04, halfL - s.hood / 2 - 0.1]} castShadow>
+          <boxGeometry args={[s.W - 0.2, 0.1, s.hood]} />
+          <meshStandardMaterial color={color} metalness={0.4} roughness={0.35} />
+        </mesh>
+      )}
+      {/* greenhouse / cabin */}
+      <mesh position={[0, s.y + s.H / 2 + s.cabH / 2 - 0.02, s.cabZ]} castShadow>
+        <boxGeometry args={[cabW, s.cabH, s.cabL]} />
+        <meshStandardMaterial color={s.glass} metalness={0.2} roughness={0.25} />
+      </mesh>
+      {/* roof cap (color) */}
+      <mesh position={[0, s.y + s.H / 2 + s.cabH - 0.04, s.cabZ]}>
+        <boxGeometry args={[cabW + 0.02, 0.08, s.cabL]} />
+        <meshStandardMaterial color={color} metalness={0.35} roughness={0.4} />
+      </mesh>
+      {/* headlights */}
+      <mesh position={[0, s.y, halfL + 0.01]}>
+        <boxGeometry args={[s.W - 0.3, 0.18, 0.05]} />
+        <meshStandardMaterial color="#fdf6d0" emissive="#fde9a0" emissiveIntensity={0.5} />
+      </mesh>
+      {/* taillights */}
+      <mesh position={[0, s.y, -halfL - 0.01]}>
+        <boxGeometry args={[s.W - 0.3, 0.16, 0.05]} />
+        <meshStandardMaterial color="#7a1010" emissive="#c01818" emissiveIntensity={0.5} />
+      </mesh>
+      {/* wheels */}
+      {[
+        [-wheelX, 0, wheelZ], [wheelX, 0, wheelZ],
+        [-wheelX, 0, -wheelZ], [wheelX, 0, -wheelZ],
+      ].map((p, i) => (
+        <mesh key={i} position={[p[0], s.wheelR, p[2]]} rotation-z={Math.PI / 2}>
+          <cylinderGeometry args={[s.wheelR, s.wheelR, 0.32, 14]} />
+          <meshStandardMaterial color="#0d0d0f" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
