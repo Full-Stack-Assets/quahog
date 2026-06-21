@@ -22,6 +22,7 @@ import { TrafficLights } from "./world/TrafficLights";
 import { ParkedCars } from "./world/ParkedCars";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
+import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
 import { Marina } from "./world/Marina";
@@ -126,6 +127,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Businesses />
       <NeonSigns />
       <Collectibles />
+      <Race />
       <Posters />
       <Police />
       <Tracers />
