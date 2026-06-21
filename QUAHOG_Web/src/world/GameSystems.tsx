@@ -7,6 +7,7 @@ import { useToasts } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
 import { sfx } from "../audio/sfx";
+import { radio } from "../audio/radioEngine";
 
 const DAY_SECONDS = 600; // matches DayNight's cycle length
 
@@ -50,6 +51,7 @@ export function GameSystems() {
     // wanted-up sting (§23): toast + chirp when police stars rise
     const stars = Math.floor(st.police);
     if (stars > prevStars.current) { useToasts.getState().push(`WANTED ${"★".repeat(stars)}`, "#6cb6ff"); sfx.bust(); }
+    if (stars !== prevStars.current) radio.setDuck(stars >= 3 ? 0.4 : 1); // adaptive chase mix (§19)
     prevStars.current = stars;
     st.decay(dt);
     acc.current += dt;

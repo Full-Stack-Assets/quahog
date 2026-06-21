@@ -202,6 +202,13 @@ class RadioEngine {
   private musicTracks: string[] = [];
   vol = 0.5;
   muted = false;
+  private duck = 1; // adaptive ducking (lowered under police heat)
+
+  setDuck(d: number) {
+    this.duck = d;
+    if (this.master && this.ctx && !this.muted) this.master.gain.setTargetAtTime(this.vol * d, this.ctx.currentTime, 0.4);
+    if (this.music) this.music.volume = this.muted ? 0 : this.vol * d;
+  }
 
   private ensure() {
     if (!this.ctx) {

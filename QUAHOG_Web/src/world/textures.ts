@@ -31,6 +31,20 @@ export function makeNoiseNormal(): THREE.Texture {
   return t;
 }
 
+// Oil/grime splotch (Phase 2) — soft dark radial blob on transparent.
+let _grime: THREE.Texture | null = null;
+export function makeGrime(): THREE.Texture {
+  if (_grime) return _grime;
+  const [c, x] = canvas(64);
+  x.clearRect(0, 0, 64, 64);
+  const g = x.createRadialGradient(32, 32, 2, 32, 32, 30);
+  g.addColorStop(0, "rgba(10,10,12,0.5)");
+  g.addColorStop(0.6, "rgba(20,18,16,0.28)");
+  g.addColorStop(1, "rgba(20,18,16,0)");
+  x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
+  const t = new THREE.Texture(c); t.needsUpdate = true; _grime = t; return t;
+}
+
 // Zebra crosswalk patch (Phase 2) — white bars on transparent, for intersections.
 let _zebra: THREE.Texture | null = null;
 export function makeZebra(): THREE.Texture {
