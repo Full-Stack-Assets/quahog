@@ -2,7 +2,7 @@ import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
-import { Character } from "../world/Character";
+import { ModelCharacter } from "./ModelCharacter";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { DRIVABLE, followCam, forwardHit, frameUp, groundY, lerpAngle } from "./follow";
 import { playState, resetBodies, type Body } from "./playState";
@@ -166,7 +166,7 @@ export function PlayerRig({ spawn, view, onReady }: { spawn: Spawn; view: View; 
   return (
     <>
       <group ref={player}>
-        <Character skin="#caa07a" shirt="#b23b34" pants="#23344f" moving={() => s.current.moving} />
+        <ModelCharacter moving={() => s.current.moving} />
       </group>
       <group ref={car}>
         <Vehicle type="mustang" color="#b81d24" />
@@ -332,7 +332,7 @@ export function TileNpcs({ slice, center }: { slice: Slice; center: [number, num
     <group>
       {peds.current.map((p, i) => (
         <group key={`p${i}`} ref={(el) => (pedRefs.current[i] = el)}>
-          <Character shirt={p.shirt} pants={p.pants} skin={p.skin} />
+          <ModelCharacter />
         </group>
       ))}
       {cars.current.map((c, i) => (

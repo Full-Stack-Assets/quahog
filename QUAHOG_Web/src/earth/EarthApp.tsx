@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Sky } from "@react-three/drei";
@@ -80,6 +80,7 @@ export function EarthApp() {
         <hemisphereLight args={["#dceaff", "#8a8678", 0.9]} />
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
 
+        <Suspense fallback={null}>
         <TilesRenderer key={apiKey}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
 
@@ -102,6 +103,7 @@ export function EarthApp() {
 
           <TilesAttributionOverlay />
         </TilesRenderer>
+        </Suspense>
       </Canvas>
 
       <Hud
@@ -165,6 +167,9 @@ function Hud(props: {
               {sp.name.toUpperCase()}
             </button>
           ))}
+        </div>
+        <div style={{ opacity: 0.55, fontSize: 9, marginTop: 8 }}>
+          Tiles © Google · Character: CesiumMan © Cesium, CC-BY 4.0
         </div>
       </div>
     </div>
