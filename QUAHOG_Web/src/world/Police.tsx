@@ -5,14 +5,21 @@ import { Vehicle } from "../earth/Vehicles";
 import { shared, type Cop } from "../shared";
 import { useStats } from "../game";
 import { useGame } from "../store";
+import { sfx } from "../audio/sfx";
+import { POLICE_STATION } from "../places";
 
-// Police pursuit (§14): cop cars spawn as the police-heat axis climbs and home
-// in on the player. Ram/contact drains health; cornering the player on foot
-// makes the arrest (busted). Cops can be shot (gun queues cop.dmg).
+// Police pursuit (§14): cop cars spawn a few streets away as the police-heat
+// axis climbs and home in — slow enough to outrun in a car and lose on foot.
+// They show on the map. Being cornered (right on top) for a 5s grace = busted.
+// Cops can be shot (gun queues cop.dmg).
 
 const MAX_COPS = 3;
-const SPEED = 17;        // m/s pursuit speed
-const SPAWN_DIST = 85;   // where new units appear, out of sight
+const SPEED = 12.5;       // m/s — a car easily outruns this
+const SPAWN_DIST = 120;   // appear a few streets away (visible on the map)
+const GIVEUP_DIST = 170;  // beyond this for GIVEUP_TIME and they lose you
+const GIVEUP_TIME = 6;
+const ARREST_DIST = 3.6;  // must be right on top to make the arrest
+const ARREST_GRACE = 5;   // seconds on top before busted
 const COP_HP = 3;
 
 interface Unit {
@@ -22,6 +29,7 @@ interface Unit {
   hp: number;
   deadT: number;
   arrest: number;
+  far: number; // seconds spent beyond GIVEUP_DIST
   car: Cop;
 }
 
@@ -37,6 +45,7 @@ export function Police() {
       hp: COP_HP,
       deadT: 0,
       arrest: 0,
+      far: 0,
       car: { pos: new THREE.Vector3(9999, 0, 9999), dmg: 0, dead: true } as Cop,
     })),
   );
@@ -48,14 +57,15 @@ export function Police() {
 
   useFrame((_, dt) => {
     const game = useGame.getState();
-    if (game.paused || game.down) return;
+    if (game.paused || game.down) { sfx.siren(false); return; }
     const stats = useStats.getState();
     const police = stats.police;
     const target = (game.mode === "car" ? shared.car : shared.player)?.translation();
 
-    // how many units should be chasing right now
-    const desired = police >= 2 ? Math.min(MAX_COPS, Math.floor(police)) : 0;
+    // chase only at 3+ stars, and fewer units than the star count
+    const desired = police >= 3 ? Math.min(MAX_COPS, Math.floor(police) - 1) : 0;
     let activeCount = units.current.filter((u) => u.active && u.hp > 0).length;
+    sfx.siren(activeCount > 0);
 
     units.current.forEach((u, i) => {
       const g = refs.current[i];
@@ -70,15 +80,14 @@ export function Police() {
         return;
       }
 
-      // (de)spawn to match desired count
+      // spawn a few streets out (never on top of the player)
       if (!u.active && activeCount < desired && target) {
         const a = Math.random() * Math.PI * 2;
         u.pos.set(target.x + Math.cos(a) * SPAWN_DIST, 0, target.z + Math.sin(a) * SPAWN_DIST);
-        u.active = true; u.hp = COP_HP; u.arrest = 0; u.car.dead = false; u.car.dmg = 0;
+        u.active = true; u.hp = COP_HP; u.arrest = 0; u.far = 0; u.car.dead = false; u.car.dmg = 0;
         activeCount++;
       }
       if (u.active && activeCount > desired && u.arrest < 0.01) {
-        // drop the furthest extra unit when heat cools
         u.active = false; u.car.dead = true; g.visible = false; activeCount--;
         return;
       }
@@ -99,13 +108,16 @@ export function Police() {
       g.position.copy(u.pos);
       g.rotation.y = u.yaw;
 
-      // consequences of being caught
-      if (d < 4) stats.setHealth(stats.health - dt * 10); // ram/contact damage
-      if (d < 2.8 && game.mode === "foot") {
+      // lose them if you break away for long enough
+      if (d > GIVEUP_DIST) { u.far += dt; if (u.far > GIVEUP_TIME) { u.active = false; u.car.dead = true; g.visible = false; activeCount--; return; } }
+      else u.far = 0;
+
+      // arrest only when right on top, on foot, for the full grace period
+      if (d < ARREST_DIST && game.mode === "foot") {
         u.arrest += dt;
-        if (u.arrest > 1.2) useGame.getState().setDown("busted");
+        if (u.arrest > ARREST_GRACE && !useGame.getState().down) { useGame.getState().setDown("busted"); sfx.bust(); }
       } else {
-        u.arrest = Math.max(0, u.arrest - dt);
+        u.arrest = Math.max(0, u.arrest - dt * 1.5);
       }
 
       // flashing lightbar
@@ -117,6 +129,23 @@ export function Police() {
 
   return (
     <group>
+      {/* police station — where the player is processed after a bust */}
+      <group position={POLICE_STATION}>
+        <mesh position={[0, 3, 0]} castShadow receiveShadow>
+          <boxGeometry args={[12, 6, 10]} />
+          <meshStandardMaterial color="#5a6472" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 6.6, 0]}>
+          <boxGeometry args={[12.4, 0.6, 10.4]} />
+          <meshStandardMaterial color="#2a3550" />
+        </mesh>
+        {/* blue station light */}
+        <mesh position={[0, 7.2, 0]}>
+          <sphereGeometry args={[0.5, 10, 10]} />
+          <meshStandardMaterial color="#2a5aff" emissive="#2a5aff" emissiveIntensity={2} />
+        </mesh>
+      </group>
+
       {units.current.map((_, i) => (
         <group key={i} ref={(el) => (refs.current[i] = el)} visible={false}>
           <Vehicle type="infiniti" color="#1a2a55" />

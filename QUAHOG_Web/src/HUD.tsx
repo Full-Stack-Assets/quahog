@@ -124,7 +124,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <br />
           <b>C</b> character &nbsp;·&nbsp; <b>M</b> map
           <br />
-          <b>G</b> draw gun &nbsp;·&nbsp; <b>click</b> fire
+          <b>G</b> draw gun &nbsp;·&nbsp; <b>click</b> fire &nbsp;·&nbsp; <b>H</b> horn
           <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>

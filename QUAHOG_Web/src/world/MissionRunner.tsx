@@ -3,6 +3,7 @@ import { shared } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
 import { useMission } from "../mission";
+import { sfx } from "../audio/sfx";
 
 // Drives the active mission (§16): checks the current step's completion each frame
 // (reach target and/or be in a car), advances, and pays rewards. Renders the
@@ -29,7 +30,8 @@ export function MissionRunner() {
     }
 
     if (complete) {
-      if (cur.reward) useStats.getState().addCash(cur.reward);
+      if (cur.reward) { useStats.getState().addCash(cur.reward); sfx.cash(); }
+      else sfx.ui();
       ms.advance();
     }
   });

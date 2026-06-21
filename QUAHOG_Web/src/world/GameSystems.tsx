@@ -4,12 +4,13 @@ import { useStats } from "../game";
 import { useGame } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
+import { sfx } from "../audio/sfx";
 
 // Runs the always-on gameplay loops (§15): heat decay + periodic autosave, and
 // loads the saved game on mount. Also handles global hotkeys (weather, pause).
 export function GameSystems() {
   const acc = useRef(0);
-  useEffect(() => { useStats.getState().load(); }, []);
+  useEffect(() => { useStats.getState().load(); sfx.startAmbience(); }, []);
   useFrame((_, dt) => {
     // global hotkeys
     if (consumeTap("KeyR")) useGame.getState().toggleWeather();

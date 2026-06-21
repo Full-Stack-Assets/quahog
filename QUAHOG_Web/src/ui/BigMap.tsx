@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useGame } from "../store";
 import { useMission } from "../mission";
 import { shared } from "../shared";
+import { POLICE_STATION } from "../places";
 
 // Large map screen (§21): full-window pannable/zoomable map of the slice drawn
 // from real OSM geometry, with real street-name labels, water, the player, and
@@ -97,6 +98,24 @@ export function BigMap() {
           ctx.fillText(r.name, 0, 0);
           ctx.restore();
         }
+      }
+
+      // police station marker + label
+      ctx.fillStyle = "#3a6bff";
+      ctx.fillRect(sx(POLICE_STATION[0]) - 5, sy(POLICE_STATION[2]) - 5, 10, 10);
+      ctx.fillStyle = "#bcd0ff";
+      ctx.font = "11px 'Courier New', monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("POLICE", sx(POLICE_STATION[0]), sy(POLICE_STATION[2]) - 10);
+
+      // cop blips
+      const pulse = (Math.sin(performance.now() * 0.008) + 1) * 0.5;
+      for (const cop of shared.cops) {
+        if (cop.dead) continue;
+        ctx.fillStyle = `rgba(90,150,255,${0.5 + pulse * 0.5})`;
+        ctx.beginPath();
+        ctx.arc(sx(cop.pos.x), sy(cop.pos.z), 5, 0, Math.PI * 2);
+        ctx.fill();
       }
 
       // objective

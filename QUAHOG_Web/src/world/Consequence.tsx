@@ -3,13 +3,14 @@ import { useFrame } from "@react-three/fiber";
 import { shared } from "../shared";
 import { useStats } from "../game";
 import { useGame } from "../store";
+import { sfx } from "../audio/sfx";
+import { HOSPITAL, POLICE_STATION } from "../places";
 
-// Busted / Wasted loop (§15): health at zero = WASTED; cornered by police on
-// foot = BUSTED. Either way the player blacks out, loses some cash + all heat,
-// and respawns at a safe location with restored health.
+// Busted / Wasted loop (§15): health at zero = WASTED (wake at the hospital);
+// cornered by police = BUSTED (processed at the police station). Either way the
+// player blacks out, loses some cash + all heat, and respawns with full health.
 
-const RESPAWN: [number, number, number] = [-256.2, 3, 106.5]; // near the Bethel
-const DELAY = 2.8; // seconds blacked out before respawn
+const DELAY = 2.6; // seconds blacked out before respawn
 
 export function Consequence() {
   const timer = useRef(0);
@@ -21,6 +22,7 @@ export function Consequence() {
     // trigger wasted when health is gone
     if (!game.down && stats.health <= 0) {
       useGame.getState().setDown("wasted");
+      sfx.bust();
       timer.current = 0;
     }
     if (!game.down) return;
@@ -28,19 +30,23 @@ export function Consequence() {
     timer.current += dt;
     if (timer.current < DELAY) return;
 
-    // respawn
+    // respawn at the hospital (wasted) or police station (busted)
     const penalty = game.down === "wasted" ? 200 : 150;
+    const spot = game.down === "wasted" ? HOSPITAL : POLICE_STATION;
     stats.addCash(-Math.min(stats.cash, penalty));
     stats.setHealth(100);
     stats.heat(-9, -9); // clamp both axes to 0
 
+    // if the player was driving, leave the car behind and step out on foot
+    useGame.getState().setMode("foot");
     const pl = shared.player;
     if (pl) {
       pl.setEnabled(true);
-      pl.setTranslation({ x: RESPAWN[0], y: RESPAWN[1], z: RESPAWN[2] }, true);
+      pl.setTranslation({ x: spot[0], y: spot[1], z: spot[2] }, true);
       pl.setLinvel({ x: 0, y: 0, z: 0 }, true);
     }
-    useGame.getState().setMode("foot");
+    // clear any active pursuit so you actually get a fresh start
+    for (const c of shared.cops) c.dead = true;
     useGame.getState().setDown(null);
     timer.current = 0;
   });

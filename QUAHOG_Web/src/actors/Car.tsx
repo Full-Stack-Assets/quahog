@@ -6,6 +6,7 @@ import { consumeTap, moveAxis } from "../input";
 import { Vehicle, type VehicleType } from "../earth/Vehicles";
 import { shared, addShake } from "../shared";
 import { useGame } from "../store";
+import { sfx } from "../audio/sfx";
 
 // Arcade tuning: brisk top speed with speed-scaled steering authority that eases
 // off at the top end, so the car is fast but planted and easy to place.
@@ -28,8 +29,8 @@ export function Car() {
     const rb = body.current;
     if (!rb) return;
     const game = useGame.getState();
-    if (game.paused) { shared.skid = false; return; }
-    if (game.mode !== "car") { shared.skid = false; shared.carSpeed = 0; return; }
+    if (game.paused) { shared.skid = false; sfx.engine(0, false); return; }
+    if (game.mode !== "car") { shared.skid = false; shared.carSpeed = 0; sfx.engine(0, false); return; }
 
     const ax = moveAxis();
     let yaw = shared.carYaw;
@@ -61,13 +62,17 @@ export function Car() {
     );
     shared.carYaw = yaw;
 
+    // engine note tracks speed; horn on H
+    sfx.engine(Math.min(1, Math.abs(nf) / MAX_SPEED), true);
+    if (consumeTap("KeyH")) sfx.horn();
+
     // ram traffic: contact halts the other car (and jolts the camera once)
     const cp = rb.translation();
     for (const tc of shared.traffic) {
       if (tc.stolen) continue;
       const d = Math.hypot(tc.pos.x - cp.x, tc.pos.z - cp.z);
       if (d < 4.4) {
-        if (tc.stop <= 0 && Math.abs(vForward) > 6) addShake(0.35);
+        if (tc.stop <= 0 && Math.abs(vForward) > 6) { addShake(0.35); sfx.crash(); }
         tc.stop = Math.max(tc.stop, 1.6);
       }
     }

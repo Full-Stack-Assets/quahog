@@ -7,6 +7,7 @@ import { consumeTap, moveAxis } from "../input";
 import { shared, addShake, raiseAlarm, addImpact, type TrafficCar, type Body, type Cop } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
+import { sfx } from "../audio/sfx";
 
 const WALK_SPEED = 6.5;
 const ENTER_RADIUS = 4.5;
@@ -112,6 +113,7 @@ export function Player() {
         addImpact(new THREE.Vector3(best.pos.x, 1.1, best.pos.z), "#9a2a2a");
         raiseAlarm(p.x, p.z, 5);
       }
+      sfx.punch();
     }
 
     // gunplay: fire the pistol when armed (left-click / Space) along the aim yaw
@@ -145,6 +147,7 @@ export function Player() {
       addShake(0.3);
       useStats.getState().heat(0.7, 0.6);
       raiseAlarm(p.x, p.z, 6); // gunfire scatters the crowd
+      sfx.gun();
     }
   });
 
