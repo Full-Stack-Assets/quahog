@@ -151,7 +151,7 @@ time; keep the build green; be honest about status.
 - [ ] Birds: gulls (flocking near harbor), pigeons; stray dogs/cats
 
 ## 8. Environmental storytelling
-- [ ] Posters/flyers for the radio stations + fictional businesses
+- [~] Posters/flyers for the radio stations + fictional businesses — wheat-pasted flyer boards (WHALE/The Rage/Maré Alta + Feast banner) near the core (Posters.tsx); building-wall pasting TODO
 - [ ] Graffiti tags per faction/turf
 - [ ] Murals (Portuguese/Cape Verdean South End, whaling heritage)
 - [ ] Memorials/plaques at real landmarks (flavor text)
@@ -184,8 +184,8 @@ time; keep the build green; be honest about status.
 - [x] Melee punch → KO/kill + knockback
 - [ ] Melee combo / block / grapple; lock-on
 - [~] Gunplay: aiming, hitscan/projectile, reticle, cover-shoot, recoil — pistol hitscan + tracer/muzzle flash + recoil shake + **reticle** (Player + Tracers.tsx + HUD); cover-shoot TODO
-- [~] Weapon set: fists, bat, pistol, shotgun, SMG, “heavy” (Quequechan Mill tier) — fists + pistol; bat/shotgun/SMG/heavy TODO
-- [ ] Ammo, reload, pickups, weapon switching
+- [~] Weapon set: fists, bat, pistol, shotgun, SMG, “heavy” (Quequechan Mill tier) — fists + pistol + **shotgun** (spread); bat/SMG/heavy TODO
+- [~] Ammo, reload, pickups, weapon switching — **weapon switching** (1/2/3 + G); ammo/reload/pickups TODO
 - [ ] Damage model + health/armor + regen/medkits
 - [~] Hit reactions, ragdolls, blood decals (toggleable), impact particles — pooled blood/dust impact bursts on hits (Impacts.tsx); ragdolls/decals TODO
 - [~] Enemy combat AI (cops, faction enforcers): chase, shoot, take cover, flank — cop cars chase, ram, and arrest (Police.tsx); shooting/cover/flank + faction enforcers TODO
@@ -259,7 +259,7 @@ time; keep the build green; be honest about status.
 - [ ] Boat smuggling runs (Coast Guard heat)
 - [ ] Clam-shack delivery time-trials
 - [ ] Vigilante/taxi/“rampage” style diversions
-- [ ] Collectibles (e.g., hidden whaling artifacts/landmarks photo-ops)
+- [~] Collectibles (e.g., hidden whaling artifacts/landmarks photo-ops) — 8 hidden scrimshaw collectibles with bounty + persistence (Collectibles.tsx); photo-ops TODO
 - [ ] Lizzie Borden ghost-tour caper
 
 ## 19. Audio & music
@@ -625,5 +625,7 @@ blood states, price, vendor, unlock.
 - **"World reacts" batch:** pedestrians now **flee/panic** from gunfire, melee, and oncoming fast cars (shared.alarm threat model, StreetLife §14); **impact particles** — pooled blood/dust bursts at every melee + gun hit (Impacts.tsx §23); an **aiming reticle** appears when the pistol is drawn (§11/§21); and **parked cars** line the curbs near the core (ParkedCars.tsx §7/§12). Shipped (`34967af`).
 
 - **Audio + police-fairness batch:** procedural **SFX** (gunshot, punch, car crunch, horn-H, cash/UI/bust stings), a **speed-tracked engine note**, a **police siren**, and a **harbor wind + gull ambience** bed (audio/sfx.ts §19/§20/§13). Reworked **police** to be fair (chase at 3★+, slower/fewer units, spawn a few streets away, **losable**, no accidental kills, **5 s arrest grace**) and fixed the **busted/wasted respawn** → BUSTED to the **police station**, WASTED to the **hospital** (places.ts §14/§15). Added **cop blips + police-station markers** to the minimap and big map, and made the **touch controls drag-to-move + resizable** with persisted layout plus gun/fire buttons (§21/§25). Hook false-positive removed (option A). Shipped (`ef1a38e`, `d8fe418`).
+
+- **30-item goal run:** across several batches — **economy** (5 buyable fronts + passive revenue, economy.ts §15/§17); **feel** (Shift sprint+stamina, Space handbrake/drift, chromatic-aberration + film-grain post, on-screen objective distance §10/§13/§3/§21); **weather/ocean/streets** (fog state + wet roads + ocean swell + cycling traffic signals §5/§6/§7); **UI/meta** (title/start screen, pause **settings** with effects+volume, **toast** notifications §22/§26/§21); **combat/side-content** (weapon switching + **shotgun** spread, hidden **scrimshaw** collectibles, **flyer/poster** boards §11/§18/§8). Also reworked police fairness + busted/wasted respawn and added the procedural **SFX/ambience** engine (sfx.ts). Hook false-positive removed (option A). Shipped across `ef1a38e`→`HEAD`.
 
 <!-- Append new dated entries above this line as work lands. -->
