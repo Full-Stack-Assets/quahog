@@ -24,6 +24,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const objective = useMission((s) => s.objective);
   const missionTitle = useMission((s) => s.title);
   const missionDone = useMission((s) => s.done);
+  const armed = useGame((s) => s.armed);
+  const down = useGame((s) => s.down);
   const [hhmm, setHhmm] = useState("09:00");
   useEffect(() => {
     const id = setInterval(() => {
@@ -38,6 +40,24 @@ export function HUD({ sliceName }: { sliceName: string }) {
 
   return (
     <div style={wrap}>
+      {/* busted / wasted overlay (§15) */}
+      {down && (
+        <div
+          style={{
+            position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
+            background: down === "wasted" ? "rgba(60,0,0,.62)" : "rgba(0,10,40,.62)",
+          }}
+        >
+          <div style={{
+            fontSize: 64, fontWeight: 900, letterSpacing: 6,
+            color: down === "wasted" ? "#ff5c5c" : "#6cb6ff",
+            textShadow: "0 2px 18px rgba(0,0,0,.8)",
+          }}>
+            {down === "wasted" ? "WASTED" : "BUSTED"}
+          </div>
+        </div>
+      )}
+
       {/* low-health damage vignette (§23) */}
       {hurt > 0 && (
         <div
@@ -68,6 +88,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ marginTop: 4, height: 6, background: "#3a2a3a", borderRadius: 3, overflow: "hidden" }}>
           <div style={{ width: `${health}%`, height: "100%", background: health > 30 ? "#4ad66d" : "#e23b3b" }} />
         </div>
+        {armed && <div style={{ fontSize: 11, marginTop: 4, color: "#ffcf4a" }}>🔫 PISTOL</div>}
       </div>
 
       <div
@@ -94,6 +115,8 @@ export function HUD({ sliceName }: { sliceName: string }) {
           <b>R</b> rain &nbsp;·&nbsp; <b>P</b>/<b>Esc</b> pause
           <br />
           <b>C</b> character &nbsp;·&nbsp; <b>M</b> map
+          <br />
+          <b>G</b> draw gun &nbsp;·&nbsp; <b>click</b> fire
           <br />
           mode: <b style={{ color: "#22d3ee" }}>{mode === "car" ? "DRIVING" : "ON FOOT"}</b>
         </div>

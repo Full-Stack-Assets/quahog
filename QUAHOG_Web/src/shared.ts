@@ -18,6 +18,20 @@ export interface TrafficCar {
   stolen: boolean; // taken by the player → hidden from traffic
 }
 
+// A fired-shot tracer for the gunplay VFX layer.
+export interface Shot {
+  from: THREE.Vector3;
+  to: THREE.Vector3;
+  life: number; // seconds remaining
+}
+
+// A pursuing police unit, registered by the Police system so the gun can hit it.
+export interface Cop {
+  pos: THREE.Vector3;
+  dmg: number;   // damage queued by the player's gun
+  dead: boolean;
+}
+
 // Cross-component mutable handles shared by the player, car, and camera.
 // (Kept out of React state so per-frame updates don't trigger re-renders.)
 export const shared = {
@@ -34,6 +48,10 @@ export const shared = {
   peds: [] as Body[],
   /** Traffic cars registered by StreetLife, for ramming + carjacking. */
   traffic: [] as TrafficCar[],
+  /** Active gun-tracer VFX, drained by the Tracers renderer. */
+  shots: [] as Shot[],
+  /** Pursuing police units, registered by the Police system. */
+  cops: [] as Cop[],
   /** Day factor 0 (night) .. 1 (noon), driven by the day/night cycle. */
   dayT: 1,
   /** Current in-game hour 0..24. */

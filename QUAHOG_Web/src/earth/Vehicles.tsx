@@ -1,4 +1,7 @@
+import { useRef } from "react";
 import * as THREE from "three";
+import { useFrame } from "@react-three/fiber";
+import { shared } from "../shared";
 
 // Recognizable low-poly road cars built from primitives. Silhouettes are tuned
 // per model (ride height, hood/cabin proportions) so a Bronco reads boxy/tall, a
@@ -22,12 +25,22 @@ const SPECS: Record<VehicleType, Spec> = {
   rav4:     { L: 4.4, W: 1.9, H: 1.15, y: 1.0, cabL: 2.2, cabH: 0.82, cabZ: -0.15, ride: 0.48, wheelR: 0.48, glass: "#212a30" },
 };
 
-export function Vehicle({ type, color }: { type: VehicleType; color: string }) {
+export function Vehicle({ type, color, brake }: { type: VehicleType; color: string; brake?: () => boolean }) {
   const s = SPECS[type];
   const halfL = s.L / 2;
   const wheelZ = halfL - 0.95;
   const wheelX = s.W / 2 - 0.05;
   const cabW = s.cabW ?? s.W - 0.25;
+  const head = useRef<THREE.MeshStandardMaterial>(null);
+  const tail = useRef<THREE.MeshStandardMaterial>(null);
+
+  // headlights/taillights come up at dusk; taillights flare under braking
+  useFrame(() => {
+    const night = 1 - shared.dayT;
+    if (head.current) head.current.emissiveIntensity = 0.3 + night * 1.6;
+    if (tail.current) tail.current.emissiveIntensity = 0.3 + night * 0.9 + (brake?.() ? 2.2 : 0);
+  });
+
   return (
     <group position={[0, s.ride - s.wheelR, 0]}>
       {/* body */}
@@ -55,12 +68,12 @@ export function Vehicle({ type, color }: { type: VehicleType; color: string }) {
       {/* headlights */}
       <mesh position={[0, s.y, halfL + 0.01]}>
         <boxGeometry args={[s.W - 0.3, 0.18, 0.05]} />
-        <meshStandardMaterial color="#fdf6d0" emissive="#fde9a0" emissiveIntensity={0.5} />
+        <meshStandardMaterial ref={head} color="#fdf6d0" emissive="#fde9a0" emissiveIntensity={0.5} />
       </mesh>
       {/* taillights */}
       <mesh position={[0, s.y, -halfL - 0.01]}>
         <boxGeometry args={[s.W - 0.3, 0.16, 0.05]} />
-        <meshStandardMaterial color="#7a1010" emissive="#c01818" emissiveIntensity={0.5} />
+        <meshStandardMaterial ref={tail} color="#7a1010" emissive="#c01818" emissiveIntensity={0.5} />
       </mesh>
       {/* wheels */}
       {[

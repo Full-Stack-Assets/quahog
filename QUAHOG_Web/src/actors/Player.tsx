@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
-import { shared, addShake, type TrafficCar } from "../shared";
+import { shared, addShake, type TrafficCar, type Body, type Cop } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
 
@@ -15,6 +15,7 @@ export function Player() {
   const body = useRef<RapierRigidBody>(null);
   const mesh = useRef<THREE.Group>(null);
   const playerTint = useGame((s) => s.playerTint);
+  const armed = useGame((s) => s.armed);
 
   useEffect(() => {
     shared.player = body.current;
@@ -110,6 +111,38 @@ export function Player() {
         addShake(0.5); // impact juice
       }
     }
+
+    // gunplay: fire the pistol when armed (left-click / Space) along the aim yaw
+    if (armed && !game.mapOpen && !game.charOpen && (consumeTap("Mouse0") || consumeTap("Space"))) {
+      const p = rb.translation();
+      const aim = shared.camYaw;
+      const fx = Math.sin(aim), fz = Math.cos(aim);
+      const from = new THREE.Vector3(p.x + fx * 0.6, p.y + 0.4, p.z + fz * 0.6);
+      const RANGE = 60;
+      let bestT = RANGE;
+      let bestPed: Body | null = null;
+      let bestCop: Cop | null = null;
+      for (const ped of shared.peds) {
+        const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
+        const along = dx * fx + dz * fz;
+        if (along <= 0 || along > RANGE) continue;
+        if (Math.abs(dx * fz - dz * fx) < 1.4 && along < bestT) { bestT = along; bestPed = ped; bestCop = null; }
+      }
+      for (const cop of shared.cops) {
+        if (cop.dead) continue;
+        const dx = cop.pos.x - p.x, dz = cop.pos.z - p.z;
+        const along = dx * fx + dz * fz;
+        if (along <= 0 || along > RANGE) continue;
+        if (Math.abs(dx * fz - dz * fx) < 2.2 && along < bestT) { bestT = along; bestCop = cop; bestPed = null; }
+      }
+      const to = new THREE.Vector3();
+      if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); }
+      else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); }
+      else to.set(p.x + fx * bestT, p.y + 0.4, p.z + fz * bestT);
+      shared.shots.push({ from, to, life: 0.06 });
+      addShake(0.3);
+      useStats.getState().heat(0.7, 0.6);
+    }
   });
 
   return (
@@ -133,6 +166,15 @@ export function Player() {
               return !!v && Math.hypot(v.x, v.z) > 0.6;
             }}
           />
+          {/* pistol in hand when armed */}
+          {armed && (
+            <group position={[0.28, 1.0, 0.25]}>
+              <mesh castShadow>
+                <boxGeometry args={[0.08, 0.12, 0.28]} />
+                <meshStandardMaterial color="#1a1a1d" roughness={0.5} metalness={0.6} />
+              </mesh>
+            </group>
+          )}
         </group>
       </group>
     </RigidBody>

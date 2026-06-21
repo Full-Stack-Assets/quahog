@@ -14,6 +14,13 @@ export function installInput() {
   });
   window.addEventListener("keyup", (e) => pressed.delete(e.code));
   window.addEventListener("blur", () => pressed.clear());
+  // left mouse → a "Mouse0" tap (used to fire the gun); ignore clicks on UI
+  window.addEventListener("mousedown", (e) => {
+    if (e.button !== 0) return;
+    const el = e.target as HTMLElement | null;
+    if (el && el.closest("button")) return; // don't fire when clicking a button
+    taps.add("Mouse0");
+  });
 }
 
 export const isDown = (code: string) => pressed.has(code);

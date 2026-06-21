@@ -4,6 +4,7 @@ import type { Slice } from "./slice";
 export type Mode = "foot" | "car";
 export type View = "third" | "first";
 export type Weather = "clear" | "rain";
+export type Down = null | "busted" | "wasted";
 
 interface GameState {
   mode: Mode;
@@ -18,6 +19,8 @@ interface GameState {
   playerTint: string;
   playerCarType: string;
   playerCarColor: string;
+  armed: boolean;
+  down: Down;
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -31,6 +34,8 @@ interface GameState {
   toggleMap: () => void;
   setPlayerTint: (c: string) => void;
   setPlayerCar: (type: string, color: string) => void;
+  toggleArmed: () => void;
+  setDown: (d: Down) => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -46,6 +51,8 @@ export const useGame = create<GameState>((set) => ({
   playerTint: "#ffffff",
   playerCarType: "mustang",
   playerCarColor: "#b81d24",
+  armed: false,
+  down: null,
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -59,4 +66,6 @@ export const useGame = create<GameState>((set) => ({
   toggleMap: () => set((s) => ({ mapOpen: !s.mapOpen })),
   setPlayerTint: (playerTint) => set({ playerTint }),
   setPlayerCar: (playerCarType, playerCarColor) => set({ playerCarType, playerCarColor }),
+  toggleArmed: () => set((s) => ({ armed: !s.armed })),
+  setDown: (down) => set({ down }),
 }));

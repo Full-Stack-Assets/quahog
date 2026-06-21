@@ -15,6 +15,7 @@ export function GameSystems() {
     if (consumeTap("KeyP") || consumeTap("Escape")) useGame.getState().togglePause();
     if (consumeTap("KeyC")) useGame.getState().toggleChar();
     if (consumeTap("KeyM")) useGame.getState().toggleMap();
+    if (consumeTap("KeyG")) useGame.getState().toggleArmed();
 
     if (useGame.getState().paused) return; // freeze sim while paused
     useStats.getState().decay(dt);

@@ -103,7 +103,11 @@ export function Car() {
       <CuboidCollider args={[1.0, 0.6, 2.1]} />
       {/* real car model; collider center is ~0.6 above the wheels' contact */}
       <group position={[0, -0.6, 0]}>
-        <Vehicle type={carType as VehicleType} color={carColor} />
+        <Vehicle
+          type={carType as VehicleType}
+          color={carColor}
+          brake={() => useGame.getState().mode === "car" && moveAxis().y < -0.1}
+        />
       </group>
     </RigidBody>
   );

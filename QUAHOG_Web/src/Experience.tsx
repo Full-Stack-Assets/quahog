@@ -14,6 +14,10 @@ import { StreetSigns } from "./world/StreetSigns";
 import { HarborProps } from "./world/HarborProps";
 import { SkidMarks } from "./world/SkidMarks";
 import { Rain } from "./world/Rain";
+import { Tracers } from "./world/Tracers";
+import { Police } from "./world/Police";
+import { Consequence } from "./world/Consequence";
+import { Safehouse } from "./world/Safehouse";
 import { Ambient } from "./earth/Ambient";
 import { DayNight } from "./world/DayNight";
 import { GameSystems } from "./world/GameSystems";
@@ -51,6 +55,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <DayNight />
       <GameSystems />
       <MissionRunner />
+      <Consequence />
 
       <Physics gravity={[0, -9.81, 0]}>
         <SatelliteGround origin={slice?.origin} />
@@ -78,6 +83,9 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      <Safehouse />
+      <Police />
+      <Tracers />
       <SkidMarks />
       <Rain />
       <Ambient weather="clear" />
