@@ -5,7 +5,9 @@ import { makeWaterNormal } from "./textures";
 
 // The real harbor, triangulated from the OSM water polygon(s), as an animated
 // ocean surface. Sits just above the opaque ground plane so it stays visible.
-const WATER_Y = 0.12;
+// Lifted well clear of the region-wide ground plane — at 0.12 it z-fought with
+// the ground and vanished in 3D (only the map showed water). 0.45 reads cleanly.
+const WATER_Y = 0.45;
 
 export function Water({ polys }: { polys: [number, number][][] }) {
   const normalMap = useMemo(() => {
@@ -73,7 +75,9 @@ export function Water({ polys }: { polys: [number, number][][] }) {
       matRef.current.normalMap.offset.x += dt * 0.012;
       matRef.current.normalMap.offset.y += dt * 0.006;
     }
-    if (base && meshRef.current) {
+    // animate the swell only on modest meshes — at region scale (Buzzards Bay)
+    // the vertex count is huge, so keep that water static for performance.
+    if (base && meshRef.current && base.length < 45000) {
       const t = state.clock.elapsedTime;
       const g = meshRef.current.geometry;
       const pos = g.attributes.position as THREE.BufferAttribute;
@@ -82,7 +86,7 @@ export function Water({ polys }: { polys: [number, number][][] }) {
         arr[i + 1] = base[i + 1] + height(base[i], base[i + 2], t);
       }
       pos.needsUpdate = true;
-      if ((g.index?.count ?? 0) < 60000) g.computeVertexNormals(); // skip on huge meshes
+      g.computeVertexNormals();
     }
   });
 
@@ -91,14 +95,14 @@ export function Water({ polys }: { polys: [number, number][][] }) {
     <mesh ref={meshRef} geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
       <meshStandardMaterial
         ref={matRef}
-        color="#13323f"
-        roughness={0.12}
-        metalness={0.6}
+        color="#1a5167"
+        roughness={0.16}
+        metalness={0.55}
         envMapIntensity={1.2}
         normalMap={normalMap}
         normalScale={new THREE.Vector2(0.45, 0.45)}
         transparent
-        opacity={0.95}
+        opacity={0.96}
       />
     </mesh>
   );

@@ -50,7 +50,8 @@ function rampY(d: number, total: number): number {
   return CREST * Math.max(0, Math.min(up, down));
 }
 
-interface Built { deck: THREE.BufferGeometry; piers: [number, number, number][] }
+interface Built { deck: THREE.BufferGeometry; rail: THREE.BufferGeometry | null; piers: [number, number, number][] }
+const RAIL = 1.1; // railing height
 
 function buildSpan(pts: Pt[], width: number): Built | null {
   const half = width / 2;
@@ -62,8 +63,9 @@ function buildSpan(pts: Pt[], width: number): Built | null {
   for (let i = 0; i < wpt.length; i++) wpt[i].y = rampY(dist[i], total);
 
   const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  const rp: number[] = [], ri: number[] = []; // railing
   const piers: [number, number, number][] = [];
-  let v = 0, sinceP = 0;
+  let v = 0, rv = 0, sinceP = 0;
   for (let i = 0; i < wpt.length - 1; i++) {
     const a = wpt[i], b = wpt[i + 1];
     const dx = b.x - a.x, dz = b.z - a.z;
@@ -75,6 +77,13 @@ function buildSpan(pts: Pt[], width: number): Built | null {
     uv.push(0, v0, 0, v1, 1, v1, 1, v0);
     idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
     v += 4;
+    // railings: a vertical strip along each deck edge
+    for (const s of [1, -1]) {
+      const ex = nx * s, ez = nz * s;
+      rp.push(a.x + ex, a.y, a.z + ez, b.x + ex, b.y, b.z + ez, b.x + ex, b.y + RAIL, b.z + ez, a.x + ex, a.y + RAIL, a.z + ez);
+      ri.push(rv, rv + 1, rv + 2, rv, rv + 2, rv + 3);
+      rv += 4;
+    }
     sinceP += segLen;
     if (sinceP >= PIER_EVERY && a.y > 1.5) { piers.push([a.x, a.y, a.z]); sinceP = 0; }
   }
@@ -84,7 +93,14 @@ function buildSpan(pts: Pt[], width: number): Built | null {
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
   g.setIndex(idx);
   g.computeVertexNormals();
-  return { deck: g, piers };
+  let rail: THREE.BufferGeometry | null = null;
+  if (rp.length) {
+    rail = new THREE.BufferGeometry();
+    rail.setAttribute("position", new THREE.Float32BufferAttribute(rp, 3));
+    rail.setIndex(ri);
+    rail.computeVertexNormals();
+  }
+  return { deck: g, rail, piers };
 }
 
 export function Bridges({ roads }: { roads: Road[] }) {
@@ -100,6 +116,11 @@ export function Bridges({ roads }: { roads: Road[] }) {
               <meshStandardMaterial map={tex} color="#74767f" roughness={0.82} side={THREE.DoubleSide} />
             </mesh>
           </RigidBody>
+          {s.rail && (
+            <mesh geometry={s.rail} castShadow>
+              <meshStandardMaterial color="#3a3e44" metalness={0.5} roughness={0.5} side={THREE.DoubleSide} />
+            </mesh>
+          )}
           {s.piers.map((p, k) => (
             <mesh key={k} position={[p[0], p[1] / 2 - 0.75, p[2]]} castShadow>
               <boxGeometry args={[1.1, p[1] + 1.5, 1.1]} />
