@@ -144,7 +144,7 @@ time; keep the build green; be honest about status.
 - [ ] Traffic lights + stop signs (functional + decorative)
 - [ ] Power lines / utility poles, dumpsters, crates, pallets
 - [ ] Storefront awnings, signage, A-frame signs, window displays
-- [ ] Parked cars lining streets
+- [x] Parked cars lining streets — static vehicles tucked against the curb near the core (ParkedCars.tsx)
 - [ ] Harbor props: nets, traps, barrels, forklifts, shipping containers
 - [~] Vegetation: street trees, weeds in cracks, harbor grass — instanced street trees (Props.tsx); weeds/harbor grass TODO
 - [ ] Litter/newspapers/leaves (wind-driven), puddles
@@ -183,11 +183,11 @@ time; keep the build green; be honest about status.
 ## 11. Combat & weapons
 - [x] Melee punch → KO/kill + knockback
 - [ ] Melee combo / block / grapple; lock-on
-- [~] Gunplay: aiming, hitscan/projectile, reticle, cover-shoot, recoil — pistol hitscan along the aim yaw + tracer/muzzle flash + recoil shake (Player + Tracers.tsx); reticle/cover-shoot TODO
+- [~] Gunplay: aiming, hitscan/projectile, reticle, cover-shoot, recoil — pistol hitscan + tracer/muzzle flash + recoil shake + **reticle** (Player + Tracers.tsx + HUD); cover-shoot TODO
 - [~] Weapon set: fists, bat, pistol, shotgun, SMG, “heavy” (Quequechan Mill tier) — fists + pistol; bat/shotgun/SMG/heavy TODO
 - [ ] Ammo, reload, pickups, weapon switching
 - [ ] Damage model + health/armor + regen/medkits
-- [ ] Hit reactions, ragdolls, blood decals (toggleable), impact particles
+- [~] Hit reactions, ragdolls, blood decals (toggleable), impact particles — pooled blood/dust impact bursts on hits (Impacts.tsx); ragdolls/decals TODO
 - [~] Enemy combat AI (cops, faction enforcers): chase, shoot, take cover, flank — cop cars chase, ram, and arrest (Police.tsx); shooting/cover/flank + faction enforcers TODO
 
 ## 12. Vehicles
@@ -213,7 +213,7 @@ time; keep the build green; be honest about status.
 - [x] Wandering pedestrians (kinematic) + contact/knockback
 - [x] Traffic following the real road network (turns at intersections)
 - [x] Peds react to melee (KO/kill, lie down)
-- [ ] Ped AI states: idle/converse/walk/flee/panic/cower; weather reactions (umbrellas)
+- [~] Ped AI states: idle/converse/walk/flee/panic/cower; weather reactions (umbrellas) — wander + **flee/panic** from gunfire/violence + oncoming fast cars (StreetLife); converse/cower/weather TODO
 - [ ] Ped density + variety by district + time of day; crowds
 - [ ] Traffic: lanes, stop at lights, yield, collision avoidance, honking, react to player
 - [ ] Faction NPCs + turf spawns (Azorean Syndicate, South End/Crioulo, Cape Set, Provençal)
@@ -621,5 +621,7 @@ blood states, price, vendor, unlock.
 - **Player-request batch (UX/driving/map/mobile):** ① collapsible **radio menu** + new **character menu** (outfit-colour tint applied live to the player model) with launcher buttons (§9/§22); ② **inverted A/D** on-foot strafing (§10); ③ **large map** screen — full-screen pannable/zoomable, real OSM **street-name labels**, water, player heading + objective (BigMap.tsx, M), plus **3D street-name signs** in-world (StreetSigns.tsx) (§21/§33); ④ **faster + smoother driving** (top speed 22→44, speed-scaled steering, removed the continuous camera speed-shake that caused the "shaky/bumpy" feel) and **vehicle combat/theft** — ram a traffic car to stop it, **carjack** it on foot (E) with model/colour swap + heat (§12/§13); ⑤ **touch controls** — on-screen thumb-stick + action buttons for phones (TouchControls.tsx, coarse-pointer only) (§25). Shipped (`1800e75`, `91a9e50`, `0aee2eb`).
 
 - **"Heat has teeth" batch:** added **gunplay** — G draws a pistol, click/Space fires a hitscan along the aim with tracer + muzzle flash (Tracers.tsx), dropping peds and damaging cops (§11); **police pursuit** — cop cars spawn and escalate with the police-heat axis, home in with a flashing lightbar, drain health on contact and arrest the player on foot, and are shootable for a payout (Police.tsx, §14); the **busted/wasted** loop — black-out → cash penalty → heat cleared → respawn at the Bethel (Consequence.tsx, §15); a **safehouse** zone that bleeds off heat and autosaves (Safehouse.tsx, §15); and dynamic **vehicle head/tail/brake lights** (dusk + braking, §12). Shipped (`d8884af`).
+
+- **"World reacts" batch:** pedestrians now **flee/panic** from gunfire, melee, and oncoming fast cars (shared.alarm threat model, StreetLife §14); **impact particles** — pooled blood/dust bursts at every melee + gun hit (Impacts.tsx §23); an **aiming reticle** appears when the pistol is drawn (§11/§21); and **parked cars** line the curbs near the core (ParkedCars.tsx §7/§12). Shipped (`34967af`).
 
 <!-- Append new dated entries above this line as work lands. -->
