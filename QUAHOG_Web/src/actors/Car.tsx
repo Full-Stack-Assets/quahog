@@ -3,17 +3,19 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { consumeTap, moveAxis } from "../input";
-import { Vehicle } from "../earth/Vehicles";
-import { shared } from "../shared";
+import { Vehicle, type VehicleType } from "../earth/Vehicles";
+import { shared, addShake } from "../shared";
 import { useGame } from "../store";
 
-// Arcade tuning informed by the legacy Unity CarController.cs (high lateral grip
-// kills sliding; modest top speed for tight historic streets).
-const MAX_SPEED = 22;
-const REVERSE_SPEED = 9;
+// Arcade tuning: brisk top speed with speed-scaled steering authority that eases
+// off at the top end, so the car is fast but planted and easy to place.
+const MAX_SPEED = 44;
+const REVERSE_SPEED = 16;
 
 export function Car() {
   const body = useRef<RapierRigidBody>(null);
+  const carType = useGame((s) => s.playerCarType);
+  const carColor = useGame((s) => s.playerCarColor);
 
   useEffect(() => {
     shared.car = body.current;
@@ -35,19 +37,20 @@ export function Car() {
     const v = rb.linvel();
     const vForward = v.x * fwd.x + v.z * fwd.z;
 
-    // steering scales with speed; invert while reversing
-    const grip = THREE.MathUtils.clamp(Math.abs(vForward) / 5, 0, 1);
-    const steer = ax.x * 1.7 * dt * grip * (vForward < -0.1 ? -1 : 1);
-    yaw -= steer;
+    // steering: needs some roll to bite, then eases off near top speed so the
+    // car tracks straight and smooth instead of darting.
+    const speedFrac = THREE.MathUtils.clamp(Math.abs(vForward) / MAX_SPEED, 0, 1);
+    const authority = THREE.MathUtils.clamp(Math.abs(vForward) / 6, 0, 1) * (1 - speedFrac * 0.45);
+    yaw -= ax.x * 2.0 * dt * authority * (vForward < -0.1 ? -1 : 1);
 
     // publish driving signals (§13): speed for camera FOV, skid for tire marks
     shared.carSpeed = vForward;
-    shared.skid = Math.abs(ax.x) > 0.55 && Math.abs(vForward) > 11;
+    shared.skid = Math.abs(ax.x) > 0.6 && Math.abs(vForward) > 18;
 
-    // throttle / brake / coast
+    // throttle / brake / coast — smoothed for a gentle, drift-free ramp
     const target =
       ax.y > 0 ? MAX_SPEED * ax.y : ax.y < 0 ? -REVERSE_SPEED * -ax.y : 0;
-    const rate = ax.y !== 0 ? 2.5 : 1.5;
+    const rate = ax.y !== 0 ? 2.2 : 1.2;
     const nf = THREE.MathUtils.lerp(vForward, target, 1 - Math.exp(-dt * rate));
 
     const nfwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
@@ -57,6 +60,17 @@ export function Car() {
       true,
     );
     shared.carYaw = yaw;
+
+    // ram traffic: contact halts the other car (and jolts the camera once)
+    const cp = rb.translation();
+    for (const tc of shared.traffic) {
+      if (tc.stolen) continue;
+      const d = Math.hypot(tc.pos.x - cp.x, tc.pos.z - cp.z);
+      if (d < 4.4) {
+        if (tc.stop <= 0 && Math.abs(vForward) > 6) addShake(0.35);
+        tc.stop = Math.max(tc.stop, 1.6);
+      }
+    }
 
     // exit
     if (consumeTap("KeyE")) {
@@ -82,13 +96,14 @@ export function Car() {
       enabledRotations={[false, false, false]}
       position={[-249, 2, 108]}
       rotation={[0, -Math.PI / 2, 0]}
-      linearDamping={0.4}
-      mass={1.2}
+      linearDamping={0.5}
+      mass={2.4}
+      ccd
     >
       <CuboidCollider args={[1.0, 0.6, 2.1]} />
       {/* real car model; collider center is ~0.6 above the wheels' contact */}
       <group position={[0, -0.6, 0]}>
-        <Vehicle type="mustang" color="#b81d24" />
+        <Vehicle type={carType as VehicleType} color={carColor} />
       </group>
     </RigidBody>
   );

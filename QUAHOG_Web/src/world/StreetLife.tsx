@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { ModelCharacter } from "./ModelCharacter";
 import { Vehicle, VEHICLE_TYPES } from "../earth/Vehicles";
-import { shared, type Body } from "../shared";
+import { shared, type Body, type TrafficCar } from "../shared";
 import type { Road } from "../slice";
 
 // Ambient "street life" ported from the legacy Unity StreetLife.cs: wandering
@@ -143,23 +143,45 @@ function Traffic({ routes }: { routes: Route[] }) {
   const state = useRef(
     Array.from({ length: CAR_COUNT }, () => {
       const ri = Math.floor(Math.random() * routes.length);
+      const color = pick(CAR_COLORS);
+      const vtype = pick(VEHICLE_TYPES);
       return {
         route: ri,
         forward: Math.random() < 0.5,
         dist: Math.random() * routes[ri].total,
-        color: pick(CAR_COLORS),
-        vtype: pick(VEHICLE_TYPES),
+        color,
+        vtype,
         pos: new THREE.Vector3(),
         heading: 0,
+        // shared handle the player ram/steal logic reads + writes
+        car: { pos: new THREE.Vector3(), yaw: 0, type: vtype, color, stop: 0, stolen: false } as TrafficCar,
       };
     }),
   );
+
+  // publish traffic cars so Car (ram) and Player (carjack) can interact
+  useEffect(() => {
+    shared.traffic = state.current.map((c) => c.car);
+    return () => { shared.traffic = []; };
+  }, []);
 
   useFrame((_, dt) => {
     const step = Math.min(dt, 0.05);
     state.current.forEach((c, i) => {
       const g = refs.current[i];
       if (!g) return;
+
+      // carjacked → hide and stop participating in traffic
+      if (c.car.stolen) { g.visible = false; return; }
+
+      // rammed → sit still until the stop timer expires
+      if (c.car.stop > 0) {
+        c.car.stop -= step;
+        g.position.copy(c.pos);
+        g.rotation.y = c.heading;
+        return;
+      }
+
       const route = routes[c.route];
       c.dist += CAR_SPEED * step;
 
@@ -182,6 +204,8 @@ function Traffic({ routes }: { routes: Route[] }) {
       c.heading = Math.atan2(dir.x, dir.z) + (c.forward ? 0 : Math.PI);
       g.position.copy(c.pos);
       g.rotation.y = c.heading;
+      c.car.pos.copy(c.pos);
+      c.car.yaw = c.heading;
     });
   });
 

@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, moveAxis } from "../input";
-import { shared, addShake } from "../shared";
+import { shared, addShake, type TrafficCar } from "../shared";
 import { useGame } from "../store";
 import { useStats } from "../game";
 
@@ -50,18 +50,43 @@ export function Player() {
     }
     if (mesh.current) mesh.current.rotation.y = shared.heading;
 
-    // proximity to car + enter
-    const car = shared.car;
-    if (car) {
+    // proximity to a car + enter / carjack
+    {
       const p = rb.translation();
-      const c = car.translation();
-      const d = Math.hypot(p.x - c.x, p.z - c.z);
-      game.setNearCar(d < ENTER_RADIUS);
-      if (d < ENTER_RADIUS && consumeTap("KeyE")) {
+      // nearest carjackable traffic car
+      let tj: TrafficCar | null = null;
+      let tjD = ENTER_RADIUS;
+      for (const tc of shared.traffic) {
+        if (tc.stolen) continue;
+        const d = Math.hypot(tc.pos.x - p.x, tc.pos.z - p.z);
+        if (d < tjD) { tjD = d; tj = tc; }
+      }
+      // distance to the player's own parked car
+      const car = shared.car;
+      let ownD = Infinity;
+      if (car) { const c = car.translation(); ownD = Math.hypot(p.x - c.x, p.z - c.z); }
+
+      const near = !!tj || ownD < ENTER_RADIUS;
+      game.setNearCar(near);
+      if (near && consumeTap("KeyE")) {
+        if (tj && tjD <= ownD) {
+          // carjack: drag the driver out, take their ride
+          useGame.getState().setPlayerCar(tj.type, tj.color);
+          if (car) {
+            car.setTranslation({ x: tj.pos.x, y: 1.4, z: tj.pos.z }, true);
+            car.setLinvel({ x: 0, y: 0, z: 0 }, true);
+            car.setRotation({ x: 0, y: Math.sin(tj.yaw / 2), z: 0, w: Math.cos(tj.yaw / 2) }, true);
+          }
+          shared.carYaw = tj.yaw;
+          tj.stolen = true;
+          addShake(0.4);
+          useStats.getState().heat(0.8, 0.4); // carjacking draws heat
+        } else {
+          useStats.getState().heat(0.5, 0); // grand theft auto (own ride)
+        }
         rb.setEnabled(false);
         game.setNearCar(false);
         game.setMode("car");
-        useStats.getState().heat(0.5, 0); // grand theft auto
       }
     }
 

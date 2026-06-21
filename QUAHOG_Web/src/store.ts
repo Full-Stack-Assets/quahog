@@ -16,6 +16,8 @@ interface GameState {
   charOpen: boolean;
   mapOpen: boolean;
   playerTint: string;
+  playerCarType: string;
+  playerCarColor: string;
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -28,6 +30,7 @@ interface GameState {
   toggleChar: () => void;
   toggleMap: () => void;
   setPlayerTint: (c: string) => void;
+  setPlayerCar: (type: string, color: string) => void;
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -41,6 +44,8 @@ export const useGame = create<GameState>((set) => ({
   charOpen: false,
   mapOpen: false,
   playerTint: "#ffffff",
+  playerCarType: "mustang",
+  playerCarColor: "#b81d24",
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -53,4 +58,5 @@ export const useGame = create<GameState>((set) => ({
   toggleChar: () => set((s) => ({ charOpen: !s.charOpen })),
   toggleMap: () => set((s) => ({ mapOpen: !s.mapOpen })),
   setPlayerTint: (playerTint) => set({ playerTint }),
+  setPlayerCar: (playerCarType, playerCarColor) => set({ playerCarType, playerCarColor }),
 }));

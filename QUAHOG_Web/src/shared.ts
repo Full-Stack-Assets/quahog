@@ -8,6 +8,16 @@ export interface Body {
   hit: number; // melee hits queued by the player, consumed by the owner
 }
 
+// A drivable traffic car the player can ram (stop) or carjack (steal).
+export interface TrafficCar {
+  pos: THREE.Vector3;
+  yaw: number;
+  type: string;
+  color: string;
+  stop: number;   // seconds the car stays halted after a contact
+  stolen: boolean; // taken by the player → hidden from traffic
+}
+
 // Cross-component mutable handles shared by the player, car, and camera.
 // (Kept out of React state so per-frame updates don't trigger re-renders.)
 export const shared = {
@@ -22,6 +32,8 @@ export const shared = {
   carYaw: -Math.PI / 2,
   /** Pedestrian bodies registered by StreetLife, for melee contact. */
   peds: [] as Body[],
+  /** Traffic cars registered by StreetLife, for ramming + carjacking. */
+  traffic: [] as TrafficCar[],
   /** Day factor 0 (night) .. 1 (noon), driven by the day/night cycle. */
   dayT: 1,
   /** Current in-game hour 0..24. */

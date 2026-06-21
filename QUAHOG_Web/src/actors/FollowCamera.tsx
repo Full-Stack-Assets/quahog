@@ -35,9 +35,10 @@ export function FollowCamera() {
       cam.updateProjectionMatrix();
     }
 
-    // decaying camera shake (§23): melee hits, crashes, fast driving
-    shared.shake = Math.max(0, shared.shake - dt * 1.8);
-    const shakeAmt = shared.shake + speedT * 0.04;
+    // decaying camera shake (§23): one-shot impulses only (melee, crashes) so
+    // ordinary driving stays perfectly smooth.
+    shared.shake = Math.max(0, shared.shake - dt * 2.4);
+    const shakeAmt = shared.shake;
 
     const tp = target.translation();
     const heading = mode === "car" ? shared.carYaw : shared.heading;
