@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Sky, Stars } from "@react-three/drei";
@@ -30,6 +30,14 @@ export function DayNight() {
   const fogC = useMemo(() => dayFog.clone(), []);
   const cSun = useMemo(() => new THREE.Color(), []);
 
+  // the directional light's target must live in the scene to steer shadows
+  useEffect(() => {
+    const s = sun.current;
+    if (!s) return;
+    scene.add(s.target);
+    return () => { scene.remove(s.target); };
+  }, [scene]);
+
   useFrame((_, dt) => {
     if (useGame.getState().paused) return; // freeze time in the pause menu
     hour.current = (hour.current + dt * (24 / DAY_LENGTH)) % 24;
@@ -46,7 +54,13 @@ export function DayNight() {
     const sx = Math.cos(a) * 150, sy = elev * 170, sz = 60;
 
     if (sun.current) {
-      sun.current.position.set(sx, Math.max(sy, 1.5), sz);
+      // follow the player so the shadow frustum stays over the action everywhere
+      const body = useGame.getState().mode === "car" ? shared.car : shared.player;
+      const p = body?.translation();
+      const px = p?.x ?? 0, pz = p?.z ?? 0;
+      sun.current.position.set(px + sx, Math.max(sy, 1.5), pz + sz);
+      sun.current.target.position.set(px, 0, pz);
+      sun.current.target.updateMatrixWorld();
       sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65 - fogW * 0.5);
       cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
       sun.current.color.copy(cSun);

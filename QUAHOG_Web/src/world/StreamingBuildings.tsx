@@ -5,6 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
+import { makeFacadeMaps } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -16,9 +17,11 @@ import type { Building } from "../slice";
 const VIEW_R = 3;     // tiles loaded around the player (each TILE metres)
 const COLLIDE_R = 1;  // tiles that get physics colliders
 const WINDOW_GLOW = new THREE.Color("#ffcf8a");
-const PALETTE = ["#8a5a48", "#b8b0a0", "#7c7e88", "#a8987e", "#6e4a3e", "#9aa0a6", "#c2bcae"];
+const WARM = ["#8a5a48", "#6e4a3e", "#a8987e", "#b8b0a0", "#c2bcae"]; // brick/clapboard (short)
+const GREY = ["#7c7e88", "#9aa0a6", "#8f8c86"];                       // granite/concrete (tall)
 const HERO_COLOR = "#caa24a";
 const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
+const FLOOR = 3.2; // metres per window row
 
 interface Manifest { tile: number; keys: string[] }
 
@@ -29,13 +32,26 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     b.footprint.forEach(([e, n], k) => (k === 0 ? shape.moveTo(e, n) : shape.lineTo(e, n)));
     const g = new THREE.ExtrudeGeometry(shape, { depth: b.height, bevelEnabled: false });
     g.rotateX(-Math.PI / 2);
-    g.deleteAttribute("uv");
     g.computeVertexNormals();
-    const col = new THREE.Color(b.name && HERO.has(b.name) ? HERO_COLOR : PALETTE[i % PALETTE.length]);
-    const n = g.attributes.position.count;
-    const colors = new Float32Array(n * 3);
-    for (let j = 0; j < n; j++) colors.set([col.r, col.g, col.b], j * 3);
+    // colour by use/height (style guide): short = brick/clapboard, tall = granite
+    const pal = b.height >= 14 ? GREY : WARM;
+    const col = new THREE.Color(b.name && HERO.has(b.name) ? HERO_COLOR : pal[i % pal.length]);
+    const pos = g.attributes.position, nor = g.attributes.normal;
+    const count = pos.count;
+    const colors = new Float32Array(count * 3);
+    const uv = new Float32Array(count * 2);
+    for (let v = 0; v < count; v++) {
+      colors.set([col.r, col.g, col.b], v * 3);
+      const x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v);
+      const ny = nor.getY(v);
+      if (Math.abs(ny) > 0.5) { uv[v * 2] = x / 6; uv[v * 2 + 1] = z / 6; }            // roof
+      else { // wall: window grid by floor
+        const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
+        uv[v * 2] = horiz / FLOOR; uv[v * 2 + 1] = y / FLOOR;
+      }
+    }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     geoms.push(g);
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
@@ -43,12 +59,16 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
 
 function Tile({ buildings, colliders }: { buildings: Building[]; colliders: boolean }) {
   const geom = useMemo(() => tileGeometry(buildings), [buildings]);
+  const maps = useMemo(() => makeFacadeMaps(), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 0.4; });
+  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
   if (!geom) return null;
   const mesh = (
     <mesh geometry={geom} castShadow={colliders} receiveShadow>
-      <meshStandardMaterial ref={mat} vertexColors emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.85} flatShading />
+      <meshStandardMaterial
+        ref={mat} vertexColors map={maps.albedo} emissiveMap={maps.emissive}
+        emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.85}
+      />
     </mesh>
   );
   return colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh;

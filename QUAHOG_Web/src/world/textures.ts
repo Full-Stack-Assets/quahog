@@ -8,6 +8,34 @@ function canvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   return [c, c.getContext("2d")!];
 }
 
+// Façade maps (§ Phase 1): one tileable cell ≈ one floor (~3.2 m). `albedo` is
+// white wall + dark glass window (multiplies the per-building base colour);
+// `emissive` is black wall + warm lit window (glows at night). Shared singletons.
+let _facade: { albedo: THREE.Texture; emissive: THREE.Texture } | null = null;
+export function makeFacadeMaps() {
+  if (_facade) return _facade;
+  const S = 128;
+  const [ca, a] = canvas(S);   // albedo
+  const [ce, e] = canvas(S);   // emissive
+  // wall
+  a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
+  e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
+  // window block, centred with a margin (mullions = wall gaps between cells)
+  const m = 22, w = S - m * 2;
+  // glass (albedo): dark, slightly blue
+  a.fillStyle = "#2b3440"; a.fillRect(m, m, w, w);
+  a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(m, m, w, w);
+  a.beginPath(); a.moveTo(S / 2, m); a.lineTo(S / 2, S - m); a.moveTo(m, S / 2); a.lineTo(S - m, S / 2); a.stroke();
+  // lit window (emissive): warm, with panes
+  e.fillStyle = "#ffcf8a"; e.fillRect(m, m, w, w);
+  e.fillStyle = "#000000"; e.lineWidth = 0;
+  e.fillRect(S / 2 - 2, m, 4, w); e.fillRect(m, S / 2 - 2, w, 4); // dark mullions
+  const albedo = new THREE.Texture(ca); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
+  const emissive = new THREE.Texture(ce); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
+  _facade = { albedo, emissive };
+  return _facade;
+}
+
 /** A 1980s flyer/poster (radio station or street-feast), procedural. */
 export function makePoster(variant: number): THREE.Texture {
   const [c, ctx] = canvas(256);
