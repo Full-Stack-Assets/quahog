@@ -651,4 +651,6 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 1, ~16 items):** rolling **wheels** on all vehicles (§12); **footsteps + foot-dust** (§20/§23); **gamepad** support (§25/§47); **reduce-shake** toggle (§25); off-screen **waypoint arrow** (§21); **mission chain** — Off the Boat → Linguiça Run → Spindle City (§16); out-of-combat **health regen** (§11); **wanted-up sting** (§23); context **enter prompts** (boat/car/steal, §21); **settings persistence** (§26); **pause stats** screen (§22); denser **pedestrians + traffic that yields** to the player (§14); **UI sfx** on menus (§20); **utility poles + wires** (§7). Shipped (`57e1334`→`9325ed9`).
 
+- **"Next 50" grind (part 2, ~5 items):** adaptive **chase-music duck** under police heat (§19); ground **grime/oil decals** (§32); **street race** side activity with checkpoints + best time (§18); title-screen **New Game / Continue** (§22). Shipped (`ea67a17`→`b79e06c`).
+
 <!-- Append new dated entries above this line as work lands. -->
