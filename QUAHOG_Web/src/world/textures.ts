@@ -109,7 +109,47 @@ export function makePoster(variant: number): THREE.Texture {
   return t;
 }
 
-/** Mottled paved-ground texture (concrete/cobble feel), tiles seamlessly-ish. */
+// Spray-paint graffiti tag on transparent (Phase 2 weathering) — colourful
+// scrawl meant to sit on building walls near the core. `variant` picks a word
+// + palette. Returns an RGBA texture (transparent background).
+export function makeGraffiti(variant: number): THREE.Texture {
+  const [c, ctx] = canvas(256);
+  ctx.clearRect(0, 0, 256, 256);
+  const PAL = [
+    { fg: "#ff3ea5", ed: "#1a0a14", word: "QUOHOG" },
+    { fg: "#37e0ff", ed: "#06141a", word: "SOUTHIE" },
+    { fg: "#7cff5a", ed: "#0a1606", word: "THE NECK" },
+    { fg: "#ffd24a", ed: "#1a1404", word: "WHALERS" },
+    { fg: "#b88aff", ed: "#120a1a", word: "ACUSHNET" },
+  ];
+  const p = PAL[variant % PAL.length];
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  // a few random spray-can scribbles behind the tag
+  for (let i = 0; i < 4; i++) {
+    ctx.strokeStyle = `rgba(${40 + Math.random() * 180},${40 + Math.random() * 180},${40 + Math.random() * 180},0.5)`;
+    ctx.lineWidth = 3 + Math.random() * 4;
+    ctx.beginPath();
+    ctx.moveTo(20 + Math.random() * 60, 40 + Math.random() * 170);
+    for (let k = 0; k < 3; k++) ctx.lineTo(40 + Math.random() * 200, 40 + Math.random() * 170);
+    ctx.stroke();
+  }
+  // the tag — bold outlined "bubble" word, italic for attitude
+  ctx.font = "italic 900 64px Impact, sans-serif";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = p.ed; ctx.lineWidth = 12;
+  ctx.strokeText(p.word, 128, 128);
+  ctx.fillStyle = p.fg;
+  ctx.fillText(p.word, 128, 128);
+  // drips
+  ctx.fillStyle = p.fg;
+  for (let i = 0; i < 5; i++) {
+    const x = 50 + Math.random() * 160;
+    ctx.fillRect(x, 150, 2 + Math.random() * 2, 10 + Math.random() * 40);
+  }
+  const t = new THREE.Texture(c);
+  t.needsUpdate = true;
+  return t;
+}
 export function makeGroundTexture(): THREE.Texture {
   const [c, ctx] = canvas(256);
   ctx.fillStyle = "#3b3d44";

@@ -3,7 +3,8 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { ModelCharacter } from "./ModelCharacter";
 import { Vehicle, VEHICLE_TYPES } from "../earth/Vehicles";
-import { shared, type Body, type TrafficCar } from "../shared";
+import { shared, raiseAlarm, type Body, type TrafficCar } from "../shared";
+import { useStats } from "../game";
 import type { Road } from "../slice";
 
 // Ambient "street life" ported from the legacy Unity StreetLife.cs: wandering
@@ -36,6 +37,7 @@ interface Route {
 
 const TMP = new THREE.Vector3();
 const TMP2 = new THREE.Vector3();
+const _dir = new THREE.Vector3();
 
 // ---------------------------------------------------------------------------
 
@@ -78,6 +80,7 @@ function Pedestrians({ center }: { center: [number, number] }) {
       return {
         pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS),
         down: 0, dead: false,
+        vel: new THREE.Vector3(), y: 0, tumble: 0, // ragdoll launch state
         body: { pos: pos.clone(), push: new THREE.Vector3(), hit: 0 } as Body,
       };
     }),
@@ -95,8 +98,26 @@ function Pedestrians({ center }: { center: [number, number] }) {
       const g = refs.current[i];
       if (!g) return;
 
-      // resolve melee hits: first = knocked out, again = killed
+      // run over by the player's car at speed → register a hit (+ heat once)
+      if (!p.dead && shared.car && Math.abs(shared.carSpeed) > 8) {
+        const c = shared.car.translation();
+        if (Math.hypot(c.x - p.pos.x, c.z - p.pos.z) < 2.3) {
+          const fresh = p.down <= 0;
+          p.body.hit += 2;
+          p.body.push.set(p.pos.x - c.x, 0, p.pos.z - c.z);
+          if (fresh) { useStats.getState().heat(0.6, 0.7); raiseAlarm(p.pos.x, p.pos.z, 5); }
+        }
+      }
+
+      // resolve hits: first = knocked down, again = killed; either way the body
+      // is launched along the blow (a bat or a car flings it; a fist nudges).
       if (p.body.hit > 0) {
+        const hard = p.body.push.length() > 1.5; // bat or car
+        if (p.body.push.lengthSq() > 1e-4) _dir.copy(p.body.push).setY(0).normalize();
+        else _dir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+        p.vel.set(_dir.x * (hard ? 9 : 3.5), hard ? 7 : 3, _dir.z * (hard ? 9 : 3.5));
+        p.tumble = 0.001;
+        p.body.push.set(0, 0, 0);
         if (p.dead) { /* stays down */ }
         else if (p.down > 0) p.dead = true;
         else p.down = 4;
@@ -104,8 +125,20 @@ function Pedestrians({ center }: { center: [number, number] }) {
       }
       if (p.dead || p.down > 0) {
         if (p.down > 0) p.down -= step;
-        g.position.copy(p.pos);
-        g.rotation.set(Math.PI / 2, p.heading, 0); // lying down
+        // ragdoll flight: integrate the launch, tumble through the air, then settle
+        if (p.tumble > 0 || p.y > 0.001) {
+          p.vel.y -= 24 * step;
+          p.pos.x += p.vel.x * step; p.pos.z += p.vel.z * step;
+          p.y += p.vel.y * step;
+          p.vel.x *= 0.96; p.vel.z *= 0.96;
+          if (p.y <= 0) { p.y = 0; p.vel.set(0, 0, 0); p.tumble = 0; }
+          else p.tumble += step * 9;
+          g.position.set(p.pos.x, p.y, p.pos.z);
+          g.rotation.set(Math.PI / 2 + Math.sin(p.tumble) * 0.7, p.heading, Math.cos(p.tumble) * 0.5);
+        } else {
+          g.position.copy(p.pos);
+          g.rotation.set(Math.PI / 2, p.heading, 0); // settled, lying down
+        }
         p.body.pos.copy(p.pos);
         return;
       }

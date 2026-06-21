@@ -15,6 +15,7 @@ import { Awnings } from "./world/Awnings";
 import { Crosswalks } from "./world/Crosswalks";
 import { UtilityPoles } from "./world/UtilityPoles";
 import { Decals } from "./world/Decals";
+import { Graffiti } from "./world/Graffiti";
 import { Businesses } from "./world/Businesses";
 import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
@@ -119,6 +120,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <UtilityPoles roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Decals roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Graffiti roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}

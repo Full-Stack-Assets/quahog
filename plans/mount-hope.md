@@ -665,6 +665,8 @@ blood states, price, vendor, unlock.
 
 - **"Next 50" grind (part 8, +1):** **scrimshaw counter** — the hidden-collectible tally is now a persistent HUD readout (🦴 n/8), reactive via `store.scrimshaw`, seeded from the save on load and bumped on pickup (Collectibles/store/HUD §18). Shipped (`3783f51`→`74eebc9`).
 
-- **"Next 50" grind (part 9, +1):** **traffic brake lights** — ambient cars now flare their taillights whenever they're halted (red light, yielding to the player, or freshly rammed) via the existing Vehicle `brake` getter, so a queue at a red reads correctly at night (StreetLife §12). Shipped (`74eebc9`→HEAD).
+- **"Next 50" grind (part 9, +1):** **traffic brake lights** — ambient cars now flare their taillights whenever they're halted (red light, yielding to the player, or freshly rammed) via the existing Vehicle `brake` getter, so a queue at a red reads correctly at night (StreetLife §12). Shipped (`74eebc9`→`c9a56f3`).
+
+- **"Next 50" grind (part 10, +2):** **ragdoll launch** — pedestrians struck by the bat (or run over by a car at speed) are now flung along the blow, tumbling through the air with gravity + spin before settling, instead of just flopping flat; running someone over also registers a hit + draws heat once (StreetLife §14/§23). **Wall graffiti** — colourful procedural spray tags (`makeGraffiti`) on upright quads set back from the street where walls are, facing the road, near-core only (Graffiti.tsx §32). Shipped (`c9a56f3`→HEAD).
 
 <!-- Append new dated entries above this line as work lands. -->
