@@ -32,6 +32,7 @@ export function PlayerRig({ spawn, view, onReady }: { spawn: Spawn; view: View; 
   const s = useRef({
     mode: "foot" as "foot" | "car",
     ready: false,
+    wait: 0,
     carSpeed: 0,
     pos: new THREE.Vector3(spawn.x, 0, spawn.z),
     heading: spawn.heading,
@@ -52,8 +53,13 @@ export function PlayerRig({ spawn, view, onReady }: { spawn: Spawn; view: View; 
     // spawn gating — hold until tiles exist under the spawn point
     if (!st.ready) {
       const gy = groundY(parent, tiles?.group, ray.current, st.pos.x, st.pos.z, up);
+      st.wait += step;
       if (gy !== null) {
         st.pos.y = gy; st.carPos.y = gy; st.ready = true; onReady?.();
+      } else if (st.wait > 3) {
+        // tiles still haven't streamed a surface — don't strand the player in the
+        // air; drop near sea level and let per-frame raycasts correct once tiles load
+        st.pos.y = 3; st.carPos.y = 3; st.ready = true; onReady?.();
       } else {
         if (player.current) player.current.visible = false;
         if (car.current) car.current.visible = false;

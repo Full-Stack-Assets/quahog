@@ -51,7 +51,7 @@ const WX: Record<Weather, { sun: number; sunColor: string; bg: string; fog: [num
 export function EarthApp() {
   const apiKey = typeof window !== "undefined" ? getApiKey() : null;
   const [slice, setSlice] = useState<Slice | null>(null);
-  const [mode, setMode] = useState<"play" | "orbit">("play");
+  const [mode, setMode] = useState<"play" | "orbit">("orbit");
   const [view, setView] = useState<View>("third");
   const [spotIdx, setSpotIdx] = useState(0);
   const [weather, setWeather] = useState<Weather>("clear");
@@ -86,7 +86,10 @@ export function EarthApp() {
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
 
         <Suspense fallback={null}>
-        <TilesRenderer key={apiKey}>
+        {/* errorTarget: the higher it is, the coarser/faster tiles load. Street-
+            level (play) cameras need this raised or the deepest LOD never streams
+            in and the ground stays blank. */}
+        <TilesRenderer key={apiKey} errorTarget={32}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
           <TilesDiag onMissing={() => setTilesProblem(true)} onOk={() => setTilesProblem(false)} />
 
