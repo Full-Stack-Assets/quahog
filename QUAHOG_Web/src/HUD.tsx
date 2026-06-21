@@ -34,19 +34,22 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const [hhmm, setHhmm] = useState("09:00");
   const [stamina, setStamina] = useState(100);
   const [dist, setDist] = useState<number | null>(null);
+  const [bearing, setBearing] = useState(0); // radians, target dir relative to camera
   useEffect(() => {
     const id = setInterval(() => {
       const h = Math.floor(shared.hour);
       const m = Math.floor((shared.hour - h) * 60);
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
       setStamina(shared.stamina);
-      // distance to the active objective
+      // distance + bearing to the active objective
       const ms = useMission.getState();
       const step = ms.done ? null : ms.steps[ms.step];
       const body = useGame.getState().mode === "car" ? shared.car : shared.player;
       const t = body?.translation();
-      if (step?.target && t) setDist(Math.round(Math.hypot(t.x - step.target[0], t.z - step.target[2])));
-      else setDist(null);
+      if (step?.target && t) {
+        setDist(Math.round(Math.hypot(t.x - step.target[0], t.z - step.target[2])));
+        setBearing(Math.atan2(step.target[0] - t.x, step.target[2] - t.z) - shared.camYaw);
+      } else setDist(null);
     }, 200);
     return () => clearInterval(id);
   }, []);
@@ -166,6 +169,9 @@ export function HUD({ sliceName }: { sliceName: string }) {
           {missionDone ? "✓ " : "► "}{objective}
           {!missionDone && dist != null && <span style={{ opacity: 0.7 }}> — {dist} m</span>}
         </div>
+        {!missionDone && dist != null && (
+          <div style={{ marginTop: 4, fontSize: 22, color: "#ffcf4a", transform: `rotate(${bearing}rad)`, lineHeight: 1 }}>▲</div>
+        )}
       </div>
 
       {mode === "foot" && nearCar && (
