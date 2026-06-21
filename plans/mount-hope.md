@@ -136,7 +136,7 @@ time; keep the build green; be honest about status.
 - [ ] Reflections + fresnel + depth-based color
 - [~] Boats bobbing; ferries; fishing vessels with wakes — bobbing fishing boats (HarborProps.tsx); ferries/wakes TODO
 - [~] Buoys, nets, lobster traps, dock pilings — dock pilings + bobbing buoys along the OSM shoreline (HarborProps.tsx); nets/traps TODO
-- [ ] Splashes when entering water; swim/drown logic
+- [~] Splashes when entering water; swim/drown logic — open water is now a **barrier**: drive/walk in and you sink + recover onto land, so bridges are the only crossing (Hazards.tsx/waterZones.ts); splash VFX + true swim TODO
 - [ ] Tide / “Gloria” flood level change
 
 ## 7. World props & set dressing
@@ -403,7 +403,7 @@ modular kits + procedural placement driven by OSM data.
 
 ## 34. Buildings & façade system (modular kit, shared)
 - [ ] **Footprint → mass → roof** — extrude OSM footprints with real heights; roof types: flat+parapet, gable, hip, mansard, sawtooth (mills), with chimneys/vents/AC units/water tanks
-- [ ] **Façade module library** — tileable bays with: double-hung windows, storefront plate glass, arched/round-top windows, bay windows, doors/transoms, cornices, lintels, sills, string courses, quoins
+- [~] **Façade module library** — tileable bays with: double-hung windows, storefront plate glass, arched/round-top windows, bay windows, doors/transoms, cornices, lintels, sills, string courses, quoins — procedural per-floor window grid (day glass + night-lit emissive) with UV mapping + colour by use/height (StreamingBuildings + makeFacadeMaps); storefronts/cornices/variety TODO
 - [ ] **Material set (PBR)** — red brick (multiple bonds), Fall River **granite block**, clapboard, wood shingle, stucco, cast stone, painted brick, glazed terra-cotta trim
 - [ ] **Detail props** — fire escapes (tenement signature), downspouts/gutters, awnings, window AC units, satellite-less era TV antennas, rooftop billboards, ghost-sign painted ads, parapets, cornice brackets
 - [ ] **Weathering pass** — soot near rooflines, rust streaks under metal, salt bloom near harbor, peeling paint, water stains, boarded windows in dead zones
@@ -631,5 +631,7 @@ blood states, price, vendor, unlock.
 - **Direction adjust + Step 1 (world build-out):** per user, dropped the planned combat-depth section and refocused the next roadmap on **world rendering + inter-city highways + surrounding towns (Dartmouth, Fairhaven, Westport) → Fall River**. Added in-world **St. Luke's Hospital** stand-in (WASTED respawn) + hospital/police **map markers** on the minimap and big map. **Re-pulled a larger New Bedford slice** via Overpass (waterfront→downtown: **7,645 buildings / 1,753 roads**, up from ~1,071), taught `make_slice.py` to capture civic landmarks, and **re-anchored the police station to the real downtown NBPD footprint** (hospital follows when the pull widens west to St. Luke's). ElevenLabs (key→`ELEVENLABS_API_KEY` env) + gamepad (native API) links handed to the user. Shipped (`d6eda37`, `5e2383d`).
 
 - **Perf → radio depth → Dartmouth (ordered batch):** ① **Perf pass** — far buildings chunked into a 160 m grid with automatic frustum culling + a 1050 m distance cull and no shadow casting, so the now-16k-building world stays interactive (Buildings.tsx §29). ② **Radio depth** — ad/ident/news rotation + hosts reacting to **wanted level** and **weather**, on top of ~4× longer host scripts (radioEngine §19); ElevenLabs VO pipeline (proxy + client) wired to all four hosts with Web-Speech fallback (§33), Iron Mike=Shaun-Boston + Buddy voices recorded. ③ **Step 16 Fairhaven** (+ elevated Acushnet bridges) and **Step 17 Dartmouth** (Route 6 corridor) pulled into the slice — now **New Bedford · Fairhaven · Dartmouth**, 16,252 buildings / 3,868 roads (mapgen now sends a User-Agent to beat the Overpass WAF). Shipped (`66e8fbc`→`f8cd5cc`).
+
+- **Step 19 + music + Phase 1 aesthetics + ocean barrier:** ① **multi-tile building streaming** (public/tiles/, 500 m tiles loaded by distance + per-tile colliders; main slice 3.5 MB→849 KB) — unblocks whole-region build-out. ② **Legitimate music** — radio plays real MP3 tracks per station (ElevenLabs Music generator scripts/gen_music.py) with synth fallback. ③ **Phase 1 aesthetics** — STYLE_GUIDE.md; **façade window kit** (procedural per-floor windows, day glass + night-lit, colour by use/height); **shadows follow the player** across the map. ④ **Ocean** — wave-wash ambience everywhere + **water is now a barrier** (sink/recover, Hazards.tsx) so bridges are the required crossing; bridges lowered to a drivable at-grade causeway on pilings. ⑤ Removed the gull-cry **squeak**. Shipped (`25db5fa`→`a4d903b`).
 
 <!-- Append new dated entries above this line as work lands. -->
