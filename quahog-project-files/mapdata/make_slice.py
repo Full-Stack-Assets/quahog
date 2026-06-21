@@ -64,8 +64,13 @@ for el in data["elements"]:
     elif el["type"]=="way" and t.get("highway"):
         pts = way_xy(el)
         if len(pts) < 2: continue
-        roads.append({"highway":t["highway"],"width":ROAD_W.get(t["highway"],6),
-                      "name":t.get("name"),"points":pts})
+        r = {"highway":t["highway"],"width":ROAD_W.get(t["highway"],6),
+             "name":t.get("name"),"points":pts}
+        if t.get("bridge") and t.get("bridge") != "no":
+            r["bridge"] = True
+            try: r["layer"] = int(t.get("layer", 1))
+            except ValueError: r["layer"] = 1
+        roads.append(r)
     elif el["type"]=="way" and (t.get("natural")=="water" or t.get("waterway")=="riverbank"):
         ring = way_xy(el)
         if len(ring) >= 3:
@@ -101,7 +106,7 @@ for lm in landmarks:
 landmarks=list(seen.values())
 
 slice_obj = {
-    "name": "New Bedford — Waterfront to Downtown",
+    "name": "New Bedford & Fairhaven",
     "origin": {"lat":OLAT,"lon":OLON},
     "meters_per_degree": {"lat":M_LAT,"lon":round(M_LON,3)},
     "axes": "x=east(m), z=south is +? -> see note; y=up",

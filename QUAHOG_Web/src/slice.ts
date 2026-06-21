@@ -12,6 +12,8 @@ export interface Road {
   width: number;
   name: string | null;
   points: [number, number][];
+  bridge?: boolean;
+  layer?: number;
 }
 export interface Landmark {
   name: string;
