@@ -5,6 +5,7 @@ export type Mode = "foot" | "car";
 export type View = "third" | "first";
 export type Weather = "clear" | "rain" | "fog";
 export type Down = null | "busted" | "wasted";
+export type Weapon = "pistol" | "shotgun";
 
 interface GameState {
   mode: Mode;
@@ -20,6 +21,7 @@ interface GameState {
   playerCarType: string;
   playerCarColor: string;
   armed: boolean;
+  weapon: Weapon;
   down: Down;
   started: boolean;
   fxOn: boolean;
@@ -37,6 +39,7 @@ interface GameState {
   setPlayerTint: (c: string) => void;
   setPlayerCar: (type: string, color: string) => void;
   toggleArmed: () => void;
+  setWeapon: (w: Weapon, drawn?: boolean) => void;
   setDown: (d: Down) => void;
   setStarted: (v: boolean) => void;
   toggleFx: () => void;
@@ -56,6 +59,7 @@ export const useGame = create<GameState>((set) => ({
   playerCarType: "mustang",
   playerCarColor: "#b81d24",
   armed: false,
+  weapon: "pistol",
   down: null,
   started: false,
   fxOn: true,
@@ -73,6 +77,7 @@ export const useGame = create<GameState>((set) => ({
   setPlayerTint: (playerTint) => set({ playerTint }),
   setPlayerCar: (playerCarType, playerCarColor) => set({ playerCarType, playerCarColor }),
   toggleArmed: () => set((s) => ({ armed: !s.armed })),
+  setWeapon: (weapon, drawn = true) => set({ weapon, armed: drawn }),
   setDown: (down) => set({ down }),
   setStarted: (started) => set({ started }),
   toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),

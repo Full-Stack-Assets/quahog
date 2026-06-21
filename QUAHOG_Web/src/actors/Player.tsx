@@ -121,38 +121,68 @@ export function Player() {
       sfx.punch();
     }
 
-    // gunplay: fire the pistol when armed (left-click / Space) along the aim yaw
+    // gunplay: fire when armed (left-click / Space) along the aim yaw
     if (armed && !game.mapOpen && !game.charOpen && (consumeTap("Mouse0") || consumeTap("Space"))) {
       const p = rb.translation();
       const aim = shared.camYaw;
       const fx = Math.sin(aim), fz = Math.cos(aim);
       const from = new THREE.Vector3(p.x + fx * 0.6, p.y + 0.4, p.z + fz * 0.6);
-      const RANGE = 60;
-      let bestT = RANGE;
-      let bestPed: Body | null = null;
-      let bestCop: Cop | null = null;
-      for (const ped of shared.peds) {
-        const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
-        const along = dx * fx + dz * fz;
-        if (along <= 0 || along > RANGE) continue;
-        if (Math.abs(dx * fz - dz * fx) < 1.4 && along < bestT) { bestT = along; bestPed = ped; bestCop = null; }
+      const shotgun = game.weapon === "shotgun";
+      const RANGE = shotgun ? 26 : 60;
+      const CONE = shotgun ? 4.5 : 1.6; // perpendicular half-width tolerance
+
+      if (shotgun) {
+        // spread: hit every ped/cop inside a short wide cone
+        let hitAny = false;
+        for (const ped of shared.peds) {
+          const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
+          const along = dx * fx + dz * fz;
+          if (along <= 0 || along > RANGE) continue;
+          if (Math.abs(dx * fz - dz * fx) < CONE) { ped.hit += 2; ped.push.x += fx; ped.push.z += fz; addImpact(new THREE.Vector3(ped.pos.x, p.y + 0.4, ped.pos.z), "#8a1414"); hitAny = true; }
+        }
+        for (const cop of shared.cops) {
+          if (cop.dead) continue;
+          const dx = cop.pos.x - p.x, dz = cop.pos.z - p.z;
+          const along = dx * fx + dz * fz;
+          if (along <= 0 || along > RANGE) continue;
+          if (Math.abs(dx * fz - dz * fx) < CONE) { cop.dmg += 2; addImpact(new THREE.Vector3(cop.pos.x, p.y + 0.4, cop.pos.z), "#8a1414"); hitAny = true; }
+        }
+        // a few visible pellet tracers
+        for (let k = -2; k <= 2; k++) {
+          const a = aim + k * 0.06;
+          shared.shots.push({ from: from.clone(), to: new THREE.Vector3(p.x + Math.sin(a) * RANGE, p.y + 0.4, p.z + Math.cos(a) * RANGE), life: 0.06 });
+        }
+        void hitAny;
+        addShake(0.6);
+        useStats.getState().heat(0.9, 0.8);
+        sfx.shotgun();
+      } else {
+        let bestT = RANGE;
+        let bestPed: Body | null = null;
+        let bestCop: Cop | null = null;
+        for (const ped of shared.peds) {
+          const dx = ped.pos.x - p.x, dz = ped.pos.z - p.z;
+          const along = dx * fx + dz * fz;
+          if (along <= 0 || along > RANGE) continue;
+          if (Math.abs(dx * fz - dz * fx) < CONE && along < bestT) { bestT = along; bestPed = ped; bestCop = null; }
+        }
+        for (const cop of shared.cops) {
+          if (cop.dead) continue;
+          const dx = cop.pos.x - p.x, dz = cop.pos.z - p.z;
+          const along = dx * fx + dz * fz;
+          if (along <= 0 || along > RANGE) continue;
+          if (Math.abs(dx * fz - dz * fx) < CONE + 0.8 && along < bestT) { bestT = along; bestCop = cop; bestPed = null; }
+        }
+        const to = new THREE.Vector3();
+        if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); addImpact(to, "#8a1414"); }
+        else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); addImpact(to, "#8a1414"); }
+        else to.set(p.x + fx * bestT, p.y + 0.4, p.z + fz * bestT);
+        shared.shots.push({ from, to, life: 0.06 });
+        addShake(0.3);
+        useStats.getState().heat(0.7, 0.6);
+        sfx.gun();
       }
-      for (const cop of shared.cops) {
-        if (cop.dead) continue;
-        const dx = cop.pos.x - p.x, dz = cop.pos.z - p.z;
-        const along = dx * fx + dz * fz;
-        if (along <= 0 || along > RANGE) continue;
-        if (Math.abs(dx * fz - dz * fx) < 2.2 && along < bestT) { bestT = along; bestCop = cop; bestPed = null; }
-      }
-      const to = new THREE.Vector3();
-      if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); addImpact(to, "#8a1414"); }
-      else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); addImpact(to, "#8a1414"); }
-      else to.set(p.x + fx * bestT, p.y + 0.4, p.z + fz * bestT);
-      shared.shots.push({ from, to, life: 0.06 });
-      addShake(0.3);
-      useStats.getState().heat(0.7, 0.6);
       raiseAlarm(p.x, p.z, 6); // gunfire scatters the crowd
-      sfx.gun();
     }
   });
 

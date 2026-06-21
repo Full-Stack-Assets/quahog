@@ -97,6 +97,7 @@ class Sfx {
 
   // ---- one-shots ----
   gun() { this.ensure(); this.burst(1400, 1.2, 0.16, 0.7); this.tone(120, 0.12, 0.3, "square", 50); }
+  shotgun() { this.ensure(); this.burst(700, 0.6, 0.3, 0.85, "lowpass"); this.tone(80, 0.22, 0.45, "square", 40); }
   punch() { this.ensure(); this.tone(150, 0.12, 0.35, "sine", 60); this.burst(500, 0.7, 0.06, 0.15); }
   crash() { this.ensure(); this.burst(800, 0.5, 0.35, 0.5, "lowpass"); this.tone(90, 0.25, 0.3, "square", 40); }
   horn() { this.ensure(); this.tone(360, 0.45, 0.25, "square"); this.tone(440, 0.45, 0.18, "square"); }

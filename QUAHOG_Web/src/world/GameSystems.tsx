@@ -21,6 +21,9 @@ export function GameSystems() {
     if (consumeTap("KeyC")) useGame.getState().toggleChar();
     if (consumeTap("KeyM")) useGame.getState().toggleMap();
     if (consumeTap("KeyG")) useGame.getState().toggleArmed();
+    if (consumeTap("Digit1") && useGame.getState().armed) useGame.getState().toggleArmed(); // fists
+    if (consumeTap("Digit2")) useGame.getState().setWeapon("pistol");
+    if (consumeTap("Digit3")) useGame.getState().setWeapon("shotgun");
 
     if (useGame.getState().paused) return; // freeze sim while paused
     if (shared.alarm.t > 0) shared.alarm.t = Math.max(0, shared.alarm.t - dt);

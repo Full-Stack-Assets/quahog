@@ -8,6 +8,30 @@ function canvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   return [c, c.getContext("2d")!];
 }
 
+/** A 1980s flyer/poster (radio station or street-feast), procedural. */
+export function makePoster(variant: number): THREE.Texture {
+  const [c, ctx] = canvas(256);
+  const PALES = [
+    { bg: "#1c1140", fg: "#ff7ad9", sub: "#ffcf4a", t1: "WHALE 92.1", t2: "CLASSIC ROCK" },
+    { bg: "#3a1010", fg: "#ffd24a", sub: "#fff", t1: "THE RAGE", t2: "1480 AM TALK" },
+    { bg: "#0c2230", fg: "#5ad0ff", sub: "#ffcf4a", t1: "MARÉ ALTA", t2: "RECORDS · LPs" },
+    { bg: "#102810", fg: "#ffd24a", sub: "#fff", t1: "FEAST OF THE", t2: "BLESSED SACRAMENT" },
+  ];
+  const p = PALES[variant % PALES.length];
+  ctx.fillStyle = p.bg; ctx.fillRect(0, 0, 256, 256);
+  ctx.strokeStyle = p.sub; ctx.lineWidth = 8; ctx.strokeRect(10, 10, 236, 236);
+  ctx.textAlign = "center";
+  ctx.fillStyle = p.fg; ctx.font = "bold 40px Georgia";
+  ctx.fillText(p.t1, 128, 110);
+  ctx.fillStyle = p.sub; ctx.font = "bold 22px Georgia";
+  ctx.fillText(p.t2, 128, 150);
+  ctx.fillStyle = p.fg; ctx.font = "16px Georgia";
+  ctx.fillText("★ NEW BEDFORD ★", 128, 200);
+  const t = new THREE.Texture(c);
+  t.needsUpdate = true;
+  return t;
+}
+
 /** Mottled paved-ground texture (concrete/cobble feel), tiles seamlessly-ish. */
 export function makeGroundTexture(): THREE.Texture {
   const [c, ctx] = canvas(256);

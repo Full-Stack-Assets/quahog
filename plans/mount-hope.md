@@ -281,18 +281,18 @@ time; keep the build green; be honest about status.
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
 - [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
-- [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health bar + police/faction badges + wallet + clock (HUD.tsx); armor/stamina/ammo/weapon TODO
+- [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health + stamina bars + police/faction badges + wallet + clock + weapon (HUD.tsx); armor/ammo TODO
 - [~] Objective markers + waypoints + on-screen distance — world beam/ring marker + map blip + **on-screen metres** to objective (HUD); off-screen waypoint arrow TODO
-- [ ] Interaction prompts + context hints
+- [~] Interaction prompts + context hints — contextual prompts (E steal/enter, B buy) + control crib (HUD); richer context hints TODO
 - [~] Big map screen (set waypoint, fast-travel, legend) — full-screen pannable/zoomable map with real street-name labels, water, player heading + objective (BigMap.tsx, M to open); waypoint/fast-travel TODO
 - [ ] Subtitles + dialogue UI + phone/contacts
-- [ ] Notifications (mission, cash, busted/wasted), damage vignette + directional hit indicators
+- [x] Notifications (mission, cash, busted/wasted), damage vignette + directional hit indicators — toast notifications (Toasts.tsx) + damage vignette; directional hit indicators TODO
 
 ## 22. UI aesthetics & menus
-- [ ] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit
-- [ ] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene
-- [~] Pause menu, mission screen, stats/progress screen — pause/settings overlay (PauseMenu.tsx: resume, view, weather, reset); mission/stats screens TODO
-- [ ] Loading screens with art + tips/lore
+- [~] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit — courier/neon palette across HUD, menus, title, toasts; CRT shader/full kit TODO
+- [~] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene — title/start screen over the live world with tips (StartMenu.tsx); New/Continue/Load split TODO
+- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, volume, reset); mission/stats screens TODO
+- [~] Loading screens with art + tips/lore — title screen doubles as a loading screen with rotating tips (StartMenu.tsx); art TODO
 - [ ] Map/HUD icon set; mission-text styling; credits
 - [ ] Photo-mode UI (filters, frames, stickers)
 
