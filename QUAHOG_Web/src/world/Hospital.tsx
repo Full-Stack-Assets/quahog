@@ -5,7 +5,8 @@ import { HOSPITAL } from "../places";
 // the slice grows north (see places.ts).
 export function Hospital() {
   return (
-    <group position={HOSPITAL}>
+    // sit on the ground (HOSPITAL[1] is the respawn height, not the building base)
+    <group position={[HOSPITAL[0], 0, HOSPITAL[2]]}>
       <mesh position={[0, 4, -14]} castShadow receiveShadow>
         <boxGeometry args={[14, 8, 10]} />
         <meshStandardMaterial color="#dfe3e6" roughness={0.8} />

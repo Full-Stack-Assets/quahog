@@ -339,6 +339,8 @@ time; keep the build green; be honest about status.
 - [x] New Bedford waterfront (primary)
 - [~] New Bedford full (downtown, South End, North End) — slice now spans **New Bedford · Fairhaven · Dartmouth** (16,252 buildings / 3,868 roads), real City Hall/PD/libraries, elevated Acushnet bridges; South/North End + St. Luke's + Padanaram/UMassD (multi-slice) TODO
 - [ ] Fall River (Spindle City): Flint, Lizzie Borden, Battleship Cove, Braga Bridge, mills
+  - on the way west, make the **Dartmouth Mall** a central hub location (shops/missions/parking)
+  - extend Fairhaven down **Sconticut Neck → West Island**; **Long Island restaurant/marina** = purchasable + boat dock
 - [ ] Brockton (Champion City Gym, boxing)
 - [ ] Cape Cod (marinas, Fake Kennedys)
 - [ ] Connecting roads/highways between districts; fast-travel
