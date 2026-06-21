@@ -1,12 +1,14 @@
 // Mount Hope radio. Procedural, royalty-free music (Web Audio synth) + scripted
-// host voices (Web Speech API). No audio files, no copyright. Stations switch
-// live; talk stations speak continuously, music stations drop DJ IDs between
-// beds. Must be started from a user gesture (a station button) — handled by
-// resuming the AudioContext on setStation.
+// host voices — real ElevenLabs VO when configured, else Web Speech (see vo.ts).
+// No audio files, no copyright. Stations switch live; talk stations speak
+// continuously, music stations drop DJ IDs between beds. Must be started from a
+// user gesture (a station button) — handled by resuming the AudioContext.
+import { speak, stopVO } from "./vo";
 
 export interface Host {
   name: string;
-  prefs: string[]; // preferred speech-synthesis voice name fragments
+  voice?: string;  // VO character key → ELEVENLABS_<KEY>_VOICE (e.g. "mike")
+  prefs: string[]; // preferred speech-synthesis voice name fragments (fallback)
   rate: number;
   pitch: number;
   lines: string[];
@@ -34,7 +36,7 @@ export const STATIONS: Station[] = [
     id: "whale", dial: "92.1", name: "WHALE", kind: "music",
     tempo: 112, root: 130.81, minor: false, prog: [0, -3, 5, 0], scale: PENT_MAJ, talkGapMs: 34000,
     host: {
-      name: "Sully", prefs: ["Daniel", "Google UK English Male", "Male"], rate: 1.0, pitch: 0.95,
+      name: "Sully", voice: "sully", prefs: ["Daniel", "Google UK English Male", "Male"], rate: 1.0, pitch: 0.95,
       lines: [
         "WHALE ninety-two point one, the Whaling City's home for classic rock. Sully with ya.",
         "That one's been spinnin' since before the Braga Bridge needed a new coat of green.",
@@ -47,7 +49,7 @@ export const STATIONS: Station[] = [
     id: "rage", dial: "1480", name: "The Rage", kind: "talk",
     tempo: 0, root: 0, minor: false, prog: [], scale: [], talkGapMs: 1400,
     host: {
-      name: "Buddy Mello", prefs: ["Fred", "Google US English", "Male"], rate: 1.16, pitch: 1.0,
+      name: "Buddy Mello", voice: "buddy", prefs: ["Fred", "Google US English", "Male"], rate: 1.16, pitch: 1.0,
       lines: [
         "You're on The Rage with Buddy Mello, and let me TELL ya about the bridge this mornin'.",
         "Forty-five minutes. Forty-five! To go three miles. Somebody explain that to me.",
@@ -62,7 +64,7 @@ export const STATIONS: Station[] = [
     id: "anvil", dial: "WBOX", name: "The Anvil", kind: "talk",
     tempo: 0, root: 0, minor: false, prog: [], scale: [], talkGapMs: 1600,
     host: {
-      name: "Iron Mike Fontaine", prefs: ["Lee", "Google UK English Male", "Male"], rate: 0.92, pitch: 0.72,
+      name: "Iron Mike Fontaine", voice: "mike", prefs: ["Lee", "Google UK English Male", "Male"], rate: 0.92, pitch: 0.72,
       lines: [
         "This is The Anvil. Iron Mike Fontaine. City of Champions, baby.",
         "You wanna be great? You get up at five, you run the hill, you hit the bag till it begs.",
@@ -76,7 +78,7 @@ export const STATIONS: Station[] = [
     id: "mare", dial: "105.3", name: "Maré Alta", kind: "music",
     tempo: 96, root: 110.0, minor: true, prog: [0, -2, -5, -7], scale: PENT_MIN, talkGapMs: 38000,
     host: {
-      name: "Tia Conceição", prefs: ["Luciana", "Google português", "Female"], rate: 0.98, pitch: 1.05,
+      name: "Tia Conceição", voice: "tia", prefs: ["Luciana", "Google português", "Female"], rate: 0.98, pitch: 1.05,
       lines: [
         "Maré Alta, cento e cinco. Bom dia, my loves — that's high tide on your dial.",
         "A little saudade for the South Coast Portuguese — from Madeira to the South End.",
@@ -133,14 +135,14 @@ class RadioEngine {
   stop() {
     if (this.timer) { clearInterval(this.timer); this.timer = undefined; }
     if (this.talkTimer) { clearTimeout(this.talkTimer); this.talkTimer = undefined; }
-    if (typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+    stopVO();
     this.station = null;
   }
 
   setMuted(m: boolean) {
     this.muted = m;
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(m ? 0 : this.vol, this.ctx.currentTime, 0.05);
-    if (m && typeof speechSynthesis !== "undefined") speechSynthesis.cancel();
+    if (m) stopVO();
   }
 
   // --- music ---
@@ -185,36 +187,27 @@ class RadioEngine {
 
   private speakNext() {
     const s = this.station;
-    if (!s || this.muted || typeof speechSynthesis === "undefined") {
+    if (!s || this.muted) {
       if (s) this.scheduleTalk(s.talkGapMs);
       return;
     }
     const line = s.host.lines[this.lineIdx % s.host.lines.length];
     this.lineIdx++;
-    const u = new SpeechSynthesisUtterance(line);
-    const v = this.pickVoice(s.host.prefs);
-    if (v) u.voice = v;
-    u.rate = s.host.rate;
-    u.pitch = s.host.pitch;
-    u.volume = 1;
     // duck the music bed while the host talks
     if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol * 0.28, this.ctx.currentTime, 0.08);
-    u.onend = () => {
+    const done = () => {
       if (this.master && this.ctx) this.master.gain.setTargetAtTime(this.muted ? 0 : this.vol, this.ctx.currentTime, 0.2);
       if (this.station === s) this.scheduleTalk(s.talkGapMs);
     };
-    u.onerror = u.onend;
-    speechSynthesis.speak(u);
-  }
-
-  private pickVoice(prefs: string[]): SpeechSynthesisVoice | null {
-    const vs = speechSynthesis.getVoices();
-    if (!vs.length) return null;
-    for (const p of prefs) {
-      const v = vs.find((x) => x.name.toLowerCase().includes(p.toLowerCase()));
-      if (v) return v;
-    }
-    return vs.find((x) => x.lang.startsWith("en")) || vs[0];
+    // real ElevenLabs voice when configured, else Web Speech (vo.ts handles both)
+    speak({
+      text: line,
+      voice: s.host.voice ?? "narrator",
+      rate: s.host.rate,
+      pitch: s.host.pitch,
+      prefs: s.host.prefs,
+      onend: done,
+    });
   }
 }
 
