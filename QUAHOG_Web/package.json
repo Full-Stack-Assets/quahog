@@ -6,7 +6,10 @@
   "description": "Web 3D vertical slice (Three.js / React Three Fiber) — New Bedford waterfront. Working title: Project QUAHOG (name TBD).",
   "scripts": {
     "dev": "vite",
+    "predev": "node scripts/gen_manifests.mjs",
     "build": "tsc && vite build",
+    "prebuild": "node scripts/gen_manifests.mjs",
+    "music:manifest": "node scripts/gen_manifests.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
