@@ -44,6 +44,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const [wp, setWp] = useState<{ dist: number; bearing: number } | null>(null);
   const [sub, setSub] = useState<{ name: string; text: string } | null>(null);
   const [mph, setMph] = useState(0);
+  const [compass, setCompass] = useState("N");
   useEffect(() => {
     const id = setInterval(() => {
       const h = Math.floor(shared.hour);
@@ -51,6 +52,10 @@ export function HUD({ sliceName }: { sliceName: string }) {
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
       setStamina(shared.stamina);
       setMph(Math.round(Math.abs(shared.carSpeed) * 2.237)); // m/s → mph
+      // compass from the active heading (world north = -z)
+      const hd = useGame.getState().mode === "car" ? shared.carYaw : shared.heading;
+      const bearing = (Math.atan2(Math.sin(hd), -Math.cos(hd)) * 180 / Math.PI + 360) % 360;
+      setCompass(["N", "NE", "E", "SE", "S", "SW", "W", "NW"][Math.round(bearing / 45) % 8]);
       const body = useGame.getState().mode === "car" ? shared.car : shared.player;
       const t = body?.translation();
       // distance + bearing to the active objective
@@ -133,7 +138,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${Math.floor(cash).toLocaleString()}</div>
         {ownedCount > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🏠 {ownedCount}/{BUSINESSES.length} fronts</div>}
         {scrimshaw > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🦴 {scrimshaw}/{SCRIMSHAW_TOTAL} scrimshaw</div>}
-        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm}</div>
+        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm} &nbsp;·&nbsp; 🧭 {compass}</div>
         <div style={{ fontSize: 12, marginTop: 4 }}>
           <span title="police" style={{ color: "#6cb6ff" }}>{stars(police)}</span>
         </div>

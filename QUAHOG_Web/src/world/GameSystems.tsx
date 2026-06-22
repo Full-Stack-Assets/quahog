@@ -64,6 +64,7 @@ export function GameSystems() {
   const acc = useRef(0);
   const prevStars = useRef(0);
   const restored = useRef(false);
+  const skidCool = useRef(0);
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -104,6 +105,9 @@ export function GameSystems() {
 
     if (useGame.getState().paused) return; // freeze sim while paused
     if (shared.alarm.t > 0) shared.alarm.t = Math.max(0, shared.alarm.t - dt);
+    // tire screech on hard cornering (§13/§20), with a cooldown so it doesn't spam
+    skidCool.current = Math.max(0, skidCool.current - dt);
+    if (shared.skid && skidCool.current <= 0) { sfx.screech(); skidCool.current = 0.55; }
     // arrive at a player-placed waypoint → clear it (§21)
     const wp = useGame.getState().waypoint;
     if (wp) {

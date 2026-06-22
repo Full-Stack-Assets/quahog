@@ -104,6 +104,7 @@ class Sfx {
   ui() { this.ensure(); this.tone(600, 0.05, 0.15, "square"); }
   bust() { this.ensure(); this.tone(300, 0.5, 0.3, "sawtooth", 120); }
   step() { this.ensure(); this.burst(240, 0.5, 0.07, 0.05, "lowpass"); }
+  screech() { this.ensure(); this.burst(1100, 7, 0.45, 0.14, "bandpass"); this.tone(900, 0.4, 0.05, "sawtooth", 1300); }
 
   // ---- continuous beds (call each frame) ----
   engine(speed01: number, on: boolean) {
