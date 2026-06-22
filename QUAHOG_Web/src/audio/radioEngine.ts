@@ -206,6 +206,15 @@ class RadioEngine {
   /** Subtitle sink (§33): set by the HUD to caption the currently spoken line. */
   onSubtitle: ((s: { name: string; text: string } | null) => void) | null = null;
   private emitSub(s: { name: string; text: string } | null) { try { this.onSubtitle?.(s); } catch { /* no sink */ } }
+  /** Now-playing track sink: set by the Radio panel to show the current song. */
+  onTrack: ((name: string) => void) | null = null;
+  private currentTrack = "";
+  private lastUrl = "";
+  private emitTrack(name: string) { this.currentTrack = name; try { this.onTrack?.(name); } catch { /* no sink */ } }
+  /** Current real track display name ("" when on the synth bed or a talk dial). */
+  trackName() { return this.currentTrack; }
+  /** Skip to another real track on the current music station (no-op otherwise). */
+  skipTrack() { if (this.station?.kind === "music" && this.musicTracks.length) this.playTrack(); }
 
   setDuck(d: number) {
     this.duck = d;
@@ -277,7 +286,10 @@ class RadioEngine {
       .catch(() => { if (this.station === s) this.startSynth(s); });
   }
   private playTrack() {
-    const url = pick(this.musicTracks);
+    // avoid replaying the same file back-to-back when there's a choice
+    let url = pick(this.musicTracks);
+    if (this.musicTracks.length > 1) { let guard = 0; while (url === this.lastUrl && guard++ < 8) url = pick(this.musicTracks); }
+    this.lastUrl = url;
     if (!this.music) this.music = new Audio();
     this.music.src = url;
     this.music.loop = false;
@@ -285,6 +297,9 @@ class RadioEngine {
     this.music.volume = this.vol;
     this.music.onended = () => { if (this.musicTracks.length) this.playTrack(); };
     this.music.play().catch(() => {});
+    // publish a clean display name (basename, no extension)
+    const base = decodeURIComponent(url.split("/").pop() || "").replace(/\.[a-z0-9]+$/i, "");
+    this.emitTrack(base);
   }
 
   stop() {
@@ -292,8 +307,10 @@ class RadioEngine {
     if (this.talkTimer) { clearTimeout(this.talkTimer); this.talkTimer = undefined; }
     if (this.music) { this.music.pause(); this.music.onended = null; }
     this.musicTracks = [];
+    this.lastUrl = "";
     stopVO();
     this.emitSub(null);
+    this.emitTrack("");
     this.station = null;
   }
 

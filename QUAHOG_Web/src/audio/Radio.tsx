@@ -7,8 +7,11 @@ import { useGame } from "../store";
 export function Radio() {
   const [idx, setIdx] = useState(-1); // -1 = off
   const [muted, setMuted] = useState(false);
+  const [track, setTrack] = useState(""); // now-playing song on a music station
   const open = useGame((s) => s.radioOpen);
   const toggleRadio = useGame((s) => s.toggleRadio);
+
+  useEffect(() => { radio.onTrack = setTrack; return () => { if (radio.onTrack === setTrack) radio.onTrack = null; }; }, []);
 
   const select = (i: number) => {
     const next = i < 0 || i >= STATIONS.length ? -1 : i;
@@ -74,6 +77,12 @@ export function Radio() {
             <div style={{ opacity: 0.7, fontSize: 11 }}>
               {cur.kind === "talk" ? "🎙 " : "🎵 "}{cur.host.name}
             </div>
+            {cur.kind === "music" && track && (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", opacity: 0.85, fontSize: 11 }} title={track}>♪ {track}</span>
+                <button style={chip(false)} onClick={() => radio.skipTrack()} title="Skip track">⏭</button>
+              </div>
+            )}
           </>
         ) : (
           <span style={{ opacity: 0.6 }}>off — pick a station</span>
