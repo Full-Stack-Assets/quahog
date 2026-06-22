@@ -189,3 +189,140 @@ radio shuffles whatever it finds. Target ~75–90 s, instrumental only.
 ### Optional talk-station stingers (short)
 - The Rage (1480 AM): "5-second aggressive AM talk-radio sting, brassy stab, urgent news-bulletin energy."
 - The Anvil (WBOX): "5-second gritty boxing-gym sting, low brass and a single bell ding, determined."
+
+---
+
+## Additional host segments (one more each, for TTS)
+
+### SULLY — WHALE 92.1
+WHALE, ninety-two point one, Sully ridin' the late shift with ya. It's that hour now where the city goes quiet and the only people still movin' are the ones with somethin' on their mind. Cab drivers, night nurses, third-shift guys clockin' out smellin' like the fish house. This next stretch is for you — the ones the daytime radio forgets about. They had a guy in here once tellin' me rock and roll was a phase. A phase! I been doin' this since before the Braga Bridge got its first coat of green and I'm tellin' ya, the only phase is everything else. Keep her between the lines on the ride home, don't trust the yellow lights downtown, and if you see the fog rollin' up off the harbor — and you will — just slow down and let it come. We'll get through the night together. This is WHALE.
+
+### BUDDY MELLO — The Rage, 1480 AM
+You're on The Rage, Buddy Mello, and somebody explain the new one-way streets downtown to me, 'cause I went to the hardware store and ended up in Fairhaven. Fairhaven! I crossed a bridge I didn't mean to cross! Now I gotta wait for it to open and close just to get back home. Whose idea was this? Some fella with a clipboard who's never driven a Buick through a rotary in his life, that's who. Line two, you're on. Ma, is that you? Ma, I told you not to call the show. Folks, that's my mother. She wants me to pick up bread on the way home. On the air! This is what I deal with. Alright, somebody at the diner save me a clam roll, I'm gonna need it after this. Fourteen-eighty AM, the only station that admits the bridge is winnin'.
+
+### IRON MIKE FONTAINE — The Anvil, WBOX
+The Anvil. Iron Mike. Let me tell you about a kid I trained twenty years ago. No talent. None. Slowest hands I ever saw. But that kid was the first one in the gym and the last one to leave, every single day, rain, snow, didn't matter. And one night he steps in the ring against a kid with everything — speed, reach, a left hook like a car door — and he beats him. You know how? He wanted it more. That's the whole story. That's the only story there's ever been in this sport, and in this city, and in this life. You can't buy want. You can't fake it. The bag knows. The hill knows. The mirror at five in the mornin' knows. So I'll ask you again, like I ask every mornin' — how bad do you want it? Lights out, hands up, chin down. This is The Anvil.
+
+### TIA CONCEIÇÃO — Maré Alta, 105.3
+Maré Alta, cento e cinco, your Tia with you on a soft evening. The light's goin' down gold over Clark's Point and the boats are comin' in, and there's a smell of somebody's caldo verde drifting down the street that is breaking my heart in the most beautiful way. This hour is for the saudade, my loves — for the ones who are far from home tonight, in another city, another country, missing this exact street, this exact light. I want you to know the music is still playing here. The kitchen light is still on. The door is open. Wherever you are, you are still one of us. A little morna now, the old kind, the kind your avó hummed while she worked. Close your eyes. Come home for three minutes. Maré Alta, cento e cinco. Fica bem, my loves.
+
+---
+
+## Songs with lyrics — music stations
+
+For ElevenLabs Music: paste the **Prompt** as the style and the lyric block as
+the lyrics. Original works; safe to ship.
+
+### WHALE 92.1 — 5 classic-rock songs (English)
+
+**1. "Quohog Republic Saturday Night"**
+Prompt: "1980s bar-rock anthem, driving guitars, Hammond organ, big sing-along chorus, gritty male lead vocal, ~115 BPM."
+- (V1) Punched out at the whistle, washed the harbor off my hands / Got ten bucks and a Friday and a beat-up Pontiac / Down to the docks where the jukebox never sleeps
+- (Chorus) Saturday night at the Quohog Republic / Cold ones on the bar and the band playin' loud / We don't got much but we got each other / Whaling City kids and we're doin' fine right now
+- (V2) Sal's still arguin' baseball, Maria's pourin' slow / The fog's out on the water but in here it's all aglow
+- (Bridge) They closed the mill, they slowed the boats / But they can't close this town's throat
+
+**2. "Buzzards Bay"**
+Prompt: "Mid-tempo heartland rock ballad, clean chorused guitar building to soaring distorted lead, nostalgic, anthemic, male vocal."
+- (V1) I learned to drive on County Street, learned to love down by the shore / Learned that everybody leaves someday and the tide comes back for more
+- (Chorus) Buzzards Bay, Buzzards Bay / Take my troubles, wash 'em out to sea / However far I go away / There's a gray-green water waitin' there for me
+- (V2) My old man worked the waterfront till the work all went away / Said son go on and find your life — but don't forget the bay
+- (Outro) I won't forget, I won't forget the bay
+
+**3. "Mill Town Heart"**
+Prompt: "Blue-collar rock, bluesy guitar licks, steady backbeat, defiant and proud, raspy male vocal, ~100 BPM."
+- (V1) Brick and granite, broken glass, the looms went quiet years ago / But the people here are made of somethin' you can't lay off, don't you know
+- (Chorus) I got a mill town heart / Knocked down a hundred times, still beatin' in the dark / They can take the work but they can't take the spark / I got a mill town heart
+- (V2) My grandmother spun the cotton, my mother sewed the seams / I'm still standin' on these same streets holdin' onto all their dreams
+
+**4. "Route 18"**
+Prompt: "Up-tempo driving rocker, palm-muted guitar, four-on-the-floor, windows-down energy, anthemic chorus, ~130 BPM."
+- (V1) Engine turnin' over, sun comin' up red / Whole day spread out in front of me, nothin' in my head / Just the white lines callin' and a full tank of gas
+- (Chorus) Down on Route Eighteen / Fastest I have ever been / Past the harbor, past the steeple / Past everything I've ever seen / Flyin' down Route Eighteen
+- (Bridge) Don't race past the church, that's where the cops all wait / But out past the city limits, baby, open up the gate
+
+**5. "Whaling City"**
+Prompt: "Triumphant classic-rock closer, big drums, layered guitars, gang-vocal chorus, proud and sweeping, male lead."
+- (V1) They chased the whales across the world and brought the whole world home / Built a city on the oil and bone and brave men's broken bones
+- (Chorus) Whaling City, Whaling City / Salt and granite, blood and pride / However rough the water gets / You keep your lantern lit, you ride the tide / Whaling City, this is mine
+- (V2) The boats are smaller now, the catch ain't what it was / But we still go out on the water 'cause it's who we are, because —
+- (Final chorus) Whaling City, Whaling City...
+
+### Maré Alta 105.3 — 5 Portuguese / Cape Verdean songs (PT lyrics + EN gloss)
+
+**1. "Maré Alta" (coladeira)**
+Prompt: "Cape Verdean coladeira, bright cavaquinho and acoustic guitar, syncopated hand percussion, joyful danceable, warm female lead vocal, Portuguese lyrics."
+- (V1) Sobe a maré, sobe o coração / Toda a avenida a dançar então *(The tide rises, the heart rises / the whole avenue dancing)*
+- (Coro) Maré alta, vem dançar comigo / Maré alta, o mar é meu amigo / Longe da terra mas perto do céu / Cantamos juntos, o povo é meu *(High tide, come dance with me / the sea is my friend / far from land but close to heaven / we sing together, these are my people)*
+- (V2) Do sul ao norte, das ilhas ao cais / Uma só família, nada mais *(From south to north, from the islands to the docks / one family, nothing more)*
+
+**2. "Saudade do Mar" (morna)**
+Prompt: "Cape Verdean morna, slow and melancholic, nylon guitar, cavaquinho, upright bass, deep saudade, tender female vocal, Portuguese lyrics."
+- (V1) Há um mar que eu deixei e que não me deixou / Cada noite ele chama, cada noite ele dói *(There's a sea I left that never left me / every night it calls, every night it aches)*
+- (Coro) Saudade, saudade do mar / Da casa, da voz que eu não posso abraçar / Levo a ilha no peito por onde eu for / Saudade é o nome do amor *(Longing for the sea / for home, the voice I can't embrace / I carry the island in my chest wherever I go / saudade is the name of love)*
+- (V2) Minha avó dizia: o mar dá e o mar leva / Mas a música fica, e a música nos eleva *(My grandmother said: the sea gives and takes / but the music stays, and lifts us)*
+
+**3. "Carta pra Mãe" (morna)**
+Prompt: "Intimate Portuguese fado-tinged morna, expressive 12-string guitarra and classical guitar, emotional rubato, soft female vocal, Portuguese lyrics."
+- (V1) Mãe, aqui faz frio, mas o trabalho é bom / Mando este dinheiro e mando este som *(Mother, it's cold here, but the work is good / I send this money and this song)*
+- (Coro) Não chores por mim, eu volto no verão / Guarda o meu lugar à mesa e no coração *(Don't cry for me, I'll come back in summer / keep my place at the table and in your heart)*
+- (V2) Reza por nós, acende uma luz na janela / Que eu encontro o caminho de volta por ela *(Pray for us, light a candle in the window / and I'll find my way home by it)*
+
+**4. "Festa na Avenida" (funaná)**
+Prompt: "Energetic Cape Verdean funaná, accordion-led, fast ferrinho percussion groove, festive and driving, lively female vocal, Portuguese lyrics."
+- (V1) Acende a grelha, chama a vizinhança / A noite é nossa, vem entrar na dança *(Light the grill, call the neighbors / the night is ours, come into the dance)*
+- (Coro) Festa na avenida, sob as luzes a brilhar / Carne no espeto, povo a cantar / Trabalhamos a semana, hoje é dia de viver / Festa na avenida, vem com a gente, vem dançar *(Feast on the avenue, under the shining lights / meat on the skewer, people singing / we worked all week, today is for living / come dance)*
+
+**5. "Volta pra Casa" (coladeira-ballad)**
+Prompt: "Hopeful Cape Verdean coladeira ballad, warm acoustic guitar and cavaquinho, gentle build, comforting female vocal with light backing harmonies, Portuguese lyrics."
+- (V1) Filho que partiste para o outro lado do mar / Ouve esta rádio, é a tua mãe a chamar *(Child who left for the other side of the sea / hear this radio, it's your mother calling)*
+- (Coro) Volta pra casa quando puderes voltar / A porta está aberta, a luz vai ficar / E enquanto não voltas, a música vai te abraçar / Volta pra casa, ó filho do mar *(Come home when you can / the door is open, the light stays on / and until you return, the music will hold you / come home, child of the sea)*
+- (V2) O tempo é duro, a distância é cruel / Mas o amor da família chega até ao céu *(Time is hard, distance is cruel / but a family's love reaches all the way to heaven)*
+
+---
+
+## Jingles & theme songs — talk stations
+
+Short sung station IDs / bumpers (~6–12 s). Paste Prompt as style, lyric as lyrics.
+
+### The Rage, 1480 AM (Buddy Mello)
+**1. "Turn It Up, It's The Rage" (theme)**
+Prompt: "1980s AM talk-radio jingle, brassy stabs, punchy organ, bold mixed-gender jingle-singer harmonies, upbeat and a little comedic, ~10 s ID."
+- Fourteen-eighty, turn it up! / It's The Rage and we don't sugarcoat! / Say what you're thinkin' in the traffic / Buddy Mello's got your vote! / The Raaaage — 1480 AM!
+
+**2. "Bridge Report" (bumper)**
+Prompt: "Short comedic AM jingle bumper, honky-tonk piano, kazoo-ish brass, exasperated cheerful tone, ~7 s."
+- The bridge is up (it's always up!) / You're gonna sit (you're gonna sit!) / Grab a clam roll, take a breath / On The Rage we deal with it!
+
+**3. "Top of the Hour" (ID)**
+Prompt: "Quick 5 s AM news-style sting with sung tag, urgent brass, single bright voice."
+- This is The Rage — fourteen-eighty AM — where we say it loud 'cause somebody's gotta!
+
+**4. "Buddy Mello" (personality jingle)**
+Prompt: "Playful 1980s radio personality jingle, walking bass, finger-snaps, smooth group vocal with a wink, ~9 s."
+- Buuuddy — Buddy Mello! / He's loud, he's right, he's a regular fella! / From the rotary to the river he's the voice of the streets / Buddy Mello — fourteen-eighty's heat!
+
+**5. "Caller Line" (bumper)**
+Prompt: "Snappy comedic AM bumper, telephone-ring SFX into brass hit, cheeky group vocal, ~6 s."
+- You're on the line, you're on the air / Say it now or hold it there / The Raaage — we're listenin' (sorta)!
+
+### The Anvil, WBOX (Iron Mike Fontaine)
+**1. "The Anvil" (theme)**
+Prompt: "Gritty 1980s motivational sports-radio theme, low brass, pounding toms, a single bell ding, determined gospel-tinged group vocal, ~12 s."
+- Steel on steel, hear it ring / The Anvil's where the champions begin / Get up, stand up, answer the bell / WBOX — City of Champions, give 'em hell!
+
+**2. "Roadwork" (morning bumper)**
+Prompt: "Driving motivational jingle, four-on-the-floor kick, brass section, urgent male gang vocal, ~9 s, sunrise energy."
+- Five in the mornin', hit the hill! / Nobody's watchin' — that's the will! / On The Anvil we don't rest / WBOX brings out your best!
+
+**3. "City of Champions" (ID)**
+Prompt: "Triumphant 6 s station ID, big brass swell, single bell, proud group vocal."
+- WBOX — the Anvil — City of Champions — we forge, we don't fold!
+
+**4. "Iron Mike" (personality jingle)**
+Prompt: "Tough but warm personality jingle, bluesy organ, brushed snare, gravel-meets-harmony group vocal, ~9 s."
+- Iron — Iron Mike! / Heart of granite, hands of stone / He'll pick you up off the canvas / And he'll never leave you alone / Iron Mike — on The Anvil!
+
+**5. "Three Rounds Left" (motivational bumper)**
+Prompt: "Slow-build inspirational bumper, lone piano into full brass and bell, anthemic male vocal climbing, ~11 s."
+- When you got nothin' / When the tank reads dry / You got three rounds left in ya — / Dig down, don't ask why / The Anvil — we go again!
