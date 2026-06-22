@@ -250,19 +250,29 @@ class RadioEngine {
   }
   private loadMusic(s: Station) {
     this.musicTracks = [];
-    fetch(`music/${s.id}/manifest.json`)
+    // a track may be a bare filename (public/music/<id>/) or an absolute URL
+    // (webhook-delivered to Blob/CDN) — accept both.
+    const resolve = (tracks: string[]) => tracks.map((f) => /^(https?:)?\/\//.test(f) ? f : `music/${s.id}/${f}`);
+    const play = (tracks?: string[]): boolean => {
+      if (this.station !== s || !tracks || !tracks.length) return false;
+      this.musicTracks = resolve(tracks);
+      this.playTrack();
+      return true;
+    };
+    // 1) Blob-backed manifest (webhook delivery) → 2) static public manifest →
+    // 3) procedural synth bed.
+    fetch(`api/music?station=${s.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((mf: { tracks?: string[] } | null) => {
         if (this.station !== s) return;
-        const tracks = mf?.tracks;
-        if (tracks && tracks.length) {
-          // a track may be a bare filename (local public/music/<id>/) or an
-          // absolute URL (webhook-delivered to Blob/CDN) — accept both.
-          this.musicTracks = tracks.map((f) => /^(https?:)?\/\//.test(f) ? f : `music/${s.id}/${f}`);
-          this.playTrack();
-        } else {
-          this.startSynth(s); // no tracks yet → procedural bed
-        }
+        if (play(mf?.tracks)) return;
+        fetch(`music/${s.id}/manifest.json`)
+          .then((r) => (r.ok ? r.json() : null))
+          .then((mf2: { tracks?: string[] } | null) => {
+            if (this.station !== s) return;
+            if (!play(mf2?.tracks)) this.startSynth(s);
+          })
+          .catch(() => { if (this.station === s) this.startSynth(s); });
       })
       .catch(() => { if (this.station === s) this.startSynth(s); });
   }
