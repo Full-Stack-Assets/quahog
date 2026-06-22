@@ -60,6 +60,53 @@ function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0, widthSca
   return g;
 }
 
+// Raised curb + sidewalk flanking each street: a top strip at height `top` with
+// a short vertical curb face down to grade on the inner (street-facing) edge, on
+// both sides of the centerline. Reads as a real walkway instead of flat paint.
+function buildSidewalks(roads: Road[], top: number, inner: number, width: number): THREE.BufferGeometry | null {
+  const pos: number[] = [], uv: number[] = [], idx: number[] = [];
+  let v = 0;
+  for (const r of roads) {
+    const half = r.width / 2;
+    const i0 = half + inner;        // inner (curb) offset from centerline
+    const o0 = half + inner + width; // outer edge
+    let len = 0;
+    for (let i = 0; i < r.points.length - 1; i++) {
+      const [ax, an] = r.points[i];
+      const [bx, bn] = r.points[i + 1];
+      const x1 = ax, z1 = -an, x2 = bx, z2 = -bn;
+      const dx = x2 - x1, dz = z2 - z1;
+      const segLen = Math.hypot(dx, dz);
+      if (segLen < 1e-4) continue;
+      const nx = -dz / segLen, nz = dx / segLen; // unit left normal
+      const v0 = len / TILE, v1 = (len + segLen) / TILE;
+      for (const s of [1, -1]) {
+        const ix = nx * i0 * s, iz = nz * i0 * s; // inner offset vector
+        const ox = nx * o0 * s, oz = nz * o0 * s; // outer offset vector
+        // top strip (inner→outer) at height `top`
+        pos.push(x1 + ix, top, z1 + iz, x2 + ix, top, z2 + iz, x2 + ox, top, z2 + oz, x1 + ox, top, z1 + oz);
+        uv.push(0, v0, 0, v1, 1, v1, 1, v0);
+        idx.push(v, v + 1, v + 2, v, v + 2, v + 3); v += 4;
+        // vertical curb face along the inner edge (grade→top), wound to face the street
+        const fwd = s === 1 ? 1 : -1; // keep outward-facing winding per side
+        pos.push(x1 + ix, 0, z1 + iz, x2 + ix, 0, z2 + iz, x2 + ix, top, z2 + iz, x1 + ix, top, z1 + iz);
+        uv.push(0, 0, 0, 1, 1, 1, 1, 0);
+        if (fwd === 1) idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
+        else idx.push(v, v + 2, v + 1, v, v + 3, v + 2);
+        v += 4;
+      }
+      len += segLen;
+    }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setIndex(idx);
+  g.computeVertexNormals();
+  return g;
+}
+
 export function Roads({ roads }: { roads: Road[] }) {
   const surfaceTex = useMemo(() => makeAsphaltTexture(false), []);
   const highwayTex = useMemo(() => makeAsphaltTexture(true), []);
@@ -90,6 +137,8 @@ export function Roads({ roads }: { roads: Road[] }) {
       cx: c.cx, cz: c.cz,
       // concrete curb/sidewalk apron under + around the carriageway
       apron: buildRibbon([...c.sf, ...c.hw], 0.04, 0, 2.6),
+      // raised curb + walkway flanking ordinary streets (not highways/cobble)
+      sidewalk: buildSidewalks(c.sf, 0.14, 0.1, 2.0),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
       surface: buildRibbon(c.sf, 0.06, 0),
       // trim highway carriageway width so close divided carriageways (the two
@@ -127,6 +176,11 @@ export function Roads({ roads }: { roads: Road[] }) {
           {c.apron && (
             <mesh geometry={c.apron} receiveShadow>
               <meshStandardMaterial map={sidewalkTex} color="#9a9890" roughness={0.95} userData={{ base: 0.95 }} />
+            </mesh>
+          )}
+          {c.sidewalk && (
+            <mesh geometry={c.sidewalk} receiveShadow castShadow>
+              <meshStandardMaterial map={sidewalkTex} color="#b0aea6" roughness={0.92} userData={{ base: 0.92 }} />
             </mesh>
           )}
           {c.cobble && (
