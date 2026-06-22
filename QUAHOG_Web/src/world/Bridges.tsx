@@ -57,6 +57,10 @@ function rampY(d: number, total: number, crest: number, ramp: number): number {
 interface Built { deck: THREE.BufferGeometry; rail: THREE.BufferGeometry | null; piers: [number, number, number][] }
 const RAIL = 1.1; // railing height
 
+// real elevated bridges are long; anything shorter tagged bridge=yes (culverts,
+// tiny overpasses) shouldn't hump up out of an otherwise flat road.
+const MIN_ELEVATED = 55;
+
 function buildSpan(pts: Pt[], width: number, crest: number, ramp: number): Built | null {
   const half = width / 2;
   // cumulative length + per-point height
@@ -64,6 +68,8 @@ function buildSpan(pts: Pt[], width: number, crest: number, ramp: number): Built
   let total = 0; const dist = [0];
   for (let i = 1; i < wpt.length; i++) { total += wpt[i].distanceTo(wpt[i - 1]); dist.push(total); }
   if (total < 4) return null;
+  // keep short spans at grade so they don't read as random bumps "jutting out"
+  if (total < MIN_ELEVATED) { crest = 0.4; ramp = total; }
   for (let i = 0; i < wpt.length; i++) wpt[i].y = rampY(dist[i], total, crest, ramp);
 
   const pos: number[] = [], uv: number[] = [], idx: number[] = [];

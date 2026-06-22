@@ -92,10 +92,10 @@ export function Roads({ roads }: { roads: Road[] }) {
       apron: buildRibbon([...c.sf, ...c.hw], 0.04, 0, 2.6),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
       surface: buildRibbon(c.sf, 0.06, 0),
-      // trim highway carriageway width a touch so close divided carriageways
-      // (e.g. the two directions of I-195) read as separate roads with a median
-      // instead of one squished blob; the concrete apron keeps the shoulders.
-      highway: buildRibbon(c.hw, 0.08, 0, 0, 0.82),
+      // trim highway carriageway width so close divided carriageways (the two
+      // directions of I-195) read as separate roads with a median gap instead of
+      // one squished/converging blob; the concrete apron keeps the shoulders.
+      highway: buildRibbon(c.hw, 0.08, 0, 0, 0.72),
     }));
   }, [roads]);
 
