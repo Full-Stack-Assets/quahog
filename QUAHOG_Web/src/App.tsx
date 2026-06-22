@@ -1,7 +1,17 @@
-import { Suspense, useEffect, useState } from "react";
+import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./Experience";
+
+// Keep one failing 3D component (e.g. a CDN asset that won't load) from blanking
+// the entire game — render an empty scene instead of an unhandled throw. The HUD
+// and menus (outside the Canvas) keep working.
+class SceneBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(e: unknown) { console.error("[scene] component error:", e); }
+  render() { return this.state.failed ? null : this.props.children; }
+}
 import { HUD } from "./HUD";
 import { Minimap } from "./Minimap";
 import { PauseMenu } from "./ui/PauseMenu";
@@ -29,7 +39,9 @@ export default function App() {
         gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       >
         <Suspense fallback={null}>
-          <Experience onReady={(s) => setSliceName(s.name)} />
+          <SceneBoundary>
+            <Experience onReady={(s) => setSliceName(s.name)} />
+          </SceneBoundary>
         </Suspense>
       </Canvas>
       <HUD sliceName={sliceName} />
