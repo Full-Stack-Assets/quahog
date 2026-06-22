@@ -186,6 +186,43 @@ export function makeGroundTexture(): THREE.Texture {
   return asColor(t);
 }
 
+/** Region terrain base — soft mottled grass/earth (no hard paving grid), so the
+ * land AROUND the city reads as ground, not one giant concrete slab. Roads,
+ * sidewalks and lots draw their own surfaces on top. Shared singleton. */
+let _terrain: THREE.Texture | null = null;
+export function makeTerrainTexture(): THREE.Texture {
+  if (_terrain) return _terrain;
+  const S = 256;
+  const [c, ctx] = canvas(S);
+  // base coastal-meadow green
+  ctx.fillStyle = "#6f7a4f";
+  ctx.fillRect(0, 0, S, S);
+  // low-frequency tonal patches (grass / dry grass / soil) via soft blobs
+  const blobs: [string, number][] = [
+    ["#7c884f", 26], ["#63704a", 30], ["#8a8a58", 18], ["#5d6a46", 24], ["#86744e", 16],
+  ];
+  for (let i = 0; i < 90; i++) {
+    const [col, rad] = blobs[i % blobs.length];
+    const x = Math.random() * S, y = Math.random() * S, r = rad + Math.random() * rad;
+    const g = ctx.createRadialGradient(x, y, 1, x, y, r);
+    g.addColorStop(0, col); g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.globalAlpha = 0.4; ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // fine speckle so it doesn't read flat up close
+  for (let i = 0; i < 2400; i++) {
+    const v = 70 + Math.random() * 50;
+    ctx.fillStyle = `rgba(${v},${v + 8},${v - 18},${0.15 + Math.random() * 0.2})`;
+    const s = 1 + Math.random() * 2;
+    ctx.fillRect(Math.random() * S, Math.random() * S, s, s);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  _terrain = asColor(t);
+  return _terrain;
+}
+
 /** Cobblestone texture for the historic district (rounded granite setts). */
 export function makeCobbleTexture(): THREE.Texture {
   const [c, ctx] = canvas(256);
