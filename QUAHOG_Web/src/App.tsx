@@ -36,7 +36,7 @@ export default function App() {
         shadows
         camera={{ fov: 60, near: 0.3, far: 1000, position: [0, 10, 24] }}
         dpr={[1, 1.5]}
-        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
+        gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.98 }}
       >
         <Suspense fallback={null}>
           <SceneBoundary>

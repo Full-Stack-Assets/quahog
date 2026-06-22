@@ -25,7 +25,7 @@ export function Effects() {
     }
     if (bc.current) {
       bc.current.brightness = -0.05 * night;
-      bc.current.contrast = 0.06 + 0.05 * night;
+      bc.current.contrast = 0.1 + 0.05 * night;
     }
   });
 
@@ -35,7 +35,7 @@ export function Effects() {
           ground and in recesses; the biggest single "grounding"/realism cue.
           halfRes keeps it cheap enough for the streamed city. */}
       <N8AO halfRes aoRadius={2.2} distanceFalloff={1.0} intensity={2.2} />
-      <Bloom intensity={0.55} luminanceThreshold={0.78} luminanceSmoothing={0.25} mipmapBlur />
+      <Bloom intensity={0.42} luminanceThreshold={0.85} luminanceSmoothing={0.2} mipmapBlur />
       <ChromaticAberration offset={new THREE.Vector2(0.0008, 0.0008)} radialModulation modulationOffset={0.4} />
       <HueSaturation ref={hs} hue={0} saturation={0} />
       <BrightnessContrast ref={bc} brightness={0} contrast={0.06} />
