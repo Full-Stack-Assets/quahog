@@ -10,14 +10,22 @@ are recorded here for reference.
 | `GOOGLE_MAPS_URL_SIGNING_SECRET` | URL signing secret for the same key |
 
 ## ElevenLabs VO (radio hosts + future dialogue) — `api/tts.ts`
+**`ELEVENLABS_API_KEY` is the only required var** — every host now has a built-in
+premade voice fallback (see `DEFAULT_VOICES` in `api/tts.ts`), so VO works the
+moment the key is set. The per-character vars below are **optional overrides**.
 | Key | Value | Character / use |
 |---|---|---|
-| `ELEVENLABS_API_KEY` | secret | required for any VO audio |
+| `ELEVENLABS_API_KEY` | secret | **required** for any ElevenLabs VO audio |
 | `ELEVENLABS_MIKE_VOICE` | `nUEpF21E0nXsKMw4L4CS` | **Shaun - Boston** → Iron Mike Fontaine (The Anvil / WBOX) |
-| `ELEVENLABS_SULLY_VOICE` | _tbd_ | Sully (WHALE 92.1) |
+| `ELEVENLABS_SULLY_VOICE` | _optional_ (default: Sam) | Sully (WHALE 92.1) |
 | `ELEVENLABS_BUDDY_VOICE` | `SA7eD52NRr8WAehitVt1` | Buddy Mello (The Rage 1480) |
-| `ELEVENLABS_TIA_VOICE` | _tbd_ | Tia Conceição (Maré Alta 105.3) |
+| `ELEVENLABS_TIA_VOICE` | _optional_ (default: Rachel) | Tia Conceição (Maré Alta 105.3) |
 | `ELEVENLABS_DEFAULT_VOICE` | _optional_ | fallback for any unmapped character key |
+
+> If hosts are silent: confirm `ELEVENLABS_API_KEY` is set in Vercel **and**
+> redeploy (env-var changes only take effect on a new deployment). Without the
+> key, `/api/tts` returns 503 and hosts fall back to the browser Web-Speech
+> voice, which is unreliable/often silent on mobile.
 
 ## ElevenLabs Music (station tracks) — `scripts/gen_music.py`
 Generates royalty-free instrumental tracks (uses the same `ELEVENLABS_API_KEY`):

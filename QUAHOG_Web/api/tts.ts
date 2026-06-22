@@ -14,6 +14,18 @@ const API = "https://api.elevenlabs.io/v1";
 const MODEL = "eleven_turbo_v2_5"; // fast, cheap, good for barks/VO
 const looksLikeId = (s: string) => /^[A-Za-z0-9]{18,24}$/.test(s);
 
+// Built-in premade ElevenLabs voices so EVERY host has a real voice out of the
+// box (available to all accounts). Per-character env vars (ELEVENLABS_MIKE_VOICE
+// …) override these; this just guarantees no host falls silent for lack of
+// config. Keys match the character keys used by radioEngine.
+const DEFAULT_VOICES: Record<string, string> = {
+  MIKE: "pNInz6obpgDQGcFmaJgB",   // Adam — gravelly older male (the Anvil)
+  BUDDY: "TxGEqnHWrfWFTfGW9XjX",  // Josh — energetic male (the Rage)
+  SULLY: "yoZ06aMxZJJ28mfd3POQ",  // Sam — laid-back male (WHALE)
+  TIA: "21m00Tcm4TlvDq8ikWAM",    // Rachel — warm female (Maré Alta)
+  NARRATOR: "pNInz6obpgDQGcFmaJgB",
+};
+
 // cache display-name → voice_id lookups for the function's warm lifetime
 const idCache = new Map<string, string>();
 
@@ -46,9 +58,12 @@ export default async function handler(req: any, res: any) {
   const voiceKey: string = (body.voice ?? "narrator").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!text) { res.status(400).json({ error: "missing text" }); return; }
 
-  // map the character key → env var (ELEVENLABS_MIKE_VOICE), then → voice_id
-  const envVal = process.env[`ELEVENLABS_${voiceKey}_VOICE`] || process.env.ELEVENLABS_DEFAULT_VOICE;
-  if (!envVal) { res.status(503).json({ error: `no voice configured for ${voiceKey}` }); return; }
+  // map the character key → env var (ELEVENLABS_MIKE_VOICE), else a sensible
+  // built-in premade voice so the host is never silent. Note: a per-voice
+  // problem must NOT return 503 — that's reserved for "key missing" so the
+  // client only gives up on remote VO globally when the key is truly absent.
+  const envVal = process.env[`ELEVENLABS_${voiceKey}_VOICE`] || process.env.ELEVENLABS_DEFAULT_VOICE
+    || DEFAULT_VOICES[voiceKey] || DEFAULT_VOICES.NARRATOR;
   const voiceId = await resolveVoiceId(apiKey, envVal);
   if (!voiceId) { res.status(502).json({ error: `could not resolve voice "${envVal}"` }); return; }
 

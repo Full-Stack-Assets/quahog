@@ -44,7 +44,10 @@ export async function speak(req: VoiceReq) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ text: req.text, voice: req.voice }),
     });
-    if (r.status === 503) { remoteAvailable = false; speakLocal(req); return; } // key not set
+    // 503 == server has no API key at all → stop trying remote for the session.
+    // Any other failure (a single voice, a transient upstream error) just falls
+    // back for THIS line so one bad call can't mute every host (§33).
+    if (r.status === 503) { remoteAvailable = false; speakLocal(req); return; }
     if (!r.ok) { speakLocal(req); return; }
     remoteAvailable = true;
     const url = URL.createObjectURL(await r.blob());
