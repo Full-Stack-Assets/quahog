@@ -81,11 +81,21 @@ export function AerialGround({ origin }: { origin?: { lat: number; lon: number }
       {/* base: collider + procedural fallback look, always present */}
       <Ground />
       {tiles.map((t, i) => (
-        <mesh key={i} position={[t.x, 0.03, t.z]} rotation-x={-Math.PI / 2} receiveShadow>
+        <mesh key={i} position={[t.x, 0.03, t.z]} rotation-x={-Math.PI / 2}>
           <planeGeometry args={[t.size, t.size]} />
           <meshBasicMaterial map={t.tex} toneMapped={false} />
         </mesh>
       ))}
+      {/* shadow catcher: the aerial photo is unlit, so on its own nothing casts a
+          shadow onto it and cars/peds/buildings look pasted-on. This transparent
+          plane just above it renders only the shadows, grounding everything. The
+          sun's shadow frustum follows the player, so only nearby shadows show. */}
+      {tiles.length > 0 && (
+        <mesh position={[0, 0.035, 0]} rotation-x={-Math.PI / 2} receiveShadow>
+          <planeGeometry args={[4000, 4000]} />
+          <shadowMaterial transparent opacity={0.38} />
+        </mesh>
+      )}
     </>
   );
 }
