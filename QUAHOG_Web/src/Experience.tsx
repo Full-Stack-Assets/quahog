@@ -111,6 +111,8 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
               ))}
           </>
         )}
+        {/* Heroes use RigidBody colliders → must live inside <Physics> */}
+        <Heroes />
       </Physics>
 
       {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
@@ -131,7 +133,6 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />
-      <Heroes />
       <Businesses />
       <Respray />
       <NeonSigns />
