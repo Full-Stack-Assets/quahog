@@ -10,12 +10,60 @@ import { sfx } from "../audio/sfx";
 import { radio } from "../audio/radioEngine";
 
 const DAY_SECONDS = 600; // matches DayNight's cycle length
+const POS_KEY = "mounthope.pos.v1";
+
+interface PosRec {
+  mode: string; px?: number; py?: number; pz?: number; heading?: number;
+  carx?: number; cary?: number; carz?: number; carYaw?: number;
+  carType?: string; carColor?: string;
+}
+
+// Persist where the player is so "Continue" resumes them in place (§26). New
+// Game removes this key, so a present key always means "resume".
+function savePos() {
+  try {
+    const g = useGame.getState();
+    const pl = shared.player?.translation();
+    const car = shared.car?.translation();
+    const rec: PosRec = {
+      mode: g.mode, px: pl?.x, py: pl?.y, pz: pl?.z, heading: shared.heading,
+      carx: car?.x, cary: car?.y, carz: car?.z, carYaw: shared.carYaw,
+      carType: g.playerCarType, carColor: g.playerCarColor,
+    };
+    localStorage.setItem(POS_KEY, JSON.stringify(rec));
+  } catch { /* ignore */ }
+}
+function loadPos(): PosRec | null {
+  try { const r = localStorage.getItem(POS_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+}
+function applyRestore(r: PosRec) {
+  const pl = shared.player, car = shared.car;
+  if (!pl) return;
+  const g = useGame.getState();
+  if (r.mode === "car" && r.carx != null && car) {
+    car.setTranslation({ x: r.carx, y: r.cary ?? 1.4, z: r.carz ?? 0 }, true);
+    car.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    if (r.carYaw != null) { car.setRotation({ x: 0, y: Math.sin(r.carYaw / 2), z: 0, w: Math.cos(r.carYaw / 2) }, true); shared.carYaw = r.carYaw; }
+    pl.setTranslation({ x: r.carx, y: 2, z: r.carz ?? 0 }, true);
+    pl.setEnabled(false);
+    if (r.carType && r.carColor) g.setPlayerCar(r.carType, r.carColor);
+    g.setMode("car");
+  } else if (r.px != null) {
+    pl.setEnabled(true);
+    pl.setTranslation({ x: r.px, y: r.py ?? 3, z: r.pz ?? 0 }, true);
+    pl.setLinvel({ x: 0, y: 0, z: 0 }, true);
+    if (r.heading != null) shared.heading = r.heading;
+    if (r.carx != null && car) car.setTranslation({ x: r.carx, y: r.cary ?? 1.4, z: r.carz ?? 0 }, true);
+    g.setMode("foot");
+  }
+}
 
 // Runs the always-on gameplay loops (§15): heat decay + periodic autosave, and
 // loads the saved game on mount. Also handles global hotkeys (weather, pause).
 export function GameSystems() {
   const acc = useRef(0);
   const prevStars = useRef(0);
+  const restored = useRef(false);
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -28,8 +76,20 @@ export function GameSystems() {
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
       if (s.weather) useGame.setState({ weather: s.weather });
     } catch { /* ignore */ }
+    // persist position on tab-hide / close so a quick exit still resumes
+    const onHide = () => { if (useGame.getState().started) savePos(); };
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => { window.removeEventListener("pagehide", onHide); document.removeEventListener("visibilitychange", onHide); };
   }, []);
   useFrame((_, dt) => {
+    // resume the saved position once the game starts and the bodies exist (§26).
+    // loadPos() is read lazily here so New Game (which removed the key) wins.
+    if (!restored.current && useGame.getState().started && shared.player) {
+      restored.current = true;
+      const r = loadPos();
+      if (r) applyRestore(r);
+    }
     // global hotkeys
     if (consumeTap("KeyR")) { useGame.getState().toggleWeather(); sfx.ui(); }
     if (consumeTap("KeyP") || consumeTap("Escape")) { useGame.getState().togglePause(); sfx.ui(); }
@@ -69,6 +129,7 @@ export function GameSystems() {
     if (acc.current > 20) {
       acc.current = 0;
       st.save();
+      if (useGame.getState().started) savePos();
       const g = useGame.getState();
       try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
     }

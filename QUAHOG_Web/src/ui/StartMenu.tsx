@@ -28,7 +28,7 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
 
   const play = () => { sfx.setVolume(0.5); useGame.getState().setStarted(true); };
   const newGame = () => {
-    try { ["mounthope.save.v1", "mounthope.economy.v1", "mounthope.scrimshaw.v1"].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+    try { ["mounthope.save.v1", "mounthope.economy.v1", "mounthope.scrimshaw.v1", "mounthope.pos.v1"].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
     useStats.getState().reset();
     useMission.getState().reset();
     useEconomy.setState({ owned: {} });
