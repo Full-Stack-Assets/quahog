@@ -4,7 +4,7 @@ import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { Vehicle, type VehicleType } from "../earth/Vehicles";
-import { shared, addShake } from "../shared";
+import { shared, addShake, addImpact } from "../shared";
 import { useGame } from "../store";
 import { sfx } from "../audio/sfx";
 
@@ -17,6 +17,7 @@ export function Car() {
   const body = useRef<RapierRigidBody>(null);
   const carType = useGame((s) => s.playerCarType);
   const carColor = useGame((s) => s.playerCarColor);
+  const smoke = useRef(0);
 
   useEffect(() => {
     shared.car = body.current;
@@ -76,8 +77,17 @@ export function Car() {
       if (tc.stolen) continue;
       const d = Math.hypot(tc.pos.x - cp.x, tc.pos.z - cp.z);
       if (d < 4.4) {
-        if (tc.stop <= 0 && Math.abs(vForward) > 6) { addShake(0.35); sfx.crash(); }
+        if (tc.stop <= 0 && Math.abs(vForward) > 6) { addShake(0.35); sfx.crash(); shared.carDamage = Math.min(100, shared.carDamage + 11); }
         tc.stop = Math.max(tc.stop, 1.6);
+      }
+    }
+
+    // engine smoke once the body's beat up (§12/§23)
+    if (shared.carDamage > 55) {
+      smoke.current -= dt;
+      if (smoke.current <= 0) {
+        smoke.current = shared.carDamage > 80 ? 0.18 : 0.32;
+        addImpact(new THREE.Vector3(cp.x + nfwd.x * 1.8, 1.0, cp.z + nfwd.z * 1.8), shared.carDamage > 80 ? "#2a2a2a" : "#8a8a8a");
       }
     }
 

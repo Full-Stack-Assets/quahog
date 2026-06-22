@@ -80,6 +80,8 @@ export const shared = {
   stopZones: [] as { x: number; z: number; rot: number; red: boolean }[],
   /** Collectible cash drops (from downed peds), drained by the Pickups layer. */
   pickups: [] as { pos: THREE.Vector3; value: number; spin: number }[],
+  /** Player car body damage 0 (pristine) .. 100 (wrecked) — smokes when high. */
+  carDamage: 0,
 };
 
 /** Drop a cash pickup at a world point (capped so it can't grow unbounded). */

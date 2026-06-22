@@ -113,6 +113,7 @@ export function Player() {
               car.setRotation({ x: 0, y: Math.sin(tj.yaw / 2), z: 0, w: Math.cos(tj.yaw / 2) }, true);
             }
             shared.carYaw = tj.yaw;
+            shared.carDamage = 0; // a fresh ride
             tj.stolen = true;
             addShake(0.4);
             useStats.getState().heat(0.8, 0.4); // carjacking draws heat

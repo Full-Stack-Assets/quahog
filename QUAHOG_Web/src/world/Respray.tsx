@@ -32,6 +32,7 @@ export function Respray() {
     if (st.cash >= FEE) {
       st.addCash(-FEE);
       st.heat(-5, -5); // clamps to 0 → wanted cleared
+      shared.carDamage = 0; // body work included
       g.setPlayerCar(g.playerCarType, pick(COLORS)); // fresh coat of paint
       sfx.cash();
       useToasts.getState().push("Resprayed — heat cleared (−$200)", "#4ad66d");
