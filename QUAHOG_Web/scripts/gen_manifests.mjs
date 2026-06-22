@@ -36,7 +36,9 @@ function main() {
     const tracks = readdirSync(dir)
       .filter((f) => AUDIO.test(f))
       // natural sort so track2 comes before track10
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }));
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+      // URL-encode so spaces/accents in filenames fetch correctly
+      .map((f) => encodeURIComponent(f));
 
     const manifest = { station: s.name, tracks, generatedAt: new Date().toISOString() };
     writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
