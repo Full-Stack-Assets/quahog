@@ -88,6 +88,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
   const benches = useRef<THREE.InstancedMesh>(null);
   const trunks = useRef<THREE.InstancedMesh>(null);
   const crowns = useRef<THREE.InstancedMesh>(null);
+  const crowns2 = useRef<THREE.InstancedMesh>(null);
   const headMat = useRef<THREE.MeshStandardMaterial>(null);
 
   useLayoutEffect(() => {
@@ -98,6 +99,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
     fill(benches.current, L.benches, 0.35);
     fill(trunks.current, L.trees, 1.6);
     fill(crowns.current, L.trees, 4.2);
+    fill(crowns2.current, L.trees, 5.3); // upper canopy tuft
   }, [L]);
 
   // lamp heads glow warmer as night falls (bloom in Effects picks this up)
@@ -141,8 +143,13 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
         <meshStandardMaterial color="#4a3526" roughness={0.95} />
       </instancedMesh>
       <instancedMesh ref={crowns} args={[undefined, undefined, Math.max(1, L.trees.length)]} castShadow>
-        <icosahedronGeometry args={[1.9, 0]} />
-        <meshStandardMaterial color="#3f6b34" roughness={1} flatShading />
+        <icosahedronGeometry args={[1.95, 1]} />
+        <meshStandardMaterial color="#3f6b34" roughness={1} />
+      </instancedMesh>
+      {/* upper canopy tuft — a smaller, lighter lobe for fuller, rounder foliage */}
+      <instancedMesh ref={crowns2} args={[undefined, undefined, Math.max(1, L.trees.length)]} castShadow>
+        <icosahedronGeometry args={[1.35, 1]} />
+        <meshStandardMaterial color="#4f7d3e" roughness={1} />
       </instancedMesh>
     </group>
   );
