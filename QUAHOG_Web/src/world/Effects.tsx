@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import {
   EffectComposer, Bloom, Vignette, SMAA, ChromaticAberration, Noise,
-  HueSaturation, BrightnessContrast,
+  HueSaturation, BrightnessContrast, N8AO,
 } from "@react-three/postprocessing";
 import { BlendFunction } from "postprocessing";
 import * as THREE from "three";
@@ -31,6 +31,10 @@ export function Effects() {
 
   return (
     <EffectComposer multisampling={0}>
+      {/* ambient occlusion — contact darkening where buildings/props meet the
+          ground and in recesses; the biggest single "grounding"/realism cue.
+          halfRes keeps it cheap enough for the streamed city. */}
+      <N8AO halfRes aoRadius={2.2} distanceFalloff={1.0} intensity={2.2} />
       <Bloom intensity={0.55} luminanceThreshold={0.78} luminanceSmoothing={0.25} mipmapBlur />
       <ChromaticAberration offset={new THREE.Vector2(0.0008, 0.0008)} radialModulation modulationOffset={0.4} />
       <HueSaturation ref={hs} hue={0} saturation={0} />
