@@ -28,6 +28,37 @@ const FLOOR = 3.2; // metres per window row
 
 interface Manifest { tile: number; keys: string[] }
 
+// A simple hip roof: triangles from each footprint edge up to a centre apex, so
+// short residential buildings read as pitched houses (triple-deckers, capes)
+// instead of flat-topped boxes. Winding is corrected so every face points up.
+function hipRoof(b: Building, roofH: number, col: THREE.Color): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3) return null;
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const apex: [number, number, number] = [cx, b.height + roofH, -cn];
+  const pos: number[] = [], colr: number[] = [], uv: number[] = [];
+  const push = (x: number, y: number, z: number) => { pos.push(x, y, z); colr.push(col.r, col.g, col.b); uv.push(0.04, 0.04); };
+  for (let i = 0; i < fp.length; i++) {
+    const [e0, n0] = fp[i], [e1, n1] = fp[(i + 1) % fp.length];
+    const a: [number, number, number] = [e0, b.height, -n0];
+    const c: [number, number, number] = [e1, b.height, -n1];
+    // face normal (a→c→apex); flip if it points down so roofs catch the sun
+    const ux = c[0] - a[0], uy = c[1] - a[1], uz = c[2] - a[2];
+    const vx = apex[0] - a[0], vy = apex[1] - a[1], vz = apex[2] - a[2];
+    const ny = uz * vx - ux * vz;
+    if (ny >= 0) { push(...a); push(...c); push(...apex); }
+    else { push(...a); push(...apex); push(...c); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(colr, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+
 function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
   const geoms: THREE.BufferGeometry[] = [];
   buildings.forEach((b, i) => {
@@ -63,6 +94,12 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     geoms.push(g);
+    // short residential buildings get a pitched hip roof so they don't read as
+    // flat-topped boxes (deterministic per-building roof pitch).
+    if (!isHero && b.height < 12) {
+      const r = hipRoof(b, 1.5 + ((i * 0.6180339887) % 1) * 1.6, roof);
+      if (r) geoms.push(r);
+    }
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
 }
