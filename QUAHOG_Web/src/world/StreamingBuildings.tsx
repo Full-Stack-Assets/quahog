@@ -17,8 +17,11 @@ import type { Building } from "../slice";
 const VIEW_R = 3;     // tiles loaded around the player (each TILE metres)
 const COLLIDE_R = 1;  // tiles that get physics colliders
 const WINDOW_GLOW = new THREE.Color("#ffcf8a");
-const WARM = ["#8a5a48", "#6e4a3e", "#a8987e", "#b8b0a0", "#c2bcae"]; // brick/clapboard (short)
-const GREY = ["#7c7e88", "#9aa0a6", "#8f8c86"];                       // granite/concrete (tall)
+// New Bedford palette: brick reds, painted clapboard, weathered wood (short
+// residential/commercial) vs granite + concrete (tall downtown).
+const WARM = ["#7e463a", "#8a5a48", "#9c6347", "#a8514a", "#6e4a3e", "#b0a48c", "#c2bcae", "#5e6b66", "#8a9488", "#b8b0a0"];
+const GREY = ["#7c7e88", "#9aa0a6", "#8f8c86", "#6f7178", "#a7a59c", "#86837c"];
+const ROOF = ["#2c2a28", "#37322c", "#31343a", "#2a2e30", "#3a352f"]; // tar / gravel roofs
 const HERO_COLOR = "#caa24a";
 const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
 const FLOOR = 3.2; // metres per window row
@@ -33,19 +36,26 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const g = new THREE.ExtrudeGeometry(shape, { depth: b.height, bevelEnabled: false });
     g.rotateX(-Math.PI / 2);
     g.computeVertexNormals();
-    // colour by use/height (style guide): short = brick/clapboard, tall = granite
+    // colour by use/height (style guide): short = brick/clapboard, tall = granite,
+    // with per-building tonal variation so neighbours don't read identical. Roofs
+    // get a dark tar tone and sample plain wall (no windows on the roof).
     const pal = b.height >= 14 ? GREY : WARM;
-    const col = new THREE.Color(b.name && HERO.has(b.name) ? HERO_COLOR : pal[i % pal.length]);
+    const isHero = !!(b.name && HERO.has(b.name));
+    const wall = new THREE.Color(isHero ? HERO_COLOR : pal[i % pal.length]);
+    if (!isHero) wall.multiplyScalar(0.82 + ((i * 0.6180339887) % 1) * 0.34);
+    const roof = new THREE.Color(ROOF[i % ROOF.length]);
     const pos = g.attributes.position, nor = g.attributes.normal;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
     const uv = new Float32Array(count * 2);
     for (let v = 0; v < count; v++) {
-      colors.set([col.r, col.g, col.b], v * 3);
       const x = pos.getX(v), y = pos.getY(v), z = pos.getZ(v);
       const ny = nor.getY(v);
-      if (Math.abs(ny) > 0.5) { uv[v * 2] = x / 6; uv[v * 2 + 1] = z / 6; }            // roof
-      else { // wall: window grid by floor
+      if (Math.abs(ny) > 0.5) { // roof / underside: roof tone, sample plain wall (no windows)
+        colors.set([roof.r, roof.g, roof.b], v * 3);
+        uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04;
+      } else { // wall: window grid by floor
+        colors.set([wall.r, wall.g, wall.b], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
         uv[v * 2] = horiz / FLOOR; uv[v * 2 + 1] = y / FLOOR;
       }
