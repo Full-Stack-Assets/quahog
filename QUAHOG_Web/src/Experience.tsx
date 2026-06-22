@@ -17,6 +17,7 @@ import { UtilityPoles } from "./world/UtilityPoles";
 import { Decals } from "./world/Decals";
 import { Graffiti } from "./world/Graffiti";
 import { Businesses } from "./world/Businesses";
+import { Respray } from "./world/Respray";
 import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
 import { TrafficLights } from "./world/TrafficLights";
@@ -130,6 +131,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Hospital />
       <Heroes />
       <Businesses />
+      <Respray />
       <NeonSigns />
       <Collectibles key={gameId} />
       <Race />

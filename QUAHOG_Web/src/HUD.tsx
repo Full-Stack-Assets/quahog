@@ -43,12 +43,14 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const [bearing, setBearing] = useState(0); // radians, target dir relative to camera
   const [wp, setWp] = useState<{ dist: number; bearing: number } | null>(null);
   const [sub, setSub] = useState<{ name: string; text: string } | null>(null);
+  const [mph, setMph] = useState(0);
   useEffect(() => {
     const id = setInterval(() => {
       const h = Math.floor(shared.hour);
       const m = Math.floor((shared.hour - h) * 60);
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
       setStamina(shared.stamina);
+      setMph(Math.round(Math.abs(shared.carSpeed) * 2.237)); // m/s → mph
       const body = useGame.getState().mode === "car" ? shared.car : shared.player;
       const t = body?.translation();
       // distance + bearing to the active objective
@@ -263,6 +265,17 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <button style={launcher} onClick={() => useGame.getState().toggleChar()} title="Character (C)">🧍</button>
         <button style={launcher} onClick={() => useGame.getState().toggleRadio()} title="Radio">📻</button>
       </div>
+
+      {/* speedometer when driving */}
+      {mode === "car" && (
+        <div style={{
+          position: "absolute", bottom: 34, right: 66, textAlign: "right",
+          background: "rgba(12,15,26,.66)", border: "1px solid #3a2a5e", borderRadius: 8, padding: "4px 12px",
+        }}>
+          <span style={{ fontSize: 26, fontWeight: 800, color: "#22d3ee", fontFamily: "'Courier New', monospace" }}>{mph}</span>
+          <span style={{ fontSize: 11, opacity: 0.7, marginLeft: 4 }}>MPH</span>
+        </div>
+      )}
 
       <div
         style={{
