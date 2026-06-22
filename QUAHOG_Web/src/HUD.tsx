@@ -59,7 +59,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         setBearing(Math.atan2(step.target[0] - t.x, step.target[2] - t.z) - shared.camYaw);
       } else setDist(null);
       // player-placed waypoint (§21)
-      const w = shared.waypoint;
+      const w = useGame.getState().waypoint;
       if (w && t) {
         setWp({
           dist: Math.round(Math.hypot(t.x - w.x, t.z - w.z)),

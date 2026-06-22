@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useGame } from "../store";
 import { useMission } from "../mission";
 import { shared } from "../shared";
@@ -14,11 +14,11 @@ const MAJOR = new Set(["motorway", "trunk", "primary", "secondary"]);
 export function BigMap() {
   const open = useGame((s) => s.mapOpen);
   const slice = useGame((s) => s.slice);
+  const waypoint = useGame((s) => s.waypoint);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cam = useRef({ x: 0, z: 0, scale: 2.2 }); // world center + px/m
   const drag = useRef<{ x: number; y: number } | null>(null);
   const inited = useRef(false);
-  const [, force] = useState(0); // re-render the clear button when the waypoint changes
 
   useEffect(() => {
     if (!open || !slice) return;
@@ -123,7 +123,7 @@ export function BigMap() {
       }
 
       // player-placed waypoint (§21) — pink pin
-      const w = shared.waypoint;
+      const w = useGame.getState().waypoint;
       if (w) {
         const wx = sx(w.x), wy = sy(w.z);
         ctx.fillStyle = "#ff4fa3";
@@ -207,11 +207,11 @@ export function BigMap() {
           e.preventDefault();
           const cvs = canvasRef.current; if (!cvs) return;
           const { x: cx, z: cz, scale } = cam.current;
-          shared.waypoint = {
+          useGame.getState().setWaypoint({
             x: cx + (e.clientX - cvs.width / 2) / scale,
             z: cz + (e.clientY - cvs.height / 2) / scale,
-          };
-          sfx.ui(); force((n) => n + 1);
+          });
+          sfx.ui();
         }}
       />
       {/* title */}
@@ -226,9 +226,9 @@ export function BigMap() {
           const t = (useGame.getState().mode === "car" ? shared.car : shared.player)?.translation();
           if (t) { cam.current.x = t.x; cam.current.z = t.z; }
         }} title="Recenter on player">◎</button>
-        {shared.waypoint && (
+        {waypoint && (
           <button style={{ ...mapBtn, color: "#ff8fd0", borderColor: "#7a3a6a" }} title="Clear waypoint"
-            onClick={() => { shared.waypoint = null; sfx.ui(); force((n) => n + 1); }}>📍</button>
+            onClick={() => { useGame.getState().setWaypoint(null); sfx.ui(); }}>📍</button>
         )}
         <button style={{ ...mapBtn, color: "#ffb0b0", borderColor: "#8e3a3a" }} onClick={() => useGame.getState().toggleMap()}>✕</button>
       </div>

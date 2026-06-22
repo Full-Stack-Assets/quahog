@@ -31,6 +31,8 @@ interface GameState {
   reduceShake: boolean;
   photo: boolean;
   scrimshaw: number; // collectibles found (for the HUD counter)
+  waypoint: { x: number; z: number } | null; // player-placed map waypoint
+  gameId: number; // bumped on New Game so per-game components can remount
   setMode: (m: Mode) => void;
   setView: (v: View) => void;
   toggleView: () => void;
@@ -54,6 +56,8 @@ interface GameState {
   toggleReduceShake: () => void;
   togglePhoto: () => void;
   setScrimshaw: (n: number) => void;
+  setWaypoint: (w: { x: number; z: number } | null) => void;
+  resetSession: () => void; // wipe in-session gameplay flags for a fresh New Game
 }
 
 export const useGame = create<GameState>((set) => ({
@@ -79,6 +83,8 @@ export const useGame = create<GameState>((set) => ({
   reduceShake: false,
   photo: false,
   scrimshaw: 0,
+  waypoint: null,
+  gameId: 0,
   setMode: (mode) => set({ mode }),
   setView: (view) => set({ view }),
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
@@ -102,6 +108,11 @@ export const useGame = create<GameState>((set) => ({
   toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
   setScrimshaw: (scrimshaw) => set({ scrimshaw }),
+  setWaypoint: (waypoint) => set({ waypoint }),
+  resetSession: () => set((s) => ({
+    mode: "foot", armed: false, weapon: "pistol", melee: "fists", down: null,
+    photo: false, weather: "clear", waypoint: null, scrimshaw: 0, gameId: s.gameId + 1,
+  })),
 }));
 
 // Lightweight toast notifications (§21).

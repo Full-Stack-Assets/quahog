@@ -62,6 +62,7 @@ const CORE: [number, number] = [-266, -100];
 
 export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
   const [slice, setSlice] = useState<Slice | null>(null);
+  const gameId = useGame((s) => s.gameId); // remount per-game props (collectibles) on New Game
 
   useEffect(() => {
     let alive = true;
@@ -130,7 +131,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Heroes />
       <Businesses />
       <NeonSigns />
-      <Collectibles />
+      <Collectibles key={gameId} />
       <Race />
       <Posters />
       <Police />

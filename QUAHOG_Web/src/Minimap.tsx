@@ -111,7 +111,7 @@ export function Minimap() {
       }
 
       // player-placed waypoint (§21) — pink dot, clamped to the radar edge
-      const w = shared.waypoint;
+      const w = useGame.getState().waypoint;
       if (w) {
         let wx = (w.x - px) * PPM, wy = (w.z - pz) * PPM;
         const m = Math.hypot(wx, wy);

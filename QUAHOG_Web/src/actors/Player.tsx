@@ -127,7 +127,7 @@ export function Player() {
     // melee: swing at the nearest pedestrian in front (F). A bat (key 4) hits
     // harder, reaches farther, and knocks them flying.
     if (consumeTap("KeyF")) {
-      const bat = game.melee === "bat";
+      const bat = game.melee === "bat" && !game.armed; // a drawn gun = pistol-whip, not a bat
       const p = rb.translation();
       const fx = Math.sin(shared.heading), fz = Math.cos(shared.heading);
       let best: (typeof shared.peds)[number] | null = null;
@@ -204,7 +204,7 @@ export function Player() {
           if (Math.abs(dx * fz - dz * fx) < CONE + 0.8 && along < bestT) { bestT = along; bestCop = cop; bestPed = null; }
         }
         const to = new THREE.Vector3();
-        if (bestPed) { bestPed.hit += 2; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); addImpact(to, "#8a1414"); }
+        if (bestPed) { bestPed.hit += 2; bestPed.push.x += fx; bestPed.push.z += fz; to.set(bestPed.pos.x, p.y + 0.4, bestPed.pos.z); addImpact(to, "#8a1414"); }
         else if (bestCop) { bestCop.dmg += 1; to.set(bestCop.pos.x, p.y + 0.4, bestCop.pos.z); addImpact(to, "#8a1414"); }
         else to.set(p.x + fx * bestT, p.y + 0.4, p.z + fz * bestT);
         shared.shots.push({ from, to, life: 0.06 });

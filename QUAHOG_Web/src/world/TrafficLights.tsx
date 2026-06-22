@@ -21,7 +21,9 @@ export function TrafficLights({ roads, center }: { roads: Road[]; center: [numbe
       const [bx, bn] = r.points[1];
       const x = ax, z = -an;
       if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
-      out.push({ x, z, rot: Math.atan2(bx - ax, bn - an), phase: (n % 3) * 2.6 });
+      // world-space road bearing: world z = -northing, so dz = -(bn-an) = an-bn.
+      // (must match the car heading atan2(dir.x, dir.z) that redAhead compares to)
+      out.push({ x, z, rot: Math.atan2(bx - ax, an - bn), phase: (n % 3) * 2.6 });
       if (++n >= MAX) break;
     }
     return out;

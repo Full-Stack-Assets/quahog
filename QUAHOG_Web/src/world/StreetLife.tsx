@@ -98,7 +98,9 @@ function Pedestrians({ center }: { center: [number, number] }) {
       const g = refs.current[i];
       if (!g) return;
 
-      // run over by the player's car at speed → register a hit (+ heat once)
+      // run over by the player's car at speed → 2 damage (a lethal blow). The
+      // push points away from the car so the body flies the right way; the hit
+      // amount (not the push length) decides how hard it's flung.
       if (!p.dead && shared.car && Math.abs(shared.carSpeed) > 8) {
         const c = shared.car.translation();
         if (Math.hypot(c.x - p.pos.x, c.z - p.pos.z) < 2.3) {
@@ -109,18 +111,20 @@ function Pedestrians({ center }: { center: [number, number] }) {
         }
       }
 
-      // resolve hits: first = knocked down, again = killed; either way the body
-      // is launched along the blow (a bat or a car flings it; a fist nudges).
+      // resolve hits: each damage point advances a stage (alive→down→dead), so a
+      // 2-damage blow (bat, gun, car) drops a standing ped outright while a fist
+      // (1) only knocks them down. A 2+ blow flings the body; a 1 just nudges it.
       if (p.body.hit > 0) {
-        const hard = p.body.push.length() > 1.5; // bat or car
+        const hard = p.body.hit > 1; // bat / gun / car vs a bare fist
         if (p.body.push.lengthSq() > 1e-4) _dir.copy(p.body.push).setY(0).normalize();
         else _dir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
         p.vel.set(_dir.x * (hard ? 9 : 3.5), hard ? 7 : 3, _dir.z * (hard ? 9 : 3.5));
         p.tumble = 0.001;
         p.body.push.set(0, 0, 0);
-        if (p.dead) { /* stays down */ }
-        else if (p.down > 0) p.dead = true;
-        else p.down = 4;
+        for (let h = p.body.hit; h > 0 && !p.dead; h--) {
+          if (p.down > 0) p.dead = true;
+          else p.down = 4;
+        }
         p.body.hit = 0;
       }
       if (p.dead || p.down > 0) {

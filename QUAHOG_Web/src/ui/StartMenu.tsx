@@ -32,6 +32,7 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
     useStats.getState().reset();
     useMission.getState().reset();
     useEconomy.setState({ owned: {} });
+    useGame.getState().resetSession(); // clear bat/photo/waypoint/scrimshaw & remount per-game props
     play();
   };
 

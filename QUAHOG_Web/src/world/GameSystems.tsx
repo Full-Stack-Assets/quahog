@@ -45,10 +45,11 @@ export function GameSystems() {
     if (useGame.getState().paused) return; // freeze sim while paused
     if (shared.alarm.t > 0) shared.alarm.t = Math.max(0, shared.alarm.t - dt);
     // arrive at a player-placed waypoint → clear it (§21)
-    if (shared.waypoint) {
+    const wp = useGame.getState().waypoint;
+    if (wp) {
       const b = (useGame.getState().mode === "car" ? shared.car : shared.player)?.translation();
-      if (b && Math.hypot(b.x - shared.waypoint.x, b.z - shared.waypoint.z) < 9) {
-        shared.waypoint = null;
+      if (b && Math.hypot(b.x - wp.x, b.z - wp.z) < 9) {
+        useGame.getState().setWaypoint(null);
         useToasts.getState().push("Waypoint reached", "#ff7ad9"); sfx.ui();
       }
     }
