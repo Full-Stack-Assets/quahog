@@ -9,8 +9,8 @@ import { Ground } from "./Ground";
 // the WebGL textures aren't tainted. If a tile fails (offline / CORS / network),
 // it's simply skipped and the procedural <Ground/> shows through — no regression.
 
-const ZOOM = 17;       // ~1.2 m/px at this latitude → crisp aerial
-const RADIUS = 6;      // tiles each way from origin → (2R+1)^2 = 169 tiles (~3km)
+const ZOOM = 18;       // ~0.45 m/px → crisp street-level aerial
+const RADIUS = 7;      // tiles each way from origin → (2R+1)^2 = 225 tiles (~1.7km core)
 const TILE_URL = (z: number, x: number, y: number) =>
   `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 

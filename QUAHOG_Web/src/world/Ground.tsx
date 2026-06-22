@@ -17,7 +17,9 @@ export function Ground() {
   return (
     <RigidBody type="fixed">
       <CuboidCollider args={[SIZE / 2, 0.1, SIZE / 2]} position={[0, -0.1, 0]} friction={1} />
-      <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]} receiveShadow>
+      {/* visual sits just below y=0 so the aerial drape (y=0.03) and roads win
+          the depth test cleanly instead of fighting this region-wide plane */}
+      <mesh rotation-x={-Math.PI / 2} position={[0, -0.15, 0]} receiveShadow>
         <planeGeometry args={[SIZE, SIZE]} />
         <meshStandardMaterial map={tex} color="#919a72" roughness={1} />
       </mesh>
