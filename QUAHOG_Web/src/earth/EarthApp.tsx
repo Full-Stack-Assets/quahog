@@ -18,6 +18,7 @@ import { useContext } from "react";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
 import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
+import { TilesBVH } from "./bvh";
 import { Radio } from "../audio/Radio";
 
 // Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
@@ -36,10 +37,18 @@ const SPOTS = [
   { name: "Fall River", sub: "Downtown", nb: false, lat: 41.7015, lon: -71.1547 },
 ];
 
+const KEY_STORE = "mh.googleMapsKey";
+
 function getApiKey(): string | null {
   const fromUrl = new URLSearchParams(window.location.search).get("key");
+  if (fromUrl) {
+    // persist a URL-provided key so it survives reloads/teleports
+    try { localStorage.setItem(KEY_STORE, fromUrl); } catch { /* private mode */ }
+    return fromUrl;
+  }
   const fromEnv = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  return fromUrl || fromEnv || null;
+  if (fromEnv) return fromEnv;
+  try { return localStorage.getItem(KEY_STORE); } catch { return null; }
 }
 
 const WX: Record<Weather, { sun: number; sunColor: string; bg: string; fog: [number, number]; sky: boolean }> = {
@@ -91,6 +100,9 @@ export function EarthApp() {
             in and the ground stays blank. */}
         <TilesRenderer key={apiKey} errorTarget={32}>
           <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
+          {/* BVH-accelerated collision raycasts + bounded tile memory (prevents
+              the street-level hitching and GPU-OOM WebGL context loss). */}
+          <TilesBVH />
           <TilesDiag onMissing={() => setTilesProblem(true)} onOk={() => setTilesProblem(false)} />
 
           {mode === "orbit" ? (
@@ -240,18 +252,41 @@ function Loading() {
 }
 
 function NoKeyNotice() {
+  const [val, setVal] = useState("");
+  const save = () => {
+    const k = val.trim();
+    if (!k) return;
+    try { localStorage.setItem(KEY_STORE, k); } catch { /* private mode */ }
+    location.reload();
+  };
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#e7e0ff", background: "#05070d", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
       <div style={{ maxWidth: 560 }}>
         <h2 style={{ color: "#7ad9ff" }}>Mount Hope (photoreal) — needs a Google API key</h2>
         <p>Renders Google's Photorealistic 3D Tiles. Needs a Google Maps Platform key with the <b>Map Tiles API</b> enabled.</p>
         <p style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8 }}>
-          1. Google Cloud → enable <b>Map Tiles API</b>.<br />
+          1. Google Cloud → enable <b>Map Tiles API</b> (and turn on billing).<br />
           2. Restrict the key to your site's domain.<br />
-          3. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?key=YOUR_KEY</code><br />
-          &nbsp;&nbsp;&nbsp;or set <code>VITE_GOOGLE_MAPS_API_KEY</code> at build time.
+          3. Paste the key below — it's saved in this browser only.
         </p>
-        <p style={{ opacity: 0.7 }}>Google bills per tile session and its terms govern use.</p>
+        {/* paste-and-go: persists to localStorage, no URL editing / rebuild needed */}
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <input
+            value={val}
+            onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") save(); }}
+            placeholder="Paste Google Maps API key"
+            spellCheck={false} autoCapitalize="off" autoCorrect="off"
+            style={{ flex: 1, background: "#0c0f1a", color: "#e7e0ff", border: "1px solid #2c3a5e", borderRadius: 6, padding: "8px 10px", font: "13px 'Courier New', monospace" }}
+          />
+          <button onClick={save} style={{ cursor: "pointer", border: "1px solid #2c3a5e", background: "#7ad9ff", color: "#04121a", fontWeight: 700, padding: "8px 16px", borderRadius: 6 }}>
+            LAUNCH
+          </button>
+        </div>
+        <p style={{ opacity: 0.6, fontSize: 11, marginTop: 10 }}>
+          Or open <code style={{ color: "#9fd8ff" }}>/earth.html?key=YOUR_KEY</code>, or set <code>VITE_GOOGLE_MAPS_API_KEY</code> at build time.
+          Google bills per tile session and its terms govern use.
+        </p>
       </div>
     </div>
   );
