@@ -24,6 +24,7 @@ import { TrafficLights } from "./world/TrafficLights";
 import { ParkedCars } from "./world/ParkedCars";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
+import { Pickups } from "./world/Pickups";
 import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
@@ -134,6 +135,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Respray />
       <NeonSigns />
       <Collectibles key={gameId} />
+      <Pickups />
       <Race />
       <Posters />
       <Police />

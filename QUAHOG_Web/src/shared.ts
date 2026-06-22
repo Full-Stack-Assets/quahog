@@ -78,7 +78,14 @@ export const shared = {
   impacts: [] as Impact[],
   /** Signal stop-lines published by TrafficLights; traffic halts at red ones. */
   stopZones: [] as { x: number; z: number; rot: number; red: boolean }[],
+  /** Collectible cash drops (from downed peds), drained by the Pickups layer. */
+  pickups: [] as { pos: THREE.Vector3; value: number; spin: number }[],
 };
+
+/** Drop a cash pickup at a world point (capped so it can't grow unbounded). */
+export function addPickup(x: number, z: number, value: number) {
+  if (shared.pickups.length < 48) shared.pickups.push({ pos: new THREE.Vector3(x, 0.8, z), value, spin: Math.random() * Math.PI * 2 });
+}
 
 /** Add a one-shot camera shake (juice §23). */
 export function addShake(amount: number) {

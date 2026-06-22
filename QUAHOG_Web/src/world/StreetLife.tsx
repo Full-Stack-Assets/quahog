@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 import { ModelCharacter } from "./ModelCharacter";
 import { Vehicle, VEHICLE_TYPES } from "../earth/Vehicles";
-import { shared, raiseAlarm, type Body, type TrafficCar } from "../shared";
+import { shared, raiseAlarm, addPickup, type Body, type TrafficCar } from "../shared";
 import { useStats } from "../game";
 import type { Road } from "../slice";
 
@@ -121,10 +121,12 @@ function Pedestrians({ center }: { center: [number, number] }) {
         p.vel.set(_dir.x * (hard ? 9 : 3.5), hard ? 7 : 3, _dir.z * (hard ? 9 : 3.5));
         p.tumble = 0.001;
         p.body.push.set(0, 0, 0);
+        const wasDead = p.dead;
         for (let h = p.body.hit; h > 0 && !p.dead; h--) {
           if (p.down > 0) p.dead = true;
           else p.down = 4;
         }
+        if (!wasDead && p.dead) addPickup(p.pos.x, p.pos.z, 20 + Math.floor(Math.random() * 60)); // drops cash
         p.body.hit = 0;
       }
       if (p.dead || p.down > 0) {
