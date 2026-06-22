@@ -10,8 +10,10 @@ import type { Road } from "../slice";
 // up and over, side rails, and piers into the water. The water barrier
 // (waterZones/Hazards) makes these the only crossings.
 
-const CREST = 7;     // metres at the high point
-const RAMP = 26;     // ramp-up length from each shore
+const CREST = 7;          // metres at the high point (ordinary causeway)
+const RAMP = 26;          // ramp-up length from each shore
+const GREEN_CREST = 10;   // the Braga rides ~10 ft taller (shipping clearance)
+const GREEN_RAMP = 40;    // …with a longer ramp so the grade stays drivable
 const TILE = 8;
 const PIER_EVERY = 16;
 
@@ -47,22 +49,22 @@ function stitchSpans(roads: Road[]): { pts: Pt[]; width: number; green: boolean 
   return out;
 }
 
-function rampY(d: number, total: number): number {
-  const up = Math.min(d / RAMP, 1), down = Math.min((total - d) / RAMP, 1);
-  return CREST * Math.max(0, Math.min(up, down));
+function rampY(d: number, total: number, crest: number, ramp: number): number {
+  const up = Math.min(d / ramp, 1), down = Math.min((total - d) / ramp, 1);
+  return crest * Math.max(0, Math.min(up, down));
 }
 
 interface Built { deck: THREE.BufferGeometry; rail: THREE.BufferGeometry | null; piers: [number, number, number][] }
 const RAIL = 1.1; // railing height
 
-function buildSpan(pts: Pt[], width: number): Built | null {
+function buildSpan(pts: Pt[], width: number, crest: number, ramp: number): Built | null {
   const half = width / 2;
   // cumulative length + per-point height
   const wpt = pts.map(([e, n]) => new THREE.Vector3(e, 0, -n));
   let total = 0; const dist = [0];
   for (let i = 1; i < wpt.length; i++) { total += wpt[i].distanceTo(wpt[i - 1]); dist.push(total); }
   if (total < 4) return null;
-  for (let i = 0; i < wpt.length; i++) wpt[i].y = rampY(dist[i], total);
+  for (let i = 0; i < wpt.length; i++) wpt[i].y = rampY(dist[i], total, crest, ramp);
 
   const pos: number[] = [], uv: number[] = [], idx: number[] = [];
   const rp: number[] = [], ri: number[] = []; // railing
@@ -109,7 +111,10 @@ export function Bridges({ roads }: { roads: Road[] }) {
   const tex = useMemo(() => makeAsphaltTexture(true), []);
   const spans = useMemo(() =>
     stitchSpans(roads)
-      .map((s) => { const b = buildSpan(s.pts, s.width); return b ? { ...b, green: s.green } : null; })
+      .map((s) => {
+        const b = buildSpan(s.pts, s.width, s.green ? GREEN_CREST : CREST, s.green ? GREEN_RAMP : RAMP);
+        return b ? { ...b, green: s.green } : null;
+      })
       .filter(Boolean) as (Built & { green: boolean })[],
   [roads]);
 

@@ -19,13 +19,13 @@ const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
 // texture repeats (cobble repeats across the width; asphalt spans 0..1 for lanes).
-function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0): THREE.BufferGeometry | null {
+function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0, widthScale = 1): THREE.BufferGeometry | null {
   const pos: number[] = [];
   const uv: number[] = [];
   const idx: number[] = [];
   let v = 0;
   for (const r of roads) {
-    const half = r.width / 2 + pad;
+    const half = (r.width * widthScale) / 2 + pad;
     const u = uScale === 0 ? 1 : r.width / uScale; // tiles across the width
     let len = 0;
     for (let i = 0; i < r.points.length - 1; i++) {
@@ -92,7 +92,10 @@ export function Roads({ roads }: { roads: Road[] }) {
       apron: buildRibbon([...c.sf, ...c.hw], 0.04, 0, 2.6),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
       surface: buildRibbon(c.sf, 0.06, 0),
-      highway: buildRibbon(c.hw, 0.08, 0),
+      // trim highway carriageway width a touch so close divided carriageways
+      // (e.g. the two directions of I-195) read as separate roads with a median
+      // instead of one squished blob; the concrete apron keeps the shoulders.
+      highway: buildRibbon(c.hw, 0.08, 0, 0, 0.82),
     }));
   }, [roads]);
 
@@ -133,12 +136,12 @@ export function Roads({ roads }: { roads: Road[] }) {
           )}
           {c.surface && (
             <mesh geometry={c.surface} receiveShadow>
-              <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} userData={{ base: 0.9 }} />
+              <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} userData={{ base: 0.9 }} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
             </mesh>
           )}
           {c.highway && (
             <mesh geometry={c.highway} receiveShadow>
-              <meshStandardMaterial map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} />
+              <meshStandardMaterial map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
             </mesh>
           )}
         </group>
