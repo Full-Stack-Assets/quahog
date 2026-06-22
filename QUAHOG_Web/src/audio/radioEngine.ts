@@ -256,7 +256,9 @@ class RadioEngine {
         if (this.station !== s) return;
         const tracks = mf?.tracks;
         if (tracks && tracks.length) {
-          this.musicTracks = tracks.map((f) => `music/${s.id}/${f}`);
+          // a track may be a bare filename (local public/music/<id>/) or an
+          // absolute URL (webhook-delivered to Blob/CDN) — accept both.
+          this.musicTracks = tracks.map((f) => /^(https?:)?\/\//.test(f) ? f : `music/${s.id}/${f}`);
           this.playTrack();
         } else {
           this.startSynth(s); // no tracks yet → procedural bed
