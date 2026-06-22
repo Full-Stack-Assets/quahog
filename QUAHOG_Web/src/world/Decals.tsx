@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { makeGrime } from "./textures";
+import { sampleRoadEdges } from "./roadSamples";
 import type { Road } from "../slice";
 
 // Ground grime: oil stains + worn patches scattered on the streets near the core
@@ -16,30 +17,13 @@ const _s = new THREE.Vector3();
 
 export function Decals({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const tex = useMemo(() => makeGrime(), []);
-  const spots = useMemo(() => {
-    const out: { x: number; z: number; r: number; rot: number }[] = [];
-    let n = 0;
-    for (const r of roads) {
-      if (r.bridge || r.points.length < 2) continue;
-      if (!["primary", "secondary", "tertiary", "residential", "unclassified"].includes(r.highway)) continue;
-      for (let i = 0; i < r.points.length - 1; i++) {
-        const [ax, an] = r.points[i], [bx, bn] = r.points[i + 1];
-        const x1 = ax, z1 = -an, x2 = bx, z2 = -bn;
-        const len = Math.hypot(x2 - x1, z2 - z1);
-        for (let d = 8; d < len; d += 20) {
-          n++;
-          if (n % 3 !== 0) continue; // sparse
-          const t = d / len;
-          const x = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 2;
-          const z = z1 + (z2 - z1) * t + (Math.random() - 0.5) * 2;
-          if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
-          out.push({ x, z, r: 1.4 + Math.random() * 2.6, rot: Math.random() * Math.PI });
-          if (out.length >= MAX) return out;
-        }
-      }
-    }
-    return out;
-  }, [roads, center]);
+  const spots = useMemo(() =>
+    sampleRoadEdges(roads, center, { radius: RADIUS, step: 20, sparse: 3, max: MAX }).map((s) => ({
+      x: s.x + (Math.random() - 0.5) * 2,
+      z: s.z + (Math.random() - 0.5) * 2,
+      r: 1.4 + Math.random() * 2.6,
+      rot: Math.random() * Math.PI,
+    })), [roads, center]);
 
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {

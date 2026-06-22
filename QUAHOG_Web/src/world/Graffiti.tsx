@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { makeGraffiti } from "./textures";
+import { sampleRoadEdges } from "./roadSamples";
 import type { Road } from "../slice";
 
 // Wall graffiti (Phase 2 weathering): colourful spray tags on upright quads set
@@ -17,41 +18,26 @@ const _e = new THREE.Euler();
 const _p = new THREE.Vector3();
 const _s = new THREE.Vector3();
 
-interface Tag { x: number; z: number; yaw: number; w: number; h: number; v: number }
+interface Tag { x: number; z: number; yaw: number; w: number; h: number }
 
 export function Graffiti({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const texes = useMemo(() => Array.from({ length: VARIANTS }, (_, i) => makeGraffiti(i)), []);
-  const tags = useMemo(() => {
-    const out: Tag[] = [];
-    let n = 0;
-    for (const r of roads) {
-      if (r.bridge || r.points.length < 2) continue;
-      if (!["primary", "secondary", "tertiary", "residential", "unclassified"].includes(r.highway)) continue;
-      for (let i = 0; i < r.points.length - 1; i++) {
-        const [ax, an] = r.points[i], [bx, bn] = r.points[i + 1];
-        const x1 = ax, z1 = -an, x2 = bx, z2 = -bn;
-        const len = Math.hypot(x2 - x1, z2 - z1);
-        for (let d = 14; d < len; d += 34) {
-          n++;
-          if (n % 4 !== 0) continue; // sparse
-          const t = d / len;
-          let dx = (x2 - x1) / len, dz = (z2 - z1) / len;
-          // perpendicular "wall" side (random sign)
-          const sign = Math.random() < 0.5 ? 1 : -1;
-          const nx = -dz * sign, nz = dx * sign;
-          const x = x1 + (x2 - x1) * t + nx * OFFSET;
-          const z = z1 + (z2 - z1) * t + nz * OFFSET;
-          if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
-          // face back toward the road (normal = -n)
-          out.push({ x, z, yaw: Math.atan2(-nx, -nz), w: 3 + Math.random() * 2, h: 2 + Math.random() * 0.8, v: out.length % VARIANTS });
-          if (out.length >= MAX) return out;
-        }
-      }
-    }
-    return out;
+  // bucket tags straight into per-variant arrays (one bucket per texture)
+  const byVariant = useMemo(() => {
+    const buckets: Tag[][] = Array.from({ length: VARIANTS }, () => []);
+    sampleRoadEdges(roads, center, { radius: RADIUS, step: 34, startAt: 14, sparse: 4, max: MAX })
+      .forEach((s, i) => {
+        const sign = Math.random() < 0.5 ? 1 : -1;      // which side of the street
+        const nx = -s.dz * sign, nz = s.dx * sign;      // perpendicular "wall" normal
+        buckets[i % VARIANTS].push({
+          x: s.x + nx * OFFSET, z: s.z + nz * OFFSET,
+          yaw: Math.atan2(-nx, -nz),                    // face back toward the road
+          w: 3 + Math.random() * 2, h: 2 + Math.random() * 0.8,
+        });
+      });
+    return buckets;
   }, [roads, center]);
 
-  const byVariant = useMemo(() => texes.map((_, v) => tags.filter((t) => t.v === v)), [tags, texes]);
   const refs = useRef<(THREE.InstancedMesh | null)[]>([]);
   useLayoutEffect(() => {
     byVariant.forEach((list, v) => {
