@@ -70,7 +70,7 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
 
       <div style={{ marginTop: 22, fontSize: 12, opacity: 0.6, maxWidth: 420 }}>TIP: {tip}</div>
       <div style={{ position: "absolute", bottom: 12, fontSize: 10, opacity: 0.5 }}>
-        Map data © OpenStreetMap contributors, ODbL · An original work
+        Map data © OpenStreetMap contributors, ODbL · Imagery © Esri, Maxar, Earthstar Geographics · An original work
       </div>
     </div>
   );
