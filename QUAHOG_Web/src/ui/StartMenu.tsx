@@ -58,7 +58,17 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
         </button>
       </div>
 
-      <div style={{ marginTop: 26, fontSize: 12, opacity: 0.6, maxWidth: 420 }}>TIP: {tip}</div>
+      {/* photoreal route — Google 3D Tiles (needs a Map Tiles API key) */}
+      <a href="earth.html" style={{
+        marginTop: 18, textDecoration: "none", pointerEvents: "auto",
+        padding: "9px 20px", borderRadius: 8, border: "1px solid #2c6a8e",
+        background: "rgba(20,40,60,.7)", color: "#9fe0ff", fontFamily: "'Courier New', monospace",
+        fontSize: 13, fontWeight: 700, letterSpacing: 1,
+      }}>
+        🛰 PHOTOREAL MODE (3D TILES)
+      </a>
+
+      <div style={{ marginTop: 22, fontSize: 12, opacity: 0.6, maxWidth: 420 }}>TIP: {tip}</div>
       <div style={{ position: "absolute", bottom: 12, fontSize: 10, opacity: 0.5 }}>
         Map data © OpenStreetMap contributors, ODbL · An original work
       </div>
