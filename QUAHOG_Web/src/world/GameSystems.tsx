@@ -65,6 +65,7 @@ export function GameSystems() {
   const prevStars = useRef(0);
   const restored = useRef(false);
   const skidCool = useRef(0);
+  const maxStars = useRef(0);
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -127,6 +128,15 @@ export function GameSystems() {
     const stars = Math.floor(st.police);
     if (stars > prevStars.current) { useToasts.getState().push(`WANTED ${"★".repeat(stars)}`, "#6cb6ff"); sfx.bust(); }
     if (stars !== prevStars.current) radio.setDuck(stars >= 3 ? 0.4 : 1); // adaptive chase mix (§19)
+    maxStars.current = Math.max(maxStars.current, stars);
+    // evaded the cops: heat fell to zero after a real chase → cash reward (§14/§15).
+    // (skip if we were just busted/wasted — that also zeroes heat)
+    if (stars === 0 && maxStars.current >= 2 && !useGame.getState().down) {
+      const bonus = maxStars.current * 50;
+      st.addCash(bonus);
+      useToasts.getState().push(`EVADED — +$${bonus}`, "#7CFC00"); sfx.cash();
+      maxStars.current = 0;
+    }
     prevStars.current = stars;
     st.decay(dt);
     acc.current += dt;
