@@ -5,7 +5,8 @@ import { CuboidCollider, RigidBody, type RapierRigidBody } from "@react-three/ra
 import { consumeTap, isDown, moveAxis } from "../input";
 import { Vehicle, type VehicleType } from "../earth/Vehicles";
 import { shared, addShake, addImpact } from "../shared";
-import { useGame } from "../store";
+import { useGame, useToasts } from "../store";
+import { useStats } from "../game";
 import { sfx } from "../audio/sfx";
 
 // Arcade tuning: brisk top speed with speed-scaled steering authority that eases
@@ -18,6 +19,7 @@ export function Car() {
   const carType = useGame((s) => s.playerCarType);
   const carColor = useGame((s) => s.playerCarColor);
   const smoke = useRef(0);
+  const nearMiss = useRef(0);
 
   useEffect(() => {
     shared.car = body.current;
@@ -73,13 +75,23 @@ export function Car() {
 
     // ram traffic: contact halts the other car (and jolts the camera once)
     const cp = rb.translation();
+    nearMiss.current = Math.max(0, nearMiss.current - dt);
+    let missed = false;
     for (const tc of shared.traffic) {
       if (tc.stolen) continue;
       const d = Math.hypot(tc.pos.x - cp.x, tc.pos.z - cp.z);
       if (d < 4.4) {
         if (tc.stop <= 0 && Math.abs(vForward) > 6) { addShake(0.35); sfx.crash(); shared.carDamage = Math.min(100, shared.carDamage + 11); }
         tc.stop = Math.max(tc.stop, 1.6);
+      } else if (d < 6.6 && Math.abs(vForward) > 24) {
+        missed = true; // a clean fast pass — close but no contact
       }
+    }
+    // near-miss cash bonus (§13/§18), throttled
+    if (missed && nearMiss.current <= 0) {
+      nearMiss.current = 1.1;
+      useStats.getState().addCash(15);
+      useToasts.getState().push("NEAR MISS +$15", "#ffcf4a");
     }
 
     // engine smoke once the body's beat up (§12/§23)

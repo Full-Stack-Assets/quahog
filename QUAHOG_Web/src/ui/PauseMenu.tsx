@@ -102,8 +102,15 @@ export function PauseMenu() {
           ⟲ Reset progress
         </button>
 
-        <div style={{ color: "#6a6486", fontSize: 10, marginTop: 12, fontFamily: "'Courier New', monospace" }}>
-          Esc / P to resume · R toggles rain
+        <div style={{ textAlign: "left", color: "#9a93b8", fontSize: 10.5, marginTop: 12, fontFamily: "'Courier New', monospace", lineHeight: 1.7, borderTop: "1px solid #2c2a44", paddingTop: 10 }}>
+          <b style={{ color: "#cfc8e6" }}>CONTROLS</b><br />
+          WASD move · Shift sprint · E enter/exit · F melee<br />
+          Space handbrake · H horn · V view · O photo<br />
+          G draw · 1/2/3/4 fists/pistol/shotgun/bat · click fire<br />
+          [ ] radio · M map · C character · R weather
+        </div>
+        <div style={{ color: "#6a6486", fontSize: 10, marginTop: 10, fontFamily: "'Courier New', monospace" }}>
+          Esc / P to resume
         </div>
       </div>
     </div>
