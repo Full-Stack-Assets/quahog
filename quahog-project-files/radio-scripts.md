@@ -326,3 +326,124 @@ Prompt: "Tough but warm personality jingle, bluesy organ, brushed snare, gravel-
 **5. "Three Rounds Left" (motivational bumper)**
 Prompt: "Slow-build inspirational bumper, lone piano into full brass and bell, anthemic male vocal climbing, ~11 s."
 - When you got nothin' / When the tank reads dry / You got three rounds left in ya — / Dig down, don't ask why / The Anvil — we go again!
+
+- Labs
+
+Eight original tracks in the heartland / bar-rock vein, each anchored to a real piece of Brockton history, geography, or townie life. Paste any prompt + lyric block straight into Eleven Labs.
+
+**The research threads each song pulls from:**
+- *City of Champions / Shoe City* — the two civic nicknames
+- *Rocky Marciano* (49–0, 43 KOs, "the Brockton Blockbuster," raised on the South Side, Dover St.) and *Marvelous Marvin Hagler* (Petronelli Gym)
+- The shoe factories — 90+ plants, ~13,000 workers in 1919, the last one closing in 2009
+- Edison's first three-wire underground electrical system, 1883 — Brockton lit the dark before almost anywhere on earth
+- Marciano Stadium, the lit statue, and Brockton High "Boxers" (Red & Black turned Boxers in 1970)
+- D.W. Field Park / Tower Hill — the Olmsted loop where Rocky trained
+- Route 24 to Boston, George's Café, the Brockton Fair, Westgate, the Montello line
+
+---
+
+## 1. "George's Café Saturday Night"
+**Prompt:** "1980s bar-rock anthem, driving guitars, Hammond organ, big sing-along chorus, gritty male lead vocal, ~118 BPM."
+
+**(V1)** Punched out at the last shoe line, leather dust in my hair / Forty bucks and a Friday night and a Chevy needs a prayer / Down to the corner where the photos line the wall
+
+**(Chorus)** Saturday night at George's / Steak tips and a cold one in your hand / Every champ who ever bled here / Lookin' down from the frames on the City of Champions, man / We don't got much but we don't fold — that's how we stand
+
+**(V2)** Sal's still callin' the Sox game, Theresa pourin' slow / The Rock's in black-and-white up there from sixty years ago
+
+**(Bridge)** They shipped the factories south, they let the lights go low / But you can't ship out a town that's got nowhere else to go
+
+---
+
+## 2. "Shoe City Heart"
+**Prompt:** "Blue-collar rock, bluesy guitar licks, steady backbeat, defiant and proud, raspy male vocal, ~100 BPM."
+
+**(V1)** Ninety factories hummin', thirteen thousand strong / Made the shoes that walked the world, then the world it moved along / Brick gone quiet on the Montello line
+
+**(Chorus)** I got a Shoe City heart / Stitched together, torn apart / They can take the line, they can't take the start / I got a Shoe City heart
+
+**(V2)** My grandfather cut the leather, my mother ran the thread / Last machine went cold in oh-nine but you'll never see us dead
+
+**(Outro)** Still standin', still standin' on these streets
+
+---
+
+## 3. "Route 24"
+**Prompt:** "Up-tempo driving rocker, palm-muted guitar, four-on-the-floor, windows-down energy, anthemic chorus, ~132 BPM."
+
+**(V1)** Tank is full, the sun comin' up over Westgate red / Twenty miles to Boston and a whole life up ahead / Just the white lines callin' and the radio turned loud
+
+**(Chorus)** Northbound on Route Twenty-Four / Faster than I've gone before / Past the fairgrounds, past the steeple / Past everything I've known before / Flyin' up Route Twenty-Four
+
+**(Bridge)** Half this town has took this road and swore they'd not come back / But the City pulls you home again — it's painted on your back
+
+---
+
+## 4. "City of Champions"
+**Prompt:** "Triumphant classic-rock closer, big drums, layered guitars, gang-vocal chorus, proud and sweeping, male lead."
+
+**(V1)** Built it out of leather, lit it up with light / First town in the world to turn the dark to white / Then we gave the ring two kings who never knelt
+
+**(Chorus)** City of Champions, City of Champions / Granite in the fist and fire in the chest / However hard they hit us / We get up off the canvas, we don't quit / City of Champions, this is it
+
+**(V2)** The factories went silent, the count got up to nine / But a champion don't stay down — he finds the bell in time
+
+**(Final chorus)** City of Champions, City of Champions...
+
+---
+
+## 5. "Forty-Nine and Oh"
+**Prompt:** "Anthemic mid-tempo heartland rock, piano and guitar build, reverent and soaring, strong male vocal, ~92 BPM."
+
+**(V1)** Born Marchegiano on the South Side gray / Dug the ditches, laid the rail, hauled the ice all day / Ran up Tower Hill in his workin' shoes
+
+**(Chorus)** Forty-nine and oh, never once laid low / The kid they couldn't keep down, the only one to go / All the way and never lose — / Forty-nine and oh
+
+**(V2)** Walcott went down in fifty-two, the whole town held its breath / One right hand they called Suzie Q and he carried home the belt
+
+**(Bridge)** Could've been a king in any town that called / But he came home to Brockton — kept his people, kept it all
+
+**(Outro)** Forty-nine and oh... no, never laid low
+
+---
+
+## 6. "First to Light"
+**Prompt:** "Mid-tempo heartland anthem, shimmering guitars, hopeful and building, male vocal with harmonies, ~108 BPM."
+
+**(V1)** Eighteen eighty-three, they ran the wire below / While the rest of the country lived by lantern glow / Edison stood right here and flipped the night to day
+
+**(Chorus)** We were the first to light / First to turn the dark to white / Before the rest of the world had a spark / This little city took on the night / We were the first to light
+
+**(V2)** They don't put it on the postcards, don't teach it in the schools / But the current's still beneath us and the wire still runs true
+
+**(Bridge)** Every town that's shinin' now, every street that glows / Owes a little somethin' to a place that nobody knows
+
+---
+
+## 7. "Under the Lights at Marciano"
+**Prompt:** "Stadium-sized heartland rocker, anthemic, big chorus, nostalgic Friday-night energy, male lead with gang vocals, ~120 BPM."
+
+**(V1)** Whole city's in the bleachers, breath up in the cold / Number on my back's the same one that my old man's wore old / And the Rock stands lit at the end of the field
+
+**(Chorus)** Under the lights at Marciano / Red and black and the whole town loud / We are the Boxers, we don't back down / Friday night in the City of Champions now / Under the lights at Marciano
+
+**(V2)** He's cast in bronze and watchin' over every kid out there / Throw the pass, take the hit, and never once you scare
+
+**(Bridge)** You learn to fight in Brockton 'fore you learn to walk away / And every Friday under him we earn the name we say
+
+---
+
+## 8. "Tower Hill"
+**Prompt:** "Mid-tempo heartland ballad, clean chorused guitar building to soaring distorted lead, nostalgic, anthemic, male vocal."
+
+**(V1)** Learned to drive the Field's Park loop with my hands at nine and three / Learned that everybody leaves this town but it never leaves me / Up the rise where the tower stands and the whole gray city shows
+
+**(Chorus)** Tower Hill, Tower Hill / Take my worry, hold it still / However far the road may wind / There's a stone tower on a green hill / Waitin' for me — Tower Hill
+
+**(V2)** Rocky ran these same hills hard in his heavy leather shoes / Same trees, same climb, same risin' ground — I run from the same blues
+
+**(Outro)** I won't forget, I won't forget the hill
+
+---
+
+*Notes: every place, date, and figure is drawn from real Brockton history — George's Café and its boxing-photo walls, the 1883 Edison underground system, the 2009 closing of the last shoe factory, Marciano's Suzie Q and his Tower Hill roadwork, the Red & Black becoming the Boxers, the Olmsted-designed D.W. Field Park. Swap BPMs or instrumentation freely; the lyric meter is built to ride a 4/4 backbeat.*
