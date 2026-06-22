@@ -131,6 +131,8 @@ export function DayNight() {
         shadow-camera-right={250}
         shadow-camera-top={250}
         shadow-camera-bottom={-250}
+        shadow-bias={-0.0002}
+        shadow-normalBias={0.6}
       />
       <Lighthouse position={[40, 0, 240]} />
     </>
