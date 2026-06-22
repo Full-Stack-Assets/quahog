@@ -678,3 +678,16 @@ blood states, price, vendor, unlock.
 - **Audio/radio pipeline + content:** fixed host VO (built-in premade voices per character so none fall silent; a per-voice failure no longer disables all VO). Added the **music drop-in system** — `scripts/gen_manifests.mjs` (auto-run via pre/dev/build) + `MusicPlayer.tsx` + a **webhook receiver** (`/api/music-webhook` → Vercel Blob) and `/api/music`; the radio reads Blob → static manifest → synth, and the in-game radio shows **now-playing + skip** on music stations. Wrote `radio-scripts.md` (host VO, songs w/ lyrics, jingles). 
 
 - **"Next 50" grind (parts AA–GG):** **cash drops** from downed peds (Pickups); **HUD compass** + **tire-screech** sfx; **pedestrian barks** on melee; **Quit-to-title** in the pause menu; **vehicle damage + engine smoke** (resets on respray/carjack); **respawning health packs**; **near-miss driving cash bonus**; **pause-menu controls reference**; **"EVADED" cash reward** for losing the cops. Shipped (`…`→HEAD).
+
+### 2026-06-22 — DIRECTION CHANGE: perfect New Bedford first
+Per the user: **stop all city/region expansion. Make the New Bedford core genuinely good before going anywhere else.** Fall River / Westport / Dartmouth / the bridges stay in the slice but are not the focus; no new regions get pulled until NB is "perfect."
+- Fixed the blocker: Vercel **install command** was `node install` → every deploy failed at install; overridden to `npm install` in `vercel.json`. Deploys live again at projectsouthcoast.vercel.app.
+- Wired uploaded audio: Maré Alta plays 3 real songs; The Rage plays jingles.
+- **Rendering pass:** sRGB colorspace on all procedural textures (fixes washed-out look), anisotropy ×16, 256px asphalt, building façade normal-relief, shadow bias.
+- **"New Bedford to perfection" checklist (open):**
+  - [ ] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look
+  - [ ] Streets: surfaces, intersections, curbs/sidewalks, signage, parked density
+  - [ ] Lighting/atmosphere: ambient occlusion, color grade, fog, reflections
+  - [ ] Waterfront: piers, working docks, boats, hurricane barrier, water quality
+  - [ ] Landmarks: Seamen's Bethel + downtown accuracy, hero buildings
+
