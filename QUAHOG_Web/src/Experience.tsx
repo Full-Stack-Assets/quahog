@@ -124,7 +124,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <UtilityPoles roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Decals roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
-      {slice && <Graffiti roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Graffiti roads={slice.roads} buildings={slice.buildings} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}

@@ -18,10 +18,20 @@ function buildSigns(roads: Road[], center: [number, number]): Sign[] {
     // anchor near the start of the road
     const [ax, an] = r.points[0];
     const [bx, bn] = r.points[1];
-    const x = ax, z = -an;
+    // world: x=east, z=-north
+    const x0 = ax, z0 = -an;
+    const dxw = bx - ax, dzw = -(bn - an);
+    const len = Math.hypot(dxw, dzw);
+    if (len < 1e-3) continue;
+    const ux = dxw / len, uz = dzw / len; // unit travel direction (world)
+    // push the post to the right-hand curb (perpendicular) AND a few metres in
+    // along the road so it lands on the corner, never in the middle of the street.
+    const off = r.width / 2 + 0.7;
+    const x = x0 + ux * 3 + uz * off; // right normal = (uz, -ux)
+    const z = z0 + uz * 3 - ux * off;
     if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
     seen.add(r.name);
-    // align the blade's local +X with the road direction (world x=east, z=-north)
+    // align the blade's local +X with the road direction
     const rot = Math.atan2(bn - an, bx - ax);
     out.push({ x, z, rot, name: r.name });
     if (out.length >= MAX_SIGNS) break;
