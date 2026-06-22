@@ -5,9 +5,11 @@ import { CapsuleCollider, RigidBody, type RapierRigidBody } from "@react-three/r
 import { ModelCharacter } from "../world/ModelCharacter";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { shared, addShake, raiseAlarm, addImpact, type TrafficCar, type Body, type Cop } from "../shared";
-import { useGame } from "../store";
+import { useGame, useToasts } from "../store";
 import { useStats } from "../game";
 import { sfx } from "../audio/sfx";
+
+const BARKS = ["Hey! Watch it!", "You crazy?!", "Somebody call the cops!", "Get outta here!", "What's your problem?!", "Easy, pal!"];
 
 const WALK_SPEED = 6.5;
 const ENTER_RADIUS = 4.5;
@@ -147,6 +149,7 @@ export function Player() {
         addShake(bat ? 0.75 : 0.5); // impact juice
         addImpact(new THREE.Vector3(best.pos.x, 1.1, best.pos.z), "#9a2a2a");
         raiseAlarm(p.x, p.z, 5);
+        if (Math.random() < 0.4) useToasts.getState().push(BARKS[Math.floor(Math.random() * BARKS.length)], "#e7e0ff");
       }
       sfx.punch();
     }

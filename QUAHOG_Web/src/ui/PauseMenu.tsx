@@ -86,6 +86,12 @@ export function PauseMenu() {
           />
         </div>
         <button
+          style={btn}
+          onClick={() => { useGame.getState().setPaused(false); useGame.getState().setStarted(false); }}
+        >
+          ⏏ Quit to title
+        </button>
+        <button
           style={{ ...btn, borderColor: "#8e3a3a", color: "#ffb0b0" }}
           onClick={() => {
             useStats.getState().reset();
