@@ -8,6 +8,25 @@ function canvas(size: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   return [c, c.getContext("2d")!];
 }
 
+// Anisotropic filtering keeps tiling surfaces (roads, ground) crisp at grazing
+// angles instead of shimmering/blurring. 16 is clamped to the GPU max by three.
+const ANISO = 16;
+
+// Colour map: canvas pixels are sRGB-encoded, so tag them sRGB or three reads
+// them as linear and everything looks washed-out/muddy (the "brutal" look).
+function asColor<T extends THREE.Texture>(t: T): T {
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = ANISO;
+  t.needsUpdate = true;
+  return t;
+}
+// Data map (normal maps): must stay linear; just sharpen with anisotropy.
+function asData<T extends THREE.Texture>(t: T): T {
+  t.anisotropy = ANISO;
+  t.needsUpdate = true;
+  return t;
+}
+
 // A tileable surface normal map (Phase 2) — fakes fine bumpiness so asphalt /
 // ground catch the light + IBL instead of reading dead flat. Shared singleton.
 let _noiseNormal: THREE.Texture | null = null;
@@ -26,9 +45,8 @@ export function makeNoiseNormal(): THREE.Texture {
   const t = new THREE.Texture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(8, 8);
-  t.needsUpdate = true;
-  _noiseNormal = t;
-  return t;
+  _noiseNormal = asData(t); // normal map → linear
+  return _noiseNormal;
 }
 
 // Oil/grime splotch (Phase 2) — soft dark radial blob on transparent.
@@ -42,7 +60,7 @@ export function makeGrime(): THREE.Texture {
   g.addColorStop(0.6, "rgba(20,18,16,0.28)");
   g.addColorStop(1, "rgba(20,18,16,0)");
   x.fillStyle = g; x.beginPath(); x.arc(32, 32, 30, 0, Math.PI * 2); x.fill();
-  const t = new THREE.Texture(c); t.needsUpdate = true; _grime = t; return t;
+  _grime = asColor(new THREE.Texture(c)); return _grime;
 }
 
 // Zebra crosswalk patch (Phase 2) — white bars on transparent, for intersections.
@@ -53,8 +71,7 @@ export function makeZebra(): THREE.Texture {
   x.clearRect(0, 0, 128, 128);
   x.fillStyle = "rgba(236,236,228,0.9)";
   for (let i = 8; i < 128; i += 22) x.fillRect(i, 6, 11, 116);
-  const t = new THREE.Texture(c); t.needsUpdate = true;
-  _zebra = t; return t;
+  _zebra = asColor(new THREE.Texture(c)); return _zebra;
 }
 
 // Façade maps (§ Phase 1): one tileable cell ≈ one floor (~3.2 m). `albedo` is
@@ -79,8 +96,8 @@ export function makeFacadeMaps() {
   e.fillStyle = "#ffcf8a"; e.fillRect(m, m, w, w);
   e.fillStyle = "#000000"; e.lineWidth = 0;
   e.fillRect(S / 2 - 2, m, 4, w); e.fillRect(m, S / 2 - 2, w, 4); // dark mullions
-  const albedo = new THREE.Texture(ca); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
-  const emissive = new THREE.Texture(ce); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
+  const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
+  const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
   _facade = { albedo, emissive };
   return _facade;
 }
@@ -104,9 +121,7 @@ export function makePoster(variant: number): THREE.Texture {
   ctx.fillText(p.t2, 128, 150);
   ctx.fillStyle = p.fg; ctx.font = "16px Georgia";
   ctx.fillText("★ NEW BEDFORD ★", 128, 200);
-  const t = new THREE.Texture(c);
-  t.needsUpdate = true;
-  return t;
+  return asColor(new THREE.Texture(c));
 }
 
 // Spray-paint graffiti tag on transparent (Phase 2 weathering) — colourful
@@ -146,9 +161,7 @@ export function makeGraffiti(variant: number): THREE.Texture {
     const x = 50 + Math.random() * 160;
     ctx.fillRect(x, 150, 2 + Math.random() * 2, 10 + Math.random() * 40);
   }
-  const t = new THREE.Texture(c);
-  t.needsUpdate = true;
-  return t;
+  return asColor(new THREE.Texture(c));
 }
 export function makeGroundTexture(): THREE.Texture {
   const [c, ctx] = canvas(256);
@@ -170,8 +183,7 @@ export function makeGroundTexture(): THREE.Texture {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 4;
-  return t;
+  return asColor(t);
 }
 
 /** Cobblestone texture for the historic district (rounded granite setts). */
@@ -198,35 +210,34 @@ export function makeCobbleTexture(): THREE.Texture {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 8;
-  return t;
+  return asColor(t);
 }
 
 /** Asphalt texture for road ribbons (u across width, v along length). */
 export function makeAsphaltTexture(withLanes: boolean): THREE.Texture {
-  const [c, ctx] = canvas(128);
+  const S = 256;
+  const [c, ctx] = canvas(S);
   ctx.fillStyle = "#34353c";
-  ctx.fillRect(0, 0, 128, 128);
-  for (let i = 0; i < 1400; i++) {
+  ctx.fillRect(0, 0, S, S);
+  for (let i = 0; i < 5200; i++) {
     const v = 35 + Math.random() * 35;
     ctx.fillStyle = `rgba(${v},${v},${v},0.4)`;
-    ctx.fillRect(Math.random() * 128, Math.random() * 128, 1, 1);
+    ctx.fillRect(Math.random() * S, Math.random() * S, 1 + Math.random(), 1 + Math.random());
   }
   // dashed centre line along v (texture repeats along length)
   ctx.fillStyle = "#d8c24a";
   if (withLanes) {
-    for (let y = 8; y < 128; y += 40) ctx.fillRect(62, y, 4, 22);
+    for (let y = 16; y < S; y += 80) ctx.fillRect(124, y, 8, 44);
     // solid edge lines
     ctx.fillStyle = "#cfcfcf";
-    ctx.fillRect(10, 0, 3, 128);
-    ctx.fillRect(115, 0, 3, 128);
+    ctx.fillRect(20, 0, 6, S);
+    ctx.fillRect(230, 0, 6, S);
   } else {
-    for (let y = 8; y < 128; y += 40) ctx.fillRect(62, y, 3, 18);
+    for (let y = 16; y < S; y += 80) ctx.fillRect(125, y, 6, 36);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.anisotropy = 4;
-  return t;
+  return asColor(t);
 }
 
 /** Bumpy normal-ish map for the water surface (scrolled for shimmer). */
@@ -244,5 +255,5 @@ export function makeWaterNormal(): THREE.Texture {
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  return t;
+  return asData(t); // normal map → linear
 }
