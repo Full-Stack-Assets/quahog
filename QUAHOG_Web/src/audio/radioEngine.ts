@@ -200,6 +200,8 @@ class RadioEngine {
   private station: Station | null = null;
   private music?: HTMLAudioElement;   // real licensed/generated tracks (§19 music)
   private musicTracks: string[] = [];
+  private jingles: string[] = [];     // station IDs/bumpers for talk dials
+  private jingleAudio?: HTMLAudioElement;
   vol = 0.5;
   muted = false;
   private duck = 1; // adaptive ducking (lowered under police heat)
@@ -248,8 +250,21 @@ class RadioEngine {
     this.lineIdx = 0;
     this.seg = 0;
     if (s.kind === "music") this.loadMusic(s);
+    this.loadJingles(s);
     // talk stations start talking almost immediately; music stations after a bed
     this.scheduleTalk(s.kind === "talk" ? 600 : s.talkGapMs);
+  }
+
+  // Station jingles/bumpers (public/music/<id>/jingles/) played between segments.
+  private loadJingles(s: Station) {
+    this.jingles = [];
+    fetch(`music/${s.id}/jingles/manifest.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((mf: { tracks?: string[] } | null) => {
+        if (this.station !== s || !mf?.tracks?.length) return;
+        this.jingles = mf.tracks.map((f) => /^(https?:)?\/\//.test(f) ? f : `music/${s.id}/jingles/${f}`);
+      })
+      .catch(() => { /* no jingles */ });
   }
 
   // Real music when public/music/<id>/manifest.json exists; else procedural synth.
@@ -306,7 +321,9 @@ class RadioEngine {
     if (this.timer) { clearInterval(this.timer); this.timer = undefined; }
     if (this.talkTimer) { clearTimeout(this.talkTimer); this.talkTimer = undefined; }
     if (this.music) { this.music.pause(); this.music.onended = null; }
+    if (this.jingleAudio) { this.jingleAudio.pause(); this.jingleAudio.onended = null; }
     this.musicTracks = [];
+    this.jingles = [];
     this.lastUrl = "";
     stopVO();
     this.emitSub(null);
@@ -371,6 +388,25 @@ class RadioEngine {
     const s = this.station;
     if (!s || this.muted) {
       if (s) this.scheduleTalk(s.talkGapMs);
+      return;
+    }
+    // every so often, drop a station jingle/bumper instead of a spoken line
+    if (this.jingles.length && this.seg > 0 && this.seg % 4 === 0) {
+      this.seg++;
+      const url = pick(this.jingles);
+      if (!this.jingleAudio) this.jingleAudio = new Audio();
+      const j = this.jingleAudio;
+      j.src = url; j.muted = this.muted; j.volume = this.vol;
+      if (this.music) this.music.volume = this.muted ? 0 : this.vol * 0.2; // duck bed under the jingle
+      this.emitSub({ name: s.name, text: "♪ station ID" });
+      const finish = () => {
+        if (this.music) this.music.volume = this.muted ? 0 : this.vol;
+        this.emitSub(null);
+        if (this.station === s) this.scheduleTalk(s.talkGapMs);
+      };
+      j.onended = finish;
+      j.onerror = finish;
+      j.play().catch(finish);
       return;
     }
     const line = this.chooseSegment(s);

@@ -19,6 +19,19 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const MUSIC_DIR = join(HERE, "..", "public", "music");
 const AUDIO = /\.(mp3|m4a|aac|ogg|wav)$/i;
 
+// Write a manifest.json into `dir` listing its audio files (URL-encoded, natural
+// sorted). Returns the track count. Empty dirs still get a manifest so the
+// runtime fetch is a clean 200 rather than a 404.
+function writeManifest(dir, label) {
+  const tracks = readdirSync(dir)
+    .filter((f) => AUDIO.test(f))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
+    .map((f) => encodeURIComponent(f));
+  writeFileSync(join(dir, "manifest.json"), JSON.stringify({ station: label, tracks, generatedAt: new Date().toISOString() }, null, 2) + "\n");
+  console.log(`  [${label}] ${tracks.length} track(s) → manifest.json`);
+  return tracks.length;
+}
+
 function main() {
   let entries;
   try {
@@ -33,20 +46,16 @@ function main() {
 
   for (const s of stations) {
     const dir = join(MUSIC_DIR, s.name);
-    const tracks = readdirSync(dir)
-      .filter((f) => AUDIO.test(f))
-      // natural sort so track2 comes before track10
-      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" }))
-      // URL-encode so spaces/accents in filenames fetch correctly
-      .map((f) => encodeURIComponent(f));
-
-    const manifest = { station: s.name, tracks, generatedAt: new Date().toISOString() };
-    writeFileSync(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n");
-    console.log(`  [${s.name}] ${tracks.length} track(s) → manifest.json`);
-    total += tracks.length;
+    total += writeManifest(dir, s.name);
+    // also emit a manifest for any sub-folder of audio (e.g. jingles/, vo/)
+    for (const sub of readdirSync(dir, { withFileTypes: true })) {
+      if (!sub.isDirectory()) continue;
+      const subdir = join(dir, sub.name);
+      total += writeManifest(subdir, `${s.name}/${sub.name}`);
+    }
   }
 
-  console.log(`✓ ${total} track(s) across ${stations.length} station(s).`);
+  console.log(`✓ ${total} clip(s) across ${stations.length} station(s).`);
 }
 
 main();
