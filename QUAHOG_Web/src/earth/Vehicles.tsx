@@ -1,11 +1,13 @@
 import { useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
+import { RoundedBox } from "@react-three/drei";
 import { shared } from "../shared";
 
 // Recognizable low-poly road cars built from primitives. Silhouettes are tuned
 // per model (ride height, hood/cabin proportions) so a Bronco reads boxy/tall, a
-// Mustang long-hood/low, the Z a wedge, etc.
+// Mustang long-hood/low, the Z a wedge, etc. Bodies are rounded (not raw boxes)
+// and paint is reflective (metalness + IBL) for a more realistic read.
 
 export type VehicleType = "bronco" | "mustang" | "infiniti" | "nissanz" | "rav4";
 export const VEHICLE_TYPES: VehicleType[] = ["bronco", "mustang", "infiniti", "nissanz", "rav4"];
@@ -57,28 +59,47 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
 
   return (
     <group ref={root} position={[0, s.ride - s.wheelR, 0]}>
-      {/* body */}
-      <mesh position={[0, s.y, 0]} castShadow>
-        <boxGeometry args={[s.W, s.H, s.L]} />
-        <meshStandardMaterial color={color} metalness={0.35} roughness={0.42} />
-      </mesh>
+      {/* body — rounded shell, reflective automotive paint */}
+      <RoundedBox args={[s.W, s.H, s.L]} radius={Math.min(0.16, s.H * 0.35)} smoothness={3} position={[0, s.y, 0]} castShadow>
+        <meshStandardMaterial color={color} metalness={0.55} roughness={0.32} envMapIntensity={1.2} />
+      </RoundedBox>
       {/* long hood accent for sports cars */}
       {s.hood && (
         <mesh position={[0, s.y + s.H / 2 - 0.04, halfL - s.hood / 2 - 0.1]} castShadow>
           <boxGeometry args={[s.W - 0.2, 0.1, s.hood]} />
-          <meshStandardMaterial color={color} metalness={0.4} roughness={0.35} />
+          <meshStandardMaterial color={color} metalness={0.6} roughness={0.3} envMapIntensity={1.2} />
         </mesh>
       )}
-      {/* greenhouse / cabin */}
-      <mesh position={[0, s.y + s.H / 2 + s.cabH / 2 - 0.02, s.cabZ]} castShadow>
-        <boxGeometry args={[cabW, s.cabH, s.cabL]} />
-        <meshStandardMaterial color={s.glass} metalness={0.2} roughness={0.25} />
-      </mesh>
-      {/* roof cap (color) */}
+      {/* greenhouse / cabin glass — rounded, dark, glossy */}
+      <RoundedBox args={[cabW, s.cabH, s.cabL]} radius={0.1} smoothness={3} position={[0, s.y + s.H / 2 + s.cabH / 2 - 0.02, s.cabZ]} castShadow>
+        <meshStandardMaterial color={s.glass} metalness={0.35} roughness={0.12} envMapIntensity={1.6} />
+      </RoundedBox>
+      {/* roof cap (body color) */}
       <mesh position={[0, s.y + s.H / 2 + s.cabH - 0.04, s.cabZ]}>
         <boxGeometry args={[cabW + 0.02, 0.08, s.cabL]} />
-        <meshStandardMaterial color={color} metalness={0.35} roughness={0.4} />
+        <meshStandardMaterial color={color} metalness={0.55} roughness={0.34} envMapIntensity={1.2} />
       </mesh>
+      {/* belt line trim along each flank (subtle chrome) */}
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[sx * (s.W / 2 - 0.01), s.y + s.H / 2 - 0.04, s.cabZ * 0.3]}>
+          <boxGeometry args={[0.03, 0.05, s.L * 0.78]} />
+          <meshStandardMaterial color="#cdd2d8" metalness={0.9} roughness={0.25} envMapIntensity={1.5} />
+        </mesh>
+      ))}
+      {/* bumpers (front + rear) */}
+      {[halfL - 0.02, -halfL + 0.02].map((bz, i) => (
+        <mesh key={i} position={[0, s.y - s.H / 2 + 0.18, bz]} castShadow>
+          <boxGeometry args={[s.W - 0.06, 0.26, 0.18]} />
+          <meshStandardMaterial color="#2a2d31" metalness={0.4} roughness={0.6} />
+        </mesh>
+      ))}
+      {/* side mirrors */}
+      {[-1, 1].map((sx) => (
+        <mesh key={sx} position={[sx * (cabW / 2 + 0.12), s.y + s.H / 2 + s.cabH * 0.3, s.cabZ + s.cabL / 2 - 0.1]} castShadow>
+          <boxGeometry args={[0.18, 0.1, 0.08]} />
+          <meshStandardMaterial color={color} metalness={0.5} roughness={0.35} />
+        </mesh>
+      ))}
       {/* headlights */}
       <mesh position={[0, s.y, halfL + 0.01]}>
         <boxGeometry args={[s.W - 0.3, 0.18, 0.05]} />
@@ -89,15 +110,20 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
         <boxGeometry args={[s.W - 0.3, 0.16, 0.05]} />
         <meshStandardMaterial ref={tail} color="#7a1010" emissive="#c01818" emissiveIntensity={0.5} />
       </mesh>
-      {/* wheels */}
+      {/* wheels — tire + lighter alloy hub */}
       {[
         [-wheelX, 0, wheelZ], [wheelX, 0, wheelZ],
         [-wheelX, 0, -wheelZ], [wheelX, 0, -wheelZ],
       ].map((p, i) => (
         <group key={i} ref={(el) => (wheels.current[i] = el)} position={[p[0], s.wheelR, p[2]]}>
-          <mesh rotation-z={Math.PI / 2}>
-            <cylinderGeometry args={[s.wheelR, s.wheelR, 0.32, 14]} />
-            <meshStandardMaterial color="#0d0d0f" roughness={0.9} />
+          <mesh rotation-z={Math.PI / 2} castShadow>
+            <cylinderGeometry args={[s.wheelR, s.wheelR, 0.32, 18]} />
+            <meshStandardMaterial color="#0d0d0f" roughness={0.92} />
+          </mesh>
+          {/* hub / rim on the outboard face */}
+          <mesh position={[p[0] < 0 ? -0.17 : 0.17, 0, 0]} rotation-z={Math.PI / 2}>
+            <cylinderGeometry args={[s.wheelR * 0.55, s.wheelR * 0.55, 0.03, 12]} />
+            <meshStandardMaterial color="#b9bdc4" metalness={0.85} roughness={0.3} envMapIntensity={1.4} />
           </mesh>
         </group>
       ))}
