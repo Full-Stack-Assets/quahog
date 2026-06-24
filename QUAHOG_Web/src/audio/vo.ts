@@ -8,6 +8,15 @@ let remoteAvailable: boolean | null = null; // null = unknown, false = key absen
 // Cancels the in-flight line's watchdog timers so a stopped/zapped station can't
 // fire a stray fallback line later. Set by speak()/speakLocal, cleared on finish.
 let cancelActive: (() => void) | null = null;
+// Per-voice health: a single character (e.g. a misconfigured ELEVENLABS_MIKE_VOICE)
+// can return empty/garbage audio while the others are fine. Two strikes and we
+// route THAT voice straight to Web Speech for the session — no repeated dead-air
+// while the watchdog waits. This is what makes one bad voice ("only the first
+// line spoken") fail over cleanly instead of stalling every line of that host.
+const voiceFails = new Map<string, number>();
+const badVoice = (v: string) => (voiceFails.get(v) ?? 0) >= 2;
+function markVoiceBad(v: string) { voiceFails.set(v, (voiceFails.get(v) ?? 0) + 1); }
+function markVoiceGood(v: string) { if (voiceFails.has(v)) voiceFails.delete(v); }
 
 export interface VoiceReq {
   text: string;
@@ -65,6 +74,9 @@ let audio: HTMLAudioElement | null = null;
 /** Speak a line with the best available voice; never throws, always ends. */
 export async function speak(req: VoiceReq) {
   if (remoteAvailable === false) { speakLocal(req); return; }
+  // This voice has already failed twice this session — don't re-try the remote
+  // and eat another dead-air gap; go straight to Web Speech for the rest of it.
+  if (badVoice(req.voice)) { speakLocal(req); return; }
   try {
     const r = await fetch("/api/tts", {
       method: "POST",
@@ -75,9 +87,13 @@ export async function speak(req: VoiceReq) {
     // Any other failure (a single voice, a transient upstream error) just falls
     // back for THIS line so one bad call can't mute every host (§33).
     if (r.status === 503) { remoteAvailable = false; speakLocal(req); return; }
-    if (!r.ok) { speakLocal(req); return; }
+    if (!r.ok) { markVoiceBad(req.voice); speakLocal(req); return; }
     remoteAvailable = true;
-    const url = URL.createObjectURL(await r.blob());
+    const blob = await r.blob();
+    // A 200 with an empty/implausibly-tiny body is a misconfigured voice — no
+    // valid audio. Skip the <audio> dance entirely and fail over immediately.
+    if (blob.size < 256) { markVoiceBad(req.voice); speakLocal(req); return; }
+    const url = URL.createObjectURL(blob);
     audio?.pause();
     const el = new Audio(url);
     audio = el;
@@ -91,10 +107,11 @@ export async function speak(req: VoiceReq) {
     const cleanup = () => { if (watchdog) clearTimeout(watchdog); if (cancelActive === silence) cancelActive = null; URL.revokeObjectURL(url); };
     const silence = () => { if (watchdog) clearTimeout(watchdog); done = true; URL.revokeObjectURL(url); };
     cancelActive = silence;
-    const finish = () => { if (done) return; done = true; cleanup(); req.onend?.(); };
+    const finish = () => { if (done) return; done = true; markVoiceGood(req.voice); cleanup(); req.onend?.(); };
     const fallback = () => {
       if (done) return;
       done = true;
+      markVoiceBad(req.voice); // empty blob / error / watchdog → strike this voice
       cleanup();
       try { el.pause(); } catch { /* ignore */ }
       speakLocal(req); // play this line via Web Speech, which advances the loop
