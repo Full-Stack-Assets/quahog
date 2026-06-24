@@ -114,9 +114,10 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
     tint(hydrants.current, L.hydrants.length, HYDRANTS);
   }, [L]);
 
-  // lamp heads glow warmer as night falls (bloom in Effects picks this up)
+  // lamp heads glow warmer as night falls (bloom in Effects picks this up);
+  // dusk-gated so streetlights are dark by day, not lit at noon
   useFrame(() => {
-    if (headMat.current) headMat.current.emissiveIntensity = 0.1 + (1 - shared.dayT) * 2.4;
+    if (headMat.current) headMat.current.emissiveIntensity = 0.05 + (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 2.6;
   });
 
   return (
