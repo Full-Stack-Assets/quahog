@@ -152,6 +152,19 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
         </mesh>
       </group>
 
+      {/* brick walkway from the street up to the steps */}
+      <mesh position={[13.8, 0.07, 0]} rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[7.5, 2.6]} />
+        <meshStandardMaterial color="#8a5a44" roughness={0.95} />
+      </mesh>
+      {/* foundation shrubs flanking the front */}
+      {[[-1, 4.6], [-1, -4.6], [3.5, 5.6], [3.5, -5.6]].map(([x, z], i) => (
+        <mesh key={`shrub${i}`} position={[x, 0.6, z]} castShadow>
+          <icosahedronGeometry args={[0.9, 0]} />
+          <meshStandardMaterial color="#3f6630" roughness={1} flatShading />
+        </mesh>
+      ))}
+
       {/* name board over the door */}
       <Text
         position={[10.2, 5.4, 0]}
