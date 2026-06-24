@@ -9,10 +9,15 @@ Two modes:
             Overpass response; useful for testing or when fetched elsewhere)
 
 Output schema (consumed directly by GeoJson.cs):
-  - building footprints -> Polygon, properties keep building / building:levels / height
+  - building footprints -> Polygon / MultiPolygon, properties keep building / building:levels / height
   - highways            -> LineString, properties keep highway / name
-  - natural=water       -> Polygon
+  - natural=water       -> Polygon / MultiPolygon
 All OSM tags are passed through as feature properties, so nothing is lost.
+
+Multipolygon relations (large/complex buildings, water bodies with islands, and
+any footprint with a courtyard) are assembled here: member ways are stitched into
+closed outer/inner rings and emitted with holes ([outer, inner, ...]), so GisCity
+renders courtyards and lakes-with-islands correctly instead of filling them solid.
 """
 import argparse
 import json
@@ -31,11 +36,16 @@ USER_AGENT = "quahog-gamedev/1.0 (map generation for QUAHOG)"
 
 def build_query(s, w, n, e):
     bbox = f"{s},{w},{n},{e}"
-    return f"""[out:json][timeout:120];
+    # Relations carry multipolygons (complex buildings, courtyards, water with
+    # islands). `out geom` attaches coordinates to ways *and* relation members so
+    # we can stitch rings client-side without a second id->geometry lookup.
+    return f"""[out:json][timeout:180];
 (
   way["building"]({bbox});
+  relation["building"]({bbox});
   way["highway"]({bbox});
   way["natural"="water"]({bbox});
+  relation["natural"="water"]({bbox});
 );
 out geom;"""
 
@@ -65,26 +75,139 @@ def fetch(query):
     )
 
 
+def _close(a, b, tol=1e-7):
+    """Two lon/lat points coincide (endpoint match when stitching ways)."""
+    return abs(a[0] - b[0]) <= tol and abs(a[1] - b[1]) <= tol
+
+
+def _closed(ring):
+    return len(ring) >= 4 and _close(ring[0], ring[-1])
+
+
+def stitch_rings(ways):
+    """Connect a bag of polylines (each a list of [lon,lat]) into closed rings by
+    matching endpoints. A multipolygon's boundary is often split across several
+    member ways in arbitrary order/direction, so we greedily weld them."""
+    segs = [list(w) for w in ways if len(w) >= 2]
+    rings = []
+    while segs:
+        ring = segs.pop(0)
+        extended = True
+        while extended and not _close(ring[0], ring[-1]):
+            extended = False
+            for i, s in enumerate(segs):
+                if _close(ring[-1], s[0]):
+                    ring += s[1:]
+                elif _close(ring[-1], s[-1]):
+                    ring += list(reversed(s))[1:]
+                elif _close(ring[0], s[-1]):
+                    ring = s[:-1] + ring
+                elif _close(ring[0], s[0]):
+                    ring = list(reversed(s))[:-1] + ring
+                else:
+                    continue
+                segs.pop(i)
+                extended = True
+                break
+        if not _close(ring[0], ring[-1]):
+            ring.append(ring[0])  # force-close a ring we couldn't fully weld
+        if _closed(ring):
+            rings.append(ring)
+    return rings
+
+
+def _point_in_ring(pt, ring):
+    """Ray-cast test: is [lon,lat] pt inside the (closed) ring?"""
+    x, y = pt
+    inside = False
+    n = len(ring)
+    j = n - 1
+    for i in range(n):
+        xi, yi = ring[i]
+        xj, yj = ring[j]
+        if ((yi > y) != (yj > y)) and (x < (xj - xi) * (y - yi) / (yj - yi + 1e-30) + xi):
+            inside = not inside
+        j = i
+    return inside
+
+
+def relation_polygons(members):
+    """Assemble a multipolygon relation's outer/inner member ways into a list of
+    GeoJSON polygons (each = [outer_ring, *hole_rings]). Inner rings are matched to
+    the outer ring that contains them."""
+    outer_ways, inner_ways = [], []
+    for m in members:
+        if m.get("type") != "way":
+            continue
+        geom = m.get("geometry")
+        if not geom:
+            continue
+        coords = [[p["lon"], p["lat"]] for p in geom if "lon" in p and "lat" in p]
+        if len(coords) < 2:
+            continue
+        (inner_ways if m.get("role") == "inner" else outer_ways).append(coords)
+
+    outers = stitch_rings(outer_ways)
+    inners = stitch_rings(inner_ways)
+    polys = []
+    for outer in outers:
+        holes = [h for h in inners if _point_in_ring(h[0], outer)]
+        polys.append([outer] + holes)
+    return polys
+
+
+def _classify(tags):
+    is_building = "building" in tags
+    is_water = tags.get("natural") == "water" or "water" in tags
+    is_highway = "highway" in tags
+    return is_building, is_water, is_highway
+
+
 def to_geojson(overpass):
     """Convert an Overpass 'out geom' response to our GeoJSON FeatureCollection."""
     features = []
-    for el in overpass.get("elements", []):
-        if el.get("type") != "way":
+    elements = overpass.get("elements", [])
+
+    # Member ways of relations are emitted again as standalone ways; skip those so
+    # a courtyard outline isn't drawn twice (once with a hole, once solid).
+    member_way_ids = set()
+    for el in elements:
+        if el.get("type") == "relation":
+            for m in el.get("members", []):
+                if m.get("type") == "way" and "ref" in m:
+                    member_way_ids.add(m["ref"])
+
+    for el in elements:
+        etype = el.get("type")
+        tags = el.get("tags") or {}
+        is_building, is_water, is_highway = _classify(tags)
+
+        if etype == "relation":
+            if not (is_building or (is_water and not is_highway)):
+                continue
+            polys = relation_polygons(el.get("members", []))
+            polys = [p for p in polys if len(p[0]) >= 4]
+            if not polys:
+                continue
+            if len(polys) == 1:
+                geometry = {"type": "Polygon", "coordinates": polys[0]}
+            else:
+                geometry = {"type": "MultiPolygon", "coordinates": polys}
+            features.append({"type": "Feature", "properties": tags, "geometry": geometry})
             continue
+
+        if etype != "way":
+            continue
+        if el.get("id") in member_way_ids and not (is_building or is_highway):
+            continue  # bare boundary way already consumed by its relation
         geom = el.get("geometry")
         if not geom or len(geom) < 2:
             continue
-        tags = el.get("tags") or {}
         coords = [[p["lon"], p["lat"]] for p in geom if "lon" in p and "lat" in p]
         if len(coords) < 2:
             continue
 
-        is_building = "building" in tags
-        is_water = tags.get("natural") == "water" or "water" in tags
-        is_highway = "highway" in tags
-
         if is_building or (is_water and not is_highway):
-            # Close the ring for a polygon.
             if coords[0] != coords[-1]:
                 coords = coords + [coords[0]]
             if len(coords) < 4:
