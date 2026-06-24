@@ -42,7 +42,7 @@ export function Dumpsters({ roads, center }: { roads: Road[]; center: [number, n
       const side = (n & 1) ? 1 : -1;
       const o = 6.2;
       const x = s.x + nx * o * side, z = s.z + nz * o * side;
-      const rot = Math.atan2(s.dx, s.dz);
+      const rot = Math.atan2(s.dx, s.dz) + (((n * 0.618) % 1) - 0.5) * 0.3;
       if (n % 2 === 0) dumps.push({ x, z, rot });
       else pallets.push({ x, z, rot });
       n++;

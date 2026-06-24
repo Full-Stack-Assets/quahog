@@ -45,7 +45,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       const side = (n & 1) ? 1 : -1;
       const off = 5.2;                       // curbside offset from centerline
       const x = s.x + nx * off * side, z = s.z + nz * off * side;
-      const rot = Math.atan2(nx * side, nz * side);
+      const rot = Math.atan2(nx * side, nz * side) + (((n * 0.618) % 1) - 0.5) * 0.25;
       const kind = n % 7;
       if (kind === 0) stops.push({ x, z, rot });
       else if (kind === 1) booths.push({ x, z, rot });

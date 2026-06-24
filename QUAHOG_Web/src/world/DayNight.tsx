@@ -110,7 +110,7 @@ export function DayNight() {
       <sprite ref={glow} scale={[180, 180, 1]}>
         <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
       </sprite>
-      <ambientLight intensity={0.14} />
+      <ambientLight intensity={0.19} />
       <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
       <directionalLight
         ref={sun}

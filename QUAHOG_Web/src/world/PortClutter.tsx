@@ -49,7 +49,7 @@ export function PortClutter({ polys, center }: { polys: [number, number][][]; ce
           const land = inRing(probeE, probeN, ring) ? -1 : 1;
           const off = 9;
           const x = ex + nx * off * land, z = ez + nz * off * land;
-          const rot = Math.atan2(ux, uz);
+          const rot = Math.atan2(ux, uz) + (((n * 0.618) % 1) - 0.5) * 0.3;
           n++;
           const kind = n % 4;
           if (kind === 0 || kind === 1) containers.push({ x, z, rot });
