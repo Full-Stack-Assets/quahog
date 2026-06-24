@@ -30,8 +30,8 @@ function lay(mesh: THREE.InstancedMesh | null, ps: P[], y: number) {
 
 export function RoadFixtures({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
-    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 26, sparse: 1, max: 700 });
-    const manholes: P[] = [], grates: P[] = [];
+    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 22, sparse: 1, max: 900 });
+    const manholes: P[] = [], grates: P[] = [], patches: P[] = [];
     let n = 0;
     for (const s of samples) {
       const nx = -s.dz, nz = s.dx;
@@ -41,16 +41,22 @@ export function RoadFixtures({ roads, center }: { roads: Road[]; center: [number
         const side = (n & 2) ? 1 : -1;
         grates.push({ x: s.x + nx * 4.6 * side, z: s.z + nz * 4.6 * side, rot });
       }
+      if (n % 7 === 0) {                                                // repaved patch on the lane
+        const off = ((n * 0.618) % 1 - 0.5) * 3;
+        patches.push({ x: s.x + nx * off, z: s.z + nz * off, rot });
+      }
       n++;
     }
-    return { manholes, grates };
+    return { manholes, grates, patches };
   }, [roads, center]);
 
   const manhole = useRef<THREE.InstancedMesh>(null);
   const grate = useRef<THREE.InstancedMesh>(null);
+  const patch = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
     lay(manhole.current, L.manholes, 0.09);
     lay(grate.current, L.grates, 0.088);
+    lay(patch.current, L.patches, 0.085);
   }, [L]);
 
   return (
@@ -62,6 +68,11 @@ export function RoadFixtures({ roads, center }: { roads: Road[]; center: [number
       <instancedMesh ref={grate} args={[undefined, undefined, Math.max(1, L.grates.length)]}>
         <planeGeometry args={[0.7, 0.45]} />
         <meshStandardMaterial color="#1c1e22" roughness={0.8} metalness={0.5} polygonOffset polygonOffsetFactor={-2} />
+      </instancedMesh>
+      {/* repaved asphalt patches — slightly lighter/fresher than the road */}
+      <instancedMesh ref={patch} args={[undefined, undefined, Math.max(1, L.patches.length)]}>
+        <planeGeometry args={[2.6, 1.8]} />
+        <meshStandardMaterial color="#6a6c74" roughness={0.95} polygonOffset polygonOffsetFactor={-1} />
       </instancedMesh>
     </group>
   );

@@ -36,7 +36,7 @@ function fill(mesh: THREE.InstancedMesh | null, places: Place[], y: number) {
 
 export function StreetExtras({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
-    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 28, sparse: 1, max: 900 });
+    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 22, sparse: 1, max: 1100 });
     const stops: Place[] = [], meters: Place[] = [], cans: Place[] = [], cones: Place[] = [];
     const booths: Place[] = [], papers: Place[] = [], bollards: Place[] = [];
     let n = 0;
