@@ -31,28 +31,50 @@ function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0, widthSca
   for (const r of roads) {
     const half = (r.width * widthScale) / 2 + pad;
     const u = uScale === 0 ? 1 : r.width / uScale; // tiles across the width
-    let len = 0;
-    for (let i = 0; i < r.points.length - 1; i++) {
-      const [ax, an] = r.points[i];
-      const [bx, bn] = r.points[i + 1];
-      const x1 = ax, z1 = -an, x2 = bx, z2 = -bn;
-      const dx = x2 - x1, dz = z2 - z1;
-      const segLen = Math.hypot(dx, dz);
-      if (segLen < 1e-4) continue;
-      const nx = (-dz / segLen) * half;
-      const nz = (dx / segLen) * half;
-      const v0 = len / TILE;
-      const v1 = (len + segLen) / TILE;
+    // world points (x=east, z=-north)
+    const P: [number, number][] = r.points.map(([e, n]) => [e, -n]);
+    const m = P.length;
+    if (m < 2) continue;
+    // per-segment unit direction + left normal + length
+    const nrm: [number, number][] = [], seg: number[] = [];
+    for (let i = 0; i < m - 1; i++) {
+      const dx = P[i + 1][0] - P[i][0], dz = P[i + 1][1] - P[i][1];
+      const l = Math.hypot(dx, dz);
+      if (l < 1e-6) { nrm.push([0, 0]); seg.push(0); continue; }
+      nrm.push([-dz / l, dx / l]); seg.push(l);
+    }
+    // cumulative length at each vertex (for the lengthwise UV)
+    const cum: number[] = [0];
+    for (let i = 0; i < m - 1; i++) cum.push(cum[i] + seg[i]);
+    // per-vertex MITERED offset: average the adjacent segment normals and scale
+    // by 1/cos(half-angle) so the left/right edges stay continuous across a bend
+    // instead of each segment overhanging/gapping (the "jutting/converging" look).
+    const off: [number, number][] = [];
+    for (let i = 0; i < m; i++) {
+      if (i === 0) { off.push([nrm[0][0] * half, nrm[0][1] * half]); continue; }
+      if (i === m - 1) { off.push([nrm[m - 2][0] * half, nrm[m - 2][1] * half]); continue; }
+      let mx = nrm[i - 1][0] + nrm[i][0], mz = nrm[i - 1][1] + nrm[i][1];
+      const ml = Math.hypot(mx, mz);
+      if (ml < 1e-6) { off.push([nrm[i][0] * half, nrm[i][1] * half]); continue; }
+      mx /= ml; mz /= ml;
+      const cos = Math.max(mx * nrm[i][0] + mz * nrm[i][1], 0.33); // clamp sharp spikes
+      off.push([(mx * half) / cos, (mz * half) / cos]);
+    }
+    // emit one quad per segment using the shared mitered vertex offsets
+    for (let i = 0; i < m - 1; i++) {
+      if (seg[i] < 1e-6) continue;
+      const v0 = cum[i] / TILE, v1 = cum[i + 1] / TILE;
+      const ax = P[i][0], az = P[i][1], bx = P[i + 1][0], bz = P[i + 1][1];
+      const oa = off[i], ob = off[i + 1];
       pos.push(
-        x1 + nx, y, z1 + nz,
-        x2 + nx, y, z2 + nz,
-        x2 - nx, y, z2 - nz,
-        x1 - nx, y, z1 - nz,
+        ax + oa[0], y, az + oa[1],
+        bx + ob[0], y, bz + ob[1],
+        bx - ob[0], y, bz - ob[1],
+        ax - oa[0], y, az - oa[1],
       );
       uv.push(0, v0, 0, v1, u, v1, u, v0);
       idx.push(v, v + 1, v + 2, v, v + 2, v + 3);
       v += 4;
-      len += segLen;
     }
   }
   if (pos.length === 0) return null;
