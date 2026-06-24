@@ -81,6 +81,8 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
     fill(bollard.current, L.bollards, 0.4);
     tint(can.current, L.cans.length, ["#384034", "#4a4a44", "#2f3a2c", "#54504a"]);
     tint(paper.current, L.papers.length, ["#b5912b", "#2f5a7a", "#9c3b2f", "#3a6a45"]);
+    tint(booth.current, L.booths.length, ["#9aa6ae", "#8a949c", "#a6b0b6", "#7e888f"]);
+    tint(meterHead.current, L.meters.length, ["#3a6b5a", "#4a4a52", "#5a3a3a", "#3a5a6a"]);
   }, [L]);
 
   return (
@@ -102,7 +104,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       </instancedMesh>
       <instancedMesh ref={meterHead} args={[undefined, undefined, Math.max(1, L.meters.length)]} castShadow>
         <boxGeometry args={[0.16, 0.3, 0.12]} />
-        <meshStandardMaterial color="#3a6b5a" roughness={0.5} metalness={0.4} />
+        <meshStandardMaterial color="#ffffff" roughness={0.5} metalness={0.4} />
       </instancedMesh>
 
       {/* trash cans */}
@@ -120,7 +122,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       {/* phone booths (brushed-aluminium + glass, mid-80s) */}
       <instancedMesh ref={booth} args={[undefined, undefined, Math.max(1, L.booths.length)]} castShadow>
         <boxGeometry args={[0.9, 2.3, 0.9]} />
-        <meshStandardMaterial color="#9aa6ae" roughness={0.35} metalness={0.6} />
+        <meshStandardMaterial color="#ffffff" roughness={0.35} metalness={0.6} />
       </instancedMesh>
 
       {/* newspaper boxes */}
