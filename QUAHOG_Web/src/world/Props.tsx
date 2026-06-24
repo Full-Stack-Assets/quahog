@@ -13,6 +13,17 @@ const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _s = new THREE.Vector3(1, 1, 1);
 const _p = new THREE.Vector3();
+const _c = new THREE.Color();
+
+// Per-instance colour variety so a field of identical instances reads naturally.
+function tint(mesh: THREE.InstancedMesh | null, count: number, palette: string[]) {
+  if (!mesh) return;
+  for (let i = 0; i < count; i++) mesh.setColorAt(i, _c.set(palette[(i * 2654435761) % palette.length]));
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+}
+const TREE_GREENS = ["#3f6b34", "#4a7a3a", "#356030", "#567f3e", "#2f5a2c", "#5f8a46"];
+const BENCH_WOODS = ["#5a3d28", "#6a4a2e", "#4a3220", "#705534"];
+const HYDRANTS = ["#b22222", "#a01f1f", "#c4a020", "#9a1c1c"]; // mostly red, some yellow
 
 type Place = { x: number; z: number; rot: number };
 
@@ -98,6 +109,9 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
     fill(benches.current, L.benches, 0.35);
     fill(trunks.current, L.trees, 1.6);
     fill(crowns.current, L.trees, 4.2);
+    tint(crowns.current, L.trees.length, TREE_GREENS);
+    tint(benches.current, L.benches.length, BENCH_WOODS);
+    tint(hydrants.current, L.hydrants.length, HYDRANTS);
   }, [L]);
 
   // lamp heads glow warmer as night falls (bloom in Effects picks this up)
@@ -120,7 +134,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
       {/* hydrants */}
       <instancedMesh ref={hydrants} args={[undefined, undefined, Math.max(1, L.hydrants.length)]} castShadow>
         <cylinderGeometry args={[0.18, 0.22, 0.9, 8]} />
-        <meshStandardMaterial color="#b22222" roughness={0.6} />
+        <meshStandardMaterial color="#ffffff" roughness={0.6} />
       </instancedMesh>
 
       {/* mailboxes (USPS blue, 1986) */}
@@ -132,7 +146,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
       {/* benches */}
       <instancedMesh ref={benches} args={[undefined, undefined, Math.max(1, L.benches.length)]} castShadow>
         <boxGeometry args={[1.6, 0.18, 0.5]} />
-        <meshStandardMaterial color="#5a3d28" roughness={0.85} />
+        <meshStandardMaterial color="#ffffff" roughness={0.85} />
       </instancedMesh>
 
       {/* street trees */}
@@ -142,7 +156,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
       </instancedMesh>
       <instancedMesh ref={crowns} args={[undefined, undefined, Math.max(1, L.trees.length)]} castShadow>
         <icosahedronGeometry args={[1.9, 0]} />
-        <meshStandardMaterial color="#3f6b34" roughness={1} flatShading />
+        <meshStandardMaterial color="#ffffff" roughness={1} flatShading />
       </instancedMesh>
     </group>
   );
