@@ -685,9 +685,23 @@ Per the user: **stop all city/region expansion. Make the New Bedford core genuin
 - Wired uploaded audio: Maré Alta plays 3 real songs; The Rage plays jingles.
 - **Rendering pass:** sRGB colorspace on all procedural textures (fixes washed-out look), anisotropy ×16, 256px asphalt, building façade normal-relief, shadow bias.
 - **"New Bedford to perfection" checklist (open):**
-  - [ ] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look
+  - [~] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look — short footprints (<14 m) now get **peaked hip roofs** (apex-fan over the centroid; tall granite/mills stay flat); era/material variety still TODO
   - [ ] Streets: surfaces, intersections, curbs/sidewalks, signage, parked density
   - [ ] Lighting/atmosphere: ambient occlusion, color grade, fog, reflections
   - [ ] Waterfront: piers, working docks, boats, hurricane barrier, water quality
   - [ ] Landmarks: Seamen's Bethel + downtown accuracy, hero buildings
+
+### 2026-06-24 — NB rooflines + favicon
+- **Peaked roofs (less "extruded box"):** `StreamingBuildings.tsx` now caps short
+  footprints (`height < 14 m`) with a peaked hip roof — a triangle fan from each
+  footprint edge to a single apex over the centroid (pitch ≈ steep 35-45° on
+  house/triple-decker widths, capped at 5.5 m so wide blocks don't spike). Tall
+  granite-downtown + brick mills keep realistic flat roofs; heroes untouched;
+  rooftop water-tank/AC clutter moved to flat-roofed buildings only. Found +
+  fixed a backface-culling bug (fan winding faced down → roofs invisible behind
+  the flat extrude cap); winding now derived from the footprint's signed area in
+  world XZ so it's robust to OSM orientation. Verified deterministically (merged
+  geometry max-Y rises above walls, roof normals face up) and visually in photo
+  mode (incl. a magenta debug pass to confirm the peak shape). Added an inline
+  SVG favicon (kills the `favicon.ico` 404). Shipped (`b64ddac`).
 
