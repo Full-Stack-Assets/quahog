@@ -170,6 +170,9 @@ export function Roads({ roads }: { roads: Road[] }) {
       // service aisles/driveways: slightly trimmed, drawn just below street level
       service: buildRibbon(c.sv, 0.045, 0, 0, 0.9),
       surface: buildRibbon(c.sf, 0.06, 0),
+      // painted centre line down arterials (>=8m: secondary/tertiary) so streets
+      // read as real roads, not bare asphalt. Thin ribbon along the centerline.
+      centerline: buildRibbon(c.sf.filter((r) => r.width >= 8), 0.066, 0, 0, 0.025),
       // trim highway carriageway width so close divided carriageways (the two
       // directions of I-195) read as separate roads with a median gap instead of
       // one squished/converging blob; the concrete apron keeps the shoulders.
@@ -225,6 +228,11 @@ export function Roads({ roads }: { roads: Road[] }) {
           {c.surface && (
             <mesh geometry={c.surface} receiveShadow>
               <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#5a5c66" roughness={0.9} userData={{ base: 0.9 }} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
+            </mesh>
+          )}
+          {c.centerline && (
+            <mesh geometry={c.centerline}>
+              <meshStandardMaterial color="#d8b43c" roughness={0.7} emissive="#c8a028" emissiveIntensity={0.15} polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
             </mesh>
           )}
           {c.highway && (
