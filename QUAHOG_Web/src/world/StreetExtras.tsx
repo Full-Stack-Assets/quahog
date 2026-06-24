@@ -13,8 +13,15 @@ const _q = new THREE.Quaternion();
 const _s = new THREE.Vector3(1, 1, 1);
 const _p = new THREE.Vector3();
 const _up = new THREE.Vector3(0, 1, 0);
+const _c = new THREE.Color();
 
 type Place = { x: number; z: number; rot: number };
+
+function tint(mesh: THREE.InstancedMesh | null, count: number, palette: string[]) {
+  if (!mesh) return;
+  for (let i = 0; i < count; i++) mesh.setColorAt(i, _c.set(palette[(i * 2654435761) % palette.length]));
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+}
 
 function fill(mesh: THREE.InstancedMesh | null, places: Place[], y: number) {
   if (!mesh) return;
@@ -72,6 +79,8 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
     fill(booth.current, L.booths, 1.15);
     fill(paper.current, L.papers, 0.6);
     fill(bollard.current, L.bollards, 0.4);
+    tint(can.current, L.cans.length, ["#384034", "#4a4a44", "#2f3a2c", "#54504a"]);
+    tint(paper.current, L.papers.length, ["#b5912b", "#2f5a7a", "#9c3b2f", "#3a6a45"]);
   }, [L]);
 
   return (
@@ -99,7 +108,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       {/* trash cans */}
       <instancedMesh ref={can} args={[undefined, undefined, Math.max(1, L.cans.length)]} castShadow>
         <cylinderGeometry args={[0.28, 0.24, 1.0, 10]} />
-        <meshStandardMaterial color="#384034" roughness={0.85} />
+        <meshStandardMaterial color="#ffffff" roughness={0.85} />
       </instancedMesh>
 
       {/* traffic cones */}
@@ -117,7 +126,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       {/* newspaper boxes */}
       <instancedMesh ref={paper} args={[undefined, undefined, Math.max(1, L.papers.length)]} castShadow>
         <boxGeometry args={[0.42, 1.1, 0.4]} />
-        <meshStandardMaterial color="#b5912b" roughness={0.6} metalness={0.2} />
+        <meshStandardMaterial color="#ffffff" roughness={0.6} metalness={0.2} />
       </instancedMesh>
 
       {/* bollards */}
