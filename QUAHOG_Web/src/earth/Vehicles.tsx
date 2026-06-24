@@ -9,9 +9,10 @@ import { shared } from "../shared";
 
 export type VehicleType =
   | "bronco" | "mustang" | "infiniti" | "nissanz" | "rav4"
-  | "pickup" | "wagon" | "van" | "sedan";
+  | "pickup" | "wagon" | "van" | "sedan" | "boxtruck" | "coupe" | "suv";
 export const VEHICLE_TYPES: VehicleType[] =
-  ["bronco", "mustang", "infiniti", "nissanz", "rav4", "pickup", "wagon", "van", "sedan"];
+  ["bronco", "mustang", "infiniti", "nissanz", "rav4", "pickup", "wagon", "van", "sedan",
+   "boxtruck", "coupe", "suv"];
 
 interface Spec {
   L: number; W: number; H: number; y: number; // body box + center height
@@ -36,6 +37,12 @@ const SPECS: Record<VehicleType, Spec> = {
   van:      { L: 4.9, W: 2.0, H: 1.55, y: 1.18, cabL: 1.3, cabH: 0.25, cabZ: 1.0, ride: 0.45, wheelR: 0.46, glass: "#161c21" },
   // plain 4-door sedan
   sedan:    { L: 4.6, W: 1.85, H: 0.85, y: 0.82, cabL: 2.3, cabH: 0.7, cabZ: -0.05, ride: 0.34, wheelR: 0.44, glass: "#1b222a" },
+  // box delivery truck: long tall body, small forward cab
+  boxtruck: { L: 6.4, W: 2.3, H: 2.1, y: 1.45, cabL: 1.5, cabH: 0.0, cabZ: 2.3, ride: 0.5, wheelR: 0.5, glass: "#161c21" },
+  // small 2-door coupe: short, low, long-ish hood
+  coupe:    { L: 4.2, W: 1.8, H: 0.8, y: 0.76, cabL: 1.5, cabH: 0.6, cabZ: -0.4, ride: 0.32, wheelR: 0.43, glass: "#141a1f", hood: 1.3 },
+  // tall family SUV
+  suv:      { L: 4.8, W: 2.0, H: 1.25, y: 1.05, cabL: 2.4, cabH: 0.85, cabZ: -0.15, ride: 0.5, wheelR: 0.5, glass: "#212a30" },
 };
 
 export function Vehicle({ type, color, brake }: { type: VehicleType; color: string; brake?: () => boolean }) {
