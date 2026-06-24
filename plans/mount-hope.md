@@ -713,4 +713,11 @@ Goal: 100 concrete improvements to the playable web game. Running log:
 - **Tuning b11 (36–37):** longer road draw distance (fog-free) + more gulls.
 - **Variety b12 (38–39):** trash-can + newspaper-box colour variety.
 - **Life b13 (40–41):** more pedestrians (32) + traffic cars (20).
+- **Vehicles b14 (42–45):** new models — pickup, station wagon, cargo van, sedan.
+- **Road wear b15 (46–48):** asphalt repair patches + denser street/fixture sampling.
+- **Life b16 (49–50):** wider pedestrian + traffic-car palettes.
+- **Fences b17 (51–52):** new `Fences` — chain-link along service/back lots.
+- **Atmosphere b18 (53–54):** more stars + varied rooftop-unit colours.
+- **Billboards b19 (55–56):** new `Billboards` — roadside poster boards on arterials.
+- **Variety b20 (57–58):** per-instance scale for awnings + crosswalks.
 
