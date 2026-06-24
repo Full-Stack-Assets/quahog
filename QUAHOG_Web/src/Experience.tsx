@@ -25,6 +25,7 @@ import { ParkedCars } from "./world/ParkedCars";
 import { StreetExtras } from "./world/StreetExtras";
 import { RoadFixtures } from "./world/RoadFixtures";
 import { Foliage } from "./world/Foliage";
+import { Fences } from "./world/Fences";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -142,6 +143,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <StreetExtras roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <RoadFixtures roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Foliage roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Fences roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />
