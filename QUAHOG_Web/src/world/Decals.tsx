@@ -8,7 +8,7 @@ import type { Road } from "../slice";
 // (Phase 2 weathering). Instanced flat quads just above the asphalt.
 
 const RADIUS = 260;
-const MAX = 300;
+const MAX = 400;
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();

@@ -13,7 +13,7 @@ const _s = new THREE.Vector3(1, 1, 1);
 const _p = new THREE.Vector3();
 const _c = new THREE.Color();
 const _up = new THREE.Vector3(0, 1, 0);
-const DUMP_COLORS = ["#2f4a32", "#3a4a55", "#5a3a2a", "#4a4540", "#2a3a4a"];
+const DUMP_COLORS = ["#2f4a32", "#3a4a55", "#5a3a2a", "#4a4540", "#2a3a4a", "#264028", "#4a4a3a", "#3a2f2a", "#2a4a4a"];
 
 type P = { x: number; z: number; rot: number };
 

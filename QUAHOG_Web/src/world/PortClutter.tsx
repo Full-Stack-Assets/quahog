@@ -25,7 +25,8 @@ function inRing(e: number, n: number, ring: [number, number][]): boolean {
   return inside;
 }
 
-const CONTAINER_COLORS = ["#9c3b2f", "#2f5a7a", "#3a6a45", "#8a8f96", "#b5862b", "#6a4a8c"];
+const CONTAINER_COLORS = ["#9c3b2f", "#2f5a7a", "#3a6a45", "#8a8f96", "#b5862b", "#6a4a8c",
+  "#7a2f25", "#274a66", "#2f5a38", "#6a6e72", "#9c7424", "#3a4a8c"];
 
 export function PortClutter({ polys, center }: { polys: [number, number][][]; center: [number, number] }) {
   const L = useMemo(() => {

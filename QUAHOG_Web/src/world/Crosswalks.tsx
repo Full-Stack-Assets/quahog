@@ -8,7 +8,7 @@ import type { Road } from "../slice";
 // the core. Approximate orientation — reads right in motion.
 
 const RADIUS = 290;
-const MAX = 200;
+const MAX = 240;
 const DRIVABLE = new Set(["primary", "secondary", "tertiary", "residential", "unclassified", "living_street"]);
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();

@@ -9,7 +9,7 @@ import type { Road } from "../slice";
 // texture variant; near-core only so it stays cheap.
 
 const RADIUS = 270;
-const MAX = 110;
+const MAX = 150;
 const VARIANTS = 5;
 const OFFSET = 7; // metres from road centerline to the "wall"
 const _m = new THREE.Matrix4();
