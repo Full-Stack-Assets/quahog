@@ -701,4 +701,9 @@ Focus reaffirmed: **the web game is the only playable target.** Work on branch `
 ### 2026-06-24 — "100 to perfection" grind (web game)
 Goal: 100 concrete improvements to the playable web game. Running log:
 - **Streets b1 (1–7):** new `StreetExtras` (stop signs, parking meters, trash cans, traffic cones) curbside; +parked-car density (26→46, tighter spacing); +crosswalk density/radius.
+- **Streets b2 (8–10):** phone booths, newspaper boxes, bollards (fill StreetExtras slots).
+- **Waterfront b3 (11–13):** new `Waterfront` — shoreline timber pilings + mooring buoys.
+- **Roads b4 (14–16):** new `RoadFixtures` — manhole covers + curb storm grates.
+- **Density b5 (17–21):** more furniture/street-signs/traffic-lights/utility-poles/graffiti.
+- **Variety b6 (22–24):** wider parked-car + awning palettes; more ground grime.
 

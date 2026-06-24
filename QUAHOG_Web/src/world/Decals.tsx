@@ -7,8 +7,8 @@ import type { Road } from "../slice";
 // Ground grime: oil stains + worn patches scattered on the streets near the core
 // (Phase 2 weathering). Instanced flat quads just above the asphalt.
 
-const RADIUS = 230;
-const MAX = 200;
+const RADIUS = 260;
+const MAX = 300;
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();

@@ -7,7 +7,8 @@ import type { Road } from "../slice";
 
 const RADIUS = 240;
 const MAX = 46;
-const COLORS = ["#7a2a2a", "#2a3a6a", "#caa24a", "#3a5a3a", "#6a6a6a", "#8c6a3a", "#2a6a6a", "#9a9a9a"];
+const COLORS = ["#7a2a2a", "#2a3a6a", "#caa24a", "#3a5a3a", "#6a6a6a", "#8c6a3a", "#2a6a6a", "#9a9a9a",
+  "#5a1f1f", "#c9c2b4", "#3a2a22", "#1f3a2a", "#7a6a30", "#40506a", "#8a8f96", "#b56a3a"];
 const DRIVABLE = new Set(["primary", "secondary", "tertiary", "residential", "unclassified", "living_street"]);
 
 interface Parked { x: number; z: number; rot: number; type: VehicleType; color: string }
