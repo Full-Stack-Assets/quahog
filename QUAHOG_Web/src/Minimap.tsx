@@ -53,7 +53,7 @@ export function Minimap() {
       ctx.fillRect(0, 0, SIZE, SIZE);
 
       // water polys
-      ctx.fillStyle = "#15384a";
+      ctx.fillStyle = "#1f6fa0";
       for (const ring of water) {
         ctx.beginPath();
         for (let i = 0; i < ring.length; i++) {

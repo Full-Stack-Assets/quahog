@@ -10,7 +10,11 @@ const SIZE = 60000;
 export function Ground() {
   const tex = useMemo(() => {
     const t = makeGroundTexture();
-    t.repeat.set(2000, 2000); // ~30 m per tile across the region
+    // ~150 m per tile: a low repeat over the region keeps the (now near-solid)
+    // texture from moiré-shimmering at grazing distance — the "flickering
+    // satellite" look. The OSM overlays (parks/parking/beach) carry the real
+    // per-material colour; this base is the neutral urban grey between them.
+    t.repeat.set(400, 400);
     return t;
   }, []);
 
@@ -19,7 +23,7 @@ export function Ground() {
       <CuboidCollider args={[SIZE / 2, 0.1, SIZE / 2]} position={[0, -0.1, 0]} friction={1} />
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[SIZE, SIZE]} />
-        <meshStandardMaterial map={tex} color="#7f8470" roughness={0.97} />
+        <meshStandardMaterial map={tex} color="#74766e" roughness={0.97} />
       </mesh>
     </RigidBody>
   );
