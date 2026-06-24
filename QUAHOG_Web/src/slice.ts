@@ -33,6 +33,8 @@ export interface Slice {
   /** Hurricane-barrier breakwater polylines (slice metres). Rendered as a stone
    *  dike and registered as drivable corridors over the water. Optional. */
   barrier?: [number, number][][];
+  /** Real OSM green spaces (parks/gardens/grass/pitches), rendered as lawns. */
+  parks?: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -59,5 +61,10 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
     const br = await fetch(url.replace("slice-", "barrier-"));
     if (br.ok) slice.barrier = (await br.json()) as [number, number][][];
   } catch { /* no barrier file — leave undefined */ }
+  // Optional OSM green spaces.
+  try {
+    const pr = await fetch(url.replace("slice-", "parks-"));
+    if (pr.ok) slice.parks = (await pr.json()) as [number, number][][];
+  } catch { /* no parks file — leave undefined */ }
   return slice;
 }
