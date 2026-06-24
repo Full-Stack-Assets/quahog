@@ -12,10 +12,10 @@ import type { Road } from "../slice";
 // no rigid bodies) so it can never shove the player's physics car — exactly the
 // constraint the Unity version held. Cars here follow the REAL OSM road network.
 
-const PED_COUNT = 20;
+const PED_COUNT = 32;
 const PED_SPEED = 1.5; // m/s
 const PED_WANDER = 32; // half-extent of wander box around origin
-const CAR_COUNT = 14;
+const CAR_COUNT = 20;
 const CAR_SPEED = 9; // m/s
 const CONNECT_R = 10; // how close road endpoints must be to count as joined
 
