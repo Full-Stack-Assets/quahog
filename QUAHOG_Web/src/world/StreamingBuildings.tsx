@@ -99,6 +99,10 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const wall = new THREE.Color(isHero ? HERO_COLOR : pal[i % pal.length]);
     if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
+    // Per-building façade phase (whole-window steps) so neighbours show a
+    // different slice of the 4×4 window grid — varied lit pattern at night.
+    const phaseX = Math.floor(hash * FACADE_GRID) / FACADE_GRID;
+    const phaseY = Math.floor(((i * 0.7548776662) % 1) * FACADE_GRID) / FACADE_GRID;
     const pos = g.attributes.position, nor = g.attributes.normal;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
@@ -115,7 +119,7 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
         const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
         colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
-        uv[v * 2] = horiz / WIN_TILE; uv[v * 2 + 1] = y / WIN_TILE;
+        uv[v * 2] = horiz / WIN_TILE + phaseX; uv[v * 2 + 1] = y / WIN_TILE + phaseY;
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
