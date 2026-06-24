@@ -78,13 +78,13 @@ const MODELED = new Set(["Seamen's Bethel"]);
 // Playable core (slice-local east, north) — drives building colliders + ped density.
 const CORE: [number, number] = [-266, -100];
 
-export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
+export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => void; onProgress?: (f: number) => void }) {
   const [slice, setSlice] = useState<Slice | null>(null);
   const gameId = useGame((s) => s.gameId); // remount per-game props (collectibles) on New Game
 
   useEffect(() => {
     let alive = true;
-    loadSlice()
+    loadSlice("slice-newbedford.json", (f) => { if (alive) onProgress?.(f); })
       .then((s) => {
         if (!alive) return;
         setSlice(s);
@@ -96,7 +96,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
     return () => {
       alive = false;
     };
-  }, [onReady]);
+  }, [onReady, onProgress]);
 
   return (
     <>
