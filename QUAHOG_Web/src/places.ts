@@ -20,6 +20,10 @@ export const CIVIC: Civic[] = [
 export const FAST_TRAVEL: { name: string; pos: [number, number] }[] = [
   { name: "New Bedford Waterfront", pos: [-256, 106] },
   { name: "Downtown New Bedford", pos: [-560, 90] },
+  { name: "Seamen's Bethel", pos: [-272, 106] },
+  { name: "Fort Phoenix (Fairhaven)", pos: [2048, 45] },
+  { name: "Hurricane Barrier", pos: [860, 2000] },
+  { name: "Buttonwood Park", pos: [-2040, -2560] },
   { name: "Off the Hook (Long Island)", pos: [6092, 4470] },
   { name: "Dartmouth Mall", pos: [-3921, 360] },
   { name: "Westport", pos: [-13280, 1781] },
