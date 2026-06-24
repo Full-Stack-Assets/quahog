@@ -109,7 +109,10 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
         colors.set([roof.r, roof.g, roof.b], v * 3);
         uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04;
       } else { // wall: window grid by floor
-        colors.set([wall.r, wall.g, wall.b], v * 3);
+        // Fake ambient occlusion: darken the façade toward street level (grime +
+        // contact shadow) so buildings feel grounded instead of flat-lit boxes.
+        const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
+        colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
         uv[v * 2] = horiz / FLOOR; uv[v * 2 + 1] = y / FLOOR;
       }
@@ -131,15 +134,33 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
 
-  // rooftop clutter (water tanks / AC units) on mid-rise buildings for skyline depth
+  // Rooftop clutter for skyline depth: a primary unit sized by building class
+  // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)
+  // plus an occasional offset vent/chimney — varied per building so the roofline
+  // reads as a real skyline, not a field of identical boxes.
   const roofs = useMemo(() => {
-    const out: [number, number, number][] = [];
+    const out: { x: number; y: number; z: number; sx: number; sy: number; sz: number }[] = [];
+    let i = 0;
     for (const b of buildings) {
-      if (b.height < 7 || b.height > 45) continue;
-      let x = 0, n = 0; for (const p of b.footprint) { x += p[0]; n += p[1]; }
-      const k = b.footprint.length;
-      out.push([x / k, b.height, -(n / k)]);
-      if (out.length > 90) break;
+      if (b.height < 7 || b.height > 60) { i++; continue; }
+      let cx = 0, cn = 0; for (const p of b.footprint) { cx += p[0]; cn += p[1]; }
+      const k = b.footprint.length || 1; cx /= k; cn /= k; const cz = -cn;
+      const h = (i * 0.6180339887) % 1;
+      const h2 = (i * 0.3819660113) % 1;
+
+      if (b.height >= 24)      out.push({ x: cx, y: b.height, z: cz, sx: 2.6 + h * 1.6, sy: 2.4 + h2 * 2.0, sz: 2.6 + h2 * 1.6 }); // penthouse
+      else if (b.height >= 12) out.push({ x: cx, y: b.height, z: cz, sx: 1.6 + h * 0.9, sy: 1.4 + h2 * 1.3, sz: 1.6 + h2 * 0.9 }); // water tank
+      else                     out.push({ x: cx, y: b.height, z: cz, sx: 1.4 + h * 0.7, sy: 0.55 + h2 * 0.4, sz: 1.4 + h * 0.7 }); // AC unit
+
+      // secondary prop offset toward a footprint corner (vent stack / chimney)
+      if (h2 > 0.45 && k >= 1) {
+        const vtx = b.footprint[i % k];
+        const px = cx + (vtx[0] - cx) * 0.55, pn = cn + (vtx[1] - cn) * 0.55;
+        const tall = b.height < 12; // chimney on houses, squat vent elsewhere
+        out.push({ x: px, y: b.height, z: -pn, sx: 0.6 + h * 0.4, sy: tall ? 1.6 + h * 1.0 : 0.7, sz: 0.6 + h2 * 0.4 });
+      }
+      if (out.length > 140) break;
+      i++;
     }
     return out;
   }, [buildings]);
@@ -147,7 +168,13 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   useLayoutEffect(() => {
     const m = roofRef.current;
     if (!m) return;
-    for (let i = 0; i < roofs.length; i++) { _rm.makeTranslation(roofs[i][0], roofs[i][1] + 0.5, roofs[i][2]); m.setMatrixAt(i, _rm); }
+    for (let i = 0; i < roofs.length; i++) {
+      const r = roofs[i];
+      _rs.set(r.sx, r.sy, r.sz);
+      _rp.set(r.x, r.y + r.sy / 2, r.z); // sit on the roof
+      _rm.compose(_rp, _rq, _rs);
+      m.setMatrixAt(i, _rm);
+    }
     m.count = roofs.length;
     m.instanceMatrix.needsUpdate = true;
   }, [roofs]);
@@ -166,13 +193,16 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
     <group>
       {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
       <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
-        <boxGeometry args={[1.8, 1, 1.8]} />
+        <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#55585e" roughness={0.9} />
       </instancedMesh>
     </group>
   );
 }
 const _rm = new THREE.Matrix4();
+const _rq = new THREE.Quaternion();
+const _rs = new THREE.Vector3();
+const _rp = new THREE.Vector3();
 
 export function StreamingBuildings({ fallback, center }: { fallback: Building[]; center: [number, number] }) {
   const [manifest, setManifest] = useState<Manifest | null>(null);
