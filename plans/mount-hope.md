@@ -61,7 +61,7 @@ time; keep the build green; be honest about status.
 - [ ] Bundle code-splitting (main chunk >2 MB; split three/rapier/drei; lazy-load earth page)
 - [ ] Asset loading/preload screen + progress bar
 - [ ] Error boundary + crash overlay on the main game (exists on earth page)
-- [ ] Versioning / changelog; build stamp in-game (commit hash, build date)
+- [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
 - [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
 
 ## 1. World data & pipeline
@@ -72,9 +72,9 @@ time; keep the build green; be honest about status.
 - [ ] Expand slice: full Fall River, Brockton, Cape Cod
 - [ ] Real building heights/levels where OSM-tagged; roof shapes
 - [ ] POI/landmark dataset beyond New Bedford
-- [ ] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety
+- [x] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety — OSM overlays baked to `*-newbedford.json`, rendered by `FlatAreas` (parks/wood/cemetery green, parking grey, beach tan) + `Water`
 - [ ] Sidewalk/curb extraction (separate ped surfaces from roadway)
-- [ ] Railways, bridges, piers as distinct meshes
+- [x] Railways, bridges, piers as distinct meshes — `Rail`, `Bridges`, `Piers`
 - [ ] Street-name + address data for signage/navigation
 
 ## 2. World rendering & environment
@@ -87,8 +87,8 @@ time; keep the build green; be honest about status.
 - [x] Hero landmark: Seamen’s Bethel (modeled + collider)
 - [~] Satellite ground via signed Static Maps proxy — needs Vercel env vars + verify/align
 - [ ] Varied building façades (windows, doors, brick/clapboard/granite materials, storefronts, roof detail)
-- [ ] Curbs, sidewalks, crosswalks, road markings, manholes, potholes
-- [ ] Parks/grass/trees/foliage, planters, hedges
+- [~] Curbs, sidewalks, crosswalks, road markings, manholes, potholes — concrete apron curbs + dedicated sidewalk texture, `Crosswalks`, lane markings, `RoadFixtures` (manholes/grates), asphalt repair patches; potholes still open
+- [x] Parks/grass/trees/foliage, planters, hedges — `FlatAreas` greens + `AreaTrees`/`Props` trees + `Foliage` bushes/tufts
 - [ ] Distant skyline / horizon backdrop + atmospheric haze
 - [ ] Hand-detailed landmarks: Whaling Museum, Custom House, Double Bank, Battleship Cove, Lizzie Borden House, St. Anne’s, Braga/Verde Bridge, the mills
 - [ ] Interiors for key buildings (chapel, bar, gym, safehouse)
@@ -750,3 +750,12 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Daytime window glow:** windows lit orange in full daylight — all three building systems (`StreamingBuildings`, `Buildings`, `SeamensBethel`) ramped emissive on a gentle `1-dayT` curve. Switched to a dusk-gated smoothstep (dayT 0→0.3) so glass is dark by day, lit only near dusk/night. (`8da26f7`)
 - **Trees:** blocky neon-green detail-0 icosahedron crowns → **detail-1 rounded canopies** (`Props`, `AreaTrees`) + muted green palettes. (`8da26f7`)
 - **Deferred (left as-is, by design):** bright horizon band is the no-fog Sky horizon (per the user's "remove fog entirely"); green pillar + magenta beam on the cobble are gameplay markers (collectible glow + mission objective beam), not bugs.
+
+### 2026-06-24 — Material/ground feedback pass + plan housekeeping (player screenshots)
+- **Ground flicker → solid:** flattened `makeGroundTexture` (dropped fine grit speckle + heavy mottle that shimmered like a satellite drape) and lowered the ground repeat to ~150 m/tile; base retoned to neutral urban grey. OSM overlays carry per-material colour (parks/grass/wood/cemetery green, parking grey, beach tan). (`1c29d68`)
+- **Sidewalks standardised:** dedicated `makeSidewalkTexture` (warm concrete + scored slab joints + light aggregate) on the road apron in a warmer/darker tone — one consistent, better sidewalk everywhere. (`1c29d68`)
+- **Beach tan + water bright blue:** beach `#e0cc94`; water `#1f86c9` (was dark teal) + brighter minimap water. (`1c29d68`)
+- **Daytime-glow consistency:** windows (all 3 building systems), vehicle head/taillights, and streetlamps now dusk-gated via `smoothstep(dayT,0,0.3)` — dark by day, lit at dusk/night. Trees rounded (detail-1 crowns) + muted greens. (`8da26f7`, `548970a`)
+- **Build stamp:** `vite.config` injects commit SHA + date; HUD shows `build <sha> · <date>` bottom-left. (`f1e07d6`)
+- **Bethel flag** now ripples in the wind (segmented plane, travelling sine).
+- **Plan housekeeping:** marked land-use layers, rail/bridges/piers, parks/foliage done; curbs/sidewalks + build-stamp partial.
