@@ -53,6 +53,7 @@ export function Awnings({ roads, center }: { roads: Road[]; center: [number, num
     for (let i = 0; i < places.length; i++) {
       _e.set(-0.5, places[i].rot, 0); // tilt the awning down/out
       _q.setFromEuler(_e);
+      _s.set(0.82 + ((i * 0.6180339887) % 1) * 0.5, 1, 0.85 + ((i * 0.382) % 1) * 0.4); // width/depth variety
       _m.compose(_p.set(places[i].x, 3, places[i].z), _q, _s);
       mesh.setMatrixAt(i, _m);
       mesh.setColorAt(i, _c.set(COLORS[places[i].c % COLORS.length]));

@@ -48,6 +48,7 @@ export function Crosswalks({ roads, center }: { roads: Road[]; center: [number, 
     for (let i = 0; i < spots.length; i++) {
       _e.set(-Math.PI / 2, (i % 2) * Math.PI / 2, 0); // lie flat, alternate orientation
       _q.setFromEuler(_e);
+      _s.set(0.85 + ((i * 0.618) % 1) * 0.4, 0.85 + ((i * 0.382) % 1) * 0.4, 1); // size variety per junction
       _m.compose(_p.set(spots[i].x, 0.085, spots[i].z), _q, _s);
       mesh.setMatrixAt(i, _m);
     }
