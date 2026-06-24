@@ -8,7 +8,7 @@ import type { Road } from "../slice";
 // mailboxes, benches, and street trees, laid out along the road edges near the
 // playable core. Everything is instanced so density stays cheap.
 
-const RADIUS = 240; // metres from core to dress
+const RADIUS = 270; // metres from core to dress
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _s = new THREE.Vector3(1, 1, 1);
@@ -44,7 +44,7 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
       if (segLen < 8) continue;
       const ux = dx / segLen, uz = dz / segLen;
       const nx = -uz, nz = ux; // left normal
-      const spacing = 22;
+      const spacing = 17;
       for (let d = 6; d < segLen; d += spacing) {
         const cx = x1 + ux * d, cz = z1 + uz * d;
         if (Math.hypot(cx - center[0], cz - center[1]) > RADIUS) continue;
@@ -60,7 +60,7 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
         else if (kind === 4) mailboxes.push({ x: px, z: pz, rot });
         else benches.push({ x: px, z: pz, rot });
         n++;
-        if (lamps.length + trees.length > 1400) break; // hard cap
+        if (lamps.length + trees.length > 2200) break; // hard cap
       }
     }
   }

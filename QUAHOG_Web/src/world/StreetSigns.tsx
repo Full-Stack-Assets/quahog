@@ -5,8 +5,8 @@ import type { Road } from "../slice";
 // Real street-name signs (§33): green MUTCD-style blades on poles at named-road
 // endpoints near the core. One sign per unique name, capped for performance.
 
-const RADIUS = 240;
-const MAX_SIGNS = 36;
+const RADIUS = 290;
+const MAX_SIGNS = 64;
 
 interface Sign { x: number; z: number; rot: number; name: string }
 

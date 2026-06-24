@@ -7,8 +7,8 @@ import type { Road } from "../slice";
 // Decorative period traffic signals (§7/§33): mast-arm signal heads at a handful
 // of major-road points near the core, cycling red→green→amber on a timer.
 
-const RADIUS = 150;
-const MAX = 10;
+const RADIUS = 210;
+const MAX = 18;
 const MAJOR = new Set(["primary", "secondary", "tertiary"]);
 
 export function TrafficLights({ roads, center }: { roads: Road[]; center: [number, number] }) {

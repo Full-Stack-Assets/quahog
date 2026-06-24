@@ -5,8 +5,8 @@ import type { Road } from "../slice";
 // Utility poles + slung wires along the streets near the core (§7). Poles are
 // instanced; wires are one merged catenary line set. Cheap period set-dressing.
 
-const RADIUS = 220;
-const MAX = 220;
+const RADIUS = 260;
+const MAX = 300;
 const _m = new THREE.Matrix4();
 const _p = new THREE.Vector3();
 const _q = new THREE.Quaternion();

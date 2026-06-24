@@ -8,8 +8,8 @@ import type { Road } from "../slice";
 // back from the street where building walls are, facing the road. Instanced per
 // texture variant; near-core only so it stays cheap.
 
-const RADIUS = 240;
-const MAX = 60;
+const RADIUS = 270;
+const MAX = 110;
 const VARIANTS = 5;
 const OFFSET = 7; // metres from road centerline to the "wall"
 const _m = new THREE.Matrix4();
