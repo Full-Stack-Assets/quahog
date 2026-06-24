@@ -74,7 +74,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         if (!alive) return;
         setSlice(s);
         useGame.getState().setSlice(s);
-        setWaterZones(s.water ?? [], s.roads);
+        setWaterZones(s.water ?? [], s.roads, s.islands ?? []);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
@@ -113,7 +113,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         )}
       </Physics>
 
-      {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
+      {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}

@@ -27,6 +27,9 @@ export interface Slice {
   buildings: Building[];
   roads: Road[];
   water: [number, number][][];
+  /** Land polygons (small islands/wharves the OSM water didn't cut out). Cut as
+   *  holes in the water so they render as land. Optional — may be absent. */
+  islands?: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -41,5 +44,12 @@ export const toWorld = (p: [number, number], y = 0): [number, number, number] =>
 export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`failed to load slice: ${res.status}`);
-  return (await res.json()) as Slice;
+  const slice = (await res.json()) as Slice;
+  // Optional island/wharf land polygons (islands-<name>.json). Absent file is
+  // fine — just no holes get cut from the water.
+  try {
+    const ir = await fetch(url.replace("slice-", "islands-"));
+    if (ir.ok) slice.islands = (await ir.json()) as [number, number][][];
+  } catch { /* no islands file — leave undefined */ }
+  return slice;
 }

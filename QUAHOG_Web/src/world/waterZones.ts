@@ -7,10 +7,12 @@ import type { Road } from "../slice";
 // slice-local [east, north]; a world point (wx, wz) has east=wx, north=-wz.
 
 let waterRings: [number, number][][] = [];
+let islandRings: [number, number][][] = []; // land cut out of the water (islands/wharves)
 let roadSegs: number[] = []; // flattened ax,an,bx,bn,halfWidth, …
 
-export function setWaterZones(water: [number, number][][], roads: Road[]) {
+export function setWaterZones(water: [number, number][][], roads: Road[], islands: [number, number][][] = []) {
   waterRings = water ?? [];
+  islandRings = islands ?? [];
   roadSegs = [];
   // Every road becomes a "safe corridor": if you're on one you never sink, even
   // where it crosses water. Road-proximity is only ever evaluated while a point
@@ -52,6 +54,8 @@ function nearRoad(px: number, pn: number): boolean {
 export function isBlockedWater(wx: number, wz: number): boolean {
   if (!waterRings.length) return false;
   const px = wx, pn = -wz; // world → slice [east, north]
+  // On a derived island/wharf (land cut out of the water) → never blocked.
+  for (const isl of islandRings) if (pointInRing(px, pn, isl)) return false;
   // Fast path: if you're not inside any water polygon you're fine (the common
   // case on land), and we skip the road scan entirely.
   let inWater = false;
