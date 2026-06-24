@@ -86,16 +86,32 @@ export function makeFacadeMaps() {
   // wall
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
-  // window block, centred with a margin (mullions = wall gaps between cells)
-  const m = 22, w = S - m * 2;
-  // glass (albedo): dark, slightly blue
-  a.fillStyle = "#2b3440"; a.fillRect(m, m, w, w);
-  a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(m, m, w, w);
-  a.beginPath(); a.moveTo(S / 2, m); a.lineTo(S / 2, S - m); a.moveTo(m, S / 2); a.lineTo(S - m, S / 2); a.stroke();
-  // lit window (emissive): warm, with panes
-  e.fillStyle = "#ffcf8a"; e.fillRect(m, m, w, w);
-  e.fillStyle = "#000000"; e.lineWidth = 0;
-  e.fillRect(S / 2 - 2, m, 4, w); e.fillRect(m, S / 2 - 2, w, 4); // dark mullions
+  // window opening, centred, taller than wide (typical sash window)
+  const mx = 30, my = 20, w = S - mx * 2, h = S - my * 2;
+  // --- albedo ---
+  // light frame/casing around the opening
+  a.fillStyle = "#d7d4cc"; a.fillRect(mx - 4, my - 4, w + 8, h + 8);
+  // glass with a vertical sky-reflection gradient (dark at top → lighter low)
+  const gg = a.createLinearGradient(0, my, 0, my + h);
+  gg.addColorStop(0, "#1c252f"); gg.addColorStop(0.55, "#2c3947"); gg.addColorStop(1, "#3a4856");
+  a.fillStyle = gg; a.fillRect(mx, my, w, h);
+  // a soft diagonal glare streak across the panes
+  a.save(); a.beginPath(); a.rect(mx, my, w, h); a.clip();
+  a.strokeStyle = "rgba(210,225,235,0.18)"; a.lineWidth = 7;
+  a.beginPath(); a.moveTo(mx - 6, my + h * 0.7); a.lineTo(mx + w * 0.7, my - 6); a.stroke();
+  a.restore();
+  // muntins: 2 vertical × 3 horizontal panes, plus the meeting rail a touch thicker
+  a.fillStyle = "#cfccc4";
+  a.fillRect(mx + w / 2 - 1.5, my, 3, h);                     // vertical mullion
+  for (const fy of [my + h / 3, my + (2 * h) / 3]) a.fillRect(mx, fy - 1.5, w, 3);
+  a.fillStyle = "#bfbcb4"; a.fillRect(mx, my + h / 2 - 2, w, 4); // meeting rail
+  // sill shadow under the opening
+  a.fillStyle = "rgba(0,0,0,0.18)"; a.fillRect(mx - 4, my + h + 4, w + 8, 4);
+  // --- emissive (lit at night) ---
+  e.fillStyle = "#ffcf8a"; e.fillRect(mx, my, w, h);
+  e.fillStyle = "#000000";
+  e.fillRect(mx + w / 2 - 1.5, my, 3, h);
+  for (const fy of [my + h / 3, my + h / 2, my + (2 * h) / 3]) e.fillRect(mx, fy - 1.5, w, 3);
   const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
   const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
   _facade = { albedo, emissive };
