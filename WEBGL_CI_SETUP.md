@@ -85,3 +85,42 @@ Once the required secrets are set:
   Unity 6 version and push again.
 - Private repos consume Actions minutes (WebGL builds are long). Public repos
   build for free.
+
+---
+
+## Troubleshooting
+
+### `Error: Code 20110 ... (status: serial invalid)` → activation fails after 5 retries
+
+This is the failure that has blocked every CI build so far. The build log shows
+login and entitlement activation **succeeding**, then aborting:
+
+```
+User *** logged in successfully
+[Licensing::Module] Successfully activated the entitlement license
+[Licensing::Client] Error: Code 20110 while processing request (status: serial invalid)
+[Licensing::Module] License activation has failed. Aborting.
+Activation failed after 5 retries
+```
+
+`UNITY_EMAIL` / `UNITY_PASSWORD` are correct (login succeeds) — **the broken
+secret is `UNITY_SERIAL`.** `game-ci/unity-builder` switches to serial-based
+(Pro/Plus) activation whenever `UNITY_SERIAL` is **set and non-empty**, and the
+serial it was given is invalid (`20110`).
+
+**Fix — pick the path that matches your license:**
+
+- **Free Personal license (most common here):** there is no serial. **Delete the
+  `UNITY_SERIAL` secret entirely** (Settings → Secrets and variables → Actions →
+  `UNITY_SERIAL` → Remove) and make sure `UNITY_LICENSE` holds the full contents
+  of your `.ulf` file (see *Getting `UNITY_LICENSE`* above). An empty/whitespace
+  value does **not** count as unset — it must be removed.
+- **Pro / Plus:** keep `UNITY_SERIAL` but set it to your real serial in the exact
+  format `XX-XXXX-XXXX-XXXX-XXXX-XXXX` (and remove `UNITY_LICENSE` so the serial
+  path is used). A typo, trailing newline, or placeholder value triggers `20110`.
+
+After fixing the secret, re-run **Actions → Build & Deploy WebGL → Run workflow**
+(the trigger is `workflow_dispatch` — manual — so a bad config doesn't spam
+20-minute failing builds on every push). Once it goes green you can re-enable the
+auto-build-on-push trigger that is commented out at the top of
+`deploy-webgl.yml`.
