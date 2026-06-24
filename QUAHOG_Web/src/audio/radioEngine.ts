@@ -164,6 +164,13 @@ const ADS = [
   "This weekend at the Madeira Field — carne de espeto, malasadas, and the carousel that's older than your grandfather.",
   "Sal's Marine Supply, Pope's Island. Nets, traps, and lies about the one that got away. All half off.",
   "Buy American, buy local, buy a clam roll the size of your fist. That's the South Coast guarantee.",
+  "Tia Conceição's Malasadas — fried to order on Acushnet Ave. Get there before the church crowd or get nothin'.",
+  "Fort Phoenix Bait & Tackle, Fairhaven side. Bloodworms, beer, and bad advice. Open since the barrier went up.",
+  "The Zeiterion's got a show this weekend — put on a clean shirt and pretend you like culture, would ya.",
+  "Cuttyhunk Ferry — if the harbor's got you down, an hour on the water fixes most things. Bring your own coffee.",
+  "Medeiros Auto Body — we fix what the cobblestones break. And downtown, brother, the cobblestones break everything.",
+  "Scallops landed fresh at the State Pier this mornin'. If it's white and sweet and costs too much, it's local.",
+  "AHA Night downtown, second Thursday — art, history, architecture, and somewhere to park, eventually.",
 ];
 
 const IDS = [
@@ -172,6 +179,10 @@ const IDS = [
   "From the harbor to the highway.",
   "Turn it up.",
   "Nobody does it like we do it.",
+  "Whaling City radio.",
+  "From Clark's Point to the Braga Bridge.",
+  "The sound of the working waterfront.",
+  "Keep her between the buoys.",
 ];
 
 const NEWS = [
@@ -179,14 +190,21 @@ const NEWS = [
   "City council voted to study the pothole problem. The study fell in a pothole. We'll keep you posted.",
   "Fish prices up at the auction this mornin' — good news for the fleet, bad news for your Friday supper.",
   "The bridge will be openin' on the half hour all weekend, so plan accordingly, or don't, and suffer.",
+  "Hurricane barrier gates tested today — everything still works, which around here counts as a miracle.",
+  "Feast of the Blessed Sacrament committee says the kitchen's open and the carne de espeto's on. Bring an appetite and a tow truck.",
+  "Harbormaster reminds you the channel's for boats, the road's for cars, and never the twain shall meet. Usually.",
+  "Whaling Museum's got a new exhibit on the lightkeepers. Admission's free if you look like you already paid.",
 ];
 
 const WANTED = [
   "Scanner's lightin' up down by the waterfront — sounds like somebody's havin' an exciting evening. Stay clear, folks.",
   "Lotta blue lights downtown tonight. Whatever you did, pal — and somebody did somethin' — knock it off.",
   "Police all over the South End. If that's one of you listenin', maybe ease off the gas, huh?",
+  "Cruisers headed over the Fairhaven bridge in a hurry. Somebody's day just got a lot longer.",
+  "They got the cobblestones blocked off downtown. Whatever you're runnin' from, it ain't worth a busted axle.",
 ];
-const RAIN = ["Wipers on, comin' down steady off the bay.", "Roads are slick as a politician's promise tonight — easy out there."];
+const RAIN = ["Wipers on, comin' down steady off the bay.", "Roads are slick as a politician's promise tonight — easy out there.",
+  "Rain comin' sideways off Buzzards Bay — keep both hands on the wheel.", "Storm drains downtown are doin' their usual nothin'. Watch the puddles."];
 const FOG = ["Pea-soup fog on the harbor — foghorn's earnin' its keep.", "Can't see the end of the pier in this fog. Drive like it."];
 
 class RadioEngine {
