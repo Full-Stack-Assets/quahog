@@ -32,6 +32,7 @@ import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
 import { Waterfront } from "./world/Waterfront";
+import { PortClutter } from "./world/PortClutter";
 import { Marina } from "./world/Marina";
 import { Gulls } from "./world/Gulls";
 import { SkidMarks } from "./world/SkidMarks";
@@ -122,6 +123,9 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       )}
       {slice && slice.water?.length > 0 && (
         <Waterfront polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
+      {slice && slice.water?.length > 0 && (
+        <PortClutter polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
       <Marina />
       <Gulls />
