@@ -15,6 +15,11 @@ const HIGHWAY = new Set([
   "motorway_link", "trunk_link", "primary_link",
 ]);
 const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
+// Cobblestone historic district — the streets around Johnny Cake Hill / the
+// Whaling Historic District (Seamen's Bethel + the hero buildings) are real
+// granite-sett cobblestone. Drivable streets whose midpoint falls in this radius
+// render on the cobble surface to match the district.
+const HIST_CX = -230, HIST_CN = -60, HIST_R = 185;
 const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
@@ -84,6 +89,7 @@ export function Roads({ roads }: { roads: Road[] }) {
       if (!c) { c = { cb: [], sf: [], hw: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
       if (HIGHWAY.has(r.highway)) c.hw.push(r);
       else if (COBBLE.has(r.highway)) c.cb.push(r);
+      else if (Math.hypot(mid[0] - HIST_CX, mid[1] - HIST_CN) < HIST_R) c.cb.push(r); // historic cobblestone
       else c.sf.push(r);
     }
     return [...cells.values()].map((c) => ({
