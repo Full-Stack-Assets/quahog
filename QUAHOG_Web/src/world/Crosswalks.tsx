@@ -7,8 +7,8 @@ import type { Road } from "../slice";
 // 3+ drivable ends meet; each gets a flat zebra patch. Instanced + capped near
 // the core. Approximate orientation — reads right in motion.
 
-const RADIUS = 240;
-const MAX = 90;
+const RADIUS = 290;
+const MAX = 150;
 const DRIVABLE = new Set(["primary", "secondary", "tertiary", "residential", "unclassified", "living_street"]);
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();

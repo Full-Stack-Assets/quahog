@@ -696,4 +696,9 @@ Focus reaffirmed: **the web game is the only playable target.** Work on branch `
 - **Buildings (web):** parapet/cornice caps, masonry+sash façade, AO gradient, varied rooftop clutter, night-lit window variation, mixed window styles (4×4 grid). See checklist item above.
 - **Road-over-water fix (web):** `waterZones.ts` now opens a crossing corridor for any road segment whose midpoint lies over a water polygon, not only `bridge=yes` roads — fixes "Into the drink" on untagged causeways/spans while open harbour still blocks.
 - **Unity GisCity pipeline (roadmap #2/#4/#5):** `fetch_osm.py` parses multipolygon **relations + holes** (tested offline); `GeoJson`/`EarClipping`/`GisCity` get courtyards/holes (keyhole-bridged triangulation), inner walls, and per-building category palettes/heights. **Not gate-verified** — the sandbox egress policy blocks the .NET SDK download; `tools/csharp/setup.sh` now falls back to the Microsoft CDN so a full-access session can run the gate.
+- **Fog removed + islands as land + clean ground:** removed all distance fog; cut Fish/Pope's Island + wharves out of the water (render as land, `derive_islands.py` → `islands-newbedford.json`); dropped the washed satellite drape for one retoned stylized ground.
+
+### 2026-06-24 — "100 to perfection" grind (web game)
+Goal: 100 concrete improvements to the playable web game. Running log:
+- **Streets b1 (1–7):** new `StreetExtras` (stop signs, parking meters, trash cans, traffic cones) curbside; +parked-car density (26→46, tighter spacing); +crosswalk density/radius.
 
