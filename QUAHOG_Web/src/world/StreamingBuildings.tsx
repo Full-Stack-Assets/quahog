@@ -59,6 +59,41 @@ function hipRoof(b: Building, roofH: number, col: THREE.Color): THREE.BufferGeom
   return g;
 }
 
+// A parapet: a short wall band standing just above the roof line, around the
+// footprint perimeter, so flat-roofed commercial/mill/downtown blocks read with
+// a real coping edge instead of a bare extruded-box top. Outward winding is
+// derived from each edge vs. the centroid (deterministic, no guesswork).
+function parapet(b: Building, h: number, col: THREE.Color): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3) return null;
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const cz = -cn; // centroid in world z
+  const y0 = b.height, y1 = b.height + h;
+  const pos: number[] = [], colr: number[] = [], uv: number[] = [];
+  const push = (x: number, y: number, z: number) => { pos.push(x, y, z); colr.push(col.r, col.g, col.b); uv.push(0.04, 0.04); };
+  for (let i = 0; i < fp.length; i++) {
+    const [e0, n0] = fp[i], [e1, n1] = fp[(i + 1) % fp.length];
+    const ax = e0, az = -n0, bx = e1, bz = -n1;
+    const ex = bx - ax, ez = bz - az;
+    if (Math.hypot(ex, ez) < 1e-4) continue;
+    const mx = (ax + bx) / 2 - cx, mz = (az + bz) / 2 - cz; // edge midpoint → outward
+    const outward = (-ez) * mx + ex * mz >= 0; // sign of the (A0,B0,B1) normal
+    const A0: [number, number, number] = [ax, y0, az], B0: [number, number, number] = [bx, y0, bz];
+    const B1: [number, number, number] = [bx, y1, bz], A1: [number, number, number] = [ax, y1, az];
+    if (outward) { push(...A0); push(...B0); push(...B1); push(...A0); push(...B1); push(...A1); }
+    else { push(...A0); push(...B1); push(...B0); push(...A0); push(...A1); push(...B1); }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(colr, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+
 function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
   const geoms: THREE.BufferGeometry[] = [];
   buildings.forEach((b, i) => {
@@ -95,10 +130,16 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     geoms.push(g);
     // short residential buildings get a pitched hip roof so they don't read as
-    // flat-topped boxes (deterministic per-building roof pitch).
+    // flat-topped boxes; taller commercial/downtown blocks get a parapet coping
+    // band instead (both deterministic per-building).
     if (!isHero && b.height < 12) {
       const r = hipRoof(b, 1.5 + ((i * 0.6180339887) % 1) * 1.6, roof);
       if (r) geoms.push(r);
+    } else if (!isHero) {
+      // coping tone: the wall colour lightened toward limestone/concrete
+      const coping = wall.clone().lerp(new THREE.Color("#cfc9bc"), 0.4);
+      const p = parapet(b, 0.7 + ((i * 0.6180339887) % 1) * 0.7, coping);
+      if (p) geoms.push(p);
     }
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
