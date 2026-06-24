@@ -24,6 +24,7 @@ internal static class Program
 
         TestMiniJsonAndGeoJson(args);
         TestEarClipper();
+        TestHolesAndCategories();
         TestGisCityBuild(args);
 
         Console.WriteLine($"\n=== {_passed} passed, {_failed} failed ===");
@@ -113,6 +114,81 @@ internal static class Program
         // Clockwise winding still triangulates (auto-orient).
         var cw = new[] { new Vector2(0, 0), new Vector2(0, 10), new Vector2(10, 10), new Vector2(10, 0) };
         Check("clockwise square -> 6 indices", EarClipper.Triangulate(cw).Length == 6);
+    }
+
+    // ---- Holes (courtyards/islands) + building categories ---------------
+    private static void TestHolesAndCategories()
+    {
+        Console.WriteLine("\n[Holes + categories]");
+
+        // A 10x10 square with a 4x4 hole -> triangulation should cover 100-16 = 84.
+        var outer = new[]
+        {
+            new Vector2(0, 0), new Vector2(10, 0), new Vector2(10, 10), new Vector2(0, 10)
+        };
+        var hole = new Vector2[] // clockwise on purpose; EnsureWinding must fix it
+        {
+            new Vector2(3, 3), new Vector2(3, 7), new Vector2(7, 7), new Vector2(7, 3)
+        };
+        int[] idx = EarClipper.Triangulate(outer, new List<Vector2[]> { hole }, out Vector2[] merged);
+        Check($"holed square merged has 10 verts (got {merged.Length})", merged.Length == 10);
+        Check("holed square indices in range", AllInRange(idx, merged.Length));
+        float area = TriArea(merged, idx);
+        Check($"holed square area ~84 (got {area:0.0})", Math.Abs(area - 84f) < 0.5f);
+
+        // No holes via the overload must match the plain triangulator.
+        int[] plain = EarClipper.Triangulate(outer, new List<Vector2[]>(), out Vector2[] m2);
+        Check($"no-hole overload -> 6 indices (got {plain.Length})", plain.Length == 6 && m2.Length == 4);
+
+        // GeoJSON Polygon with an inner ring -> one building with one hole.
+        const string holeJson = @"{""type"":""FeatureCollection"",""features"":[
+          {""type"":""Feature"",""properties"":{""building"":""yes"",""height"":""12""},
+           ""geometry"":{""type"":""Polygon"",""coordinates"":[
+             [[-70.92,41.63],[-70.918,41.63],[-70.918,41.632],[-70.92,41.632],[-70.92,41.63]],
+             [[-70.9195,41.6305],[-70.9185,41.6305],[-70.9185,41.6315],[-70.9195,41.6315],[-70.9195,41.6305]]
+           ]}}]}";
+        GeoData hd = GeoJson.Parse(holeJson);
+        Check($"holed building parsed (got {hd.Buildings.Count})", hd.Buildings.Count == 1);
+        Check($"building has 1 hole (got {(hd.Buildings.Count > 0 ? hd.Buildings[0].Holes.Count : -1)})",
+              hd.Buildings.Count > 0 && hd.Buildings[0].Holes.Count == 1);
+
+        // Categories from the building tag.
+        Check("building=industrial -> Industrial", CatOf("industrial") == BuildingCategory.Industrial);
+        Check("building=house -> Residential", CatOf("house") == BuildingCategory.Residential);
+        Check("building=retail -> Commercial", CatOf("retail") == BuildingCategory.Commercial);
+        Check("building=church -> Civic", CatOf("church") == BuildingCategory.Civic);
+        Check("building=yes -> Default", CatOf("yes") == BuildingCategory.Default);
+
+        // Untagged-height buildings of different categories get different defaults.
+        float hRes = HeightOf("house"), hCivic = HeightOf("church");
+        Check($"residential default < civic default ({hRes:0.0} < {hCivic:0.0})", hRes < hCivic);
+    }
+
+    private static BuildingCategory CatOf(string buildingTag)
+    {
+        string j = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"properties\":{\"building\":\""
+            + buildingTag + "\"},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-70.92,41.63],[-70.919,41.63],[-70.919,41.631],[-70.92,41.631],[-70.92,41.63]]]}}]}";
+        GeoData d = GeoJson.Parse(j);
+        return d.Buildings.Count > 0 ? d.Buildings[0].Category : BuildingCategory.Default;
+    }
+
+    private static float HeightOf(string buildingTag)
+    {
+        string j = "{\"type\":\"FeatureCollection\",\"features\":[{\"type\":\"Feature\",\"properties\":{\"building\":\""
+            + buildingTag + "\"},\"geometry\":{\"type\":\"Polygon\",\"coordinates\":[[[-70.92,41.63],[-70.919,41.63],[-70.919,41.631],[-70.92,41.631],[-70.92,41.63]]]}}]}";
+        GeoData d = GeoJson.Parse(j);
+        return d.Buildings.Count > 0 ? d.Buildings[0].Height : 0f;
+    }
+
+    private static float TriArea(Vector2[] pts, int[] idx)
+    {
+        float sum = 0f;
+        for (int t = 0; t + 2 < idx.Length; t += 3)
+        {
+            Vector2 a = pts[idx[t]], b = pts[idx[t + 1]], c = pts[idx[t + 2]];
+            sum += Math.Abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) * 0.5f;
+        }
+        return sum;
     }
 
     // ---- Full GIS city build (smoke) ------------------------------------

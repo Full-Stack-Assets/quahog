@@ -685,9 +685,15 @@ Per the user: **stop all city/region expansion. Make the New Bedford core genuin
 - Wired uploaded audio: Maré Alta plays 3 real songs; The Rage plays jingles.
 - **Rendering pass:** sRGB colorspace on all procedural textures (fixes washed-out look), anisotropy ×16, 256px asphalt, building façade normal-relief, shadow bias.
 - **"New Bedford to perfection" checklist (open):**
-  - [ ] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look
+  - [x] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look — *web `StreamingBuildings`: parapet/cornice rim walls (recessed roofs + roofline variation), masonry-course façade with 2×3 sash + a 4×4 window-style grid (sash/shorter/arched), street-level AO gradient, varied rooftop skyline (AC/tank/penthouse + vents), night-lit window variation. Still open: genuine per-building façade variety (one shared map today), ground-floor storefront banding.*
   - [ ] Streets: surfaces, intersections, curbs/sidewalks, signage, parked density
   - [ ] Lighting/atmosphere: ambient occlusion, color grade, fog, reflections
   - [ ] Waterfront: piers, working docks, boats, hurricane barrier, water quality
   - [ ] Landmarks: Seamen's Bethel + downtown accuracy, hero buildings
+
+### 2026-06-24 — Web buildings pass + road-over-water fix; Unity map-pipeline groundwork
+Focus reaffirmed: **the web game is the only playable target.** Work on branch `claude/task-1-complete-0bn2xh` (draft PR #25).
+- **Buildings (web):** parapet/cornice caps, masonry+sash façade, AO gradient, varied rooftop clutter, night-lit window variation, mixed window styles (4×4 grid). See checklist item above.
+- **Road-over-water fix (web):** `waterZones.ts` now opens a crossing corridor for any road segment whose midpoint lies over a water polygon, not only `bridge=yes` roads — fixes "Into the drink" on untagged causeways/spans while open harbour still blocks.
+- **Unity GisCity pipeline (roadmap #2/#4/#5):** `fetch_osm.py` parses multipolygon **relations + holes** (tested offline); `GeoJson`/`EarClipping`/`GisCity` get courtyards/holes (keyhole-bridged triangulation), inner walls, and per-building category palettes/heights. **Not gate-verified** — the sandbox egress policy blocks the .NET SDK download; `tools/csharp/setup.sh` now falls back to the Microsoft CDN so a full-access session can run the gate.
 
