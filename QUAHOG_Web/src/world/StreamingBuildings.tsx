@@ -22,8 +22,17 @@ const WINDOW_GLOW = new THREE.Color("#ffcf8a");
 const WARM = ["#7e463a", "#8a5a48", "#9c6347", "#a8514a", "#6e4a3e", "#b0a48c", "#c2bcae", "#5e6b66", "#8a9488", "#b8b0a0"];
 const GREY = ["#7c7e88", "#9aa0a6", "#8f8c86", "#6f7178", "#a7a59c", "#86837c"];
 const ROOF = ["#2c2a28", "#37322c", "#31343a", "#2a2e30", "#3a352f"]; // tar / gravel roofs
-const HERO_COLOR = "#caa24a";
-const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
+// Real materials for the Johnny Cake Hill hero buildings (was a flat gold marker):
+// white clapboard for the wood Federal/Greek-revival ones, red brick + granite for
+// the institutional ones.
+const HERO_COLORS: Record<string, string> = {
+  "Mariner's Home": "#dcd8cc",            // white clapboard
+  "New Bedford Whaling Museum": "#7c3b30", // red brick
+  "Double Bank Building": "#bcb6a8",       // granite Greek revival
+  "Rodman Candleworks": "#c4bdaf",         // granite
+  "Seamen's Bethel": "#e6e2d8",            // white clapboard (also modelled separately)
+};
+const HERO = new Set(Object.keys(HERO_COLORS));
 const FLOOR = 3.2; // metres per window row
 const WIN_TILE = FLOOR * FACADE_GRID; // metres spanned by one façade texture tile
 
@@ -96,7 +105,7 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const pal = b.height >= 14 ? GREY : WARM;
     const isHero = !!(b.name && HERO.has(b.name));
     const hash = (i * 0.6180339887) % 1;
-    const wall = new THREE.Color(isHero ? HERO_COLOR : pal[i % pal.length]);
+    const wall = new THREE.Color(isHero ? (HERO_COLORS[b.name!] ?? "#c2bcae") : pal[i % pal.length]);
     if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
     // Per-building façade phase (whole-window steps) so neighbours show a
