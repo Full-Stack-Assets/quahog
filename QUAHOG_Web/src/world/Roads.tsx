@@ -6,7 +6,7 @@ import { useGame } from "../store";
 import type { Road } from "../slice";
 
 const CELL = 1000;       // road chunk size (m)
-const DRAW_DIST = 1500;  // hide road chunks beyond this from the camera
+const DRAW_DIST = 2200;  // hide road chunks beyond this from the camera (open, fog-free view)
 
 // Road classes → surface material. Highways get lane markings; vehicular streets
 // get plain asphalt; footways/pedestrian/steps get historic cobblestone.
