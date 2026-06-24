@@ -9,6 +9,7 @@ import { CharacterMenu } from "./ui/CharacterMenu";
 import { BigMap } from "./ui/BigMap";
 import { TouchControls } from "./ui/TouchControls";
 import { Toasts } from "./ui/Toasts";
+import { DebugStats } from "./ui/DebugStats";
 import { StartMenu } from "./ui/StartMenu";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
@@ -45,6 +46,7 @@ export default function App() {
       <TouchControls />
       <Toasts />
       <Radio />
+      <DebugStats />
       <StartMenu sliceName={sliceName} progress={progress} />
     </>
   );
