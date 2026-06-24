@@ -57,10 +57,10 @@ time; keep the build green; be honest about status.
 - [x] Engine reconciliation: R3F canonical; Unity/Godot marked legacy
 - [x] Game named **Mount Hope**
 - [x] Design docs: README, ROADMAP, Characters & Missions bible, Gemini build spec
-- [ ] CI: typecheck/build check on PRs
+- [x] CI: typecheck/build check on PRs — `.github/workflows/web-ci.yml` runs `tsc && vite build` on PRs/pushes touching `QUAHOG_Web` (uses `npm install`; lockfile drifts from package.json — `@vercel/blob` missing from the lock)
 - [ ] Bundle code-splitting (main chunk >2 MB; split three/rapier/drei; lazy-load earth page)
 - [ ] Asset loading/preload screen + progress bar
-- [ ] Error boundary + crash overlay on the main game (exists on earth page)
+- [x] Error boundary + crash overlay on the main game — `ui/ErrorBoundary.tsx` wraps `<App>` in `main.tsx` (recoverable overlay + reload + build stamp)
 - [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
 - [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
 
@@ -759,3 +759,8 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Build stamp:** `vite.config` injects commit SHA + date; HUD shows `build <sha> · <date>` bottom-left. (`f1e07d6`)
 - **Bethel flag** now ripples in the wind (segmented plane, travelling sine).
 - **Plan housekeeping:** marked land-use layers, rail/bridges/piers, parks/foliage done; curbs/sidewalks + build-stamp partial.
+
+### 2026-06-24 — Resilience + CI batch (non-visual, safe during visual iteration)
+- **Build stamp** in HUD (commit SHA + date) so the live deploy is unambiguous after a hard refresh. (`f1e07d6`)
+- **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
+- **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced a real latent issue — `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so `npm ci` hard-fails. Vercel deploys with `npm install`, so the app builds fine; CI switched to `npm install` to match. **Lockfile should be refreshed with `npm install` locally.** (`e80c49c`→`67a8669`)
