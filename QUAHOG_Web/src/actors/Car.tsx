@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
-import { CuboidCollider, RigidBody, type RapierRigidBody } from "@react-three/rapier";
+import { CuboidCollider, RigidBody, useRapier, type RapierRigidBody } from "@react-three/rapier";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { Vehicle, type VehicleType } from "../earth/Vehicles";
 import { shared, addShake, addImpact } from "../shared";
@@ -20,6 +20,8 @@ export function Car() {
   const carColor = useGame((s) => s.playerCarColor);
   const smoke = useRef(0);
   const nearMiss = useRef(0);
+  const { world, rapier } = useRapier();
+  const ray = useRef(new rapier.Ray({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 1 }));
 
   useEffect(() => {
     shared.car = body.current;
@@ -59,9 +61,25 @@ export function Car() {
     const target =
       handbrake ? 0 : ax.y > 0 ? MAX_SPEED * ax.y : ax.y < 0 ? -REVERSE_SPEED * -ax.y : 0;
     const rate = handbrake ? 4.5 : ax.y !== 0 ? 2.2 : 1.2;
-    const nf = THREE.MathUtils.lerp(vForward, target, 1 - Math.exp(-dt * rate));
+    let nf = THREE.MathUtils.lerp(vForward, target, 1 - Math.exp(-dt * rate));
 
     const nfwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+
+    // forward wall-probe: the solver alone can't hold a trimesh wall when we
+    // re-inject full forward velocity every frame (that's how the car "drove
+    // through buildings"). Raycast in the travel direction and refuse to drive
+    // into anything within the body's reach, while still allowing reverse.
+    if (Math.abs(nf) > 0.5) {
+      const sign = nf < 0 ? -1 : 1;
+      const tr = rb.translation();
+      const r = ray.current;
+      r.origin.x = tr.x; r.origin.y = tr.y + 0.4; r.origin.z = tr.z;
+      r.dir.x = nfwd.x * sign; r.dir.y = 0; r.dir.z = nfwd.z * sign;
+      const CLEAR = 2.8; // collider half-length (2.1) + a small buffer
+      const hit = world.castRay(r, CLEAR, true, undefined, undefined, undefined, rb);
+      if (hit && hit.timeOfImpact < CLEAR) nf = 0; // wall ahead → don't ram through
+    }
+
     rb.setLinvel({ x: nfwd.x * nf, y: v.y, z: nfwd.z * nf }, true);
     rb.setRotation(
       { x: 0, y: Math.sin(yaw / 2), z: 0, w: Math.cos(yaw / 2) },
