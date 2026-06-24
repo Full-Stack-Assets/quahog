@@ -25,6 +25,59 @@ const ROOF = ["#2c2a28", "#37322c", "#31343a", "#2a2e30", "#3a352f"]; // tar / g
 const HERO_COLOR = "#caa24a";
 const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
 const FLOOR = 3.2; // metres per window row
+// Buildings shorter than this get a peaked (hip) roof — New Bedford's signature
+// triple-deckers/houses read as boxes when flat-topped. Taller granite downtown
+// + brick mills keep their realistic flat roofs.
+const PITCH_MAX_H = 14;
+
+/**
+ * A peaked hip roof capping a footprint: fan of triangles from each footprint
+ * edge (at wall height `h`) up to a single apex over the centroid. Robust for
+ * any polygon — concave footprints just give a slightly creased cap, never a
+ * crash. Returns a non-indexed BufferGeometry with position/normal/uv/color so
+ * it merges with the extruded walls. Plain UV (no window grid) + roof tone.
+ */
+function roofGeometry(footprint: [number, number][], h: number, roof: THREE.Color): THREE.BufferGeometry | null {
+  // de-dupe a closed ring's repeated last vertex
+  const pts = footprint.slice();
+  if (pts.length > 1) {
+    const [fe, fn] = pts[0], [le, ln] = pts[pts.length - 1];
+    if (Math.abs(fe - le) < 1e-6 && Math.abs(fn - ln) < 1e-6) pts.pop();
+  }
+  if (pts.length < 3) return null;
+  let cx = 0, cn = 0, minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;
+  for (const [e, n] of pts) {
+    cx += e; cn += n;
+    if (e < minE) minE = e; if (e > maxE) maxE = e;
+    if (n < minN) minN = n; if (n > maxN) maxN = n;
+  }
+  cx /= pts.length; cn /= pts.length;
+  const minHalfSpan = Math.min(maxE - minE, maxN - minN) / 2;
+  if (minHalfSpan < 1.5) return null; // too thin to roof cleanly — leave flat
+  const pitch = Math.max(1.2, Math.min(3.6, minHalfSpan * 0.6));
+  const pos: number[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [ea, na] = pts[i];
+    const [eb, nb] = pts[(i + 1) % pts.length];
+    if (Math.abs(ea - eb) < 1e-6 && Math.abs(na - nb) < 1e-6) continue; // degenerate edge
+    // world-local: x=east, y=up, z=-north
+    pos.push(ea, h, -na, eb, h, -nb, cx, h + pitch, -cn);
+  }
+  if (pos.length === 0) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pos), 3));
+  g.computeVertexNormals();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  for (let v = 0; v < count; v++) {
+    colors.set([roof.r, roof.g, roof.b], v * 3);
+    uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04; // plain wall sample (no window grid)
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
 
 interface Manifest { tile: number; keys: string[] }
 
@@ -63,6 +116,12 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     geoms.push(g);
+    // short residential/commercial footprints get a peaked roof so the skyline
+    // stops reading as a field of flat boxes (heroes keep their modeled look).
+    if (!isHero && b.height < PITCH_MAX_H) {
+      const rg = roofGeometry(b.footprint, b.height, roof);
+      if (rg) geoms.push(rg);
+    }
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
 }
@@ -79,7 +138,7 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const roofs = useMemo(() => {
     const out: [number, number, number][] = [];
     for (const b of buildings) {
-      if (b.height < 7 || b.height > 45) continue;
+      if (b.height < PITCH_MAX_H || b.height > 45) continue; // only flat-roofed buildings
       let x = 0, n = 0; for (const p of b.footprint) { x += p[0]; n += p[1]; }
       const k = b.footprint.length;
       out.push([x / k, b.height, -(n / k)]);
