@@ -8,7 +8,7 @@ import type { Road } from "../slice";
 // of major-road points near the core, cycling red→green→amber on a timer.
 
 const RADIUS = 210;
-const MAX = 18;
+const MAX = 24;
 const MAJOR = new Set(["primary", "secondary", "tertiary"]);
 
 export function TrafficLights({ roads, center }: { roads: Road[]; center: [number, number] }) {

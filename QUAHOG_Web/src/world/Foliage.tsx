@@ -16,7 +16,8 @@ const _c = new THREE.Color();
 const _up = new THREE.Vector3(0, 1, 0);
 
 type P = { x: number; z: number; rot: number; sc: number };
-const GREENS = ["#3a6630", "#46763a", "#2f5a2c", "#548040", "#356a34", "#608a46"];
+const GREENS = ["#3a6630", "#46763a", "#2f5a2c", "#548040", "#356a34", "#608a46",
+  "#2a5226", "#5a8a42", "#3f6e38", "#4a7a30"];
 
 function place(mesh: THREE.InstancedMesh | null, ps: P[], y: number) {
   if (!mesh) return;

@@ -6,7 +6,7 @@ import type { Road } from "../slice";
 // endpoints near the core. One sign per unique name, capped for performance.
 
 const RADIUS = 290;
-const MAX_SIGNS = 64;
+const MAX_SIGNS = 90;
 
 interface Sign { x: number; z: number; rot: number; name: string }
 

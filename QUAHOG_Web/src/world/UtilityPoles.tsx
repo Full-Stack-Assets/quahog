@@ -6,7 +6,7 @@ import type { Road } from "../slice";
 // instanced; wires are one merged catenary line set. Cheap period set-dressing.
 
 const RADIUS = 260;
-const MAX = 300;
+const MAX = 360;
 const _m = new THREE.Matrix4();
 const _p = new THREE.Vector3();
 const _q = new THREE.Quaternion();

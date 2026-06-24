@@ -726,4 +726,12 @@ Goal: 100 concrete improvements to the playable web game. Running log:
 - **Landmarks b24 (66–68):** real hero materials (clapboard/brick/granite, was gold); Seamen's Bethel full bell tower + octagonal spire + Greek-revival cornice + repositioned entrance.
 - **Landmarks b25 (69–70):** Bethel grass lawn + flagpole/flag (per reference photos).
 - **Realism b26 (71–73):** parked-car yaw jitter; more crosswalks + awnings.
+- **Density b27 (74–76):** denser foliage/port/waterfront layers.
+- **Polish b28 (77–81):** brighter night ambient; placement jitter (street/port/dumpsters); more gulls.
+- **Density b29 (82–86):** higher caps on port/waterfront/dumpsters/fences/fixtures.
+- **Variety b30 (87–91):** wider container/dumpster palettes; more decals/crosswalks/graffiti.
+- **Bethel b31 (92–93):** brick entrance walkway + foundation shrubs.
+- **Finish b32 (94–100):** more street trees + foliage greens; more billboards/traffic-lights/utility-poles/street-signs; wider crosswalk radius.
+
+**✅ 100/100 web-game improvements shipped.** New components added this run: `StreetExtras`, `Waterfront`, `RoadFixtures`, `Foliage`, `Fences`, `Billboards`, `Dumpsters`, `PortClutter`; plus the Seamen's Bethel rebuild, real hero-building materials, fog removal, island land, the clean stylized ground, the road-over-water fix, building/vehicle/pedestrian variety, and a citywide density pass. All build-verified via Vercel.
 

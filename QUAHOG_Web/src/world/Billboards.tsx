@@ -8,7 +8,7 @@ import type { Road } from "../slice";
 // the road. Cheap: a few textured quads, not instanced.
 
 const RADIUS = 320;
-const MAX = 12;
+const MAX = 18;
 
 export function Billboards({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const posters = useMemo(() => [0, 1, 2, 3].map((v) => makePoster(v)), []);

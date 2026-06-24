@@ -65,11 +65,11 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
         const rot = Math.atan2(nx * side, nz * side);
         // cycle furniture types so the street feels stocked but not repetitive
         const kind = n % 6;
-        if (kind === 0 || kind === 3) lamps.push({ x: px, z: pz, rot });
-        else if (kind === 1) trees.push({ x: px, z: pz, rot });
+        if (kind === 0) lamps.push({ x: px, z: pz, rot });
+        else if (kind === 1 || kind === 5) trees.push({ x: px, z: pz, rot }); // more street trees
         else if (kind === 2) hydrants.push({ x: px, z: pz, rot });
         else if (kind === 4) mailboxes.push({ x: px, z: pz, rot });
-        else benches.push({ x: px, z: pz, rot });
+        else benches.push({ x: px, z: pz, rot }); // kind 3
         n++;
         if (lamps.length + trees.length > 2200) break; // hard cap
       }
