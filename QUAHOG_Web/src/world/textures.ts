@@ -213,22 +213,28 @@ export function makeGraffiti(variant: number): THREE.Texture {
   return asColor(new THREE.Texture(c));
 }
 export function makeGroundTexture(): THREE.Texture {
+  // A LIGHT, softly-mottled neutral. It multiplies each mesh's own colour, so
+  // keeping it near-white lets the ground (grey-green) and the road apron
+  // (concrete) read at their intended tone instead of darkening to near-black.
   const [c, ctx] = canvas(256);
-  ctx.fillStyle = "#3b3d44";
+  ctx.fillStyle = "#d8d6cc";
   ctx.fillRect(0, 0, 256, 256);
-  // speckle
-  for (let i = 0; i < 2600; i++) {
-    const v = 40 + Math.random() * 50;
-    ctx.fillStyle = `rgba(${v},${v},${v + 4},${0.25 + Math.random() * 0.25})`;
-    const s = 1 + Math.random() * 3;
-    ctx.fillRect(Math.random() * 256, Math.random() * 256, s, s);
+  // soft organic patches (lighter + darker) so the floor isn't a flat slab
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, r = 10 + Math.random() * 46;
+    const d = (Math.random() - 0.5) * 30;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${206 + d},${204 + d},${190 + d},0.16)`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
-  // faint paving grid
-  ctx.strokeStyle = "rgba(20,20,24,0.5)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 256; i += 32) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
+  // fine grit speckle (subtle, slightly warm)
+  for (let i = 0; i < 2200; i++) {
+    const v = 150 + Math.random() * 70;
+    ctx.fillStyle = `rgba(${v},${v - 6},${v - 18},${0.10 + Math.random() * 0.16})`;
+    const s = 1 + Math.random() * 2;
+    ctx.fillRect(Math.random() * 256, Math.random() * 256, s, s);
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
