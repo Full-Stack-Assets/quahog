@@ -54,14 +54,28 @@ function roofGeometry(footprint: [number, number][], h: number, roof: THREE.Colo
   cx /= pts.length; cn /= pts.length;
   const minHalfSpan = Math.min(maxE - minE, maxN - minN) / 2;
   if (minHalfSpan < 1.5) return null; // too thin to roof cleanly — leave flat
-  const pitch = Math.max(1.2, Math.min(3.6, minHalfSpan * 0.6));
+  // Steep enough to clearly read as a New England pitched roof (~35-45°) on
+  // typical house/triple-decker widths, capped so wide blocks don't get spikes.
+  const pitch = Math.max(2.2, Math.min(5.5, minHalfSpan * 0.9));
+  // The fan triangles must wind so their normals face UP/outward, else they're
+  // backface-culled (invisible) and the flat extrude cap shows through. OSM
+  // footprint orientation varies, so derive the winding from the ring's signed
+  // area in world XZ (x=east, z=-north) rather than assuming a fixed order.
+  let area2 = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [ea, na] = pts[i];
+    const [eb, nb] = pts[(i + 1) % pts.length];
+    area2 += ea * -nb - eb * -na; // x_i*z_{i+1} - x_{i+1}*z_i, with z=-n
+  }
+  const flip = area2 > 0; // keeps apex-fan normals pointing up
   const pos: number[] = [];
   for (let i = 0; i < pts.length; i++) {
     const [ea, na] = pts[i];
     const [eb, nb] = pts[(i + 1) % pts.length];
     if (Math.abs(ea - eb) < 1e-6 && Math.abs(na - nb) < 1e-6) continue; // degenerate edge
     // world-local: x=east, y=up, z=-north
-    pos.push(ea, h, -na, eb, h, -nb, cx, h + pitch, -cn);
+    if (flip) pos.push(eb, h, -nb, ea, h, -na, cx, h + pitch, -cn);
+    else pos.push(ea, h, -na, eb, h, -nb, cx, h + pitch, -cn);
   }
   if (pos.length === 0) return null;
   const g = new THREE.BufferGeometry();
