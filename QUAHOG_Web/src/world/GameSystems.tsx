@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useStats } from "../game";
 import { useGame } from "../store";
-import { useEconomy } from "../economy";
+import { useEconomy, rollRevenueEvent } from "../economy";
 import { useToasts } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
@@ -66,6 +66,8 @@ export function GameSystems() {
   const restored = useRef(false);
   const skidCool = useRef(0);
   const maxStars = useRef(0);
+  const revAcc = useRef(0);
+  const nextRev = useRef(75); // first revenue event after ~75s of ownership
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -122,6 +124,18 @@ export function GameSystems() {
     // passive business revenue (§15 RevenueManager)
     const income = useEconomy.getState().incomePerSec(DAY_SECONDS);
     if (income > 0) st.addCash(income * dt);
+    // occasional margin-leak / boom event on an owned front (§15 RevenueManager)
+    revAcc.current += dt;
+    if (revAcc.current > nextRev.current) {
+      revAcc.current = 0;
+      nextRev.current = 90 + Math.random() * 120; // next in 90–210s
+      const ev = rollRevenueEvent();
+      if (ev) {
+        st.addCash(ev.amount);
+        useToasts.getState().push(ev.text, ev.good ? "#7CFC00" : "#ff6a6a");
+        ev.good ? sfx.cash() : sfx.ui();
+      }
+    }
     // slow health regen out of combat (§11)
     if (st.health > 0 && st.health < 100 && useGame.getState().mode === "foot") st.setHealth(st.health + dt * 2.2);
     // wanted-up sting (§23): toast + chirp when police stars rise
