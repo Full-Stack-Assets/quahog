@@ -117,7 +117,7 @@ export function Water({ polys, holes = [] }: { polys: [number, number][][]; hole
     <mesh ref={meshRef} geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
       <meshStandardMaterial
         ref={matRef}
-        color="#1f86c9"
+        color="#1a5167"
         roughness={0.16}
         metalness={0.55}
         envMapIntensity={1.2}

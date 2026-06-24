@@ -146,11 +146,7 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
-  // Windows only light up at dusk/night. shared.dayT is the sun-elevation factor
-  // (1 at noon, 0 at/under the horizon); a linear (1 - dayT) ramp left windows
-  // glowing through the whole day. Gate it to the low end so daytime façades read
-  // as dark glass and lights come on only as the sun drops past ~dayT 0.3.
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.15; });
+  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
 
   // Rooftop clutter for skyline depth: a primary unit sized by building class
   // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)

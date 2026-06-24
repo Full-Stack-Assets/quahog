@@ -11,7 +11,7 @@ const _q = new THREE.Quaternion();
 const _s = new THREE.Vector3();
 const _p = new THREE.Vector3();
 const _c = new THREE.Color();
-const GREENS = ["#31562a", "#3a6231", "#2a4d24", "#406d33", "#2f5a2c", "#47743a"];
+const GREENS = ["#365e2c", "#3f6b34", "#2e5226", "#487a38", "#335f30", "#5a8a40"];
 
 function inRing(e: number, n: number, r: [number, number][]): boolean {
   let inside = false;
@@ -69,8 +69,7 @@ export function AreaTrees({ areas, step = 12, cap = 700 }: { areas?: [number, nu
         <meshStandardMaterial color="#4a3526" roughness={0.95} />
       </instancedMesh>
       <instancedMesh ref={crown} args={[undefined, undefined, Math.max(1, trees.length)]} castShadow>
-        {/* detail-1 icosahedron reads as a rounded canopy, not a blocky diamond */}
-        <icosahedronGeometry args={[2.0, 1]} />
+        <icosahedronGeometry args={[2.0, 0]} />
         <meshStandardMaterial color="#ffffff" roughness={1} flatShading />
       </instancedMesh>
     </group>

@@ -1,11 +1,9 @@
-import { useMemo, useRef } from "react";
+import { useMemo } from "react";
 import * as THREE from "three";
 import { Text } from "@react-three/drei";
-import { useFrame } from "@react-three/fiber";
 import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { toWorld } from "../slice";
 import type { Landmark } from "../slice";
-import { shared } from "../shared";
 
 // Hand-detailed hero landmark: the Seamen's Bethel ("Whaleman's Chapel", 1832) on
 // Johnny Cake Hill — a white New England clapboard chapel with a gable front,
@@ -148,7 +146,10 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
           <cylinderGeometry args={[0.07, 0.08, 7, 6]} />
           <meshStandardMaterial color="#d8d8d0" metalness={0.4} roughness={0.5} />
         </mesh>
-        <WaveFlag />
+        <mesh position={[0.9, 6.2, 0]} castShadow>
+          <boxGeometry args={[1.8, 1.0, 0.04]} />
+          <meshStandardMaterial color="#b22234" roughness={0.7} />
+        </mesh>
       </group>
 
       {/* brick walkway from the street up to the steps */}
@@ -190,34 +191,23 @@ function ArchWindow({
   axis: "x" | "z";
 }) {
   const ry = axis === "x" ? Math.PI / 2 : 0;
-  // Window glass only warms up at dusk/night (matches the city buildings); in
-  // daylight it reads as faintly warm leaded glass, not lit-up yellow panes.
-  const pane = useRef<THREE.MeshStandardMaterial>(null);
-  const arch = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(() => {
-    const i = 0.05 + (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 0.7;
-    if (pane.current) pane.current.emissiveIntensity = i;
-    if (arch.current) arch.current.emissiveIntensity = i;
-  });
   return (
     <group position={position} rotation-y={ry}>
       <mesh>
         <boxGeometry args={[1.2, 2.6, 0.12]} />
         <meshStandardMaterial
-          ref={pane}
           color={GLASS}
           emissive={GLASS}
-          emissiveIntensity={0.05}
+          emissiveIntensity={0.4}
           roughness={0.3}
         />
       </mesh>
       <mesh position={[0, 1.3, 0]} rotation-x={Math.PI / 2}>
         <cylinderGeometry args={[0.6, 0.6, 0.12, 12, 1, false, 0, Math.PI]} />
         <meshStandardMaterial
-          ref={arch}
           color={GLASS}
           emissive={GLASS}
-          emissiveIntensity={0.05}
+          emissiveIntensity={0.4}
           roughness={0.3}
         />
       </mesh>
@@ -227,37 +217,5 @@ function ArchWindow({
         <meshStandardMaterial color={TRIM} roughness={0.8} />
       </mesh>
     </group>
-  );
-}
-
-// A small flag that ripples in the wind: a segmented plane whose vertices are
-// displaced along z by a travelling sine wave, with amplitude growing from the
-// fixed hoist edge (at the pole) toward the free fly edge. Cheap (one mesh).
-function WaveFlag() {
-  const geo = useRef<THREE.PlaneGeometry>(null);
-  const base = useRef<Float32Array | null>(null);
-  useFrame(({ clock }) => {
-    const g = geo.current;
-    if (!g) return;
-    const pos = g.attributes.position;
-    const arr = pos.array as Float32Array;
-    if (!base.current) base.current = arr.slice();
-    const b = base.current;
-    const t = clock.elapsedTime;
-    for (let i = 0; i < pos.count; i++) {
-      const x = b[i * 3];            // -0.9 (hoist) .. +0.9 (fly)
-      const y = b[i * 3 + 1];
-      const hoist = (x + 0.9) / 1.8; // 0 at pole, 1 at fly edge
-      arr[i * 3 + 2] = Math.sin(x * 3.4 - t * 5) * 0.18 * hoist + Math.sin(y * 2 + t * 3) * 0.05 * hoist;
-    }
-    pos.needsUpdate = true;
-    g.computeVertexNormals();
-  });
-  // hoist edge sits at the pole (x=0 in the flag's local space → group at x=0)
-  return (
-    <mesh position={[0.9, 6.2, 0]} castShadow>
-      <planeGeometry ref={geo} args={[1.8, 1.0, 14, 4]} />
-      <meshStandardMaterial color="#b22234" roughness={0.7} side={THREE.DoubleSide} />
-    </mesh>
   );
 }

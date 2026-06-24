@@ -129,7 +129,7 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
       </Physics>
 
       {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.05} repeat={0.06} roughness={0.95} />}
-      {slice && <FlatAreas polys={slice.beach} color="#e0cc94" y={0.05} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.05} repeat={0.04} />}
       {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.055} />}
       {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.058} />}
       {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.06} />}

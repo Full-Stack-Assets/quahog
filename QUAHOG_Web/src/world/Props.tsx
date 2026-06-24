@@ -21,7 +21,7 @@ function tint(mesh: THREE.InstancedMesh | null, count: number, palette: string[]
   for (let i = 0; i < count; i++) mesh.setColorAt(i, _c.set(palette[(i * 2654435761) % palette.length]));
   if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
 }
-const TREE_GREENS = ["#3a6231", "#447137", "#31562a", "#4d7438", "#2c5328", "#52803f"];
+const TREE_GREENS = ["#3f6b34", "#4a7a3a", "#356030", "#567f3e", "#2f5a2c", "#5f8a46"];
 const BENCH_WOODS = ["#5a3d28", "#6a4a2e", "#4a3220", "#705534"];
 const HYDRANTS = ["#b22222", "#a01f1f", "#c4a020", "#9a1c1c"]; // mostly red, some yellow
 
@@ -114,10 +114,9 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
     tint(hydrants.current, L.hydrants.length, HYDRANTS);
   }, [L]);
 
-  // lamp heads glow warmer as night falls (bloom in Effects picks this up);
-  // dusk-gated so streetlights are dark by day, not lit at noon
+  // lamp heads glow warmer as night falls (bloom in Effects picks this up)
   useFrame(() => {
-    if (headMat.current) headMat.current.emissiveIntensity = 0.05 + (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 2.6;
+    if (headMat.current) headMat.current.emissiveIntensity = 0.1 + (1 - shared.dayT) * 2.4;
   });
 
   return (
@@ -156,8 +155,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
         <meshStandardMaterial color="#4a3526" roughness={0.95} />
       </instancedMesh>
       <instancedMesh ref={crowns} args={[undefined, undefined, Math.max(1, L.trees.length)]} castShadow>
-        {/* detail-1 icosahedron reads as a rounded canopy, not a blocky diamond */}
-        <icosahedronGeometry args={[1.9, 1]} />
+        <icosahedronGeometry args={[1.9, 0]} />
         <meshStandardMaterial color="#ffffff" roughness={1} flatShading />
       </instancedMesh>
     </group>
