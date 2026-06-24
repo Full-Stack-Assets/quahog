@@ -15,6 +15,10 @@ const HIGHWAY = new Set([
   "motorway_link", "trunk_link", "primary_link",
 ]);
 const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
+// parking-lot aisles / driveways / alleys — thousands of them. Drawn as a quiet,
+// darker surface UNDER the real streets (no lane markings, no curb apron, no
+// sidewalks) so the map doesn't read as a tangle of equal-weight roads converging.
+const SERVICE = new Set(["service"]);
 const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
@@ -122,15 +126,16 @@ export function Roads({ roads }: { roads: Road[] }) {
   // chunk roads into a spatial grid so off-screen/distant cells are culled
   const chunks = useMemo(() => {
     const land = roads.filter((r) => !r.bridge); // bridges handled by <Bridges/>
-    const cells = new Map<string, { cb: Road[]; sf: Road[]; hw: Road[]; cx: number; cz: number }>();
+    const cells = new Map<string, { cb: Road[]; sf: Road[]; hw: Road[]; sv: Road[]; cx: number; cz: number }>();
     for (const r of land) {
       const mid = r.points[Math.floor(r.points.length / 2)] ?? r.points[0];
       const gx = Math.floor(mid[0] / CELL), gn = Math.floor(mid[1] / CELL);
       const key = `${gx}_${gn}`;
       let c = cells.get(key);
-      if (!c) { c = { cb: [], sf: [], hw: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
+      if (!c) { c = { cb: [], sf: [], hw: [], sv: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
       if (HIGHWAY.has(r.highway)) c.hw.push(r);
       else if (COBBLE.has(r.highway)) c.cb.push(r);
+      else if (SERVICE.has(r.highway)) c.sv.push(r);
       else c.sf.push(r);
     }
     return [...cells.values()].map((c) => ({
@@ -140,6 +145,8 @@ export function Roads({ roads }: { roads: Road[] }) {
       // raised curb + walkway flanking ordinary streets (not highways/cobble)
       sidewalk: buildSidewalks(c.sf, 0.14, 0.1, 2.0),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
+      // service aisles/driveways: slightly trimmed, drawn just below street level
+      service: buildRibbon(c.sv, 0.045, 0, 0, 0.9),
       surface: buildRibbon(c.sf, 0.06, 0),
       // trim highway carriageway width so close divided carriageways (the two
       // directions of I-195) read as separate roads with a median gap instead of
@@ -186,6 +193,11 @@ export function Roads({ roads }: { roads: Road[] }) {
           {c.cobble && (
             <mesh geometry={c.cobble} receiveShadow>
               <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} userData={{ base: 0.95 }} />
+            </mesh>
+          )}
+          {c.service && (
+            <mesh geometry={c.service} receiveShadow>
+              <meshStandardMaterial map={surfaceTex} color="#44464d" roughness={0.96} userData={{ base: 0.96 }} polygonOffset polygonOffsetFactor={-0.5} polygonOffsetUnits={-0.5} />
             </mesh>
           )}
           {c.surface && (
