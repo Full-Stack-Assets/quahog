@@ -74,13 +74,18 @@ export function makeZebra(): THREE.Texture {
   _zebra = asColor(new THREE.Texture(c)); return _zebra;
 }
 
-// Façade maps (§ Phase 1): one tileable cell ≈ one floor (~3.2 m). `albedo` is
-// white wall + dark glass window (multiplies the per-building base colour);
-// `emissive` is black wall + warm lit window (glows at night). Shared singletons.
+// Façade maps (§ Phase 1): a tileable GRID×GRID block of floors. `albedo` is
+// white wall + dark glass windows (multiplies the per-building base colour);
+// `emissive` is black wall + warm lit windows (glows at night). The grid lets
+// only SOME windows light up after dark — a uniform single-window tile made every
+// window glow at once. Consumers scale wall UVs by FLOOR*FACADE_GRID. Singletons.
+export const FACADE_GRID = 4; // floors/windows per texture tile
 let _facade: { albedo: THREE.Texture; emissive: THREE.Texture } | null = null;
 export function makeFacadeMaps() {
   if (_facade) return _facade;
-  const S = 128;
+  const G = FACADE_GRID;
+  const CELL = 128;
+  const S = CELL * G;
   const [ca, a] = canvas(S);   // albedo
   const [ce, e] = canvas(S);   // emissive
   // wall (albedo): white base, then faint masonry courses so flat walls aren't
@@ -92,25 +97,34 @@ export function makeFacadeMaps() {
   a.fillStyle = "rgba(108,98,86,0.06)";
   for (let x = 8; x < S; x += 16) a.fillRect(x, 0, 1, S);   // vertical joints
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
-  // window block, centred with a margin (mullions = wall gaps between cells).
-  // Tall 2×3 sash with a lighter lintel above + sill below — period New Bedford.
-  const m = 24, w = S - m * 2;
-  // lintel + sill (trim, lighter than wall) frame the opening
-  a.fillStyle = "#dad4c8";
-  a.fillRect(m - 4, m - 5, w + 8, 4);                       // lintel
-  a.fillRect(m - 4, m + w + 1, w + 8, 5);                   // sill
-  // glass (albedo): dark, slightly blue
-  a.fillStyle = "#2b3440"; a.fillRect(m, m, w, w);
-  a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(m, m, w, w);
-  a.lineWidth = 2; a.beginPath();
-  a.moveTo(m + w / 2, m); a.lineTo(m + w / 2, m + w);       // centre mullion
-  for (let r = 1; r < 3; r++) { a.moveTo(m, m + (w * r) / 3); a.lineTo(m + w, m + (w * r) / 3); } // muntins
-  a.stroke();
-  // lit window (emissive): warm panes with dark muntins (matches the sash grid)
-  e.fillStyle = "#ffcf8a"; e.fillRect(m, m, w, w);
-  e.fillStyle = "#000000"; e.lineWidth = 0;
-  e.fillRect(m + w / 2 - 2, m, 4, w);                       // centre mullion
-  for (let r = 1; r < 3; r++) e.fillRect(m, m + (w * r) / 3 - 2, w, 4); // muntins
+
+  // One tall 2×3 sash per cell — lighter lintel above + sill below (New Bedford).
+  const m = 24, w = CELL - m * 2;
+  for (let gy = 0; gy < G; gy++) {
+    for (let gx = 0; gx < G; gx++) {
+      const ox = gx * CELL, oy = gy * CELL;
+      // lintel + sill (trim, lighter than wall) frame the opening
+      a.fillStyle = "#dad4c8";
+      a.fillRect(ox + m - 4, oy + m - 5, w + 8, 4);         // lintel
+      a.fillRect(ox + m - 4, oy + m + w + 1, w + 8, 5);     // sill
+      // glass (albedo): dark, slightly blue
+      a.fillStyle = "#2b3440"; a.fillRect(ox + m, oy + m, w, w);
+      a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(ox + m, oy + m, w, w);
+      a.lineWidth = 2; a.beginPath();
+      a.moveTo(ox + m + w / 2, oy + m); a.lineTo(ox + m + w / 2, oy + m + w); // centre mullion
+      for (let r = 1; r < 3; r++) { a.moveTo(ox + m, oy + m + (w * r) / 3); a.lineTo(ox + m + w, oy + m + (w * r) / 3); }
+      a.stroke();
+      // lit window (emissive): only ~55% of windows are lit at night, in warm or
+      // cooler tones, with dark muntins matching the sash grid.
+      if (Math.random() < 0.55) {
+        e.fillStyle = Math.random() < 0.25 ? "#cfe0ff" : "#ffcf8a"; // a few cool TVs/fluoros
+        e.fillRect(ox + m, oy + m, w, w);
+        e.fillStyle = "#000000"; e.lineWidth = 0;
+        e.fillRect(ox + m + w / 2 - 2, oy + m, 4, w);       // centre mullion
+        for (let r = 1; r < 3; r++) e.fillRect(ox + m, oy + m + (w * r) / 3 - 2, w, 4); // muntins
+      }
+    }
+  }
   const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
   const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
   _facade = { albedo, emissive };

@@ -5,7 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
-import { makeFacadeMaps, makeNoiseNormal } from "./textures";
+import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -25,6 +25,7 @@ const ROOF = ["#2c2a28", "#37322c", "#31343a", "#2a2e30", "#3a352f"]; // tar / g
 const HERO_COLOR = "#caa24a";
 const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
 const FLOOR = 3.2; // metres per window row
+const WIN_TILE = FLOOR * FACADE_GRID; // metres spanned by one façade texture tile
 
 interface Manifest { tile: number; keys: string[] }
 
@@ -74,7 +75,7 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   const trim = wall.clone().multiplyScalar(0.9);
   for (let v = 0; v < count; v++) {
     colors.set([trim.r, trim.g, trim.b], v * 3);
-    uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04; // plain wall UV → no windows on the cap
+    uv[v * 2] = 0.02; uv[v * 2 + 1] = 0.02; // plain wall UV → no windows on the cap
   }
   g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
   g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
@@ -107,14 +108,14 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
       const ny = nor.getY(v);
       if (Math.abs(ny) > 0.5) { // roof / underside: roof tone, sample plain wall (no windows)
         colors.set([roof.r, roof.g, roof.b], v * 3);
-        uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04;
+        uv[v * 2] = 0.02; uv[v * 2 + 1] = 0.02;
       } else { // wall: window grid by floor
         // Fake ambient occlusion: darken the façade toward street level (grime +
         // contact shadow) so buildings feel grounded instead of flat-lit boxes.
         const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
         colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
-        uv[v * 2] = horiz / FLOOR; uv[v * 2 + 1] = y / FLOOR;
+        uv[v * 2] = horiz / WIN_TILE; uv[v * 2 + 1] = y / WIN_TILE;
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
