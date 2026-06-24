@@ -23,10 +23,26 @@ export default defineConfig({
     __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
   },
   build: {
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       input: {
         main: "index.html", // the game slice
         earth: "earth.html", // Google Photorealistic 3D Tiles test
+      },
+      output: {
+        // Split the heavy engine deps into their own long-lived vendor chunks so
+        // they cache across deploys and don't bloat the main app chunk. Each only
+        // re-downloads when that library actually changes, not on every game edit.
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          // order matters: match the more specific scoped packages before the
+          // bare "three"/"react" substrings (which they also contain).
+          if (id.includes("rapier")) return "vendor-rapier";
+          if (id.includes("@react-three")) return "vendor-r3f";
+          if (id.includes("node_modules/three")) return "vendor-three";
+          if (id.includes("node_modules/react") || id.includes("react-dom") || id.includes("/scheduler/")) return "vendor-react";
+          return "vendor";
+        },
       },
     },
   },
