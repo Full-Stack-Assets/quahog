@@ -706,4 +706,11 @@ Goal: 100 concrete improvements to the playable web game. Running log:
 - **Roads b4 (14–16):** new `RoadFixtures` — manhole covers + curb storm grates.
 - **Density b5 (17–21):** more furniture/street-signs/traffic-lights/utility-poles/graffiti.
 - **Variety b6 (22–24):** wider parked-car + awning palettes; more ground grime.
+- **Variety b7 (25–27):** per-instance colour for trees/benches/hydrants.
+- **Port b8 (28–31):** new `PortClutter` — wharf shipping containers, crates, barrels.
+- **Buildings b9 (32):** per-building window-pattern phase (varied night lighting).
+- **Foliage b10 (33–35):** new `Foliage` — frontage bushes + curb grass tufts.
+- **Tuning b11 (36–37):** longer road draw distance (fog-free) + more gulls.
+- **Variety b12 (38–39):** trash-can + newspaper-box colour variety.
+- **Life b13 (40–41):** more pedestrians (32) + traffic cars (20).
 
