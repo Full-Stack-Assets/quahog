@@ -10,7 +10,8 @@ import { Ground } from "./Ground";
 // it's simply skipped and the procedural <Ground/> shows through — no regression.
 
 const ZOOM = 18;       // ~0.45 m/px → crisp street-level aerial
-const RADIUS = 7;      // tiles each way from origin → (2R+1)^2 = 225 tiles (~1.7km core)
+const RADIUS = 5;      // tiles each way from origin → (2R+1)^2 = 121 tiles (~1.2km core)
+const MAX_CONCURRENT = 6; // cap simultaneous tile fetches (network/GPU on mobile)
 const TILE_URL = (z: number, x: number, y: number) =>
   `https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`;
 
@@ -42,38 +43,57 @@ export function AerialGround({ origin }: { origin?: { lat: number; lon: number }
 
   useEffect(() => {
     if (!origin || !mPer) return;
+    let alive = true;
+    setTiles([]); // drop the previous location's tiles immediately (no wrong-place flash)
     const loader = new THREE.TextureLoader();
     loader.setCrossOrigin("anonymous");
-    let alive = true;
+    const created: THREE.Texture[] = []; // every texture we make, for disposal
     const out: Tile[] = [];
     const c = lonLatToTile(origin.lon, origin.lat, ZOOM);
     const cx = Math.floor(c.x), cy = Math.floor(c.y);
 
+    // build the job list, nearest-first, so the core fills in before the edges
+    const jobs: { tx: number; ty: number; wx: number; wz: number; size: number; d: number }[] = [];
     for (let dx = -RADIUS; dx <= RADIUS; dx++) {
       for (let dy = -RADIUS; dy <= RADIUS; dy++) {
         const tx = cx + dx, ty = cy + dy;
-        // tile centre → world position (matches the slice equirectangular frame)
         const nw = tileToLonLat(tx, ty, ZOOM);
         const se = tileToLonLat(tx + 1, ty + 1, ZOOM);
         const midLon = (nw.lon + se.lon) / 2, midLat = (nw.lat + se.lat) / 2;
         const wx = (midLon - origin.lon) * mPer.lon;
         const wz = -(midLat - origin.lat) * mPer.lat;
         const size = Math.abs((se.lat - nw.lat) * mPer.lat); // square tile height in m
-        loader.load(
-          TILE_URL(ZOOM, tx, ty),
-          (t) => {
-            if (!alive) return;
-            t.colorSpace = THREE.SRGBColorSpace;
-            t.anisotropy = 8;
-            out.push({ tex: t, x: wx, z: wz, size });
-            setTiles([...out]);
-          },
-          undefined,
-          () => { /* tile failed → procedural ground shows through here */ },
-        );
+        jobs.push({ tx, ty, wx, wz, size, d: dx * dx + dy * dy });
       }
     }
-    return () => { alive = false; };
+    jobs.sort((a, b) => a.d - b.d);
+
+    // progressive loader with a concurrency cap
+    let next = 0, inFlight = 0;
+    const pump = () => {
+      while (alive && inFlight < MAX_CONCURRENT && next < jobs.length) {
+        const job = jobs[next++];
+        inFlight++;
+        loader.load(
+          TILE_URL(ZOOM, job.tx, job.ty),
+          (t) => {
+            inFlight--;
+            if (!alive) { t.dispose(); return; }
+            t.colorSpace = THREE.SRGBColorSpace;
+            t.anisotropy = 8;
+            created.push(t);
+            out.push({ tex: t, x: job.wx, z: job.wz, size: job.size });
+            setTiles([...out]);
+            pump();
+          },
+          undefined,
+          () => { inFlight--; pump(); /* tile failed → procedural ground shows through */ },
+        );
+      }
+    };
+    pump();
+
+    return () => { alive = false; created.forEach((t) => t.dispose()); };
   }, [origin, mPer]);
 
   return (

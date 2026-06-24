@@ -40,10 +40,18 @@ const SPOTS = [
 const KEY_STORE = "mh.googleMapsKey";
 
 function getApiKey(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get("key");
+  const params = new URLSearchParams(window.location.search);
+  const fromUrl = params.get("key");
   if (fromUrl) {
     // persist a URL-provided key so it survives reloads/teleports
     try { localStorage.setItem(KEY_STORE, fromUrl); } catch { /* private mode */ }
+    // scrub ?key= from the address bar so the secret doesn't linger in history,
+    // referrers, or screenshots (it's saved now)
+    try {
+      params.delete("key");
+      const q = params.toString();
+      window.history.replaceState(null, "", window.location.pathname + (q ? `?${q}` : "") + window.location.hash);
+    } catch { /* no-op */ }
     return fromUrl;
   }
   const fromEnv = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
