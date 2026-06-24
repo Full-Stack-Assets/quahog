@@ -1,0 +1,31 @@
+name: web-ci
+
+# Typecheck + build the playable web game on PRs and branch pushes so a broken
+# tsc/vite build is caught here, not only in the Vercel preview. Scoped to paths
+# under QUAHOG_Web so unrelated changes don't spend CI minutes.
+on:
+  push:
+    paths:
+      - "QUAHOG_Web/**"
+      - ".github/workflows/web-ci.yml"
+  pull_request:
+    paths:
+      - "QUAHOG_Web/**"
+      - ".github/workflows/web-ci.yml"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: QUAHOG_Web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: QUAHOG_Web/package-lock.json
+      - run: npm ci
+      - name: Typecheck + build
+        run: npm run build
