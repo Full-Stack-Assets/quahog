@@ -35,6 +35,10 @@ export interface Slice {
   barrier?: [number, number][][];
   /** Real OSM green spaces (parks/gardens/grass/pitches), rendered as lawns. */
   parks?: [number, number][][];
+  /** Real OSM parking lots, rendered as asphalt. */
+  parking?: [number, number][][];
+  /** Real OSM beaches, rendered as sand. */
+  beach?: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -61,10 +65,14 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
     const br = await fetch(url.replace("slice-", "barrier-"));
     if (br.ok) slice.barrier = (await br.json()) as [number, number][][];
   } catch { /* no barrier file — leave undefined */ }
-  // Optional OSM green spaces.
-  try {
-    const pr = await fetch(url.replace("slice-", "parks-"));
-    if (pr.ok) slice.parks = (await pr.json()) as [number, number][][];
-  } catch { /* no parks file — leave undefined */ }
+  // Optional OSM area overlays (green spaces, parking, beaches).
+  await Promise.all([
+    ["parks-", "parks"], ["parking-", "parking"], ["beach-", "beach"],
+  ].map(async ([pre, key]) => {
+    try {
+      const r = await fetch(url.replace("slice-", pre));
+      if (r.ok) (slice as unknown as Record<string, unknown>)[key] = await r.json();
+    } catch { /* absent overlay file is fine */ }
+  }));
   return slice;
 }

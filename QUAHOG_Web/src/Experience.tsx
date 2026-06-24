@@ -29,7 +29,7 @@ import { Fences } from "./world/Fences";
 import { Billboards } from "./world/Billboards";
 import { Dumpsters } from "./world/Dumpsters";
 import { HurricaneBarrier } from "./world/HurricaneBarrier";
-import { Parks } from "./world/Parks";
+import { FlatAreas } from "./world/FlatAreas";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -123,7 +123,9 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         )}
       </Physics>
 
-      {slice && <Parks polys={slice.parks} />}
+      {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.05} repeat={0.06} roughness={0.95} />}
+      {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.05} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.06} />}
       {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />

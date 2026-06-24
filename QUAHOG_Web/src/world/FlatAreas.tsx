@@ -2,15 +2,21 @@ import { useMemo } from "react";
 import * as THREE from "three";
 import { makeGroundTexture } from "./textures";
 
-// Real OSM green spaces (parks, gardens, grass, ball fields) baked to
-// public/parks-newbedford.json (slice metres). Rendered as flat green patches
-// just above the ground so the city has real lawns/parks instead of bare ground.
-// Coordinates are [east, north]; world x = east, z = -north.
+// Generic flat ground overlay for real OSM area features baked to slice metres:
+// parks (green), parking lots (asphalt), beaches (sand). Each instance merges its
+// polygons into one flat textured mesh just above the ground. Coordinates are
+// [east, north]; world x = east, z = -north.
 
-const PARK_Y = 0.06;
-
-export function Parks({ polys }: { polys?: [number, number][][] }) {
-  const tex = useMemo(() => { const t = makeGroundTexture(); t.repeat.set(0.05, 0.05); return t; }, []);
+export function FlatAreas({
+  polys, color, y, repeat = 0.05, roughness = 1,
+}: {
+  polys?: [number, number][][];
+  color: string;
+  y: number;
+  repeat?: number;
+  roughness?: number;
+}) {
+  const tex = useMemo(() => { const t = makeGroundTexture(); t.repeat.set(repeat, repeat); return t; }, [repeat]);
 
   const geometry = useMemo(() => {
     if (!polys || polys.length === 0) return null;
@@ -18,8 +24,8 @@ export function Parks({ polys }: { polys?: [number, number][][] }) {
     for (const ring of polys) {
       if (ring.length < 3) continue;
       const shape = new THREE.Shape(ring.map(([e, n]) => new THREE.Vector2(e, n)));
-      const g = new THREE.ShapeGeometry(shape); // earcut
-      g.rotateX(-Math.PI / 2); // (e,n) -> (x,-z)
+      const g = new THREE.ShapeGeometry(shape);
+      g.rotateX(-Math.PI / 2);
       geoms.push(g);
     }
     if (geoms.length === 0) return null;
@@ -27,10 +33,7 @@ export function Parks({ polys }: { polys?: [number, number][][] }) {
     geoms.forEach((g) => (count += g.attributes.position.count));
     const pos = new Float32Array(count * 3);
     let o = 0;
-    for (const g of geoms) {
-      const p = g.attributes.position.array as Float32Array;
-      pos.set(p, o); o += p.length;
-    }
+    for (const g of geoms) { const p = g.attributes.position.array as Float32Array; pos.set(p, o); o += p.length; }
     const merged = new THREE.BufferGeometry();
     merged.setAttribute("position", new THREE.BufferAttribute(pos, 3));
     const uv = new Float32Array(count * 2);
@@ -42,8 +45,8 @@ export function Parks({ polys }: { polys?: [number, number][][] }) {
 
   if (!geometry) return null;
   return (
-    <mesh geometry={geometry} position={[0, PARK_Y, 0]} receiveShadow>
-      <meshStandardMaterial map={tex} color="#4f6e3a" roughness={1} polygonOffset polygonOffsetFactor={-1} />
+    <mesh geometry={geometry} position={[0, y, 0]} receiveShadow>
+      <meshStandardMaterial map={tex} color={color} roughness={roughness} polygonOffset polygonOffsetFactor={-1} />
     </mesh>
   );
 }
