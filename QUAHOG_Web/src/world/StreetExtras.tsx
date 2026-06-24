@@ -31,6 +31,7 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
   const L = useMemo(() => {
     const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 28, sparse: 1, max: 900 });
     const stops: Place[] = [], meters: Place[] = [], cans: Place[] = [], cones: Place[] = [];
+    const booths: Place[] = [], papers: Place[] = [], bollards: Place[] = [];
     let n = 0;
     for (const s of samples) {
       const nx = -s.dz, nz = s.dx;          // left normal of travel
@@ -40,12 +41,15 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       const rot = Math.atan2(nx * side, nz * side);
       const kind = n % 7;
       if (kind === 0) stops.push({ x, z, rot });
+      else if (kind === 1) booths.push({ x, z, rot });
       else if (kind === 2) meters.push({ x, z, rot });
+      else if (kind === 3) papers.push({ x, z, rot });
       else if (kind === 4) cans.push({ x, z, rot });
-      else if (kind === 6) cones.push({ x: x - nx * side * 3.4, z: z - nz * side * 3.4, rot }); // nudge into gutter
+      else if (kind === 5) bollards.push({ x, z, rot });
+      else cones.push({ x: x - nx * side * 3.4, z: z - nz * side * 3.4, rot }); // nudge into gutter
       n++;
     }
-    return { stops, meters, cans, cones };
+    return { stops, meters, cans, cones, booths, papers, bollards };
   }, [roads, center]);
 
   const stopPole = useRef<THREE.InstancedMesh>(null);
@@ -54,6 +58,9 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
   const meterHead = useRef<THREE.InstancedMesh>(null);
   const can = useRef<THREE.InstancedMesh>(null);
   const cone = useRef<THREE.InstancedMesh>(null);
+  const booth = useRef<THREE.InstancedMesh>(null);
+  const paper = useRef<THREE.InstancedMesh>(null);
+  const bollard = useRef<THREE.InstancedMesh>(null);
 
   useLayoutEffect(() => {
     fill(stopPole.current, L.stops, 1.1);
@@ -62,6 +69,9 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
     fill(meterHead.current, L.meters, 1.15);
     fill(can.current, L.cans, 0.5);
     fill(cone.current, L.cones, 0.3);
+    fill(booth.current, L.booths, 1.15);
+    fill(paper.current, L.papers, 0.6);
+    fill(bollard.current, L.bollards, 0.4);
   }, [L]);
 
   return (
@@ -96,6 +106,24 @@ export function StreetExtras({ roads, center }: { roads: Road[]; center: [number
       <instancedMesh ref={cone} args={[undefined, undefined, Math.max(1, L.cones.length)]} castShadow>
         <coneGeometry args={[0.22, 0.6, 8]} />
         <meshStandardMaterial color="#e8631a" roughness={0.7} />
+      </instancedMesh>
+
+      {/* phone booths (brushed-aluminium + glass, mid-80s) */}
+      <instancedMesh ref={booth} args={[undefined, undefined, Math.max(1, L.booths.length)]} castShadow>
+        <boxGeometry args={[0.9, 2.3, 0.9]} />
+        <meshStandardMaterial color="#9aa6ae" roughness={0.35} metalness={0.6} />
+      </instancedMesh>
+
+      {/* newspaper boxes */}
+      <instancedMesh ref={paper} args={[undefined, undefined, Math.max(1, L.papers.length)]} castShadow>
+        <boxGeometry args={[0.42, 1.1, 0.4]} />
+        <meshStandardMaterial color="#b5912b" roughness={0.6} metalness={0.2} />
+      </instancedMesh>
+
+      {/* bollards */}
+      <instancedMesh ref={bollard} args={[undefined, undefined, Math.max(1, L.bollards.length)]} castShadow>
+        <cylinderGeometry args={[0.1, 0.12, 0.8, 8]} />
+        <meshStandardMaterial color="#2b2e33" roughness={0.6} metalness={0.4} />
       </instancedMesh>
     </group>
   );
