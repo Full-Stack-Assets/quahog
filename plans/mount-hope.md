@@ -743,3 +743,10 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Rail (108–110):** OSM railway lines (60) → ballast bed + steel rails via `Rail`.
 - **Deferred:** open-sea water polygon (harbour is OSM coastline; needs a visual check to shape correctly).
 
+
+### 2026-06-24 — Radio fix + daytime visual pass (from player screenshots)
+- **The Anvil "only first line" fix:** `vo.ts` talk loop only advanced on `onend`; a misconfigured ElevenLabs voice returning a 200 with an empty/garbage blob never fired `ended`/`error`, stalling after line 1. Added a single-fire finish guard + watchdog (sized to clip duration or text estimate) on both the ElevenLabs and Web-Speech paths; empty/tiny (<256B) blobs fail over instantly; **per-voice strike tracking** routes a consistently-bad voice straight to Web Speech for the session (no repeated dead-air). `stopVO` cancels the active watchdog. (`ff645a4`, `4f8b2c5`)
+- **Radio depth:** each of the four hosts expanded to **52–53 lines** (was 32). (`ff645a4`)
+- **Daytime window glow:** windows lit orange in full daylight — all three building systems (`StreamingBuildings`, `Buildings`, `SeamensBethel`) ramped emissive on a gentle `1-dayT` curve. Switched to a dusk-gated smoothstep (dayT 0→0.3) so glass is dark by day, lit only near dusk/night. (`8da26f7`)
+- **Trees:** blocky neon-green detail-0 icosahedron crowns → **detail-1 rounded canopies** (`Props`, `AreaTrees`) + muted green palettes. (`8da26f7`)
+- **Deferred (left as-is, by design):** bright horizon band is the no-fog Sky horizon (per the user's "remove fog entirely"); green pillar + magenta beam on the cobble are gameplay markers (collectible glow + mission objective beam), not bugs.
