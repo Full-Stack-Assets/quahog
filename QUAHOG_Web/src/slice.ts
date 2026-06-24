@@ -46,6 +46,8 @@ export interface Slice {
   wood?: [number, number][][];
   /** Real OSM piers, rendered as raised wooden docks. */
   pier?: [number, number][][];
+  /** Real OSM church centroids, marked with steeples. */
+  church?: [number, number][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -75,7 +77,7 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
   // Optional OSM area overlays (green spaces, parking, beaches).
   await Promise.all([
     ["parks-", "parks"], ["parking-", "parking"], ["beach-", "beach"], ["rail-", "rail"],
-    ["cemetery-", "cemetery"], ["wood-", "wood"], ["pier-", "pier"],
+    ["cemetery-", "cemetery"], ["wood-", "wood"], ["pier-", "pier"], ["church-", "church"],
   ].map(async ([pre, key]) => {
     try {
       const r = await fetch(url.replace("slice-", pre));

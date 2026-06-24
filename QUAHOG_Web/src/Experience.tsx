@@ -34,6 +34,7 @@ import { Rail } from "./world/Rail";
 import { Piers } from "./world/Piers";
 import { AreaTrees } from "./world/AreaTrees";
 import { CullByDistance } from "./world/CullByDistance";
+import { Steeples } from "./world/Steeples";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -136,6 +137,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Piers paths={slice.pier} />}
       {slice && <AreaTrees areas={slice.wood} step={9} cap={800} />}
       {slice && <AreaTrees areas={slice.parks} step={16} cap={300} />}
+      {slice && <Steeples points={slice.church} />}
       {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
