@@ -179,9 +179,11 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
       _rp.set(r.x, r.y + r.sy / 2, r.z); // sit on the roof
       _rm.compose(_rp, _rq, _rs);
       m.setMatrixAt(i, _rm);
+      m.setColorAt(i, _rc.set(ROOF_UNIT[i % ROOF_UNIT.length]));
     }
     m.count = roofs.length;
     m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }, [roofs]);
 
   if (!geom) return null;
@@ -199,7 +201,7 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
       {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
       <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#55585e" roughness={0.9} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
       </instancedMesh>
     </group>
   );
@@ -208,6 +210,8 @@ const _rm = new THREE.Matrix4();
 const _rq = new THREE.Quaternion();
 const _rs = new THREE.Vector3();
 const _rp = new THREE.Vector3();
+const _rc = new THREE.Color();
+const ROOF_UNIT = ["#55585e", "#6a6258", "#4a4e54", "#736a5e", "#5e5a52", "#484c50"]; // varied HVAC/tank tones
 
 export function StreamingBuildings({ fallback, center }: { fallback: Building[]; center: [number, number] }) {
   const [manifest, setManifest] = useState<Manifest | null>(null);

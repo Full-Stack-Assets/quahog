@@ -106,7 +106,7 @@ export function DayNight() {
   return (
     <>
       <Sky sunPosition={sunPos} turbidity={5} rayleigh={2.2} mieCoefficient={0.005} />
-      <Stars radius={400} depth={60} count={1500} factor={6} fade speed={0.3} />
+      <Stars radius={400} depth={60} count={2800} factor={6} fade speed={0.3} />
       <sprite ref={glow} scale={[180, 180, 1]}>
         <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
       </sprite>
