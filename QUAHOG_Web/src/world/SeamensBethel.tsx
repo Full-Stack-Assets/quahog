@@ -135,6 +135,23 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
       <ArchWindow position={[9.06, 3.6, 3.2]} axis="x" />
       <ArchWindow position={[9.06, 3.6, -3.2]} axis="x" />
 
+      {/* grass lawn the chapel sits on (set back from the street, like the photos) */}
+      <mesh position={[0, 0.05, 0]} rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[21, 16]} />
+        <meshStandardMaterial color="#4c6a3a" roughness={1} />
+      </mesh>
+      {/* flagpole + flag on the side lawn */}
+      <group position={[4, 0, 7]}>
+        <mesh position={[0, 3.5, 0]} castShadow>
+          <cylinderGeometry args={[0.07, 0.08, 7, 6]} />
+          <meshStandardMaterial color="#d8d8d0" metalness={0.4} roughness={0.5} />
+        </mesh>
+        <mesh position={[0.9, 6.2, 0]} castShadow>
+          <boxGeometry args={[1.8, 1.0, 0.04]} />
+          <meshStandardMaterial color="#b22234" roughness={0.7} />
+        </mesh>
+      </group>
+
       {/* name board over the door */}
       <Text
         position={[10.2, 5.4, 0]}
