@@ -33,6 +33,7 @@ import { FlatAreas } from "./world/FlatAreas";
 import { Rail } from "./world/Rail";
 import { Piers } from "./world/Piers";
 import { AreaTrees } from "./world/AreaTrees";
+import { CullByDistance } from "./world/CullByDistance";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -147,6 +148,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       )}
       <Marina />
       <Gulls />
+      <CullByDistance center={CORE} radius={820}>
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Awnings roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
@@ -162,6 +164,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Fences roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Billboards roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Dumpsters roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      </CullByDistance>
       {slice && <HurricaneBarrier paths={slice.barrier} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
