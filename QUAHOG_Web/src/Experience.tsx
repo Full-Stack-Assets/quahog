@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
 import { useGame } from "./store";
-import { SatelliteGround } from "./world/SatelliteGround";
+import { Ground } from "./world/Ground";
 import { Roads } from "./world/Roads";
 import { Bridges } from "./world/Bridges";
 import { StreamingBuildings } from "./world/StreamingBuildings";
@@ -22,6 +22,19 @@ import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
 import { TrafficLights } from "./world/TrafficLights";
 import { ParkedCars } from "./world/ParkedCars";
+import { StreetExtras } from "./world/StreetExtras";
+import { RoadFixtures } from "./world/RoadFixtures";
+import { Foliage } from "./world/Foliage";
+import { Fences } from "./world/Fences";
+import { Billboards } from "./world/Billboards";
+import { Dumpsters } from "./world/Dumpsters";
+import { HurricaneBarrier } from "./world/HurricaneBarrier";
+import { FlatAreas } from "./world/FlatAreas";
+import { Rail } from "./world/Rail";
+import { Piers } from "./world/Piers";
+import { AreaTrees } from "./world/AreaTrees";
+import { CullByDistance } from "./world/CullByDistance";
+import { Steeples } from "./world/Steeples";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -29,6 +42,8 @@ import { HealthPickups } from "./world/HealthPickups";
 import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
+import { Waterfront } from "./world/Waterfront";
+import { PortClutter } from "./world/PortClutter";
 import { Marina } from "./world/Marina";
 import { Gulls } from "./world/Gulls";
 import { SkidMarks } from "./world/SkidMarks";
@@ -74,7 +89,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         if (!alive) return;
         setSlice(s);
         useGame.getState().setSlice(s);
-        setWaterZones(s.water ?? [], s.roads);
+        setWaterZones(s.water ?? [], s.roads, s.islands ?? [], s.barrier ?? []);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
@@ -93,7 +108,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Hazards />
 
       <Physics gravity={[0, -9.81, 0]}>
-        <SatelliteGround origin={slice?.origin} />
+        <Ground />
         <Player />
         <Car />
         <Boat />
@@ -113,12 +128,29 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         )}
       </Physics>
 
-      {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
+      {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.05} repeat={0.06} roughness={0.95} />}
+      {slice && <FlatAreas polys={slice.beach} color="#e0cc94" y={0.05} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.055} />}
+      {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.058} />}
+      {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.06} />}
+      {slice && <Rail paths={slice.rail} />}
+      {slice && <Piers paths={slice.pier} />}
+      {slice && <AreaTrees areas={slice.wood} step={9} cap={800} />}
+      {slice && <AreaTrees areas={slice.parks} step={16} cap={300} />}
+      {slice && <Steeples points={slice.church} />}
+      {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
+      {slice && slice.water?.length > 0 && (
+        <Waterfront polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
+      {slice && slice.water?.length > 0 && (
+        <PortClutter polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
       <Marina />
       <Gulls />
+      <CullByDistance center={CORE} radius={820}>
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Awnings roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
@@ -128,6 +160,14 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <StreetExtras roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <RoadFixtures roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Foliage roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Fences roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Billboards roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Dumpsters roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      </CullByDistance>
+      {slice && <HurricaneBarrier paths={slice.barrier} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />

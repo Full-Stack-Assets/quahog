@@ -1,12 +1,12 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal, makeGroundTexture } from "./textures";
+import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal, makeSidewalkTexture } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
 
 const CELL = 1000;       // road chunk size (m)
-const DRAW_DIST = 1500;  // hide road chunks beyond this from the camera
+const DRAW_DIST = 2200;  // hide road chunks beyond this from the camera (open, fog-free view)
 
 // Road classes → surface material. Highways get lane markings; vehicular streets
 // get plain asphalt; footways/pedestrian/steps get historic cobblestone.
@@ -15,6 +15,11 @@ const HIGHWAY = new Set([
   "motorway_link", "trunk_link", "primary_link",
 ]);
 const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "track"]);
+// Cobblestone historic district — the streets around Johnny Cake Hill / the
+// Whaling Historic District (Seamen's Bethel + the hero buildings) are real
+// granite-sett cobblestone. Drivable streets whose midpoint falls in this radius
+// render on the cobble surface to match the district.
+const HIST_CX = -230, HIST_CN = -60, HIST_R = 185;
 const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
@@ -70,7 +75,7 @@ export function Roads({ roads }: { roads: Road[] }) {
   }, []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const ns = useMemo(() => new THREE.Vector2(0.4, 0.4), []);
-  const sidewalkTex = useMemo(() => { const t = makeGroundTexture(); t.repeat.set(3, 0.4); return t; }, []);
+  const sidewalkTex = useMemo(() => { const t = makeSidewalkTexture(); t.repeat.set(4, 1.5); return t; }, []);
 
   // chunk roads into a spatial grid so off-screen/distant cells are culled
   const chunks = useMemo(() => {
@@ -84,6 +89,7 @@ export function Roads({ roads }: { roads: Road[] }) {
       if (!c) { c = { cb: [], sf: [], hw: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
       if (HIGHWAY.has(r.highway)) c.hw.push(r);
       else if (COBBLE.has(r.highway)) c.cb.push(r);
+      else if (Math.hypot(mid[0] - HIST_CX, mid[1] - HIST_CN) < HIST_R) c.cb.push(r); // historic cobblestone
       else c.sf.push(r);
     }
     return [...cells.values()].map((c) => ({
@@ -126,7 +132,7 @@ export function Roads({ roads }: { roads: Road[] }) {
         <group key={i} ref={(el) => (groups.current[i] = el)}>
           {c.apron && (
             <mesh geometry={c.apron} receiveShadow>
-              <meshStandardMaterial map={sidewalkTex} color="#9a9890" roughness={0.95} userData={{ base: 0.95 }} />
+              <meshStandardMaterial map={sidewalkTex} color="#7d786d" roughness={0.95} userData={{ base: 0.95 }} />
             </mesh>
           )}
           {c.cobble && (

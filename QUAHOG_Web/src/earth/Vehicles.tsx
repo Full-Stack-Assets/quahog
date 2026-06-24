@@ -7,8 +7,12 @@ import { shared } from "../shared";
 // per model (ride height, hood/cabin proportions) so a Bronco reads boxy/tall, a
 // Mustang long-hood/low, the Z a wedge, etc.
 
-export type VehicleType = "bronco" | "mustang" | "infiniti" | "nissanz" | "rav4";
-export const VEHICLE_TYPES: VehicleType[] = ["bronco", "mustang", "infiniti", "nissanz", "rav4"];
+export type VehicleType =
+  | "bronco" | "mustang" | "infiniti" | "nissanz" | "rav4"
+  | "pickup" | "wagon" | "van" | "sedan" | "boxtruck" | "coupe" | "suv";
+export const VEHICLE_TYPES: VehicleType[] =
+  ["bronco", "mustang", "infiniti", "nissanz", "rav4", "pickup", "wagon", "van", "sedan",
+   "boxtruck", "coupe", "suv"];
 
 interface Spec {
   L: number; W: number; H: number; y: number; // body box + center height
@@ -25,6 +29,20 @@ const SPECS: Record<VehicleType, Spec> = {
   infiniti: { L: 4.7, W: 1.85, H: 0.85, y: 0.82, cabL: 2.1, cabH: 0.66, cabZ: -0.1, ride: 0.34, wheelR: 0.44, glass: "#1a2128" },
   nissanz:  { L: 4.4, W: 1.85, H: 0.72, y: 0.7, cabL: 1.4, cabH: 0.55, cabZ: -0.6, ride: 0.3, wheelR: 0.45, glass: "#0f1418", hood: 1.7 },
   rav4:     { L: 4.4, W: 1.9, H: 1.15, y: 1.0, cabL: 2.2, cabH: 0.82, cabZ: -0.15, ride: 0.48, wheelR: 0.48, glass: "#212a30" },
+  // mid-80s work pickup: tall, cab-forward, open bed behind
+  pickup:   { L: 5.0, W: 2.0, H: 1.0, y: 0.95, cabL: 1.5, cabH: 0.78, cabZ: 0.7, ride: 0.5, wheelR: 0.5, glass: "#1c242b" },
+  // station wagon: long low roof all the way back
+  wagon:    { L: 4.9, W: 1.9, H: 0.86, y: 0.82, cabL: 2.7, cabH: 0.72, cabZ: -0.1, ride: 0.34, wheelR: 0.44, glass: "#1a2128" },
+  // boxy cargo/work van: one tall volume, short stubby hood
+  van:      { L: 4.9, W: 2.0, H: 1.55, y: 1.18, cabL: 1.3, cabH: 0.25, cabZ: 1.0, ride: 0.45, wheelR: 0.46, glass: "#161c21" },
+  // plain 4-door sedan
+  sedan:    { L: 4.6, W: 1.85, H: 0.85, y: 0.82, cabL: 2.3, cabH: 0.7, cabZ: -0.05, ride: 0.34, wheelR: 0.44, glass: "#1b222a" },
+  // box delivery truck: long tall body, small forward cab
+  boxtruck: { L: 6.4, W: 2.3, H: 2.1, y: 1.45, cabL: 1.5, cabH: 0.0, cabZ: 2.3, ride: 0.5, wheelR: 0.5, glass: "#161c21" },
+  // small 2-door coupe: short, low, long-ish hood
+  coupe:    { L: 4.2, W: 1.8, H: 0.8, y: 0.76, cabL: 1.5, cabH: 0.6, cabZ: -0.4, ride: 0.32, wheelR: 0.43, glass: "#141a1f", hood: 1.3 },
+  // tall family SUV
+  suv:      { L: 4.8, W: 2.0, H: 1.25, y: 1.05, cabL: 2.4, cabH: 0.85, cabZ: -0.15, ride: 0.5, wheelR: 0.5, glass: "#212a30" },
 };
 
 export function Vehicle({ type, color, brake }: { type: VehicleType; color: string; brake?: () => boolean }) {
@@ -42,9 +60,12 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
   // headlights/taillights come up at dusk; taillights flare under braking; and
   // wheels roll by self-measured world speed (works for any vehicle).
   useFrame(() => {
-    const night = 1 - shared.dayT;
-    if (head.current) head.current.emissiveIntensity = 0.3 + night * 1.6;
-    if (tail.current) tail.current.emissiveIntensity = 0.3 + night * 0.9 + (brake?.() ? 2.2 : 0);
+    // dusk-gated so headlights/taillights are off in daylight and come up only
+    // as the sun drops (matches the city's window glow); taillights keep a faint
+    // base so the red lens still reads, and flare under braking at any hour.
+    const night = 1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3);
+    if (head.current) head.current.emissiveIntensity = night * 1.9;
+    if (tail.current) tail.current.emissiveIntensity = 0.15 + night * 1.0 + (brake?.() ? 2.2 : 0);
     if (root.current) {
       root.current.getWorldPosition(_wp);
       if (prev.current) {

@@ -27,6 +27,27 @@ export interface Slice {
   buildings: Building[];
   roads: Road[];
   water: [number, number][][];
+  /** Land polygons (small islands/wharves the OSM water didn't cut out). Cut as
+   *  holes in the water so they render as land. Optional — may be absent. */
+  islands?: [number, number][][];
+  /** Hurricane-barrier breakwater polylines (slice metres). Rendered as a stone
+   *  dike and registered as drivable corridors over the water. Optional. */
+  barrier?: [number, number][][];
+  /** Real OSM green spaces (parks/gardens/grass/pitches), rendered as lawns. */
+  parks?: [number, number][][];
+  /** Real OSM parking lots, rendered as asphalt. */
+  parking?: [number, number][][];
+  /** Real OSM beaches, rendered as sand. */
+  beach?: [number, number][][];
+  /** Real OSM railway lines, rendered as ballast bed + rails. */
+  rail?: [number, number][][];
+  /** Real OSM cemeteries / wooded areas, rendered as flat ground. */
+  cemetery?: [number, number][][];
+  wood?: [number, number][][];
+  /** Real OSM piers, rendered as raised wooden docks. */
+  pier?: [number, number][][];
+  /** Real OSM church centroids, marked with steeples. */
+  church?: [number, number][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -41,5 +62,27 @@ export const toWorld = (p: [number, number], y = 0): [number, number, number] =>
 export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`failed to load slice: ${res.status}`);
-  return (await res.json()) as Slice;
+  const slice = (await res.json()) as Slice;
+  // Optional island/wharf land polygons (islands-<name>.json). Absent file is
+  // fine — just no holes get cut from the water.
+  try {
+    const ir = await fetch(url.replace("slice-", "islands-"));
+    if (ir.ok) slice.islands = (await ir.json()) as [number, number][][];
+  } catch { /* no islands file — leave undefined */ }
+  // Optional hurricane-barrier breakwater geometry.
+  try {
+    const br = await fetch(url.replace("slice-", "barrier-"));
+    if (br.ok) slice.barrier = (await br.json()) as [number, number][][];
+  } catch { /* no barrier file — leave undefined */ }
+  // Optional OSM area overlays (green spaces, parking, beaches).
+  await Promise.all([
+    ["parks-", "parks"], ["parking-", "parking"], ["beach-", "beach"], ["rail-", "rail"],
+    ["cemetery-", "cemetery"], ["wood-", "wood"], ["pier-", "pier"], ["church-", "church"],
+  ].map(async ([pre, key]) => {
+    try {
+      const r = await fetch(url.replace("slice-", pre));
+      if (r.ok) (slice as unknown as Record<string, unknown>)[key] = await r.json();
+    } catch { /* absent overlay file is fine */ }
+  }));
+  return slice;
 }

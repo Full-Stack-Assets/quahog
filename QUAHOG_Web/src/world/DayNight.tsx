@@ -93,13 +93,8 @@ export function DayNight() {
     bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6).lerp(fogGrey, fogW * 0.8);
     fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7).lerp(fogGrey, fogW * 0.85);
     scene.background = bg;
-    if (scene.fog) {
-      const f = scene.fog as THREE.Fog;
-      f.color.copy(fogC);
-      // dense coastal fog pulls the view right in; rain less so; clear is open
-      f.near = fogW ? 12 : 350;
-      f.far = fogW ? 180 : rain ? 700 : 1500;
-    }
+    // Fog removed entirely — open, fog-free view reads much better. We leave
+    // scene.fog unset; if anything ever re-adds it, this stays null-safe.
 
     skyThrottle.current += dt;
     if (skyThrottle.current > 0.25) {
@@ -110,13 +105,12 @@ export function DayNight() {
 
   return (
     <>
-      <fog attach="fog" args={["#c4d6e6", 350, 1500]} />
       <Sky sunPosition={sunPos} turbidity={5} rayleigh={2.2} mieCoefficient={0.005} />
-      <Stars radius={400} depth={60} count={1500} factor={6} fade speed={0.3} />
+      <Stars radius={400} depth={60} count={2800} factor={6} fade speed={0.3} />
       <sprite ref={glow} scale={[180, 180, 1]}>
         <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
       </sprite>
-      <ambientLight intensity={0.14} />
+      <ambientLight intensity={0.19} />
       <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
       <directionalLight
         ref={sun}

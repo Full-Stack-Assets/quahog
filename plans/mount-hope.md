@@ -696,4 +696,57 @@ Focus reaffirmed: **the web game is the only playable target.** Work on branch `
 - **Buildings (web):** parapet/cornice caps, masonry+sash façade, AO gradient, varied rooftop clutter, night-lit window variation, mixed window styles (4×4 grid). See checklist item above.
 - **Road-over-water fix (web):** `waterZones.ts` now opens a crossing corridor for any road segment whose midpoint lies over a water polygon, not only `bridge=yes` roads — fixes "Into the drink" on untagged causeways/spans while open harbour still blocks.
 - **Unity GisCity pipeline (roadmap #2/#4/#5):** `fetch_osm.py` parses multipolygon **relations + holes** (tested offline); `GeoJson`/`EarClipping`/`GisCity` get courtyards/holes (keyhole-bridged triangulation), inner walls, and per-building category palettes/heights. **Not gate-verified** — the sandbox egress policy blocks the .NET SDK download; `tools/csharp/setup.sh` now falls back to the Microsoft CDN so a full-access session can run the gate.
+- **Fog removed + islands as land + clean ground:** removed all distance fog; cut Fish/Pope's Island + wharves out of the water (render as land, `derive_islands.py` → `islands-newbedford.json`); dropped the washed satellite drape for one retoned stylized ground.
 
+### 2026-06-24 — "100 to perfection" grind (web game)
+Goal: 100 concrete improvements to the playable web game. Running log:
+- **Streets b1 (1–7):** new `StreetExtras` (stop signs, parking meters, trash cans, traffic cones) curbside; +parked-car density (26→46, tighter spacing); +crosswalk density/radius.
+- **Streets b2 (8–10):** phone booths, newspaper boxes, bollards (fill StreetExtras slots).
+- **Waterfront b3 (11–13):** new `Waterfront` — shoreline timber pilings + mooring buoys.
+- **Roads b4 (14–16):** new `RoadFixtures` — manhole covers + curb storm grates.
+- **Density b5 (17–21):** more furniture/street-signs/traffic-lights/utility-poles/graffiti.
+- **Variety b6 (22–24):** wider parked-car + awning palettes; more ground grime.
+- **Variety b7 (25–27):** per-instance colour for trees/benches/hydrants.
+- **Port b8 (28–31):** new `PortClutter` — wharf shipping containers, crates, barrels.
+- **Buildings b9 (32):** per-building window-pattern phase (varied night lighting).
+- **Foliage b10 (33–35):** new `Foliage` — frontage bushes + curb grass tufts.
+- **Tuning b11 (36–37):** longer road draw distance (fog-free) + more gulls.
+- **Variety b12 (38–39):** trash-can + newspaper-box colour variety.
+- **Life b13 (40–41):** more pedestrians (32) + traffic cars (20).
+- **Vehicles b14 (42–45):** new models — pickup, station wagon, cargo van, sedan.
+- **Road wear b15 (46–48):** asphalt repair patches + denser street/fixture sampling.
+- **Life b16 (49–50):** wider pedestrian + traffic-car palettes.
+- **Fences b17 (51–52):** new `Fences` — chain-link along service/back lots.
+- **Atmosphere b18 (53–54):** more stars + varied rooftop-unit colours.
+- **Billboards b19 (55–56):** new `Billboards` — roadside poster boards on arterials.
+- **Variety b20 (57–58):** per-instance scale for awnings + crosswalks.
+- **Back-lots b21 (59–60):** new `Dumpsters` — dumpsters + pallets on service roads.
+- **Variety b22 (61–62):** per-instance colour for phone booths + parking meters.
+- **Vehicles b23 (63–65):** box truck, coupe, SUV.
+- **Landmarks b24 (66–68):** real hero materials (clapboard/brick/granite, was gold); Seamen's Bethel full bell tower + octagonal spire + Greek-revival cornice + repositioned entrance.
+- **Landmarks b25 (69–70):** Bethel grass lawn + flagpole/flag (per reference photos).
+- **Realism b26 (71–73):** parked-car yaw jitter; more crosswalks + awnings.
+- **Density b27 (74–76):** denser foliage/port/waterfront layers.
+- **Polish b28 (77–81):** brighter night ambient; placement jitter (street/port/dumpsters); more gulls.
+- **Density b29 (82–86):** higher caps on port/waterfront/dumpsters/fences/fixtures.
+- **Variety b30 (87–91):** wider container/dumpster palettes; more decals/crosswalks/graffiti.
+- **Bethel b31 (92–93):** brick entrance walkway + foundation shrubs.
+- **Finish b32 (94–100):** more street trees + foliage greens; more billboards/traffic-lights/utility-poles/street-signs; wider crosswalk radius.
+
+**✅ 100/100 web-game improvements shipped.** New components added this run: `StreetExtras`, `Waterfront`, `RoadFixtures`, `Foliage`, `Fences`, `Billboards`, `Dumpsters`, `PortClutter`; plus the Seamen's Bethel rebuild, real hero-building materials, fog removal, island land, the clean stylized ground, the road-over-water fix, building/vehicle/pedestrian variety, and a citywide density pass. All build-verified via Vercel.
+
+### 2026-06-24 — "Next 100" grind: real OSM grounding + the Hurricane Barrier
+Now pulling **real OpenStreetMap data live** (Overpass reachable this session) and baking it to `public/*-newbedford.json`, loaded by the slice loader.
+- **Hurricane Barrier:** real OSM breakwater ways → `barrier-newbedford.json`; `HurricaneBarrier` renders the stone dike + granite deck across the harbour mouth (Clark's Cove dike + main barrier), registered drivable in `waterZones`.
+- **Parks/green (101–103):** OSM parks/gardens/grass/pitches (172) → green lawns via `Parks`→`FlatAreas`.
+- **Surfaces (104–107):** OSM parking lots (asphalt) + beaches (sand) via generic `FlatAreas`.
+- **Rail (108–110):** OSM railway lines (60) → ballast bed + steel rails via `Rail`.
+- **Deferred:** open-sea water polygon (harbour is OSM coastline; needs a visual check to shape correctly).
+
+
+### 2026-06-24 — Radio fix + daytime visual pass (from player screenshots)
+- **The Anvil "only first line" fix:** `vo.ts` talk loop only advanced on `onend`; a misconfigured ElevenLabs voice returning a 200 with an empty/garbage blob never fired `ended`/`error`, stalling after line 1. Added a single-fire finish guard + watchdog (sized to clip duration or text estimate) on both the ElevenLabs and Web-Speech paths; empty/tiny (<256B) blobs fail over instantly; **per-voice strike tracking** routes a consistently-bad voice straight to Web Speech for the session (no repeated dead-air). `stopVO` cancels the active watchdog. (`ff645a4`, `4f8b2c5`)
+- **Radio depth:** each of the four hosts expanded to **52–53 lines** (was 32). (`ff645a4`)
+- **Daytime window glow:** windows lit orange in full daylight — all three building systems (`StreamingBuildings`, `Buildings`, `SeamensBethel`) ramped emissive on a gentle `1-dayT` curve. Switched to a dusk-gated smoothstep (dayT 0→0.3) so glass is dark by day, lit only near dusk/night. (`8da26f7`)
+- **Trees:** blocky neon-green detail-0 icosahedron crowns → **detail-1 rounded canopies** (`Props`, `AreaTrees`) + muted green palettes. (`8da26f7`)
+- **Deferred (left as-is, by design):** bright horizon band is the no-fog Sky horizon (per the user's "remove fog entirely"); green pillar + magenta beam on the cobble are gameplay markers (collectible glow + mission objective beam), not bugs.

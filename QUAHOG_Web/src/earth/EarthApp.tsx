@@ -80,7 +80,6 @@ export function EarthApp() {
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
         <ContextGuard />
         <color attach="background" args={[wx.bg]} />
-        {mode === "play" && <fog attach="fog" args={[wx.bg, wx.fog[0], wx.fog[1]]} />}
         {wx.sky && <Sky sunPosition={[120, 80, 60]} turbidity={weather === "cloudy" ? 8 : 3} rayleigh={1.2} />}
         <hemisphereLight args={["#dceaff", "#8a8678", 0.9]} />
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />

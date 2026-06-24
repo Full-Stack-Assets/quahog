@@ -7,8 +7,8 @@ import type { Road } from "../slice";
 // 3+ drivable ends meet; each gets a flat zebra patch. Instanced + capped near
 // the core. Approximate orientation — reads right in motion.
 
-const RADIUS = 240;
-const MAX = 90;
+const RADIUS = 320;
+const MAX = 240;
 const DRIVABLE = new Set(["primary", "secondary", "tertiary", "residential", "unclassified", "living_street"]);
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
@@ -48,6 +48,7 @@ export function Crosswalks({ roads, center }: { roads: Road[]; center: [number, 
     for (let i = 0; i < spots.length; i++) {
       _e.set(-Math.PI / 2, (i % 2) * Math.PI / 2, 0); // lie flat, alternate orientation
       _q.setFromEuler(_e);
+      _s.set(0.85 + ((i * 0.618) % 1) * 0.4, 0.85 + ((i * 0.382) % 1) * 0.4, 1); // size variety per junction
       _m.compose(_p.set(spots[i].x, 0.085, spots[i].z), _q, _s);
       mesh.setMatrixAt(i, _m);
     }

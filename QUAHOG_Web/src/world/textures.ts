@@ -213,26 +213,65 @@ export function makeGraffiti(variant: number): THREE.Texture {
   return asColor(new THREE.Texture(c));
 }
 export function makeGroundTexture(): THREE.Texture {
+  // A near-SOLID light neutral. It multiplies each mesh's own colour, so keeping
+  // it near-white lets the ground and overlays (grass green / parking grey /
+  // beach sand) read at their intended material tone. Deliberately almost flat:
+  // the old fine grit speckle + strong mottle shimmered/"flickered" like a
+  // satellite drape on the huge region plane at grazing angles. Only a faint,
+  // low-frequency tonal drift remains so it isn't dead plastic.
   const [c, ctx] = canvas(256);
-  ctx.fillStyle = "#3b3d44";
+  ctx.fillStyle = "#dedcd2";
   ctx.fillRect(0, 0, 256, 256);
-  // speckle
-  for (let i = 0; i < 2600; i++) {
-    const v = 40 + Math.random() * 50;
-    ctx.fillStyle = `rgba(${v},${v},${v + 4},${0.25 + Math.random() * 0.25})`;
-    const s = 1 + Math.random() * 3;
-    ctx.fillRect(Math.random() * 256, Math.random() * 256, s, s);
-  }
-  // faint paving grid
-  ctx.strokeStyle = "rgba(20,20,24,0.5)";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 256; i += 32) {
-    ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, 256); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(256, i); ctx.stroke();
+  // a few big, very soft patches — low frequency tiles cleanly without shimmer
+  for (let i = 0; i < 16; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, r = 60 + Math.random() * 80;
+    const d = (Math.random() - 0.5) * 12;
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${212 + d},${210 + d},${198 + d},0.10)`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return asColor(t);
+}
+
+// Dedicated sidewalk/curb texture: warm concrete with faint scored expansion
+// joints + light aggregate grain. Richer than the flat ground so curbside
+// pavement reads as a real sidewalk, used uniformly by the road apron.
+let _sidewalk: THREE.Texture | null = null;
+export function makeSidewalkTexture(): THREE.Texture {
+  if (_sidewalk) return _sidewalk;
+  const S = 256;
+  const [c, ctx] = canvas(S);
+  ctx.fillStyle = "#c9c4b8"; // warm concrete (multiplies the mesh tone)
+  ctx.fillRect(0, 0, S, S);
+  // subtle aggregate flecks (low count → no grazing-angle shimmer)
+  for (let i = 0; i < 520; i++) {
+    const v = 150 + Math.random() * 60;
+    ctx.fillStyle = `rgba(${v},${v - 4},${v - 12},${0.06 + Math.random() * 0.1})`;
+    ctx.fillRect(Math.random() * S, Math.random() * S, 1.5, 1.5);
+  }
+  // scored expansion joints: one panel seam across each axis per tile so a
+  // tiled sidewalk shows regular slab divisions, not a busy grid
+  ctx.strokeStyle = "rgba(70,66,58,0.5)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, S / 2); ctx.lineTo(S, S / 2);
+  ctx.moveTo(S / 2, 0); ctx.lineTo(S / 2, S);
+  ctx.stroke();
+  // faint highlight lip beside each joint for a little relief
+  ctx.strokeStyle = "rgba(255,253,245,0.35)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, S / 2 + 2); ctx.lineTo(S, S / 2 + 2);
+  ctx.moveTo(S / 2 + 2, 0); ctx.lineTo(S / 2 + 2, S);
+  ctx.stroke();
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  _sidewalk = asColor(t);
+  return _sidewalk;
 }
 
 /** Cobblestone texture for the historic district (rounded granite setts). */

@@ -22,8 +22,17 @@ const WINDOW_GLOW = new THREE.Color("#ffcf8a");
 const WARM = ["#7e463a", "#8a5a48", "#9c6347", "#a8514a", "#6e4a3e", "#b0a48c", "#c2bcae", "#5e6b66", "#8a9488", "#b8b0a0"];
 const GREY = ["#7c7e88", "#9aa0a6", "#8f8c86", "#6f7178", "#a7a59c", "#86837c"];
 const ROOF = ["#2c2a28", "#37322c", "#31343a", "#2a2e30", "#3a352f"]; // tar / gravel roofs
-const HERO_COLOR = "#caa24a";
-const HERO = new Set(["Seamen's Bethel", "New Bedford Whaling Museum", "Mariner's Home", "Double Bank Building", "Rodman Candleworks"]);
+// Real materials for the Johnny Cake Hill hero buildings (was a flat gold marker):
+// white clapboard for the wood Federal/Greek-revival ones, red brick + granite for
+// the institutional ones.
+const HERO_COLORS: Record<string, string> = {
+  "Mariner's Home": "#dcd8cc",            // white clapboard
+  "New Bedford Whaling Museum": "#7c3b30", // red brick
+  "Double Bank Building": "#bcb6a8",       // granite Greek revival
+  "Rodman Candleworks": "#c4bdaf",         // granite
+  "Seamen's Bethel": "#e6e2d8",            // white clapboard (also modelled separately)
+};
+const HERO = new Set(Object.keys(HERO_COLORS));
 const FLOOR = 3.2; // metres per window row
 const WIN_TILE = FLOOR * FACADE_GRID; // metres spanned by one façade texture tile
 
@@ -96,9 +105,13 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const pal = b.height >= 14 ? GREY : WARM;
     const isHero = !!(b.name && HERO.has(b.name));
     const hash = (i * 0.6180339887) % 1;
-    const wall = new THREE.Color(isHero ? HERO_COLOR : pal[i % pal.length]);
+    const wall = new THREE.Color(isHero ? (HERO_COLORS[b.name!] ?? "#c2bcae") : pal[i % pal.length]);
     if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
+    // Per-building façade phase (whole-window steps) so neighbours show a
+    // different slice of the 4×4 window grid — varied lit pattern at night.
+    const phaseX = Math.floor(hash * FACADE_GRID) / FACADE_GRID;
+    const phaseY = Math.floor(((i * 0.7548776662) % 1) * FACADE_GRID) / FACADE_GRID;
     const pos = g.attributes.position, nor = g.attributes.normal;
     const count = pos.count;
     const colors = new Float32Array(count * 3);
@@ -115,7 +128,7 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
         const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
         colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
-        uv[v * 2] = horiz / WIN_TILE; uv[v * 2 + 1] = y / WIN_TILE;
+        uv[v * 2] = horiz / WIN_TILE + phaseX; uv[v * 2 + 1] = y / WIN_TILE + phaseY;
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
@@ -133,7 +146,11 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
+  // Windows only light up at dusk/night. shared.dayT is the sun-elevation factor
+  // (1 at noon, 0 at/under the horizon); a linear (1 - dayT) ramp left windows
+  // glowing through the whole day. Gate it to the low end so daytime façades read
+  // as dark glass and lights come on only as the sun drops past ~dayT 0.3.
+  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.15; });
 
   // Rooftop clutter for skyline depth: a primary unit sized by building class
   // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)
@@ -175,9 +192,11 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
       _rp.set(r.x, r.y + r.sy / 2, r.z); // sit on the roof
       _rm.compose(_rp, _rq, _rs);
       m.setMatrixAt(i, _rm);
+      m.setColorAt(i, _rc.set(ROOF_UNIT[i % ROOF_UNIT.length]));
     }
     m.count = roofs.length;
     m.instanceMatrix.needsUpdate = true;
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }, [roofs]);
 
   if (!geom) return null;
@@ -195,7 +214,7 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
       {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
       <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="#55585e" roughness={0.9} />
+        <meshStandardMaterial color="#ffffff" roughness={0.9} />
       </instancedMesh>
     </group>
   );
@@ -204,6 +223,8 @@ const _rm = new THREE.Matrix4();
 const _rq = new THREE.Quaternion();
 const _rs = new THREE.Vector3();
 const _rp = new THREE.Vector3();
+const _rc = new THREE.Color();
+const ROOF_UNIT = ["#55585e", "#6a6258", "#4a4e54", "#736a5e", "#5e5a52", "#484c50"]; // varied HVAC/tank tones
 
 export function StreamingBuildings({ fallback, center }: { fallback: Building[]; center: [number, number] }) {
   const [manifest, setManifest] = useState<Manifest | null>(null);
