@@ -293,6 +293,21 @@ export function HUD({ sliceName }: { sliceName: string }) {
       >
         Map data © OpenStreetMap contributors, ODbL
       </div>
+
+      {/* build stamp — confirms which deploy is live after a hard refresh */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 6,
+          left: 8,
+          fontSize: 10,
+          opacity: 0.5,
+          fontFamily: "'Courier New', monospace",
+          letterSpacing: 0.5,
+        }}
+      >
+        build {__BUILD_SHA__} · {__BUILD_DATE__}
+      </div>
     </div>
   );
 }
