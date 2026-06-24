@@ -28,6 +28,7 @@ import { Foliage } from "./world/Foliage";
 import { Fences } from "./world/Fences";
 import { Billboards } from "./world/Billboards";
 import { Dumpsters } from "./world/Dumpsters";
+import { HurricaneBarrier } from "./world/HurricaneBarrier";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -82,7 +83,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         if (!alive) return;
         setSlice(s);
         useGame.getState().setSlice(s);
-        setWaterZones(s.water ?? [], s.roads, s.islands ?? []);
+        setWaterZones(s.water ?? [], s.roads, s.islands ?? [], s.barrier ?? []);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
@@ -148,6 +149,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <Fences roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Billboards roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Dumpsters roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <HurricaneBarrier paths={slice.barrier} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />

@@ -10,10 +10,21 @@ let waterRings: [number, number][][] = [];
 let islandRings: [number, number][][] = []; // land cut out of the water (islands/wharves)
 let roadSegs: number[] = []; // flattened ax,an,bx,bn,halfWidth, …
 
-export function setWaterZones(water: [number, number][][], roads: Road[], islands: [number, number][][] = []) {
+export function setWaterZones(
+  water: [number, number][][],
+  roads: Road[],
+  islands: [number, number][][] = [],
+  barriers: [number, number][][] = [],
+) {
   waterRings = water ?? [];
   islandRings = islands ?? [];
   roadSegs = [];
+  // The hurricane-barrier dike is a drivable/walkable corridor over the water.
+  for (const path of barriers ?? []) {
+    for (let i = 0; i < path.length - 1; i++) {
+      roadSegs.push(path[i][0], path[i][1], path[i + 1][0], path[i + 1][1], 7);
+    }
+  }
   // Every road becomes a "safe corridor": if you're on one you never sink, even
   // where it crosses water. Road-proximity is only ever evaluated while a point
   // is already inside a water polygon (see isBlockedWater), so scanning the full

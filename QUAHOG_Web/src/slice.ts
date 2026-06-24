@@ -30,6 +30,9 @@ export interface Slice {
   /** Land polygons (small islands/wharves the OSM water didn't cut out). Cut as
    *  holes in the water so they render as land. Optional — may be absent. */
   islands?: [number, number][][];
+  /** Hurricane-barrier breakwater polylines (slice metres). Rendered as a stone
+   *  dike and registered as drivable corridors over the water. Optional. */
+  barrier?: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -51,5 +54,10 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
     const ir = await fetch(url.replace("slice-", "islands-"));
     if (ir.ok) slice.islands = (await ir.json()) as [number, number][][];
   } catch { /* no islands file — leave undefined */ }
+  // Optional hurricane-barrier breakwater geometry.
+  try {
+    const br = await fetch(url.replace("slice-", "barrier-"));
+    if (br.ok) slice.barrier = (await br.json()) as [number, number][][];
+  } catch { /* no barrier file — leave undefined */ }
   return slice;
 }
