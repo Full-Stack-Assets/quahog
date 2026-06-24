@@ -33,7 +33,7 @@ function fill(mesh: THREE.InstancedMesh | null, ps: P[], y: number, tint?: strin
 export function Dumpsters({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
     const samples = sampleRoadEdges(roads, center, {
-      radius: RADIUS, step: 34, sparse: 1, max: 200, highways: ["service", "unclassified", "residential"],
+      radius: RADIUS, step: 34, sparse: 1, max: 280, highways: ["service", "unclassified", "residential"],
     });
     const dumps: P[] = [], pallets: P[] = [];
     let n = 0;

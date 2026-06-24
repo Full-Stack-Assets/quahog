@@ -31,7 +31,7 @@ function fill(mesh: THREE.InstancedMesh | null, ps: P[], y: number) {
 export function Fences({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
     const samples = sampleRoadEdges(roads, center, {
-      radius: RADIUS, step: 4, sparse: 1, max: 1200, highways: ["service", "unclassified"],
+      radius: RADIUS, step: 4, sparse: 1, max: 1500, highways: ["service", "unclassified"],
     });
     const panels: P[] = [], posts: P[] = [];
     let n = 0;

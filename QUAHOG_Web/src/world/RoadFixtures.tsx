@@ -30,7 +30,7 @@ function lay(mesh: THREE.InstancedMesh | null, ps: P[], y: number) {
 
 export function RoadFixtures({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
-    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 22, sparse: 1, max: 900 });
+    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 22, sparse: 1, max: 1100 });
     const manholes: P[] = [], grates: P[] = [], patches: P[] = [];
     let n = 0;
     for (const s of samples) {

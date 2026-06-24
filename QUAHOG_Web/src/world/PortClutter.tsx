@@ -55,11 +55,11 @@ export function PortClutter({ polys, center }: { polys: [number, number][][]; ce
           if (kind === 0 || kind === 1) containers.push({ x, z, rot });
           else if (kind === 2) crates.push({ x, z, rot });
           else barrels.push({ x: x + nx * land * 2, z: z + nz * land * 2, rot });
-          if (containers.length > 220) break;
+          if (containers.length > 300) break;
         }
-        if (containers.length > 220) break;
+        if (containers.length > 300) break;
       }
-      if (containers.length > 220) break;
+      if (containers.length > 300) break;
     }
     return { containers, crates, barrels };
   }, [polys, center]);

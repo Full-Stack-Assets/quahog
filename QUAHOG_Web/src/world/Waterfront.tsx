@@ -49,11 +49,11 @@ export function Waterfront({ polys, center }: { polys: [number, number][][]; cen
             const into = inRing(e1, n1, ring) ? 1 : -1;
             buoys.push({ x: x + nx * 6 * into, z: z + nz * 6 * into, rot: 0 });
           }
-          if (pilings.length > 700) break;
+          if (pilings.length > 900) break;
         }
-        if (pilings.length > 700) break;
+        if (pilings.length > 900) break;
       }
-      if (pilings.length > 700) break;
+      if (pilings.length > 900) break;
     }
     return { pilings, buoys };
   }, [polys, center]);
