@@ -33,7 +33,7 @@ function place(mesh: THREE.InstancedMesh | null, ps: P[], y: number) {
 
 export function Foliage({ roads, center }: { roads: Road[]; center: [number, number] }) {
   const L = useMemo(() => {
-    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 13, sparse: 1, max: 1500 });
+    const samples = sampleRoadEdges(roads, center, { radius: RADIUS, step: 11, sparse: 1, max: 1800 });
     const bushes: P[] = [], tufts: P[] = [];
     let n = 0;
     for (const s of samples) {

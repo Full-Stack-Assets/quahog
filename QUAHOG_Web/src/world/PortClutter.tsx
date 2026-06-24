@@ -41,7 +41,7 @@ export function PortClutter({ polys, center }: { polys: [number, number][][]; ce
         if (len < 1e-3) continue;
         const ux = dx / len, uz = dz / len;
         const nx = -uz, nz = ux;
-        for (let d = 0; d < len; d += 24) {
+        for (let d = 0; d < len; d += 20) {
           const ex = ax + ux * d, ez = az + uz * d;
           if (Math.hypot(ex - center[0], ez - center[1]) > RADIUS) continue;
           // land side = the side NOT inside the water ring

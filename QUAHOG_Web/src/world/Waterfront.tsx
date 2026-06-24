@@ -38,7 +38,7 @@ export function Waterfront({ polys, center }: { polys: [number, number][][]; cen
         if (len < 1e-3) continue;
         const ux = dx / len, uz = dz / len;
         const nx = -uz, nz = ux; // perpendicular
-        for (let d = 0; d < len; d += 9) {
+        for (let d = 0; d < len; d += 7) {
           const x = ax + ux * d, z = az + uz * d;
           if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
           n++;

@@ -720,4 +720,10 @@ Goal: 100 concrete improvements to the playable web game. Running log:
 - **Atmosphere b18 (53–54):** more stars + varied rooftop-unit colours.
 - **Billboards b19 (55–56):** new `Billboards` — roadside poster boards on arterials.
 - **Variety b20 (57–58):** per-instance scale for awnings + crosswalks.
+- **Back-lots b21 (59–60):** new `Dumpsters` — dumpsters + pallets on service roads.
+- **Variety b22 (61–62):** per-instance colour for phone booths + parking meters.
+- **Vehicles b23 (63–65):** box truck, coupe, SUV.
+- **Landmarks b24 (66–68):** real hero materials (clapboard/brick/granite, was gold); Seamen's Bethel full bell tower + octagonal spire + Greek-revival cornice + repositioned entrance.
+- **Landmarks b25 (69–70):** Bethel grass lawn + flagpole/flag (per reference photos).
+- **Realism b26 (71–73):** parked-car yaw jitter; more crosswalks + awnings.
 
