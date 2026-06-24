@@ -11,13 +11,24 @@ export function setWaterZones(water: [number, number][][], roads: Road[]) {
   waterRings = water ?? [];
   bridgeSegs = [];
   for (const r of roads) {
-    if (!r.bridge) continue;
-    const hw = r.width / 2 + 4; // generous corridor so you can stay "on the bridge"
+    const hw = r.width / 2 + 4; // generous corridor so you can stay "on the road"
+    const isBridge = !!r.bridge;
     for (let i = 0; i < r.points.length - 1; i++) {
       const [ax, an] = r.points[i], [bx, bn] = r.points[i + 1];
-      bridgeSegs.push(ax, an, bx, bn, hw);
+      // A bridge always carries you over. For every other road, only its segments
+      // that actually run over a water polygon become crossing corridors — so real
+      // causeways/spans the OSM data forgot to tag bridge=yes stay drivable, while
+      // open harbour off the road network still blocks you.
+      if (isBridge || midInWater((ax + bx) / 2, (an + bn) / 2)) {
+        bridgeSegs.push(ax, an, bx, bn, hw);
+      }
     }
   }
+}
+
+function midInWater(px: number, pn: number): boolean {
+  for (const ring of waterRings) if (pointInRing(px, pn, ring)) return true;
+  return false;
 }
 
 function pointInRing(px: number, pn: number, ring: [number, number][]): boolean {
