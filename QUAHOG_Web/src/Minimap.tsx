@@ -33,6 +33,8 @@ export function Minimap() {
       }
     }
     const water = slice.water ?? [];
+    const parks = slice.parks ?? [];
+    const barrier = slice.barrier ?? [];
 
     const draw = () => {
       const body = useGame.getState().mode === "car" ? shared.car : shared.player;
@@ -63,6 +65,19 @@ export function Minimap() {
         ctx.fill();
       }
 
+      // parks / green spaces
+      ctx.fillStyle = "#2c4626";
+      for (const ring of parks) {
+        ctx.beginPath();
+        for (let i = 0; i < ring.length; i++) {
+          const sx = R + (ring[i][0] - px) * PPM;
+          const sy = R + (-ring[i][1] - pz) * PPM;
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
       // roads
       for (let i = 0; i < segs.length; i += 5) {
         const x1 = R + (segs[i] - px) * PPM;
@@ -77,6 +92,19 @@ export function Minimap() {
         ctx.beginPath();
         ctx.moveTo(x1, y1);
         ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      // hurricane barrier (stone dike)
+      ctx.strokeStyle = "#9a978c";
+      ctx.lineWidth = 2.5;
+      for (const path of barrier) {
+        ctx.beginPath();
+        for (let i = 0; i < path.length; i++) {
+          const sx = R + (path[i][0] - px) * PPM;
+          const sy = R + (-path[i][1] - pz) * PPM;
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
         ctx.stroke();
       }
 
