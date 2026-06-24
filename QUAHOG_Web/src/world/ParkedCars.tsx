@@ -33,7 +33,12 @@ function build(roads: Road[], center: [number, number]): Parked[] {
         const x = x1 + ux * d + nx * off * side;
         const z = z1 + uz * d + nz * off * side;
         if (Math.hypot(x - center[0], z - center[1]) > RADIUS) continue;
-        out.push({ x, z, rot: Math.atan2(ux, uz), type: VEHICLE_TYPES[n % VEHICLE_TYPES.length], color: COLORS[n % COLORS.length] });
+        out.push({
+          x, z,
+          rot: Math.atan2(ux, uz) + (((n * 0.6180339887) % 1) - 0.5) * 0.2, // parked-by-hand yaw jitter
+          type: VEHICLE_TYPES[(n * 7) % VEHICLE_TYPES.length],
+          color: COLORS[(n * 5) % COLORS.length],
+        });
         n++;
         if (out.length >= MAX) return out;
       }

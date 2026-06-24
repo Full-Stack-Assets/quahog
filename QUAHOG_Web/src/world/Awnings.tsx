@@ -6,8 +6,8 @@ import type { Road } from "../slice";
 // commercial frontages near the core — instanced, two-tone, angled out over the
 // "sidewalk". Cheap way to make streets read as shops, not blank walls.
 
-const RADIUS = 240;
-const MAX = 280;
+const RADIUS = 260;
+const MAX = 360;
 const COMMERCIAL = new Set(["primary", "secondary", "tertiary", "unclassified", "living_street"]);
 const COLORS = ["#9c2b2b", "#1f5e3a", "#21456e", "#7a4a8c", "#b5862b", "#2a6f6f",
   "#8a3a1f", "#3a5a8c", "#6a2a4a", "#2a6a3a", "#a8902b", "#444a55"];
