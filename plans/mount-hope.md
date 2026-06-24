@@ -62,7 +62,7 @@ time; keep the build green; be honest about status.
 - [x] Asset loading/preload screen + progress bar — `loadSlice` streams the slice JSON and reports 0..1; StartMenu shows a progress bar + `LOADING NEW BEDFORD · NN%`
 - [x] Error boundary + crash overlay on the main game — `ui/ErrorBoundary.tsx` wraps `<App>` in `main.tsx` (recoverable overlay + reload + build stamp)
 - [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
-- [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
+- [x] Analytics-free telemetry stub (FPS, load time) behind a debug flag — `ui/DebugStats.tsx`, off by default (`?debug` / localStorage / backtick toggle)
 
 ## 1. World data & pipeline
 - [x] OSM pull: New Bedford + Fall River (roads/water/rail/coastline/boundary)
