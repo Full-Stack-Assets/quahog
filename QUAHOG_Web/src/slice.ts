@@ -39,6 +39,8 @@ export interface Slice {
   parking?: [number, number][][];
   /** Real OSM beaches, rendered as sand. */
   beach?: [number, number][][];
+  /** Real OSM railway lines, rendered as ballast bed + rails. */
+  rail?: [number, number][][];
   landmarks: Landmark[];
   attribution: string;
 }
@@ -67,7 +69,7 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
   } catch { /* no barrier file — leave undefined */ }
   // Optional OSM area overlays (green spaces, parking, beaches).
   await Promise.all([
-    ["parks-", "parks"], ["parking-", "parking"], ["beach-", "beach"],
+    ["parks-", "parks"], ["parking-", "parking"], ["beach-", "beach"], ["rail-", "rail"],
   ].map(async ([pre, key]) => {
     try {
       const r = await fetch(url.replace("slice-", pre));
