@@ -735,3 +735,11 @@ Goal: 100 concrete improvements to the playable web game. Running log:
 
 **✅ 100/100 web-game improvements shipped.** New components added this run: `StreetExtras`, `Waterfront`, `RoadFixtures`, `Foliage`, `Fences`, `Billboards`, `Dumpsters`, `PortClutter`; plus the Seamen's Bethel rebuild, real hero-building materials, fog removal, island land, the clean stylized ground, the road-over-water fix, building/vehicle/pedestrian variety, and a citywide density pass. All build-verified via Vercel.
 
+### 2026-06-24 — "Next 100" grind: real OSM grounding + the Hurricane Barrier
+Now pulling **real OpenStreetMap data live** (Overpass reachable this session) and baking it to `public/*-newbedford.json`, loaded by the slice loader.
+- **Hurricane Barrier:** real OSM breakwater ways → `barrier-newbedford.json`; `HurricaneBarrier` renders the stone dike + granite deck across the harbour mouth (Clark's Cove dike + main barrier), registered drivable in `waterZones`.
+- **Parks/green (101–103):** OSM parks/gardens/grass/pitches (172) → green lawns via `Parks`→`FlatAreas`.
+- **Surfaces (104–107):** OSM parking lots (asphalt) + beaches (sand) via generic `FlatAreas`.
+- **Rail (108–110):** OSM railway lines (60) → ballast bed + steel rails via `Rail`.
+- **Deferred:** open-sea water polygon (harbour is OSM coastline; needs a visual check to shape correctly).
+

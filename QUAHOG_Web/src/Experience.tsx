@@ -31,6 +31,7 @@ import { Dumpsters } from "./world/Dumpsters";
 import { HurricaneBarrier } from "./world/HurricaneBarrier";
 import { FlatAreas } from "./world/FlatAreas";
 import { Rail } from "./world/Rail";
+import { Piers } from "./world/Piers";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -126,8 +127,11 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
 
       {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.05} repeat={0.06} roughness={0.95} />}
       {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.05} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.055} />}
+      {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.058} />}
       {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.06} />}
       {slice && <Rail paths={slice.rail} />}
+      {slice && <Piers paths={slice.pier} />}
       {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
