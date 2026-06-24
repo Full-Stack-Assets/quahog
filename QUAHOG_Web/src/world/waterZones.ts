@@ -1,34 +1,29 @@
 import type { Road } from "../slice";
 
-// Water as a barrier (§6 road mechanics): you can't drive/walk across the harbor
-// or the Acushnet — except where a bridge road carries you over. Coordinates are
+// Water as a barrier (§6 road mechanics): you can't drive/walk across the open
+// harbor or the Acushnet — but a road surface is never "open water". Any road
+// (a bridge, a causeway, or a span OSM forgot to tag bridge=yes) carries you
+// over; only water that's off the road network blocks you. Coordinates are
 // slice-local [east, north]; a world point (wx, wz) has east=wx, north=-wz.
 
 let waterRings: [number, number][][] = [];
-let bridgeSegs: number[] = []; // flattened ax,an,bx,bn,halfWidth, …
+let roadSegs: number[] = []; // flattened ax,an,bx,bn,halfWidth, …
 
 export function setWaterZones(water: [number, number][][], roads: Road[]) {
   waterRings = water ?? [];
-  bridgeSegs = [];
+  roadSegs = [];
+  // Every road becomes a "safe corridor": if you're on one you never sink, even
+  // where it crosses water. Road-proximity is only ever evaluated while a point
+  // is already inside a water polygon (see isBlockedWater), so scanning the full
+  // set is cheap — it runs for the few frames you're actually over the water.
   for (const r of roads) {
-    const hw = r.width / 2 + 4; // generous corridor so you can stay "on the road"
-    const isBridge = !!r.bridge;
+    if (r.points.length < 2) continue;
+    const hw = r.width / 2 + 5; // generous so you stay "on the road" lane + shoulder
     for (let i = 0; i < r.points.length - 1; i++) {
       const [ax, an] = r.points[i], [bx, bn] = r.points[i + 1];
-      // A bridge always carries you over. For every other road, only its segments
-      // that actually run over a water polygon become crossing corridors — so real
-      // causeways/spans the OSM data forgot to tag bridge=yes stay drivable, while
-      // open harbour off the road network still blocks you.
-      if (isBridge || midInWater((ax + bx) / 2, (an + bn) / 2)) {
-        bridgeSegs.push(ax, an, bx, bn, hw);
-      }
+      roadSegs.push(ax, an, bx, bn, hw);
     }
   }
-}
-
-function midInWater(px: number, pn: number): boolean {
-  for (const ring of waterRings) if (pointInRing(px, pn, ring)) return true;
-  return false;
 }
 
 function pointInRing(px: number, pn: number, ring: [number, number][]): boolean {
@@ -40,9 +35,9 @@ function pointInRing(px: number, pn: number, ring: [number, number][]): boolean 
   return inside;
 }
 
-function nearBridge(px: number, pn: number): boolean {
-  for (let i = 0; i < bridgeSegs.length; i += 5) {
-    const ax = bridgeSegs[i], an = bridgeSegs[i + 1], bx = bridgeSegs[i + 2], bn = bridgeSegs[i + 3], hw = bridgeSegs[i + 4];
+function nearRoad(px: number, pn: number): boolean {
+  for (let i = 0; i < roadSegs.length; i += 5) {
+    const ax = roadSegs[i], an = roadSegs[i + 1], bx = roadSegs[i + 2], bn = roadSegs[i + 3], hw = roadSegs[i + 4];
     const dx = bx - ax, dn = bn - an;
     const len2 = dx * dx + dn * dn || 1;
     let t = ((px - ax) * dx + (pn - an) * dn) / len2;
@@ -53,11 +48,15 @@ function nearBridge(px: number, pn: number): boolean {
   return false;
 }
 
-/** True if this world point is open water you may not cross (not on a bridge). */
+/** True if this world point is open water you may not cross (not on a road). */
 export function isBlockedWater(wx: number, wz: number): boolean {
   if (!waterRings.length) return false;
   const px = wx, pn = -wz; // world → slice [east, north]
-  if (nearBridge(px, pn)) return false;
-  for (const ring of waterRings) if (pointInRing(px, pn, ring)) return true;
-  return false;
+  // Fast path: if you're not inside any water polygon you're fine (the common
+  // case on land), and we skip the road scan entirely.
+  let inWater = false;
+  for (const ring of waterRings) if (pointInRing(px, pn, ring)) { inWater = true; break; }
+  if (!inWater) return false;
+  // Over water: blocked only if you're NOT on a road surface.
+  return !nearRoad(px, pn);
 }
