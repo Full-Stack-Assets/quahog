@@ -28,6 +28,59 @@ const FLOOR = 3.2; // metres per window row
 
 interface Manifest { tile: number; keys: string[] }
 
+function pushTri(arr: number[], a: number[], b: number[], c: number[]) {
+  arr.push(a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]);
+}
+
+// A parapet/cornice ring standing above the roof: extrude the footprint edges
+// upward by capH so the flat extrude top becomes a recessed roof behind a rim
+// wall — kills the "extruded box" silhouette and gives roofline variation
+// (mills get a tall parapet, downtown a shorter cornice). Vertical extrusion of
+// the outline → no corner gaps. Coloured a touch darker than the wall as a cap
+// band; merges into the wall geometry (plain wall UV, so no windows on the cap).
+function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3) return null;
+  const H = b.height;
+  const capH = H < 14 ? 0.5 + hash * 0.4
+             : H < 32 ? 1.1 + hash * 0.7
+             : 0.9 + hash * 0.5;
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const cz = -cn; // world-space centroid z
+  const pos: number[] = [];
+  for (let i = 0; i < fp.length; i++) {
+    const [e1, n1] = fp[i];
+    const [e2, n2] = fp[(i + 1) % fp.length];
+    const ax = e1, az = -n1, bx = e2, bz = -n2; // world: x=east, z=-north
+    const dx = bx - ax, dz = bz - az;
+    if (Math.hypot(dx, dz) < 1e-3) continue;
+    // outward = left normal (-dz, dx) if it points away from the centroid
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const outward = (-dz) * (mx - cx) + dx * (mz - cz) >= 0;
+    const v0 = [ax, H, az], v1 = [bx, H, bz];
+    const v2 = [bx, H + capH, bz], v3 = [ax, H + capH, az];
+    if (outward) { pushTri(pos, v0, v1, v2); pushTri(pos, v0, v2, v3); }
+    else         { pushTri(pos, v0, v2, v1); pushTri(pos, v0, v3, v2); }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  const trim = wall.clone().multiplyScalar(0.9);
+  for (let v = 0; v < count; v++) {
+    colors.set([trim.r, trim.g, trim.b], v * 3);
+    uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04; // plain wall UV → no windows on the cap
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
 function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
   const geoms: THREE.BufferGeometry[] = [];
   buildings.forEach((b, i) => {
@@ -41,8 +94,9 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     // get a dark tar tone and sample plain wall (no windows on the roof).
     const pal = b.height >= 14 ? GREY : WARM;
     const isHero = !!(b.name && HERO.has(b.name));
+    const hash = (i * 0.6180339887) % 1;
     const wall = new THREE.Color(isHero ? HERO_COLOR : pal[i % pal.length]);
-    if (!isHero) wall.multiplyScalar(0.82 + ((i * 0.6180339887) % 1) * 0.34);
+    if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
     const pos = g.attributes.position, nor = g.attributes.normal;
     const count = pos.count;
@@ -63,6 +117,8 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     geoms.push(g);
+    const cap = parapetGeometry(b, wall, hash);
+    if (cap) geoms.push(cap);
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
 }

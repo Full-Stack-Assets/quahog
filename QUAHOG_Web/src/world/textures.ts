@@ -83,19 +83,34 @@ export function makeFacadeMaps() {
   const S = 128;
   const [ca, a] = canvas(S);   // albedo
   const [ce, e] = canvas(S);   // emissive
-  // wall
+  // wall (albedo): white base, then faint masonry courses so flat walls aren't
+  // dead colour — thin horizontal mortar lines (brick/clapboard) + sparse joints
+  // gently darken the per-building base instead of reading as one flat slab.
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
+  a.fillStyle = "rgba(108,98,86,0.11)";
+  for (let y = 4; y < S; y += 9) a.fillRect(0, y, S, 1);    // horizontal courses
+  a.fillStyle = "rgba(108,98,86,0.06)";
+  for (let x = 8; x < S; x += 16) a.fillRect(x, 0, 1, S);   // vertical joints
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
-  // window block, centred with a margin (mullions = wall gaps between cells)
-  const m = 22, w = S - m * 2;
+  // window block, centred with a margin (mullions = wall gaps between cells).
+  // Tall 2×3 sash with a lighter lintel above + sill below — period New Bedford.
+  const m = 24, w = S - m * 2;
+  // lintel + sill (trim, lighter than wall) frame the opening
+  a.fillStyle = "#dad4c8";
+  a.fillRect(m - 4, m - 5, w + 8, 4);                       // lintel
+  a.fillRect(m - 4, m + w + 1, w + 8, 5);                   // sill
   // glass (albedo): dark, slightly blue
   a.fillStyle = "#2b3440"; a.fillRect(m, m, w, w);
   a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(m, m, w, w);
-  a.beginPath(); a.moveTo(S / 2, m); a.lineTo(S / 2, S - m); a.moveTo(m, S / 2); a.lineTo(S - m, S / 2); a.stroke();
-  // lit window (emissive): warm, with panes
+  a.lineWidth = 2; a.beginPath();
+  a.moveTo(m + w / 2, m); a.lineTo(m + w / 2, m + w);       // centre mullion
+  for (let r = 1; r < 3; r++) { a.moveTo(m, m + (w * r) / 3); a.lineTo(m + w, m + (w * r) / 3); } // muntins
+  a.stroke();
+  // lit window (emissive): warm panes with dark muntins (matches the sash grid)
   e.fillStyle = "#ffcf8a"; e.fillRect(m, m, w, w);
   e.fillStyle = "#000000"; e.lineWidth = 0;
-  e.fillRect(S / 2 - 2, m, 4, w); e.fillRect(m, S / 2 - 2, w, 4); // dark mullions
+  e.fillRect(m + w / 2 - 2, m, 4, w);                       // centre mullion
+  for (let r = 1; r < 3; r++) e.fillRect(m, m + (w * r) / 3 - 2, w, 4); // muntins
   const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
   const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
   _facade = { albedo, emissive };
