@@ -98,30 +98,50 @@ export function makeFacadeMaps() {
   for (let x = 8; x < S; x += 16) a.fillRect(x, 0, 1, S);   // vertical joints
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
 
-  // One tall 2×3 sash per cell — lighter lintel above + sill below (New Bedford).
+  // Each cell gets one of a few window styles (tall sash / shorter / arched) so a
+  // tiled façade reads as varied windows, not 16 identical ones. The dark daytime
+  // glass is drawn in `a`; if the window is "lit" the warm pane is drawn in `e`
+  // with the SAME pane grid so night light matches the muntins.
   const m = 24, w = CELL - m * 2;
+  const archPath = (ctx: CanvasRenderingContext2D, x: number, y: number) => {
+    ctx.beginPath();
+    ctx.moveTo(x, y + w);
+    ctx.lineTo(x, y + w / 2);
+    ctx.arc(x + w / 2, y + w / 2, w / 2, Math.PI, 0); // semicircular top
+    ctx.lineTo(x + w, y + w);
+    ctx.closePath();
+  };
   for (let gy = 0; gy < G; gy++) {
     for (let gx = 0; gx < G; gx++) {
       const ox = gx * CELL, oy = gy * CELL;
-      // lintel + sill (trim, lighter than wall) frame the opening
+      const x = ox + m, y = oy + m;
+      // style: 0 tall sash (2×3), 1 shorter (2×2), 2 arched (2×3 + round top)
+      const roll = Math.random();
+      const style = roll < 0.55 ? 0 : roll < 0.8 ? 1 : 2;
+      const cols = 2, rows = style === 1 ? 2 : 3, arch = style === 2;
+
+      // lintel + sill (lighter trim) frame the opening
       a.fillStyle = "#dad4c8";
-      a.fillRect(ox + m - 4, oy + m - 5, w + 8, 4);         // lintel
-      a.fillRect(ox + m - 4, oy + m + w + 1, w + 8, 5);     // sill
-      // glass (albedo): dark, slightly blue
-      a.fillStyle = "#2b3440"; a.fillRect(ox + m, oy + m, w, w);
-      a.strokeStyle = "#11151b"; a.lineWidth = 3; a.strokeRect(ox + m, oy + m, w, w);
+      a.fillRect(x - 4, y - 5, w + 8, 4);
+      a.fillRect(x - 4, y + w + 1, w + 8, 5);
+      // dark glass (albedo) + frame
+      a.fillStyle = "#2b3440";
+      if (arch) { archPath(a, x, y); a.fill(); } else a.fillRect(x, y, w, w);
+      a.strokeStyle = "#11151b"; a.lineWidth = 3;
+      if (arch) { archPath(a, x, y); a.stroke(); } else a.strokeRect(x, y, w, w);
+      // sash muntins
       a.lineWidth = 2; a.beginPath();
-      a.moveTo(ox + m + w / 2, oy + m); a.lineTo(ox + m + w / 2, oy + m + w); // centre mullion
-      for (let r = 1; r < 3; r++) { a.moveTo(ox + m, oy + m + (w * r) / 3); a.lineTo(ox + m + w, oy + m + (w * r) / 3); }
+      for (let c = 1; c < cols; c++) { a.moveTo(x + (w * c) / cols, y); a.lineTo(x + (w * c) / cols, y + w); }
+      for (let r = 1; r < rows; r++) { a.moveTo(x, y + (w * r) / rows); a.lineTo(x + w, y + (w * r) / rows); }
       a.stroke();
-      // lit window (emissive): only ~55% of windows are lit at night, in warm or
-      // cooler tones, with dark muntins matching the sash grid.
+
+      // lit window (emissive): ~55% lit, a few cool-toned, matching the pane grid
       if (Math.random() < 0.55) {
-        e.fillStyle = Math.random() < 0.25 ? "#cfe0ff" : "#ffcf8a"; // a few cool TVs/fluoros
-        e.fillRect(ox + m, oy + m, w, w);
+        e.fillStyle = Math.random() < 0.25 ? "#cfe0ff" : "#ffcf8a";
+        if (arch) { archPath(e, x, y); e.fill(); } else e.fillRect(x, y, w, w);
         e.fillStyle = "#000000"; e.lineWidth = 0;
-        e.fillRect(ox + m + w / 2 - 2, oy + m, 4, w);       // centre mullion
-        for (let r = 1; r < 3; r++) e.fillRect(ox + m, oy + m + (w * r) / 3 - 2, w, 4); // muntins
+        for (let c = 1; c < cols; c++) e.fillRect(x + (w * c) / cols - 2, y, 4, w);
+        for (let r = 1; r < rows; r++) e.fillRect(x, y + (w * r) / rows - 2, w, 4);
       }
     }
   }
