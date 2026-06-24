@@ -5,6 +5,24 @@ import { Cloud, Clouds } from "@react-three/drei";
 
 export type Weather = "clear" | "cloudy" | "rain";
 
+// Soft procedural cloud puff so drei's <Cloud> never reaches for its default
+// texture on a CDN (rawcdn.githack.com). That external fetch, when blocked or
+// offline, THREW during render and took the whole scene down via the error
+// boundary — this keeps the world self-contained and crash-proof.
+let _cloudUrl: string | null = null;
+function cloudTextureUrl(): string {
+  if (_cloudUrl) return _cloudUrl;
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const x = c.getContext("2d")!;
+  const g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.7)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  x.fillStyle = g; x.fillRect(0, 0, 128, 128);
+  _cloudUrl = c.toDataURL("image/png"); // self-contained data URL — no CDN fetch
+  return _cloudUrl;
+}
+
 // Sky life for the photoreal world: drifting clouds, a couple of airliners, and
 // rain when the weather turns. All live inside the y-up content group (so high y
 // = altitude). Rain follows the camera.
@@ -36,8 +54,11 @@ function CloudLayer({ weather }: { weather: Weather }) {
       })),
     [count],
   );
+  // the parent <Clouds> owns the shared texture (a URL string); feeding it our
+  // self-contained data URL keeps drei from fetching its default off a CDN.
+  const tex = useMemo(() => cloudTextureUrl(), []);
   return (
-    <Clouds material={THREE.MeshBasicMaterial} limit={400}>
+    <Clouds material={THREE.MeshBasicMaterial} limit={400} texture={tex}>
       {specs.map((s, i) => (
         <Cloud
           key={i}
