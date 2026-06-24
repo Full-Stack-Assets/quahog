@@ -58,6 +58,17 @@ function applyRestore(r: PosRec) {
   }
 }
 
+// Reactive radio inserts read by whichever host is on after the player shakes a
+// chase (§19 milestone reactions). Host-agnostic so any voice can read them.
+const EVADE_FLASH = [
+  "Scanner's gone quiet down on the waterfront — whoever they were chasin', they're in the wind now. Tip your cap.",
+  "Word is the cops just lost somebody in the South End. Happens. Back to the music.",
+  "They had the cruisers all lit up a minute ago and now — nothin'. Somebody knows these streets better than the badges do.",
+  "Police scanner says 'lost visual.' Two words that make a getaway driver smile. Moving on.",
+  "Whoever just gave the law the slip by the bridge — you didn't hear it from me. Here's another one.",
+];
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
 // Runs the always-on gameplay loops (§15): heat decay + periodic autosave, and
 // loads the saved game on mount. Also handles global hotkeys (weather, pause).
 export function GameSystems() {
@@ -149,6 +160,7 @@ export function GameSystems() {
       const bonus = maxStars.current * 50;
       st.addCash(bonus);
       useToasts.getState().push(`EVADED — +$${bonus}`, "#7CFC00"); sfx.cash();
+      radio.flashNews(pick(EVADE_FLASH)); // hosts react to the chase (§19 milestone)
       maxStars.current = 0;
     }
     prevStars.current = stars;

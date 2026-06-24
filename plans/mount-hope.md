@@ -227,7 +227,7 @@ time; keep the build green; be honest about status.
 - [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
-- [~] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems); margin-leak events TODO
+- [x] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems) + one-off margin-leak/boom events on owned fronts (`rollRevenueEvent`, every 90–210s, toast + sfx)
 - [ ] **ChopShopArmsManager** (weapons gated to Quequechan Mill #4 tier)
 - [ ] **WeatherController** ↔ vehicle friction
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)

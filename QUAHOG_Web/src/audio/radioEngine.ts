@@ -347,6 +347,7 @@ class RadioEngine {
   private step = 0;
   private lineIdx = 0;
   private seg = 0;
+  private flash: string | null = null; // one-off reactive line to read at the next talk slot
   private station: Station | null = null;
   private music?: HTMLAudioElement;   // real licensed/generated tracks (§19 music)
   private musicTracks: string[] = [];
@@ -475,6 +476,7 @@ class RadioEngine {
     this.musicTracks = [];
     this.jingles = [];
     this.lastUrl = "";
+    this.flash = null;
     stopVO();
     this.emitSub(null);
     this.emitTrack("");
@@ -583,8 +585,14 @@ class RadioEngine {
 
   // Interleave host lines with ads, idents, news, and reactive weather/wanted
   // chatter so the dial feels alive (§19 radio depth).
+  /** Queue a one-off reactive line (e.g. a player milestone) read in the host
+   *  voice at the next talk slot. No-op styling — just a breaking-news insert. */
+  flashNews(text: string) { this.flash = text; }
+
   private chooseSegment(s: Station): string {
     this.seg++;
+    // a queued reactive line jumps the rotation (consumed once)
+    if (this.flash) { const f = this.flash; this.flash = null; return f; }
     try {
       const police = useStats.getState().police;
       const weather = useGame.getState().weather;
