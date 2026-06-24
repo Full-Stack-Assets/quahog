@@ -58,8 +58,8 @@ time; keep the build green; be honest about status.
 - [x] Game named **Mount Hope**
 - [x] Design docs: README, ROADMAP, Characters & Missions bible, Gemini build spec
 - [x] CI: typecheck/build check on PRs — `.github/workflows/web-ci.yml` runs `tsc && vite build` on PRs/pushes touching `QUAHOG_Web` (uses `npm install`; lockfile drifts from package.json — `@vercel/blob` missing from the lock)
-- [ ] Bundle code-splitting (main chunk >2 MB; split three/rapier/drei; lazy-load earth page)
-- [ ] Asset loading/preload screen + progress bar
+- [~] Bundle code-splitting — `vite.config` `manualChunks` splits three / @react-three / rapier / react into long-lived vendor chunks; earth is already its own entry (lazy-load of the earth route still open)
+- [x] Asset loading/preload screen + progress bar — `loadSlice` streams the slice JSON and reports 0..1; StartMenu shows a progress bar + `LOADING NEW BEDFORD · NN%`
 - [x] Error boundary + crash overlay on the main game — `ui/ErrorBoundary.tsx` wraps `<App>` in `main.tsx` (recoverable overlay + reload + build stamp)
 - [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
 - [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
@@ -764,3 +764,4 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Build stamp** in HUD (commit SHA + date) so the live deploy is unambiguous after a hard refresh. (`f1e07d6`)
 - **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
 - **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced that `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so strict `npm ci` fails. The lock can't be regenerated here (org egress policy 403s `@vercel/blob`) and there's no local dev env to do it either — but it's a non-issue: Vercel and CI both use `npm install`, which builds fine, so CI uses `npm install` to match. No action outstanding. (`e80c49c`→`67a8669`)
+- **Slice-load progress bar** + **vendor code-splitting** (three/r3f/rapier/react chunks) shipped and CI+Vercel-verified (`447b613`, `c1161d0`). Lockfile note resolved: no action outstanding (CI/Vercel both use `npm install`).
