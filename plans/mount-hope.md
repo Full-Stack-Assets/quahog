@@ -264,7 +264,7 @@ time; keep the build green; be honest about status.
 
 ## 19. Audio & music
 - [x] Radio: 4 stations (WHALE, The Rage, The Anvil, Maré Alta) — TTS hosts, music, switching/mute
-- [~] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — scripts ~4x longer + ad/ident/news rotation + **wanted/weather reactions** (radioEngine); mission-milestone reactions TODO
+- [x] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — 50+ lines/host + ad/ident/news rotation + **wanted/weather reactions** + **milestone reactions** via `radio.flashNews()` (evade-chase, buy-a-front)
 - [ ] More stations + larger procedural/licensed-free music sets
 - [~] VO pipeline for NPC/mission dialogue (TTS now, recorded later) — ElevenLabs server proxy (api/tts.ts) + vo.ts client wired to radio hosts, Web-Speech fallback; NPC/mission dialogue hookup TODO
 - [ ] Mission/score adaptive music layers (calm/tension/chase)
