@@ -1,0 +1,31 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.4",
+  "Category": "Games",
+  "Description": "Mount Hope UE5 console/PC foundation.",
+  "Modules": [
+    {
+      "Name": "MountHope",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "EnhancedInput",
+      "Enabled": true
+    },
+    {
+      "Name": "ChaosVehiclesPlugin",
+      "Enabled": true
+    },
+    {
+      "Name": "WorldPartitionHLODUtilities",
+      "Enabled": true
+    }
+  ],
+  "TargetPlatforms": [
+    "Windows",
+    "Linux"
+  ]
+}

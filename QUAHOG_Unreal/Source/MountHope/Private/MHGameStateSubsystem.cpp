@@ -1,0 +1,163 @@
+#include "MHGameStateSubsystem.h"
+
+#include "Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+namespace
+{
+FString ResolvePath(const FString& RelativeOrAbsolutePath)
+{
+    if (FPaths::FileExists(RelativeOrAbsolutePath))
+    {
+        return RelativeOrAbsolutePath;
+    }
+
+    return FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / RelativeOrAbsolutePath);
+}
+
+float ClampHeat(float Value)
+{
+    return FMath::Clamp(Value, 0.0f, 5.0f);
+}
+}
+
+void UMHGameStateSubsystem::AddHeat(float PoliceDelta, float FactionDelta)
+{
+    PoliceHeat = ClampHeat(PoliceHeat + PoliceDelta);
+    FactionHeat = ClampHeat(FactionHeat + FactionDelta);
+}
+
+void UMHGameStateSubsystem::DecayHeat(float DeltaSeconds, float RatePerSecond)
+{
+    if (PoliceHeat <= 0.0f && FactionHeat <= 0.0f)
+    {
+        return;
+    }
+
+    const float Decay = DeltaSeconds * RatePerSecond;
+    PoliceHeat = ClampHeat(PoliceHeat - Decay);
+    FactionHeat = ClampHeat(FactionHeat - Decay);
+}
+
+void UMHGameStateSubsystem::AddCash(int32 Delta)
+{
+    Cash = FMath::Max(0, Cash + Delta);
+}
+
+void UMHGameStateSubsystem::ApplyDamage(float Damage)
+{
+    Health = FMath::Clamp(Health - FMath::Max(0.0f, Damage), 0.0f, 100.0f);
+}
+
+void UMHGameStateSubsystem::CycleWeather()
+{
+    switch (Weather)
+    {
+    case EMHWeatherState::Clear:
+        Weather = EMHWeatherState::DenseFog;
+        break;
+    case EMHWeatherState::DenseFog:
+        Weather = EMHWeatherState::CoastalRain;
+        break;
+    case EMHWeatherState::CoastalRain:
+        Weather = EMHWeatherState::Noreaster;
+        break;
+    default:
+        Weather = EMHWeatherState::Clear;
+        break;
+    }
+}
+
+bool UMHGameStateSubsystem::BuyBusiness(const FString& BusinessId)
+{
+    for (const FMHBusinessRecord& Business : Businesses)
+    {
+        if (Business.Id == BusinessId)
+        {
+            const FName Key(*Business.Id);
+            if (OwnedBusinessIds.Contains(Key) || Cash < Business.Cost)
+            {
+                return false;
+            }
+
+            OwnedBusinessIds.Add(Key);
+            AddCash(-Business.Cost);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+int32 UMHGameStateSubsystem::GetPassiveDailyIncome() const
+{
+    int32 Total = 0;
+    for (const FMHBusinessRecord& Business : Businesses)
+    {
+        if (OwnedBusinessIds.Contains(FName(*Business.Id)))
+        {
+            Total += Business.DailyIncome;
+        }
+    }
+    return Total;
+}
+
+bool UMHGameStateSubsystem::LoadBusinessesFromJson(const FString& RelativeOrAbsolutePath)
+{
+    const FString FullPath = ResolvePath(RelativeOrAbsolutePath);
+    FString RawJson;
+    if (!FFileHelper::LoadFileToString(RawJson, *FullPath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("MountHope: Unable to load businesses JSON: %s"), *FullPath);
+        return false;
+    }
+
+    TSharedPtr<FJsonObject> RootObject;
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(RawJson);
+    if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("MountHope: Invalid businesses JSON: %s"), *FullPath);
+        return false;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>* BusinessesArray = nullptr;
+    if (!RootObject->TryGetArrayField(TEXT("businesses"), BusinessesArray) || !BusinessesArray)
+    {
+        UE_LOG(LogTemp, Error, TEXT("MountHope: Missing 'businesses' field in %s"), *FullPath);
+        return false;
+    }
+
+    Businesses.Reset();
+    Businesses.Reserve(BusinessesArray->Num());
+    for (const TSharedPtr<FJsonValue>& Value : *BusinessesArray)
+    {
+        const TSharedPtr<FJsonObject> Object = Value->AsObject();
+        if (!Object.IsValid())
+        {
+            continue;
+        }
+
+        FMHBusinessRecord Record;
+        Record.Id = Object->GetStringField(TEXT("id"));
+        Record.Name = Object->GetStringField(TEXT("name"));
+        Record.Cost = Object->GetIntegerField(TEXT("cost"));
+        Record.DailyIncome = Object->GetIntegerField(TEXT("dailyIncome"));
+
+        const TArray<TSharedPtr<FJsonValue>>* Pos = nullptr;
+        if (Object->TryGetArrayField(TEXT("pos"), Pos) && Pos && Pos->Num() >= 3)
+        {
+            Record.WorldLocation = FVector(
+                static_cast<float>((*Pos)[0]->AsNumber()),
+                static_cast<float>((*Pos)[1]->AsNumber()),
+                static_cast<float>((*Pos)[2]->AsNumber()));
+        }
+
+        Businesses.Add(MoveTemp(Record));
+    }
+
+    UE_LOG(LogTemp, Log, TEXT("MountHope: Loaded %d businesses"), Businesses.Num());
+    return Businesses.Num() > 0;
+}
