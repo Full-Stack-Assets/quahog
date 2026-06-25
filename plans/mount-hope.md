@@ -315,7 +315,7 @@ time; keep the build green; be honest about status.
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
-- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons (incl. gun + fire) for phones, **drag-to-move + resize with persisted layout** (TouchControls.tsx); KB/M remap + gamepad TODO
+- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + a **full action-button set** (enter, fire, hit, gun, **handbrake + sprint held**, horn, map, menu, buy, outfit, photo, sleep, weather, weapon 1–4), each **draggable + resizable + show/hide toggle**, layout persisted (TouchControls.tsx, input.setVirtualHold); KB/M remap TODO
 - [ ] Colorblind modes; UI scale; high-contrast
 - [ ] Aim assist; difficulty options; hold-vs-toggle
 - [ ] Reduce-motion / camera-shake toggle; flashing-lights warning
@@ -775,6 +775,8 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped (`cd729f8`).
 - **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped (`24c7329`).
 - **§24 FOV setting:** a persisted **Field of view** slider (45–85°) in pause settings feeds the camera base FOV (speed-widening still applies on top) — motion comfort (store/PauseMenu/FollowCamera/GameSystems). Shipped.
+- **Mobile access fixes:** the pause menu (Stats/Credits/Shadows/FOV/etc.) was Esc/P-only → unreachable on phones; added an always-visible HUD **☰ menu button**. Then expanded **touch controls** to a full action set (handbrake/sprint held via `input.setVirtualHold`, horn/map/menu/buy/outfit/photo/sleep/weather/weapon 1–4) with a **per-button show/hide toggle** in edit mode, persisted (schema v3). Verified the **radio** wiring end-to-end (station select/`[ ]` → setStation → AudioContext resume → talk/music + fallbacks; mute/skip/subtitle/volume all connected). Shipped.
+- **Direction (2026-06-25 pm):** per the user, New Bedford is "good enough" — **stop NB polish; next = missions, then Brockton (City of Champions / boxing) with purpose, then surrounding towns as content needs them.** (Supersedes the 2026-06-22 "perfect NB first" hold.)
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
