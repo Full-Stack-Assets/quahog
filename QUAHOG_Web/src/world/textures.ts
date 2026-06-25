@@ -80,9 +80,20 @@ export function makeZebra(): THREE.Texture {
 // only SOME windows light up after dark — a uniform single-window tile made every
 // window glow at once. Consumers scale wall UVs by FLOOR*FACADE_GRID. Singletons.
 export const FACADE_GRID = 4; // floors/windows per texture tile
-let _facade: { albedo: THREE.Texture; emissive: THREE.Texture } | null = null;
-export function makeFacadeMaps() {
-  if (_facade) return _facade;
+export const FACADE_VARIANTS = 3; // distinct façade "styles" cut across the city
+const _facades: ({ albedo: THREE.Texture; emissive: THREE.Texture } | null)[] = [];
+// Per-variant façade flavour so neighbouring buildings don't share one window
+// pattern: 0 = residential brick (tall sash), 1 = industrial mill (big multi-pane
+// windows, tight courses), 2 = commercial (mix of arched + shorter shopfront-ish).
+const FACADE_STYLE = [
+  { course: 9,  joint: 16, tall: 0.55, short: 0.80, cols: 2, litCool: 0.25 }, // brick residential
+  { course: 6,  joint: 11, tall: 0.85, short: 0.95, cols: 3, litCool: 0.45 }, // industrial mill
+  { course: 12, joint: 22, tall: 0.30, short: 0.62, cols: 2, litCool: 0.18 }, // commercial / arched
+];
+export function makeFacadeMaps(variant = 0) {
+  const v = ((variant % FACADE_VARIANTS) + FACADE_VARIANTS) % FACADE_VARIANTS;
+  if (_facades[v]) return _facades[v]!;
+  const sty = FACADE_STYLE[v];
   const G = FACADE_GRID;
   const CELL = 128;
   const S = CELL * G;
@@ -91,11 +102,12 @@ export function makeFacadeMaps() {
   // wall (albedo): white base, then faint masonry courses so flat walls aren't
   // dead colour — thin horizontal mortar lines (brick/clapboard) + sparse joints
   // gently darken the per-building base instead of reading as one flat slab.
+  // Course/joint spacing varies by variant (mill = tight, commercial = coarse).
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
   a.fillStyle = "rgba(108,98,86,0.11)";
-  for (let y = 4; y < S; y += 9) a.fillRect(0, y, S, 1);    // horizontal courses
+  for (let y = 4; y < S; y += sty.course) a.fillRect(0, y, S, 1);  // horizontal courses
   a.fillStyle = "rgba(108,98,86,0.06)";
-  for (let x = 8; x < S; x += 16) a.fillRect(x, 0, 1, S);   // vertical joints
+  for (let x = 8; x < S; x += sty.joint) a.fillRect(x, 0, 1, S);   // vertical joints
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
 
   // Each cell gets one of a few window styles (tall sash / shorter / arched) so a
@@ -115,10 +127,12 @@ export function makeFacadeMaps() {
     for (let gx = 0; gx < G; gx++) {
       const ox = gx * CELL, oy = gy * CELL;
       const x = ox + m, y = oy + m;
-      // style: 0 tall sash (2×3), 1 shorter (2×2), 2 arched (2×3 + round top)
+      // style: 0 tall sash (2×3), 1 shorter (2×2), 2 arched (2×3 + round top).
+      // Per-variant probabilities (sty.tall/short) bias the mix: mills favour tall
+      // multi-pane, commercial favours arched/short.
       const roll = Math.random();
-      const style = roll < 0.55 ? 0 : roll < 0.8 ? 1 : 2;
-      const cols = 2, rows = style === 1 ? 2 : 3, arch = style === 2;
+      const style = roll < sty.tall ? 0 : roll < sty.short ? 1 : 2;
+      const cols = sty.cols, rows = style === 1 ? 2 : 3, arch = style === 2;
 
       // lintel + sill (lighter trim) frame the opening
       a.fillStyle = "#dad4c8";
@@ -137,7 +151,7 @@ export function makeFacadeMaps() {
 
       // lit window (emissive): ~55% lit, a few cool-toned, matching the pane grid
       if (Math.random() < 0.55) {
-        e.fillStyle = Math.random() < 0.25 ? "#cfe0ff" : "#ffcf8a";
+        e.fillStyle = Math.random() < sty.litCool ? "#cfe0ff" : "#ffcf8a";
         if (arch) { archPath(e, x, y); e.fill(); } else e.fillRect(x, y, w, w);
         e.fillStyle = "#000000"; e.lineWidth = 0;
         for (let c = 1; c < cols; c++) e.fillRect(x + (w * c) / cols - 2, y, 4, w);
@@ -147,8 +161,8 @@ export function makeFacadeMaps() {
   }
   const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
   const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
-  _facade = { albedo, emissive };
-  return _facade;
+  _facades[v] = { albedo, emissive };
+  return _facades[v]!;
 }
 
 /** A 1980s flyer/poster (radio station or street-feast), procedural. */

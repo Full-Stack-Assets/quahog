@@ -5,7 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
-import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID } from "./textures";
+import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID, FACADE_VARIANTS } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -91,8 +91,11 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   return g;
 }
 
-function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
-  const geoms: THREE.BufferGeometry[] = [];
+// Returns one merged geometry per façade variant (or null for an empty bucket).
+// Buildings are split across variants so neighbours show different window styles
+// instead of one shared texture — the core fix for the "repetitive boxes" read.
+function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
+  const buckets: THREE.BufferGeometry[][] = Array.from({ length: FACADE_VARIANTS }, () => []);
   buildings.forEach((b, i) => {
     const shape = new THREE.Shape();
     b.footprint.forEach(([e, n], k) => (k === 0 ? shape.moveTo(e, n) : shape.lineTo(e, n)));
@@ -138,22 +141,31 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-    geoms.push(g);
+    // Façade variant: golden-angle hash spreads neighbours across styles; tall
+    // downtown blocks skip the residential-brick variant (0) so they read
+    // commercial/industrial rather than like oversized houses.
+    let variant = Math.floor(((i * 2.3999632297) % 1) * FACADE_VARIANTS) % FACADE_VARIANTS;
+    if (b.height >= 24 && variant === 0) variant = 1 + (i % 2);
+    buckets[variant].push(g);
     const cap = parapetGeometry(b, wall, hash);
-    if (cap) geoms.push(cap);
+    if (cap) buckets[variant].push(cap);
   });
-  return geoms.length ? mergeGeometries(geoms, false) : null;
+  return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
 }
 
 function Tile({ buildings, colliders }: { buildings: Building[]; colliders: boolean }) {
-  const geom = useMemo(() => tileGeometry(buildings), [buildings]);
-  const maps = useMemo(() => makeFacadeMaps(), []);
+  const geoms = useMemo(() => tileGeometry(buildings), [buildings]);
+  const maps = useMemo(() => Array.from({ length: FACADE_VARIANTS }, (_, v) => makeFacadeMaps(v)), []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
-  const mat = useRef<THREE.MeshStandardMaterial>(null);
+  const mats = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
   // Windows only light at dusk/night. A plain (1 - dayT) ramp left them glowing
   // orange through the day; gate it to the low end so daytime glass reads dark.
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.1; });
+  // One material per façade variant, all driven from the same dusk ramp.
+  useFrame(() => {
+    const ei = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.1;
+    for (const m of mats.current) if (m) m.emissiveIntensity = ei;
+  });
 
   // Rooftop clutter for skyline depth: a primary unit sized by building class
   // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)
@@ -202,19 +214,22 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }, [roofs]);
 
-  if (!geom) return null;
-  const mesh = (
-    <mesh geometry={geom} castShadow={colliders} receiveShadow>
-      <meshStandardMaterial
-        ref={mat} vertexColors map={maps.albedo} emissiveMap={maps.emissive}
-        normalMap={nrm} normalScale={nrmScale}
-        emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.82} metalness={0.04}
-      />
-    </mesh>
+  if (!geoms.some(Boolean)) return null;
+  const meshes = geoms.map((g, v) =>
+    g ? (
+      <mesh key={v} geometry={g} castShadow={colliders} receiveShadow>
+        <meshStandardMaterial
+          ref={(m) => { mats.current[v] = m as THREE.MeshStandardMaterial | null; }}
+          vertexColors map={maps[v].albedo} emissiveMap={maps[v].emissive}
+          normalMap={nrm} normalScale={nrmScale}
+          emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.82} metalness={0.04}
+        />
+      </mesh>
+    ) : null,
   );
   return (
     <group>
-      {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
+      {colliders ? <RigidBody type="fixed" colliders="trimesh">{meshes}</RigidBody> : <>{meshes}</>}
       <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#ffffff" roughness={0.9} />
