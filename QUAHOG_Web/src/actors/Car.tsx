@@ -138,6 +138,7 @@ export function Car() {
           type={carType as VehicleType}
           color={carColor}
           brake={() => useGame.getState().mode === "car" && moveAxis().y < -0.1}
+          reverse={() => useGame.getState().mode === "car" && shared.carSpeed < -0.5}
         />
       </group>
     </RigidBody>
