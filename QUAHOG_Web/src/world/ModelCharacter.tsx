@@ -28,14 +28,24 @@ export function ModelCharacter({ moving, tint }: { moving?: () => boolean; tint?
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = true;
+      const src = mesh.material as THREE.Material;
+      let m = (Array.isArray(src) ? src[0] : src) as THREE.MeshStandardMaterial;
       // tint a private material clone so the player's outfit colour doesn't
       // bleed onto pedestrians sharing the source GLB material.
       if (tint) {
-        const src = mesh.material as THREE.Material;
-        const m = (Array.isArray(src) ? src[0] : src).clone() as THREE.MeshStandardMaterial;
-        if (m.color) m.color.set(tint);
+        m = m.clone();
+        // absolute (set→scale, not relative multiply) so repeat effect runs don't
+        // compound; 0.72 keeps the light jumpsuit — esp. the default white tint —
+        // from clipping to a glowing white blob under the noon sun + bloom.
+        if (m.color) m.color.set(tint).multiplyScalar(0.72);
         mesh.material = m;
       }
+      // Kill the over-bright sheen either way: no metalness/emissive, fully rough,
+      // low env reflection. Characters were reading blown-out and haloed by bloom.
+      m.metalness = 0;
+      m.roughness = Math.max(m.roughness ?? 0.9, 0.9);
+      if (m.emissive) { m.emissive.setRGB(0, 0, 0); m.emissiveIntensity = 0; }
+      m.envMapIntensity = 0.5;
     });
     const a = names.length ? actions[names[0]] : null;
     if (a) { a.reset().play(); action.current = a; }
