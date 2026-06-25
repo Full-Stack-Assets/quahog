@@ -322,7 +322,7 @@ time; keep the build green; be honest about status.
 
 ## 26. Save / settings / onboarding
 - [ ] Save/load UI + autosave + slots + cloud-ready format
-- [ ] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls
+- [~] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls — **Shadows on/off** + Effects on/off + volume + weather + camera-shake toggles, persisted (PauseMenu/GameSystems); draw-distance/quality presets + control remap TODO
 - [ ] First-time tutorial / control onboarding (the opener doubles as this)
 - [ ] Resume/“continue” flow; new-game-plus (stretch)
 
@@ -770,6 +770,7 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **World-gen cleanup (from playtest screenshots, merged PRs #29–#31):** building façade/window/storefront/roofline variety + per-ped colour/size variety + non-glowing player/hospital + reduced bloom; then a world-artifact pass — filtered **7.4k stray service/parking/alley/construction/corridor/track ways** at slice load (unnecessary roads), stopped `Props` decorating bridges + motorway/trunk (floating benches/trees over Rt 18), moved the **Battleship Cove fast-travel off the Braga Bridge deck**, dropped park/area polys below the road apron (green z-fight bleed), and dulled the steel **rails** so they stop mirroring the sky blue. (Stylized New-Bedford focus; earth/photoreal parked.)
 - **§15 day counter + sleep/time-skip:** the clock now integrates on `shared.hour` and bumps a `shared.day` counter at midnight; inside a safehouse on foot **T sleeps til 07:00** (heal + clear both wanted axes + advance day + save), with hint/confirm toasts. HUD shows **Day N**; New Game resets to Day 1 / 09:00. Shipped (`dd376e3`).
 - **§30 credits/attribution:** pause-menu **Credits & attribution** overlay (OSM ODbL, CesiumMan CC-BY, Three.js/R3F/Rapier/drei, procedural+ElevenLabs audio, parody/fiction disclaimer); added `T sleep` to the controls crib. Shipped (`b321c38`).
+- **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
