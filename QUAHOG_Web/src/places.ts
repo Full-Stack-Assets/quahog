@@ -27,7 +27,7 @@ export const FAST_TRAVEL: { name: string; pos: [number, number] }[] = [
   { name: "Off the Hook (Long Island)", pos: [6092, 4470] },
   { name: "Dartmouth Mall", pos: [-3921, 360] },
   { name: "Westport", pos: [-13280, 1781] },
-  { name: "Fall River — Battleship Cove", pos: [-20000, -7400] },
+  { name: "Fall River — Battleship Cove", pos: [-19972, -7348] }, // off the Braga deck/ramps (was under it), beside a surface road
   { name: "Lizzie Borden House", pos: [-19599, -7060] },
 ];
 

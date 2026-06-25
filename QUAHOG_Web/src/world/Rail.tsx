@@ -43,8 +43,8 @@ export function Rail({ paths }: { paths?: [number, number][][] }) {
       <mesh geometry={g.bed} receiveShadow>
         <meshStandardMaterial color="#3a352e" roughness={1} polygonOffset polygonOffsetFactor={-1} />
       </mesh>
-      {g.railL && <mesh geometry={g.railL}><meshStandardMaterial color="#9a9ca0" roughness={0.5} metalness={0.7} polygonOffset polygonOffsetFactor={-2} /></mesh>}
-      {g.railR && <mesh geometry={g.railR}><meshStandardMaterial color="#9a9ca0" roughness={0.5} metalness={0.7} polygonOffset polygonOffsetFactor={-2} /></mesh>}
+      {g.railL && <mesh geometry={g.railL}><meshStandardMaterial color="#7c7e82" roughness={0.78} metalness={0.25} polygonOffset polygonOffsetFactor={-2} /></mesh>}
+      {g.railR && <mesh geometry={g.railR}><meshStandardMaterial color="#7c7e82" roughness={0.78} metalness={0.25} polygonOffset polygonOffsetFactor={-2} /></mesh>}
     </group>
   );
 }
