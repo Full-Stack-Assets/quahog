@@ -35,6 +35,7 @@ export function PauseMenu() {
   const mTitle = useMission((s) => s.title);
   const mDone = useMission((s) => s.done);
   const [vol, setVol] = useState(0.5);
+  const [showCredits, setShowCredits] = useState(false);
   if (!paused) return null;
   const wlabel = weather === "rain" ? "Rain" : weather === "fog" ? "Fog" : "Clear";
 
@@ -85,6 +86,7 @@ export function PauseMenu() {
             style={{ width: "100%", marginTop: 4 }}
           />
         </div>
+        <button style={btn} onClick={() => setShowCredits(true)}>ⓘ Credits &amp; attribution</button>
         <button
           style={btn}
           onClick={() => { useGame.getState().setPaused(false); useGame.getState().setStarted(false); }}
@@ -107,12 +109,65 @@ export function PauseMenu() {
           WASD move · Shift sprint · E enter/exit · F melee<br />
           Space handbrake · H horn · V view · O photo<br />
           G draw · 1/2/3/4 fists/pistol/shotgun/bat · click fire<br />
-          [ ] radio · M map · C character · R weather
+          [ ] radio · M map · C character · R weather · T sleep (safehouse)
         </div>
         <div style={{ color: "#6a6486", fontSize: 10, marginTop: 10, fontFamily: "'Courier New', monospace" }}>
           Esc / P to resume
         </div>
       </div>
+
+      {showCredits && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 21,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(6,8,16,.82)", backdropFilter: "blur(2px)",
+          }}
+          onClick={() => setShowCredits(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 360, maxHeight: "82vh", overflowY: "auto", padding: 22,
+              background: "rgba(12,15,26,.97)", border: "1px solid #3a2a5e", borderRadius: 14,
+              color: "#cfc8e6", fontFamily: "'Courier New', monospace", fontSize: 11.5, lineHeight: 1.7,
+            }}
+          >
+            <div style={{ color: "#ff7ad9", fontWeight: 700, letterSpacing: 2, fontSize: 16, textAlign: "center", marginBottom: 4 }}>
+              MOUNT HOPE
+            </div>
+            <div style={{ color: "#9a93b8", fontSize: 10, textAlign: "center", marginBottom: 14 }}>
+              Credits &amp; attribution
+            </div>
+
+            <b style={{ color: "#e7e0ff" }}>Map data</b><br />
+            © OpenStreetMap contributors, licensed under the Open Database License
+            (ODbL). Geometry derived from OSM via Overpass.<br /><br />
+
+            <b style={{ color: "#e7e0ff" }}>3D character</b><br />
+            “CesiumMan” © Cesium — CC-BY 4.0.<br /><br />
+
+            <b style={{ color: "#e7e0ff" }}>Engine &amp; libraries</b><br />
+            Three.js · React Three Fiber · @react-three/rapier · @react-three/drei.<br /><br />
+
+            <b style={{ color: "#e7e0ff" }}>Audio</b><br />
+            Procedural Web Audio SFX; radio voices via ElevenLabs TTS (with a
+            Web-Speech fallback); music tracks per their own licenses.<br /><br />
+
+            <b style={{ color: "#e7e0ff" }}>Disclaimer</b><br />
+            Mount Hope is a work of parody/fiction set in a fictionalized South
+            Coast. All characters, businesses, factions, and events are invented;
+            any resemblance to real people or businesses is coincidental. Not
+            affiliated with or endorsed by any real entity.<br /><br />
+
+            <div style={{ textAlign: "center", marginTop: 6 }}>
+              <button style={{ ...btn, width: "auto", display: "inline-block", padding: "8px 18px" }} onClick={() => setShowCredits(false)}>
+                ← Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
