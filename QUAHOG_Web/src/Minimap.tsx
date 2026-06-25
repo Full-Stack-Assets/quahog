@@ -3,6 +3,7 @@ import { useGame } from "./store";
 import { useMission } from "./mission";
 import { shared } from "./shared";
 import { CIVIC } from "./places";
+import { useEconomy, BUSINESSES } from "./economy";
 
 // Player-centered radar (§21): draws nearby roads, the objective, and a heading
 // arrow on a small canvas. North-up. Cheap 2D — no WebGL.
@@ -112,6 +113,21 @@ export function Minimap() {
       for (const c of CIVIC) {
         ctx.fillStyle = c.kind === "hospital" ? "#4ad66d" : "#3a6bff";
         ctx.fillRect(R + (c.pos[0] - px) * PPM - 3, R + (c.pos[2] - pz) * PPM - 3, 6, 6);
+      }
+
+      // business fronts (gold squares): owned = filled, buyable = hollow outline
+      const owned = useEconomy.getState().owned;
+      for (const b of BUSINESSES) {
+        const bx = R + (b.pos[0] - px) * PPM;
+        const by = R + (b.pos[2] - pz) * PPM;
+        if (owned[b.id]) {
+          ctx.fillStyle = "#ffcf4a";
+          ctx.fillRect(bx - 3, by - 3, 6, 6);
+          ctx.strokeStyle = "#0a0e18"; ctx.lineWidth = 1; ctx.strokeRect(bx - 3, by - 3, 6, 6);
+        } else {
+          ctx.strokeStyle = "#caa24a"; ctx.lineWidth = 1.5;
+          ctx.strokeRect(bx - 3, by - 3, 6, 6);
+        }
       }
 
       // cop blips (pulsing blue dots)

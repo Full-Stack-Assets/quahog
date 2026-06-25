@@ -280,7 +280,7 @@ time; keep the build green; be honest about status.
 
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
-- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
+- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, parks, objective, heading, cop blips, police/hospital markers, **business-front icons** (owned filled / buyable hollow), waypoint); rotation TODO
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health + stamina bars + police/faction badges + wallet + clock + weapon (HUD.tsx); armor/ammo TODO
 - [~] Objective markers + waypoints + on-screen distance — world beam/ring marker + map blip + **on-screen metres** to objective (HUD); off-screen waypoint arrow TODO
 - [~] Interaction prompts + context hints — contextual prompts (E steal/enter, B buy) + control crib (HUD); richer context hints TODO
@@ -772,7 +772,8 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **§30 credits/attribution:** pause-menu **Credits & attribution** overlay (OSM ODbL, CesiumMan CC-BY, Three.js/R3F/Rapier/drei, procedural+ElevenLabs audio, parody/fiction disclaimer); added `T sleep` to the controls crib. Shipped (`b321c38`).
 - **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
 - **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped (`c68b294`).
-- **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped.
+- **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped (`cd729f8`).
+- **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped.
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
