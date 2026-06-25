@@ -88,6 +88,7 @@ export function GameSystems() {
       const s = JSON.parse(localStorage.getItem("mounthope.settings.v1") || "{}");
       const g = useGame.getState();
       if (typeof s.fxOn === "boolean" && s.fxOn !== g.fxOn) g.toggleFx();
+      if (typeof s.shadows === "boolean" && s.shadows !== g.shadows) g.toggleShadows();
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
       if (s.weather) useGame.setState({ weather: s.weather });
     } catch { /* ignore */ }
@@ -171,7 +172,7 @@ export function GameSystems() {
       st.save();
       if (useGame.getState().started) savePos();
       const g = useGame.getState();
-      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
+      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
     }
   });
   return null;

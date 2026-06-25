@@ -29,6 +29,7 @@ export function PauseMenu() {
   const view = useGame((s) => s.view);
   const weather = useGame((s) => s.weather);
   const fxOn = useGame((s) => s.fxOn);
+  const shadows = useGame((s) => s.shadows);
   const reduceShake = useGame((s) => s.reduceShake);
   const cash = useStats((s) => s.cash);
   const owned = useEconomy((s) => s.owned);
@@ -74,6 +75,9 @@ export function PauseMenu() {
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleFx()}>
           Effects: {fxOn ? "On" : "Off"}
+        </button>
+        <button style={btn} onClick={() => useGame.getState().toggleShadows()}>
+          Shadows: {shadows ? "On" : "Off"}
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleReduceShake()}>
           Camera shake: {reduceShake ? "Off" : "On"}
