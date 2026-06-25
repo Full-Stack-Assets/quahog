@@ -286,7 +286,7 @@ function EarthTouch() {
 
   const tapBtn = (label: string, sub: string, action: string, style: React.CSSProperties, size: number) => (
     <div
-      onPointerDown={(e) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId); virtualTap(action); }}
+      onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); virtualTap(action); }}
       style={{
         position: "fixed", width: size, height: size, borderRadius: "50%", zIndex: 16, touchAction: "none",
         background: "rgba(12,15,26,.7)", border: "2px solid rgba(120,110,170,.6)", color: "#fff",
@@ -303,7 +303,7 @@ function EarthTouch() {
     <>
       <div
         ref={stick}
-        onPointerDown={(e) => { dragId.current = e.pointerId; (e.target as HTMLElement).setPointerCapture(e.pointerId); moveStick(e.clientX, e.clientY); }}
+        onPointerDown={(e) => { dragId.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); moveStick(e.clientX, e.clientY); }}
         onPointerMove={(e) => { if (dragId.current === e.pointerId) moveStick(e.clientX, e.clientY); }}
         onPointerUp={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}
         onPointerCancel={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}

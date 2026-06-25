@@ -81,7 +81,7 @@ function Pedestrians({ center }: { center: [number, number] }) {
       const pos = randInBox(center);
       return {
         pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS),
-        scale: 0.9 + Math.random() * 0.28, // height variety so the crowd isn't 32 clones
+        scale: 0.9 + Math.random() * 0.28, // overall size variety (origin at feet, so they stay planted) — not 32 clones
         down: 0, dead: false,
         vel: new THREE.Vector3(), y: 0, tumble: 0, // ragdoll launch state
         body: { pos: pos.clone(), push: new THREE.Vector3(), hit: 0 } as Body,
