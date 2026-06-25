@@ -9,7 +9,9 @@ export function Hospital() {
     <group position={[HOSPITAL[0], 0, HOSPITAL[2]]}>
       <mesh position={[0, 4, -14]} castShadow receiveShadow>
         <boxGeometry args={[14, 8, 10]} />
-        <meshStandardMaterial color="#dfe3e6" roughness={0.8} />
+        {/* mid grey, not near-white: a #dfe3e6 face blew out to a glowing white
+            block under the sun + bloom */}
+        <meshStandardMaterial color="#c2c6ca" roughness={0.85} />
       </mesh>
       {/* red cross sign */}
       <group position={[0, 6.5, -8.9]}>
