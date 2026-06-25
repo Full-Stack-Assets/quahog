@@ -84,4 +84,10 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "MountHope|Economy")
     bool LoadBusinessesFromJson(const FString& RelativeOrAbsolutePath);
+
+    UFUNCTION(BlueprintCallable, Category = "MountHope|Save")
+    bool SaveToSlot(const FString& SlotName = TEXT("MountHopeSlot"), int32 UserIndex = 0) const;
+
+    UFUNCTION(BlueprintCallable, Category = "MountHope|Save")
+    bool LoadFromSlot(const FString& SlotName = TEXT("MountHopeSlot"), int32 UserIndex = 0);
 };

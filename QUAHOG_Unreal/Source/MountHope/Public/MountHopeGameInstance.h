@@ -20,4 +20,7 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MountHope|Boot")
     FString EconomyPath = TEXT("Data/Economy/businesses.json");
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "MountHope|Boot")
+    FString SaveSlotName = TEXT("MountHopeSlot");
 };

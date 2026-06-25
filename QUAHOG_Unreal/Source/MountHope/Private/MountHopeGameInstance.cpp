@@ -21,5 +21,6 @@ void UMountHopeGameInstance::Init()
     if (UMHGameStateSubsystem* GameStateSubsystem = GetSubsystem<UMHGameStateSubsystem>())
     {
         GameStateSubsystem->LoadBusinessesFromJson(EconomyPath);
+        GameStateSubsystem->LoadFromSlot(SaveSlotName);
     }
 }

@@ -14,6 +14,12 @@ derived from the existing South Coast gameplay concept in this repo.
   - `UMHGameStateSubsystem`: wallet/health, dual-axis heat, weather state, and
     property economy primitives.
   - `UMountHopeGameInstance`: bootstraps the above from JSON files on startup.
+- Playable framework classes:
+  - `AMountHopeCharacter`: walk/sprint + enter/exit vehicle shell.
+  - `AMountHopeVehiclePawn`: Chaos wheeled-vehicle base pawn for drivable cars.
+  - `AMountHopeGameMode`: heat decay tick + objective completion/reward routing.
+  - `AMHMissionTriggerActor`: overlap trigger to advance mission objectives.
+  - `UMHSaveGame`: save slot payload for wallet/health/heat/weather/owned assets.
 - `Data/Missions/vertical_slice.json`: opening mission chain seed.
 - `Data/Economy/businesses.json`: first-pass property roster seed.
 
@@ -26,6 +32,8 @@ derived from the existing South Coast gameplay concept in this repo.
    - slice load count (roads/buildings/landmarks),
    - mission file load count,
    - business file load count.
+5. Drop `AMHMissionTriggerActor` in the test map and position it at each mission
+   objective target to validate progression/rewards.
 
 ## Current status
 
@@ -41,10 +49,11 @@ you a clean Unreal code spine to continue into:
 
 ## Next build steps (recommended)
 
-1. Add `AMountHopeCharacter` + `AMountHopeVehiclePawn` with Enhanced Input.
-2. Add a `GameMode` that binds objective checks to `UMHMissionSubsystem`.
-3. Build a georeferenced New Bedford map level with World Partition and import
+1. Wire Enhanced Input mapping contexts to `AMountHopeCharacter` and add camera,
+   interact, and weapon bindings.
+2. Build a georeferenced New Bedford map level with World Partition and import
    hero landmarks.
-4. Replace JSON bootstrap data with DataAssets + editor tooling.
+3. Replace JSON bootstrap data with DataAssets + editor tooling.
+4. Add mission-authoring utilities to auto-spawn objective triggers from JSON.
 5. Stand up an automated content cook/package pipeline for Windows first, then
    PS5 and Xbox.

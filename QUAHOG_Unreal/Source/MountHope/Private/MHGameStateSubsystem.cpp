@@ -1,6 +1,8 @@
 #include "MHGameStateSubsystem.h"
 
 #include "Dom/JsonObject.h"
+#include "Kismet/GameplayStatics.h"
+#include "MHSaveGame.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
@@ -160,4 +162,59 @@ bool UMHGameStateSubsystem::LoadBusinessesFromJson(const FString& RelativeOrAbso
 
     UE_LOG(LogTemp, Log, TEXT("MountHope: Loaded %d businesses"), Businesses.Num());
     return Businesses.Num() > 0;
+}
+
+bool UMHGameStateSubsystem::SaveToSlot(const FString& SlotName, int32 UserIndex) const
+{
+    UMHSaveGame* Save = Cast<UMHSaveGame>(UGameplayStatics::CreateSaveGameObject(UMHSaveGame::StaticClass()));
+    if (!Save)
+    {
+        return false;
+    }
+
+    Save->Cash = Cash;
+    Save->Health = Health;
+    Save->PoliceHeat = PoliceHeat;
+    Save->FactionHeat = FactionHeat;
+    Save->Weather = static_cast<uint8>(Weather);
+
+    Save->OwnedBusinessIds.Reset();
+    Save->OwnedBusinessIds.Reserve(OwnedBusinessIds.Num());
+    for (const FName& Id : OwnedBusinessIds)
+    {
+        Save->OwnedBusinessIds.Add(Id.ToString());
+    }
+
+    return UGameplayStatics::SaveGameToSlot(Save, SlotName, UserIndex);
+}
+
+bool UMHGameStateSubsystem::LoadFromSlot(const FString& SlotName, int32 UserIndex)
+{
+    if (!UGameplayStatics::DoesSaveGameExist(SlotName, UserIndex))
+    {
+        return false;
+    }
+
+    UMHSaveGame* Save = Cast<UMHSaveGame>(UGameplayStatics::LoadGameFromSlot(SlotName, UserIndex));
+    if (!Save)
+    {
+        return false;
+    }
+
+    Cash = FMath::Max(0, Save->Cash);
+    Health = FMath::Clamp(Save->Health, 0.0f, 100.0f);
+    PoliceHeat = ClampHeat(Save->PoliceHeat);
+    FactionHeat = ClampHeat(Save->FactionHeat);
+    Weather = static_cast<EMHWeatherState>(FMath::Clamp<int32>(Save->Weather, 0, 3));
+
+    OwnedBusinessIds.Reset();
+    for (const FString& Id : Save->OwnedBusinessIds)
+    {
+        if (!Id.IsEmpty())
+        {
+            OwnedBusinessIds.Add(FName(*Id));
+        }
+    }
+
+    return true;
 }
