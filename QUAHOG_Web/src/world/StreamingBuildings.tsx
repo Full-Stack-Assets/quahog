@@ -105,9 +105,14 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const pal = b.height >= 14 ? GREY : WARM;
     const isHero = !!(b.name && HERO.has(b.name));
     const hash = (i * 0.6180339887) % 1;
+    const hash3 = (i * 0.3819660113) % 1;
     const wall = new THREE.Color(isHero ? (HERO_COLORS[b.name!] ?? "#c2bcae") : pal[i % pal.length]);
-    if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
+    if (!isHero) wall.multiplyScalar(0.78 + hash * 0.42); // wider tonal spread between neighbours
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
+    // Per-building window SCALE: floors run taller/shorter (and windows wider/
+    // narrower) building-to-building so the street isn't one repeated window grid
+    // — the biggest fix for the "repetitive boxes" read. ±~25% around the base.
+    const winTile = WIN_TILE * (0.8 + hash3 * 0.5);
     // Per-building façade phase (whole-window steps) so neighbours show a
     // different slice of the 4×4 window grid — varied lit pattern at night.
     const phaseX = Math.floor(hash * FACADE_GRID) / FACADE_GRID;
@@ -128,7 +133,7 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
         const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
         colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
-        uv[v * 2] = horiz / WIN_TILE + phaseX; uv[v * 2 + 1] = y / WIN_TILE + phaseY;
+        uv[v * 2] = horiz / winTile + phaseX; uv[v * 2 + 1] = y / winTile + phaseY;
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
