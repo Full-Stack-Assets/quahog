@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Sky } from "@react-three/drei";
@@ -12,7 +12,7 @@ import {
 import { GoogleCloudAuthPlugin, CesiumIonAuthPlugin } from "3d-tiles-renderer/plugins";
 import { WGS84_ELLIPSOID } from "3d-tiles-renderer/three";
 import { loadSlice, type Slice } from "../slice";
-import { installInput } from "../input";
+import { installInput, setVirtualMove, virtualTap } from "../input";
 import { computeSpawn } from "./follow";
 import { useContext } from "react";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
@@ -137,6 +137,7 @@ export function EarthApp() {
         weather={weather}
       />
       <Radio />
+      {mode === "play" && <EarthTouch />}
       {mode === "play" && !ready && !tilesProblem && <Loading />}
       {tilesProblem && <TilesProblem />}
     </>
@@ -164,9 +165,10 @@ function TilesDiag({ onMissing, onOk }: { onMissing: () => void; onOk: () => voi
 function TilesProblem() {
   return (
     <div style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 5, maxWidth: 460, background: "rgba(40,10,10,.9)", border: "1px solid #7a2c2c", borderRadius: 8, padding: "10px 14px", color: "#ffd9d9", font: "12px/1.5 'Courier New', monospace", textAlign: "center" }}>
-      <b>Photoreal tiles aren't loading.</b> The map data isn't coming back —
-      almost always the token: a bad/expired Cesium ion token, or (on the Google path)
-      Map Tiles API not enabled, billing off, or over quota. Check the token, then reload.
+      <b>Photoreal tiles aren't loading.</b> On the Cesium ion path this almost always
+      means you haven't added <b>Google Photorealistic 3D Tiles</b> to your ion assets
+      (Asset Depot → add, accept Google's terms) — or the token is bad/expired. On the
+      Google path: Map Tiles API not enabled, billing off, or over quota. Fix, then reload.
       (Movement still works; you're just on an empty surface.)
     </div>
   );
@@ -238,7 +240,7 @@ function Hud(props: {
           ))}
         </div>
         <div style={{ opacity: 0.55, fontSize: 9, marginTop: 8 }}>
-          Tiles © Google · Character: CesiumMan © Cesium, CC-BY 4.0
+          Tiles © Google
         </div>
       </div>
     </div>
@@ -255,6 +257,73 @@ function Loading() {
   );
 }
 
+// Minimal on-screen controls for phones in PLAY mode: a movement thumb-stick +
+// E (enter/exit car) and punch taps, feeding the shared virtual-input layer.
+// (The main game's TouchControls is bound to its own store, so earth needs its
+// own.) Only renders on coarse-pointer (touch) devices.
+function EarthTouch() {
+  const [touch, setTouch] = useState(false);
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
+  const dragId = useRef<number | null>(null);
+  const stick = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const coarse = typeof window !== "undefined" &&
+      (window.matchMedia?.("(pointer: coarse)").matches || "ontouchstart" in window);
+    setTouch(!!coarse);
+  }, []);
+  if (!touch) return null;
+
+  const SZ = 130, KN = SZ * 0.42;
+  const moveStick = (cx: number, cy: number) => {
+    const el = stick.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    let dx = (cx - (r.left + r.width / 2)) / (r.width / 2);
+    let dy = (cy - (r.top + r.height / 2)) / (r.height / 2);
+    const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; }
+    setKnob({ x: dx * (SZ / 2 - KN / 2), y: dy * (SZ / 2 - KN / 2) });
+    setVirtualMove(dx, -dy);
+  };
+
+  const tapBtn = (label: string, sub: string, action: string, style: React.CSSProperties, size: number) => (
+    <div
+      onPointerDown={(e) => { e.preventDefault(); (e.target as HTMLElement).setPointerCapture(e.pointerId); virtualTap(action); }}
+      style={{
+        position: "fixed", width: size, height: size, borderRadius: "50%", zIndex: 16, touchAction: "none",
+        background: "rgba(12,15,26,.7)", border: "2px solid rgba(120,110,170,.6)", color: "#fff",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+        fontFamily: "'Courier New', monospace", fontWeight: 700, lineHeight: 1, ...style,
+      }}
+    >
+      <span style={{ fontSize: size * 0.32 }}>{label}</span>
+      <span style={{ fontSize: Math.max(8, size * 0.15), opacity: 0.8 }}>{sub}</span>
+    </div>
+  );
+
+  return (
+    <>
+      <div
+        ref={stick}
+        onPointerDown={(e) => { dragId.current = e.pointerId; (e.target as HTMLElement).setPointerCapture(e.pointerId); moveStick(e.clientX, e.clientY); }}
+        onPointerMove={(e) => { if (dragId.current === e.pointerId) moveStick(e.clientX, e.clientY); }}
+        onPointerUp={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}
+        onPointerCancel={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}
+        style={{
+          position: "fixed", left: 24, bottom: 24, width: SZ, height: SZ, borderRadius: "50%", zIndex: 16,
+          background: "rgba(12,15,26,.4)", border: "2px solid rgba(120,110,170,.5)", touchAction: "none",
+        }}
+      >
+        <div style={{
+          position: "absolute", left: SZ / 2 - KN / 2 + knob.x, top: SZ / 2 - KN / 2 + knob.y,
+          width: KN, height: KN, borderRadius: "50%",
+          background: "rgba(255,122,217,.6)", border: "2px solid rgba(255,255,255,.5)",
+        }} />
+      </div>
+      {tapBtn("E", "car", "KeyE", { right: 24, bottom: 30 }, 76)}
+      {tapBtn("👊", "punch", "KeyF", { right: 112, bottom: 30 }, 60)}
+    </>
+  );
+}
+
 function NoKeyNotice() {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#e7e0ff", background: "#05070d", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
@@ -264,8 +333,10 @@ function NoKeyNotice() {
         <p style={{ textAlign: "left", background: "#0c1a14", padding: 12, borderRadius: 8, border: "1px solid #1f5c44" }}>
           <b style={{ color: "#8ff0c2" }}>Cesium ion — free, easiest:</b><br />
           1. Sign up at <code style={{ color: "#9fd8ff" }}>cesium.com/ion</code> (free).<br />
-          2. Copy your <b>access token</b> from the dashboard.<br />
-          3. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?ion=YOUR_TOKEN</code><br />
+          2. <b>Asset Depot</b> → add <b>Google Photorealistic 3D Tiles</b> to your assets
+          (accept Google's terms). <i>Without this the screen stays blank.</i><br />
+          3. Copy your <b>access token</b> from the dashboard.<br />
+          4. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?ion=YOUR_TOKEN</code><br />
           &nbsp;&nbsp;&nbsp;or set <code>VITE_CESIUM_ION_TOKEN</code> at build time.
         </p>
         <p style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8 }}>
