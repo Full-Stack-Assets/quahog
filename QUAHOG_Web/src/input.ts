@@ -2,6 +2,7 @@
 // (touch) layer so on-screen controls feed the same movement/tap pipeline.
 const pressed = new Set<string>();
 const taps = new Set<string>();
+const vheld = new Set<string>();    // virtual (touch) held keys, e.g. sprint/handbrake
 const virtual = { x: 0, y: 0 };     // touch joystick, each axis -1..1
 const gamepadMove = { x: 0, y: 0 }; // gamepad left stick
 
@@ -14,7 +15,7 @@ export function installInput() {
     pressed.add(e.code);
   });
   window.addEventListener("keyup", (e) => pressed.delete(e.code));
-  window.addEventListener("blur", () => pressed.clear());
+  window.addEventListener("blur", () => { pressed.clear(); vheld.clear(); });
   // left mouse → a "Mouse0" tap (used to fire the gun); ignore clicks on UI
   window.addEventListener("mousedown", (e) => {
     if (e.button !== 0) return;
@@ -54,7 +55,10 @@ export function installInput() {
   requestAnimationFrame(poll);
 }
 
-export const isDown = (code: string) => pressed.has(code);
+export const isDown = (code: string) => pressed.has(code) || vheld.has(code);
+
+/** Hold/release a virtual key from an on-screen (touch) button (sprint, brake). */
+export const setVirtualHold = (code: string, down: boolean) => { if (down) vheld.add(code); else vheld.delete(code); };
 
 /** Returns true exactly once per physical key press. */
 export const consumeTap = (code: string) => taps.delete(code);

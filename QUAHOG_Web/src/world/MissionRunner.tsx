@@ -21,6 +21,7 @@ export function MissionRunner() {
 
     let complete = true;
     if (cur.needCar && mode !== "car") complete = false;
+    if (cur.noHeat && useStats.getState().police >= 1) complete = false; // shake the cops first
     if (cur.target && body) {
       const p = body.translation();
       const d = Math.hypot(p.x - cur.target[0], p.z - cur.target[2]);

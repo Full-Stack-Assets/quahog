@@ -45,7 +45,7 @@ const SPECS: Record<VehicleType, Spec> = {
   suv:      { L: 4.8, W: 2.0, H: 1.25, y: 1.05, cabL: 2.4, cabH: 0.85, cabZ: -0.15, ride: 0.5, wheelR: 0.5, glass: "#212a30" },
 };
 
-export function Vehicle({ type, color, brake }: { type: VehicleType; color: string; brake?: () => boolean }) {
+export function Vehicle({ type, color, brake, reverse }: { type: VehicleType; color: string; brake?: () => boolean; reverse?: () => boolean }) {
   const s = SPECS[type];
   const halfL = s.L / 2;
   const wheelZ = halfL - 0.95;
@@ -53,6 +53,7 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
   const cabW = s.cabW ?? s.W - 0.25;
   const head = useRef<THREE.MeshStandardMaterial>(null);
   const tail = useRef<THREE.MeshStandardMaterial>(null);
+  const rev = useRef<THREE.MeshStandardMaterial>(null);
   const root = useRef<THREE.Group>(null);
   const wheels = useRef<(THREE.Group | null)[]>([]);
   const prev = useRef<THREE.Vector3 | null>(null);
@@ -63,6 +64,7 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
     const night = 1 - shared.dayT;
     if (head.current) head.current.emissiveIntensity = 0.3 + night * 1.6;
     if (tail.current) tail.current.emissiveIntensity = 0.3 + night * 0.9 + (brake?.() ? 2.2 : 0);
+    if (rev.current) rev.current.emissiveIntensity = reverse?.() ? 2.4 : 0; // white backup lights
     if (root.current) {
       root.current.getWorldPosition(_wp);
       if (prev.current) {
@@ -106,6 +108,11 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
       <mesh position={[0, s.y, -halfL - 0.01]}>
         <boxGeometry args={[s.W - 0.3, 0.16, 0.05]} />
         <meshStandardMaterial ref={tail} color="#7a1010" emissive="#c01818" emissiveIntensity={0.5} />
+      </mesh>
+      {/* reverse (backup) lights — white, lit only when backing up */}
+      <mesh position={[0, s.y - 0.17, -halfL - 0.012]}>
+        <boxGeometry args={[s.W - 0.8, 0.08, 0.05]} />
+        <meshStandardMaterial ref={rev} color="#fafafa" emissive="#ffffff" emissiveIntensity={0} />
       </mesh>
       {/* wheels */}
       {[

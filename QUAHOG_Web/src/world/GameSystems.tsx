@@ -16,6 +16,7 @@ interface PosRec {
   mode: string; px?: number; py?: number; pz?: number; heading?: number;
   carx?: number; cary?: number; carz?: number; carYaw?: number;
   carType?: string; carColor?: string;
+  day?: number; hour?: number; // so Continue resumes the same in-game day/time
 }
 
 // Persist where the player is so "Continue" resumes them in place (§26). New
@@ -29,6 +30,7 @@ function savePos() {
       mode: g.mode, px: pl?.x, py: pl?.y, pz: pl?.z, heading: shared.heading,
       carx: car?.x, cary: car?.y, carz: car?.z, carYaw: shared.carYaw,
       carType: g.playerCarType, carColor: g.playerCarColor,
+      day: shared.day, hour: shared.hour,
     };
     localStorage.setItem(POS_KEY, JSON.stringify(rec));
   } catch { /* ignore */ }
@@ -40,6 +42,8 @@ function applyRestore(r: PosRec) {
   const pl = shared.player, car = shared.car;
   if (!pl) return;
   const g = useGame.getState();
+  if (typeof r.day === "number") shared.day = r.day;
+  if (typeof r.hour === "number") shared.hour = r.hour;
   if (r.mode === "car" && r.carx != null && car) {
     car.setTranslation({ x: r.carx, y: r.cary ?? 1.4, z: r.carz ?? 0 }, true);
     car.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -88,6 +92,8 @@ export function GameSystems() {
       const s = JSON.parse(localStorage.getItem("mounthope.settings.v1") || "{}");
       const g = useGame.getState();
       if (typeof s.fxOn === "boolean" && s.fxOn !== g.fxOn) g.toggleFx();
+      if (typeof s.shadows === "boolean" && s.shadows !== g.shadows) g.toggleShadows();
+      if (typeof s.fov === "number") g.setFov(s.fov);
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
       if (s.weather) useGame.setState({ weather: s.weather });
     } catch { /* ignore */ }
@@ -171,7 +177,7 @@ export function GameSystems() {
       st.save();
       if (useGame.getState().started) savePos();
       const g = useGame.getState();
-      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
+      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
     }
   });
   return null;

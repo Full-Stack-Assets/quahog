@@ -194,7 +194,7 @@ time; keep the build green; be honest about status.
 - [x] Real car models (Bronco/Mustang/G/Z/RAV4) — player + traffic
 - [x] Arcade driving (accel/brake/steer/reverse), enter/exit, collision — faster top speed + speed-scaled steering; ram traffic to halt it; **carjack** traffic on foot (E) with model/colour swap
 - [ ] Wheel rotation + steering animation; suspension travel
-- [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking (Vehicles.tsx); reverse/turn signals TODO
+- [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking, **white reverse lights when backing up** (Vehicles.tsx/Car.tsx); turn signals TODO
 - [ ] Damage/deformation, smoke when wrecked, explosions
 - [ ] Region-accurate spawns (“Townie”, “Linguiça” moped, “Codfish 40”, lowriders, preppy imports)
 - [~] Motorcycles/mopeds, boats, bicycles — **pilotable yacht** (Boat.tsx; board at the Long Island marina, drives on water, wake); motorcycles/mopeds/bicycles TODO
@@ -224,7 +224,7 @@ time; keep the build green; be honest about status.
 ## 15. Gameplay systems (canon)
 - [x] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints — mission.ts + MissionRunner.tsx (objective beam/ring); waypoint trail TODO
 - [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — police+faction 0–5 + decay (game.ts); **busted/wasted** loop with respawn (Consequence.tsx)
-- [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
+- [x] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves; **T sleeps til 07:00** (heal + clear heat + advance day + save) (Safehouse.tsx)
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
 - [x] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems) + one-off margin-leak/boom events on owned fronts (`rollRevenueEvent`, every 90–210s, toast + sfx)
@@ -233,15 +233,15 @@ time; keep the build green; be honest about status.
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
 - [ ] **RadioManager** integration with story milestones
 - [~] Save/load (IndexedDB/localStorage) + autosave + multiple slots — localStorage save + 20s autosave (GameSystems.tsx); multi-slot TODO
-- [~] Time of day clock + day counter; time-skip — HUD clock from shared.hour; day counter + time-skip TODO
+- [x] Time of day clock + day counter; time-skip — HUD clock + **Day N** counter (midnight rollover) + **safehouse sleep** time-skip (shared.day, DayNight, Safehouse, HUD)
 - [ ] Respect/reputation + faction standing
 
 ## 16. Missions & content
 - [~] **“Off the Boat”** opener (arrival → Bethel → fish-pier ambush → fog getaway → safehouse) — 3-step playable version (Bethel → steal car → safehouse); ambush/fog beats TODO
-- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar live; remaining primitives TODO
+- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar + **deliver** + **escape (noHeat: lose the cops)** live; follow/eliminate/protect/tail/timed/stealth TODO
 - [ ] Cutscene system (scripted camera + dialogue + subtitles)
-- [ ] Act I (New Bedford): harbor takeover arc
-- [ ] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing)
+- [~] Act I (New Bedford): harbor takeover arc — **Auction Rules** (lean on Sully's collectors → cool the car at Reggie's) + **The Linguiça Run** + **Harbor Heat** (break Sully's grip, lose the cops) playable in the chain; Sully boss beat TODO
+- [~] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing) — **Spindle City** (I-195 over the Braga to Battleship Cove) + **Acquitted** (Borden House → run the ledger, lose the tail) playable; The Undefeated waits on the Brockton pull
 - [ ] Act III (Cape + “Gloria” storm) → Battleship Cove finale
 - [ ] Branching/optional outcomes; mission replay
 - [ ] Dialogue system (NPC conversations, choices where relevant)
@@ -280,7 +280,7 @@ time; keep the build green; be honest about status.
 
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
-- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
+- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, parks, objective, heading, cop blips, police/hospital markers, **business-front icons** (owned filled / buyable hollow), waypoint); rotation TODO
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health + stamina bars + police/faction badges + wallet + clock + weapon (HUD.tsx); armor/ammo TODO
 - [~] Objective markers + waypoints + on-screen distance — world beam/ring marker + map blip + **on-screen metres** to objective (HUD); off-screen waypoint arrow TODO
 - [~] Interaction prompts + context hints — contextual prompts (E steal/enter, B buy) + control crib (HUD); richer context hints TODO
@@ -291,7 +291,7 @@ time; keep the build green; be honest about status.
 ## 22. UI aesthetics & menus
 - [~] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit — courier/neon palette across HUD, menus, title, toasts; CRT shader/full kit TODO
 - [~] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene — title/start screen over the live world with tips (StartMenu.tsx); New/Continue/Load split TODO
-- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, volume, reset); mission/stats screens TODO
+- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, **shadows**, volume, reset) + **Stats overlay** (day/health/cash/wanted/fronts/scrimshaw/mission) + **Credits**; dedicated mission screen TODO
 - [~] Loading screens with art + tips/lore — title screen doubles as a loading screen with rotating tips (StartMenu.tsx); art TODO
 - [ ] Map/HUD icon set; mission-text styling; credits
 - [ ] Photo-mode UI (filters, frames, stickers)
@@ -311,18 +311,18 @@ time; keep the build green; be honest about status.
 - [ ] Aim/over-the-shoulder camera; lock-on framing
 - [ ] Cinematic/cutscene camera rig; mission intro fly-bys
 - [ ] Photo mode free-cam (already exists on earth page — port + expand)
-- [ ] Smoothing, FOV options, motion-sickness comfort settings
+- [~] Smoothing, FOV options, motion-sickness comfort settings — **FOV slider (45–85°)** in pause settings, persisted, feeds the chase/eye camera base FOV (FollowCamera); per-axis comfort options TODO
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
-- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons (incl. gun + fire) for phones, **drag-to-move + resize with persisted layout** (TouchControls.tsx); KB/M remap + gamepad TODO
+- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + a **full action-button set** (enter, fire, hit, gun, **handbrake + sprint held**, horn, map, menu, buy, outfit, photo, sleep, weather, weapon 1–4), each **draggable + resizable + show/hide toggle**, layout persisted (TouchControls.tsx, input.setVirtualHold); KB/M remap TODO
 - [ ] Colorblind modes; UI scale; high-contrast
 - [ ] Aim assist; difficulty options; hold-vs-toggle
 - [ ] Reduce-motion / camera-shake toggle; flashing-lights warning
 
 ## 26. Save / settings / onboarding
 - [ ] Save/load UI + autosave + slots + cloud-ready format
-- [ ] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls
+- [~] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls — **Shadows on/off** + Effects on/off + volume + weather + camera-shake toggles, persisted (PauseMenu/GameSystems); draw-distance/quality presets + control remap TODO
 - [ ] First-time tutorial / control onboarding (the opener doubles as this)
 - [ ] Resume/“continue” flow; new-game-plus (stretch)
 
@@ -362,7 +362,7 @@ time; keep the build green; be honest about status.
 - [ ] Cross-browser + perf testing; input device testing
 - [ ] Bug tracker / known-issues list
 - [ ] Release notes + in-game version stamp
-- [ ] Legal/attribution page (OSM ODbL, model licenses, parody disclaimer)
+- [x] Legal/attribution page (OSM ODbL, model licenses, parody disclaimer) — Credits overlay in the pause menu (OSM ODbL, CesiumMan CC-BY, engine/audio credits, parody disclaimer) (PauseMenu.tsx)
 
 ## 31. Parked / external
 - [~] Photoreal Google 3D Tiles build (`earth.html`) — full play world built; **blocked on billed Google key**; revisit if resolved
@@ -765,6 +765,18 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
 - **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced that `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so strict `npm ci` fails. The lock can't be regenerated here (org egress policy 403s `@vercel/blob`) and there's no local dev env to do it either — but it's a non-issue: Vercel and CI both use `npm install`, which builds fine, so CI uses `npm install` to match. No action outstanding. (`e80c49c`→`67a8669`)
 - **Slice-load progress bar** + **vendor code-splitting** (three/r3f/rapier/react chunks) shipped and CI+Vercel-verified (`447b613`, `c1161d0`). Lockfile note resolved: no action outstanding (CI/Vercel both use `npm install`).
+
+### 2026-06-25 — World-gen artifact cleanup + resume plan loop
+- **World-gen cleanup (from playtest screenshots, merged PRs #29–#31):** building façade/window/storefront/roofline variety + per-ped colour/size variety + non-glowing player/hospital + reduced bloom; then a world-artifact pass — filtered **7.4k stray service/parking/alley/construction/corridor/track ways** at slice load (unnecessary roads), stopped `Props` decorating bridges + motorway/trunk (floating benches/trees over Rt 18), moved the **Battleship Cove fast-travel off the Braga Bridge deck**, dropped park/area polys below the road apron (green z-fight bleed), and dulled the steel **rails** so they stop mirroring the sky blue. (Stylized New-Bedford focus; earth/photoreal parked.)
+- **§15 day counter + sleep/time-skip:** the clock now integrates on `shared.hour` and bumps a `shared.day` counter at midnight; inside a safehouse on foot **T sleeps til 07:00** (heal + clear both wanted axes + advance day + save), with hint/confirm toasts. HUD shows **Day N**; New Game resets to Day 1 / 09:00; **Continue restores the saved day/time**. Shipped (`dd376e3`+).
+- **§30 credits/attribution:** pause-menu **Credits & attribution** overlay (OSM ODbL, CesiumMan CC-BY, Three.js/R3F/Rapier/drei, procedural+ElevenLabs audio, parody/fiction disclaimer); added `T sleep` to the controls crib. Shipped (`b321c38`).
+- **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
+- **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped (`c68b294`).
+- **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped (`cd729f8`).
+- **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped (`24c7329`).
+- **§24 FOV setting:** a persisted **Field of view** slider (45–85°) in pause settings feeds the camera base FOV (speed-widening still applies on top) — motion comfort (store/PauseMenu/FollowCamera/GameSystems). Shipped.
+- **Mobile access fixes:** the pause menu (Stats/Credits/Shadows/FOV/etc.) was Esc/P-only → unreachable on phones; added an always-visible HUD **☰ menu button**. Then expanded **touch controls** to a full action set (handbrake/sprint held via `input.setVirtualHold`, horn/map/menu/buy/outfit/photo/sleep/weather/weapon 1–4) with a **per-button show/hide toggle** in edit mode, persisted (schema v3). Verified the **radio** wiring end-to-end (station select/`[ ]` → setStation → AudioContext resume → talk/music + fallbacks; mute/skip/subtitle/volume all connected). Shipped.
+- **Direction (2026-06-25 pm):** per the user, New Bedford is "good enough" — **stop NB polish; next = missions, then Brockton (City of Champions / boxing) with purpose, then surrounding towns as content needs them.** (Supersedes the 2026-06-22 "perfect NB first" hold.)
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.

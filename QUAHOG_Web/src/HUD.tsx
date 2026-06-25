@@ -38,6 +38,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
   const owned = useEconomy((s) => s.owned);
   const ownedCount = Object.keys(owned).length;
   const [hhmm, setHhmm] = useState("09:00");
+  const [day, setDay] = useState(1);
   const [stamina, setStamina] = useState(100);
   const [dist, setDist] = useState<number | null>(null);
   const [bearing, setBearing] = useState(0); // radians, target dir relative to camera
@@ -50,6 +51,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
       const h = Math.floor(shared.hour);
       const m = Math.floor((shared.hour - h) * 60);
       setHhmm(`${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`);
+      setDay(shared.day);
       setStamina(shared.stamina);
       setMph(Math.round(Math.abs(shared.carSpeed) * 2.237)); // m/s → mph
       // compass from the active heading (world north = -z)
@@ -127,6 +129,17 @@ export function HUD({ sliceName }: { sliceName: string }) {
         />
       )}
 
+      {/* menu / pause button — the only way to open settings on touch (no Esc/P) */}
+      <button
+        onClick={() => useGame.getState().togglePause()}
+        title="Menu (Esc / P)"
+        style={{
+          position: "absolute", top: 12, left: 12, zIndex: 13,
+          width: 42, height: 42, borderRadius: "50%", pointerEvents: "auto", cursor: "pointer",
+          background: "rgba(12,15,26,.72)", border: "1px solid #3a2a5e", color: "#e7e0ff", fontSize: 18,
+        }}
+      >☰</button>
+
       {/* status panel (top-right under the radio is fine; use top-center-right) */}
       <div
         style={{
@@ -138,7 +151,7 @@ export function HUD({ sliceName }: { sliceName: string }) {
         <div style={{ color: "#7CFC00", fontWeight: 700, fontSize: 15 }}>${Math.floor(cash).toLocaleString()}</div>
         {ownedCount > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🏠 {ownedCount}/{BUSINESSES.length} fronts</div>}
         {scrimshaw > 0 && <div style={{ fontSize: 10, opacity: 0.8 }}>🦴 {scrimshaw}/{SCRIMSHAW_TOTAL} scrimshaw</div>}
-        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm} &nbsp;·&nbsp; 🧭 {compass}</div>
+        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 2 }}>🕑 {hhmm} &nbsp;·&nbsp; Day {day} &nbsp;·&nbsp; 🧭 {compass}</div>
         <div style={{ fontSize: 12, marginTop: 4 }}>
           <span title="police" style={{ color: "#6cb6ff" }}>{stars(police)}</span>
         </div>

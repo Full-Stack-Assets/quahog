@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
 import { useGame } from "./store";
@@ -71,6 +72,18 @@ import { FollowCamera } from "./actors/FollowCamera";
 function FxGate() {
   const on = useGame((s) => s.fxOn);
   return on ? <Effects /> : null;
+}
+
+// Shadow rendering toggle (§26) — a real perf lever for low-end / mobile: when
+// off, the per-frame shadow-map pass is skipped entirely.
+function ShadowGate() {
+  const on = useGame((s) => s.shadows);
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    gl.shadowMap.enabled = on;
+    gl.shadowMap.needsUpdate = true;
+  }, [gl, on]);
+  return null;
 }
 
 // Landmarks rendered as hand-detailed models (so the generic beam/label is skipped).
@@ -199,6 +212,7 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
 
       <FollowCamera />
       <FxGate />
+      <ShadowGate />
     </>
   );
 }
