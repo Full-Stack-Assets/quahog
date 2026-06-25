@@ -84,7 +84,7 @@ export function DayNight() {
       sun.current.position.set(px + sx, Math.max(sy, 1.5), pz + sz);
       sun.current.target.position.set(px, 0, pz);
       sun.current.target.updateMatrixWorld();
-      sun.current.intensity = (0.05 + dayT * 2.1) * (1 - rain * 0.65 - fogW * 0.5);
+      sun.current.intensity = (0.05 + dayT * 2.5) * (1 - rain * 0.65 - fogW * 0.5);
       cSun.set("#fff2dc").lerp(warm, dusk * 0.7);
       sun.current.color.copy(cSun);
       // sun-glow sprite rides the sun direction, far out from the player
@@ -96,7 +96,7 @@ export function DayNight() {
         m.color.copy(cSun);
       }
     }
-    if (hemi.current) hemi.current.intensity = (0.22 + dayT * 0.8) * (1 - rain * 0.25);
+    if (hemi.current) hemi.current.intensity = (0.16 + dayT * 0.5) * (1 - rain * 0.25);
 
     // sky/fog/background lerp night→day with a warm dusk push, grey in rain/fog
     bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6).lerp(fogGrey, fogW * 0.8);
@@ -121,7 +121,7 @@ export function DayNight() {
       <sprite ref={glow} scale={[180, 180, 1]}>
         <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
       </sprite>
-      <ambientLight intensity={0.19} />
+      <ambientLight intensity={0.12} />
       <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
       <directionalLight
         ref={sun}
