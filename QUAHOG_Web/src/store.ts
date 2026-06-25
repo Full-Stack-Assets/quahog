@@ -30,6 +30,7 @@ interface GameState {
   started: boolean;
   fxOn: boolean;
   shadows: boolean;
+  fov: number;
   reduceShake: boolean;
   photo: boolean;
   scrimshaw: number; // collectibles found (for the HUD counter)
@@ -56,6 +57,7 @@ interface GameState {
   setStarted: (v: boolean) => void;
   toggleFx: () => void;
   toggleShadows: () => void;
+  setFov: (n: number) => void;
   toggleReduceShake: () => void;
   togglePhoto: () => void;
   setScrimshaw: (n: number) => void;
@@ -84,6 +86,7 @@ export const useGame = create<GameState>((set) => ({
   started: false,
   fxOn: true,
   shadows: true,
+  fov: 60,
   reduceShake: false,
   photo: false,
   scrimshaw: 0,
@@ -111,6 +114,7 @@ export const useGame = create<GameState>((set) => ({
   setStarted: (started) => set({ started }),
   toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),
   toggleShadows: () => set((s) => ({ shadows: !s.shadows })),
+  setFov: (fov) => set({ fov: Math.max(45, Math.min(85, fov)) }),
   toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
   setScrimshaw: (scrimshaw) => set({ scrimshaw }),

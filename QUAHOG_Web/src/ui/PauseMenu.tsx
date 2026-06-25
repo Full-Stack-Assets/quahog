@@ -40,6 +40,7 @@ export function PauseMenu() {
   const weather = useGame((s) => s.weather);
   const fxOn = useGame((s) => s.fxOn);
   const shadows = useGame((s) => s.shadows);
+  const fov = useGame((s) => s.fov);
   const reduceShake = useGame((s) => s.reduceShake);
   const cash = useStats((s) => s.cash);
   const health = useStats((s) => s.health);
@@ -102,6 +103,14 @@ export function PauseMenu() {
           <input
             type="range" min={0} max={1} step={0.05} value={vol}
             onChange={(e) => { const v = parseFloat(e.target.value); setVol(v); sfx.setVolume(v); radio.setVolume(v); }}
+            style={{ width: "100%", marginTop: 4 }}
+          />
+        </div>
+        <div style={{ margin: "8px 0", textAlign: "left", color: "#cfc8e6", fontFamily: "'Courier New', monospace", fontSize: 12 }}>
+          Field of view: {Math.round(fov)}°
+          <input
+            type="range" min={45} max={85} step={1} value={fov}
+            onChange={(e) => useGame.getState().setFov(parseInt(e.target.value, 10))}
             style={{ width: "100%", marginTop: 4 }}
           />
         </div>

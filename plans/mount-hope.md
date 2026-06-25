@@ -311,7 +311,7 @@ time; keep the build green; be honest about status.
 - [ ] Aim/over-the-shoulder camera; lock-on framing
 - [ ] Cinematic/cutscene camera rig; mission intro fly-bys
 - [ ] Photo mode free-cam (already exists on earth page — port + expand)
-- [ ] Smoothing, FOV options, motion-sickness comfort settings
+- [~] Smoothing, FOV options, motion-sickness comfort settings — **FOV slider (45–85°)** in pause settings, persisted, feeds the chase/eye camera base FOV (FollowCamera); per-axis comfort options TODO
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
@@ -773,7 +773,8 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
 - **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped (`c68b294`).
 - **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped (`cd729f8`).
-- **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped.
+- **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped (`24c7329`).
+- **§24 FOV setting:** a persisted **Field of view** slider (45–85°) in pause settings feeds the camera base FOV (speed-widening still applies on top) — motion comfort (store/PauseMenu/FollowCamera/GameSystems). Shipped.
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
