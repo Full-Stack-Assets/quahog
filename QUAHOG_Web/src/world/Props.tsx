@@ -25,7 +25,7 @@ const TREE_GREENS = ["#3f6b34", "#4a7a3a", "#356030", "#567f3e", "#2f5a2c", "#5f
 const BENCH_WOODS = ["#5a3d28", "#6a4a2e", "#4a3220", "#705534"];
 const HYDRANTS = ["#b22222", "#a01f1f", "#c4a020", "#9a1c1c"]; // mostly red, some yellow
 
-type Place = { x: number; z: number; rot: number };
+type Place = { x: number; z: number; rot: number; sc?: number };
 
 interface Layout {
   lamps: Place[];
@@ -66,7 +66,7 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
         // cycle furniture types so the street feels stocked but not repetitive
         const kind = n % 6;
         if (kind === 0) lamps.push({ x: px, z: pz, rot });
-        else if (kind === 1 || kind === 5) trees.push({ x: px, z: pz, rot }); // more street trees
+        else if (kind === 1 || kind === 5) trees.push({ x: px, z: pz, rot, sc: 0.82 + ((n * 0.618) % 1) * 0.5 }); // more street trees, varied height
         else if (kind === 2) hydrants.push({ x: px, z: pz, rot });
         else if (kind === 4) mailboxes.push({ x: px, z: pz, rot });
         else benches.push({ x: px, z: pz, rot }); // kind 3
@@ -81,8 +81,9 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
 function fill(mesh: THREE.InstancedMesh | null, places: Place[], y: number) {
   if (!mesh) return;
   for (let i = 0; i < places.length; i++) {
+    const sc = places[i].sc ?? 1; // per-instance size variety (trees); 1 = unchanged
     _q.setFromAxisAngle(_p.set(0, 1, 0), places[i].rot);
-    _m.compose(_p.set(places[i].x, y, places[i].z), _q, _s);
+    _m.compose(_p.set(places[i].x, y * sc, places[i].z), _q, _s.setScalar(sc));
     mesh.setMatrixAt(i, _m);
   }
   mesh.instanceMatrix.needsUpdate = true;
@@ -155,7 +156,9 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
         <meshStandardMaterial color="#4a3526" roughness={0.95} />
       </instancedMesh>
       <instancedMesh ref={crowns} args={[undefined, undefined, Math.max(1, L.trees.length)]} castShadow>
-        <icosahedronGeometry args={[1.9, 0]} />
+        {/* detail 1 (not 0): a rounder leafy canopy instead of a faceted diamond,
+            still flat-shaded for the stylized low-poly read */}
+        <icosahedronGeometry args={[1.9, 1]} />
         <meshStandardMaterial color="#ffffff" roughness={1} flatShading />
       </instancedMesh>
     </group>

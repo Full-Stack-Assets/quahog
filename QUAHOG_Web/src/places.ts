@@ -8,7 +8,7 @@
 
 export interface Civic { name: string; kind: "hospital" | "police"; pos: [number, number, number] }
 
-export const HOSPITAL: [number, number, number] = [-256.2, 3, 106.5]; // stand-in by the Bethel
+export const HOSPITAL: [number, number, number] = [-264.2, 3, 106.5]; // stand-in by the Bethel, nudged W off the roadway
 export const POLICE_STATION: [number, number, number] = [-513, 3, 147]; // real NB Police Station
 
 export const CIVIC: Civic[] = [
