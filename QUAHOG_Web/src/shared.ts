@@ -64,6 +64,8 @@ export const shared = {
   dayT: 1,
   /** Current in-game hour 0..24. */
   hour: 9,
+  /** In-game day counter (starts at 1); bumps at midnight or on sleep. */
+  day: 1,
   /** Signed forward speed of the car (m/s), written by Car each frame. */
   carSpeed: 0,
   /** True while the car is cornering hard at speed (lays skid marks). */

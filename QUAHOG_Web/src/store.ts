@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Slice } from "./slice";
+import { shared } from "./shared";
 
 export type Mode = "foot" | "car" | "boat";
 export type View = "third" | "first";
@@ -110,10 +111,13 @@ export const useGame = create<GameState>((set) => ({
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
   setScrimshaw: (scrimshaw) => set({ scrimshaw }),
   setWaypoint: (waypoint) => set({ waypoint }),
-  resetSession: () => set((s) => ({
-    mode: "foot", armed: false, weapon: "pistol", melee: "fists", down: null,
-    photo: false, weather: "clear", waypoint: null, scrimshaw: 0, gameId: s.gameId + 1,
-  })),
+  resetSession: () => {
+    shared.day = 1; shared.hour = 9; // fresh clock on New Game
+    set((s) => ({
+      mode: "foot", armed: false, weapon: "pistol", melee: "fists", down: null,
+      photo: false, weather: "clear", waypoint: null, scrimshaw: 0, gameId: s.gameId + 1,
+    }));
+  },
 }));
 
 // Lightweight toast notifications (§21).

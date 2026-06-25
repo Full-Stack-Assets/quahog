@@ -35,7 +35,6 @@ export function DayNight() {
   const { scene } = useThree();
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
-  const hour = useRef(9);
   const skyThrottle = useRef(0);
   const [sunPos, setSunPos] = useState<[number, number, number]>([120, 120, 60]);
   const bg = useMemo(() => dayBg.clone(), []);
@@ -54,13 +53,17 @@ export function DayNight() {
 
   useFrame((_, dt) => {
     if (useGame.getState().paused) return; // freeze time in the pause menu
-    hour.current = (hour.current + dt * (24 / DAY_LENGTH)) % 24;
-    const a = ((hour.current - 6) / 12) * Math.PI; // 6am rise → 6pm set
+    // integrate on shared.hour (the canonical clock) so a safehouse sleep can
+    // skip it; rolling past midnight advances the day counter.
+    const prev = shared.hour;
+    const h = (prev + dt * (24 / DAY_LENGTH)) % 24;
+    if (h < prev) shared.day += 1; // wrapped 24→0
+    shared.hour = h;
+    const a = ((h - 6) / 12) * Math.PI; // 6am rise → 6pm set
     const elev = Math.sin(a);
     const dayT = THREE.MathUtils.clamp(elev, 0, 1);
     const dusk = THREE.MathUtils.clamp(1 - Math.abs(elev) * 4, 0, 1); // peaks near horizon
     shared.dayT = dayT;
-    shared.hour = hour.current;
     const weather = useGame.getState().weather;
     const rain = weather === "rain" ? 1 : 0;
     const fogW = weather === "fog" ? 1 : 0;
