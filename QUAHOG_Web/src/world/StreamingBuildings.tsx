@@ -52,7 +52,14 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   const fp = b.footprint;
   if (fp.length < 3) return null;
   const H = b.height;
-  const capH = H < 14 ? 0.5 + hash * 0.4
+  // Roofline variety so the skyline isn't a row of identically-rimmed boxes. A
+  // second hash (decoupled from the colour/window hash) picks the parapet style:
+  // ~28% of short blocks get a tall Main-Street "false front", the rest a normal
+  // cornice that still varies in height.
+  const r2 = (b.footprint.length * 0.27 + H * 0.13 + hash * 0.5) % 1;
+  const falseFront = H < 16 && r2 > 0.72;
+  const capH = falseFront ? 1.6 + r2 * 1.4
+             : H < 14 ? 0.5 + hash * 0.4
              : H < 32 ? 1.1 + hash * 0.7
              : 0.9 + hash * 0.5;
   let cx = 0, cn = 0;
