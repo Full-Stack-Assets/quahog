@@ -238,10 +238,10 @@ time; keep the build green; be honest about status.
 
 ## 16. Missions & content
 - [~] **“Off the Boat”** opener (arrival → Bethel → fish-pier ambush → fog getaway → safehouse) — 3-step playable version (Bethel → steal car → safehouse); ambush/fog beats TODO
-- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar live; remaining primitives TODO
+- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar + **deliver** + **escape (noHeat: lose the cops)** live; follow/eliminate/protect/tail/timed/stealth TODO
 - [ ] Cutscene system (scripted camera + dialogue + subtitles)
-- [ ] Act I (New Bedford): harbor takeover arc
-- [ ] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing)
+- [~] Act I (New Bedford): harbor takeover arc — **Auction Rules** (lean on Sully's collectors → cool the car at Reggie's) + **The Linguiça Run** + **Harbor Heat** (break Sully's grip, lose the cops) playable in the chain; Sully boss beat TODO
+- [~] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing) — **Spindle City** (I-195 over the Braga to Battleship Cove) + **Acquitted** (Borden House → run the ledger, lose the tail) playable; The Undefeated waits on the Brockton pull
 - [ ] Act III (Cape + “Gloria” storm) → Battleship Cove finale
 - [ ] Branching/optional outcomes; mission replay
 - [ ] Dialogue system (NPC conversations, choices where relevant)
