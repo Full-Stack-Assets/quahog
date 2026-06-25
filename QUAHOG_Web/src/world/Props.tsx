@@ -27,6 +27,9 @@ const HYDRANTS = ["#b22222", "#a01f1f", "#c4a020", "#9a1c1c"]; // mostly red, so
 
 type Place = { x: number; z: number; rot: number; sc?: number };
 
+// Limited-access highways get no sidewalk furniture (no benches on Rt 18).
+const NO_FURNITURE = new Set(["motorway", "trunk", "motorway_link", "trunk_link", "primary_link"]);
+
 interface Layout {
   lamps: Place[];
   hydrants: Place[];
@@ -45,6 +48,9 @@ function buildLayout(roads: Road[], center: [number, number]): Layout {
 
   for (const r of roads) {
     if (r.points.length < 2) continue;
+    // No street furniture on bridges or limited-access highways (Rt 18 etc.) —
+    // that's what put benches/trees/lamps floating out over the expressway.
+    if (r.bridge || NO_FURNITURE.has(r.highway)) continue;
     const off = r.width / 2 + 1.1; // sidewalk offset from centerline
     for (let i = 0; i < r.points.length - 1; i++) {
       const [ax, an] = r.points[i];

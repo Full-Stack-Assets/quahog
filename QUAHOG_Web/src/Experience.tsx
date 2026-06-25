@@ -75,6 +75,9 @@ function FxGate() {
 
 // Landmarks rendered as hand-detailed models (so the generic beam/label is skipped).
 const MODELED = new Set(["Seamen's Bethel"]);
+// OSM highway types that are not real streets and only added stray pavement to
+// the city (driveways, parking-lot aisles, alleys, indoor corridors, etc.).
+const SKIP_HIGHWAY = new Set(["service", "construction", "corridor", "track", "proposed", "raceway", "bus_guideway", "busway", "escape"]);
 // Playable core (slice-local east, north) — drives building colliders + ped density.
 const CORE: [number, number] = [-266, -100];
 
@@ -87,6 +90,10 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
     loadSlice("slice-newbedford.json", (f) => { if (alive) onProgress?.(f); })
       .then((s) => {
         if (!alive) return;
+        // Drop non-street OSM ways that cluttered the map with stray pavement:
+        // service drives/parking aisles/alleys (7k+), plus construction/corridor/
+        // track. Real streets, footpaths, and highways are kept.
+        s.roads = s.roads.filter((r) => !SKIP_HIGHWAY.has(r.highway));
         setSlice(s);
         useGame.getState().setSlice(s);
         setWaterZones(s.water ?? [], s.roads, s.islands ?? [], s.barrier ?? []);
@@ -128,11 +135,14 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
         )}
       </Physics>
 
-      {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.05} repeat={0.06} roughness={0.95} />}
-      {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.05} repeat={0.04} />}
-      {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.055} />}
-      {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.058} />}
-      {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.06} />}
+      {/* Area polys sit BELOW the road apron (0.04) so roads/sidewalks always
+          render over them — at the old 0.05-0.06 they tied the road surface
+          (0.06) and z-fought, bleeding green/grey through the pavement. */}
+      {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.03} repeat={0.06} roughness={0.95} />}
+      {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.026} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.032} />}
+      {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.034} />}
+      {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.036} />}
       {slice && <Rail paths={slice.rail} />}
       {slice && <Piers paths={slice.pier} />}
       {slice && <AreaTrees areas={slice.wood} step={9} cap={800} />}
