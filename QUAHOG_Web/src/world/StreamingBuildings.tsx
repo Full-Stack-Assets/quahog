@@ -146,7 +146,9 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
+  // Windows only light at dusk/night. A plain (1 - dayT) ramp left them glowing
+  // orange through the day; gate it to the low end so daytime glass reads dark.
+  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.1; });
 
   // Rooftop clutter for skyline depth: a primary unit sized by building class
   // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)

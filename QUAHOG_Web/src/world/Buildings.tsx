@@ -89,7 +89,7 @@ export function Buildings({
   const chunkRefs = useRef<(THREE.Mesh | null)[]>([]);
   const camera = useThree((s) => s.camera);
   useFrame(() => {
-    const night = 1 - shared.dayT;
+    const night = 1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3); // dusk-gated: dark by day
     const g = root.current;
     if (g) g.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
