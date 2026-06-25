@@ -71,10 +71,23 @@ def validate_default_config():
     assert "GlobalDefaultGameMode=/Script/MountHope.MountHopeGameMode" in default_game
 
 
+def validate_framework_wiring():
+    char_cpp = (ROOT / "Source" / "MountHope" / "Private" / "MountHopeCharacter.cpp").read_text(encoding="utf-8")
+    mode_cpp = (ROOT / "Source" / "MountHope" / "Private" / "MountHopeGameMode.cpp").read_text(encoding="utf-8")
+    trigger_cpp = (ROOT / "Source" / "MountHope" / "Private" / "MHMissionTriggerActor.cpp").read_text(encoding="utf-8")
+
+    assert "SetupPlayerInputComponent" in char_cpp, "Character input binding missing"
+    assert "TryCompleteVehicleObjective" in mode_cpp, "Vehicle objective helper missing"
+    assert "RefreshObjectiveTrigger" in mode_cpp, "Objective trigger refresh missing"
+    assert "SetTriggerRadius" in trigger_cpp, "Trigger radius setter missing"
+    assert "ResetConsumed" in trigger_cpp, "Trigger consumed reset missing"
+
+
 if __name__ == "__main__":
     validate_uproject()
     validate_expected_code_files()
     validate_missions()
     validate_economy()
     validate_default_config()
+    validate_framework_wiring()
     print("MountHope Unreal bootstrap validation passed.")

@@ -16,6 +16,12 @@ class MOUNTHOPE_API AMHMissionTriggerActor : public AActor
 public:
     AMHMissionTriggerActor();
 
+    UFUNCTION(BlueprintCallable, Category = "MountHope|Mission")
+    void SetTriggerRadius(float NewRadius);
+
+    UFUNCTION(BlueprintCallable, Category = "MountHope|Mission")
+    void ResetConsumed();
+
 protected:
     virtual void BeginPlay() override;
 

@@ -15,10 +15,10 @@ derived from the existing South Coast gameplay concept in this repo.
     property economy primitives.
   - `UMountHopeGameInstance`: bootstraps the above from JSON files on startup.
 - Playable framework classes:
-  - `AMountHopeCharacter`: walk/sprint + enter/exit vehicle shell.
+  - `AMountHopeCharacter`: Enhanced Input-ready walk/look/sprint + enter/exit vehicle shell.
   - `AMountHopeVehiclePawn`: Chaos wheeled-vehicle base pawn for drivable cars.
-  - `AMountHopeGameMode`: heat decay tick + objective completion/reward routing.
-  - `AMHMissionTriggerActor`: overlap trigger to advance mission objectives.
+  - `AMountHopeGameMode`: heat decay tick + objective completion/reward routing + auto objective-trigger placement from mission step data.
+  - `AMHMissionTriggerActor`: reusable overlap trigger to advance mission objectives.
   - `UMHSaveGame`: save slot payload for wallet/health/heat/weather/owned assets.
 - `Data/Missions/vertical_slice.json`: opening mission chain seed.
 - `Data/Economy/businesses.json`: first-pass property roster seed.
@@ -32,8 +32,9 @@ derived from the existing South Coast gameplay concept in this repo.
    - slice load count (roads/buildings/landmarks),
    - mission file load count,
    - business file load count.
-5. Drop `AMHMissionTriggerActor` in the test map and position it at each mission
-   objective target to validate progression/rewards.
+5. Place a player start and at least one `AMountHopeVehiclePawn` in the map.
+6. Optional: if using custom objective flow, place `AMHMissionTriggerActor` manually.
+   Otherwise `AMountHopeGameMode` auto-spawns/repositions one for target steps.
 
 ## Current status
 
@@ -49,11 +50,11 @@ you a clean Unreal code spine to continue into:
 
 ## Next build steps (recommended)
 
-1. Wire Enhanced Input mapping contexts to `AMountHopeCharacter` and add camera,
-   interact, and weapon bindings.
+1. Create and assign `UInputMappingContext` + `UInputAction` assets in editor
+   (`Move`, `Look`, `Sprint`, `Interact`) to activate the character bindings.
 2. Build a georeferenced New Bedford map level with World Partition and import
    hero landmarks.
 3. Replace JSON bootstrap data with DataAssets + editor tooling.
-4. Add mission-authoring utilities to auto-spawn objective triggers from JSON.
+4. Add mission-authoring utilities for batch trigger visualization and debug UX.
 5. Stand up an automated content cook/package pipeline for Windows first, then
    PS5 and Xbox.

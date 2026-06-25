@@ -15,6 +15,16 @@ AMHMissionTriggerActor::AMHMissionTriggerActor()
     TriggerSphere->SetSphereRadius(350.0f);
 }
 
+void AMHMissionTriggerActor::SetTriggerRadius(float NewRadius)
+{
+    TriggerSphere->SetSphereRadius(FMath::Max(1.0f, NewRadius));
+}
+
+void AMHMissionTriggerActor::ResetConsumed()
+{
+    bConsumed = false;
+}
+
 void AMHMissionTriggerActor::BeginPlay()
 {
     Super::BeginPlay();
