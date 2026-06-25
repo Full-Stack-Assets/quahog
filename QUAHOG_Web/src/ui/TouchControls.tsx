@@ -12,28 +12,29 @@ type Ctl = { left: number; top: number; size: number };
 type Layout = Record<string, Ctl>;
 type Saved = { layout: Layout; hidden: Record<string, true> };
 
-// Every action button. `hold` keys (sprint/handbrake) press-and-hold; the rest
-// fire a one-shot tap. `defHidden` start hidden (toggle on in edit mode).
-const BTNS: { k: string; label: string; sub: string; action: string; hold?: boolean; defHidden?: boolean }[] = [
-  { k: "e", label: "E", sub: "enter", action: "KeyE" },
-  { k: "fire", label: "🔫", sub: "fire", action: "Mouse0" },
-  { k: "f", label: "👊", sub: "hit", action: "KeyF" },
-  { k: "g", label: "G", sub: "gun", action: "KeyG" },
-  { k: "brake", label: "✋", sub: "brake", action: "Space", hold: true },
-  { k: "sprint", label: "⚡", sub: "run", action: "ShiftLeft", hold: true },
-  { k: "v", label: "V", sub: "view", action: "KeyV" },
-  { k: "horn", label: "📣", sub: "horn", action: "KeyH" },
-  { k: "map", label: "🗺", sub: "map", action: "KeyM" },
-  { k: "menu", label: "☰", sub: "menu", action: "KeyP", defHidden: true },
-  { k: "buy", label: "🏠", sub: "buy", action: "KeyB", defHidden: true },
-  { k: "char", label: "👕", sub: "outfit", action: "KeyC", defHidden: true },
-  { k: "photo", label: "📷", sub: "photo", action: "KeyO", defHidden: true },
-  { k: "sleep", label: "🛌", sub: "sleep", action: "KeyT", defHidden: true },
-  { k: "weather", label: "☁️", sub: "wx", action: "KeyR", defHidden: true },
-  { k: "w1", label: "1", sub: "fists", action: "Digit1", defHidden: true },
-  { k: "w2", label: "2", sub: "pistol", action: "Digit2", defHidden: true },
-  { k: "w3", label: "3", sub: "shotgun", action: "Digit3", defHidden: true },
-  { k: "w4", label: "4", sub: "bat", action: "Digit4", defHidden: true },
+// Every action button — labeled + colour-coded (GTA-mobile style). `hold` keys
+// (sprint/handbrake) press-and-hold; the rest fire a one-shot tap. `big` = the
+// prominent RUN button. `defHidden` start hidden (toggle on in edit mode).
+const BTNS: { k: string; label: string; action: string; color: string; hold?: boolean; big?: boolean; defHidden?: boolean }[] = [
+  { k: "fire", label: "FIRE", action: "Mouse0", color: "#a23a3a" },
+  { k: "e", label: "CAR", action: "KeyE", color: "#3461a8" },
+  { k: "g", label: "GUN", action: "KeyG", color: "#5b6070" },
+  { k: "f", label: "HIT", action: "KeyF", color: "#b5742a" },
+  { k: "brake", label: "BRAKE", action: "Space", hold: true, color: "#45506a" },
+  { k: "sprint", label: "RUN", action: "ShiftLeft", hold: true, color: "#c79a2e", big: true },
+  { k: "v", label: "VIEW", action: "KeyV", color: "#3a4060" },
+  { k: "horn", label: "HORN", action: "KeyH", color: "#3a4a6a" },
+  { k: "map", label: "MAP", action: "KeyM", color: "#3a4a6a" },
+  { k: "menu", label: "MENU", action: "KeyP", color: "#3a3f4e", defHidden: true },
+  { k: "buy", label: "BUY", action: "KeyB", color: "#3a6a4a", defHidden: true },
+  { k: "char", label: "FIT", action: "KeyC", color: "#6a4a8a", defHidden: true },
+  { k: "photo", label: "PHOTO", action: "KeyO", color: "#3a4a6a", defHidden: true },
+  { k: "sleep", label: "SLEEP", action: "KeyT", color: "#3a4a6a", defHidden: true },
+  { k: "weather", label: "WX", action: "KeyR", color: "#3a4a6a", defHidden: true },
+  { k: "w1", label: "1", action: "Digit1", color: "#3a3f4e", defHidden: true },
+  { k: "w2", label: "2", action: "Digit2", color: "#3a3f4e", defHidden: true },
+  { k: "w3", label: "3", action: "Digit3", color: "#3a3f4e", defHidden: true },
+  { k: "w4", label: "4", action: "Digit4", color: "#3a3f4e", defHidden: true },
 ];
 const BTN_OF = Object.fromEntries(BTNS.map((b) => [b.k, b]));
 
@@ -201,13 +202,14 @@ export function TouchControls() {
         onPointerDown={(e) => onDown(e, k)} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
         style={{
           position: "fixed", left: c.left, top: c.top, width: c.size, height: c.size, borderRadius: "50%",
-          background: "rgba(12,15,26,.7)", border: "2px solid rgba(120,110,170,.6)", color: "#fff", zIndex: 16, touchAction: "none",
-          fontFamily: "'Courier New', monospace", fontWeight: 700, lineHeight: 1, opacity: hidden[k] ? 0.4 : 1,
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, ...editBox(),
+          background: `${b.color}d9`, border: `2px solid ${b.big ? "#f0cf6a" : "rgba(240,220,160,.5)"}`,
+          color: "#fff", zIndex: 16, touchAction: "none",
+          fontFamily: "'Oswald','Arial Narrow',Arial,sans-serif", fontWeight: 800, lineHeight: 1, opacity: hidden[k] ? 0.4 : 1,
+          boxShadow: "0 2px 6px rgba(0,0,0,.4)",
+          display: "flex", alignItems: "center", justifyContent: "center", ...editBox(),
         }}
       >
-        <span style={{ fontSize: c.size * 0.32 }}>{b.label}</span>
-        <span style={{ fontSize: Math.max(8, c.size * 0.15), opacity: 0.8 }}>{b.sub}</span>
+        <span style={{ fontSize: c.size * (b.label.length > 4 ? 0.22 : b.label.length > 3 ? 0.27 : 0.34), letterSpacing: 0.5, textShadow: "0 1px 2px rgba(0,0,0,.6)" }}>{b.label}</span>
         {hideToggle(k)}
         {resizeHandle(k)}
       </div>
