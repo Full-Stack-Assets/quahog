@@ -224,7 +224,7 @@ time; keep the build green; be honest about status.
 ## 15. Gameplay systems (canon)
 - [x] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints — mission.ts + MissionRunner.tsx (objective beam/ring); waypoint trail TODO
 - [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — police+faction 0–5 + decay (game.ts); **busted/wasted** loop with respawn (Consequence.tsx)
-- [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
+- [x] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves; **T sleeps til 07:00** (heal + clear heat + advance day + save) (Safehouse.tsx)
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
 - [x] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems) + one-off margin-leak/boom events on owned fronts (`rollRevenueEvent`, every 90–210s, toast + sfx)
@@ -233,7 +233,7 @@ time; keep the build green; be honest about status.
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
 - [ ] **RadioManager** integration with story milestones
 - [~] Save/load (IndexedDB/localStorage) + autosave + multiple slots — localStorage save + 20s autosave (GameSystems.tsx); multi-slot TODO
-- [~] Time of day clock + day counter; time-skip — HUD clock from shared.hour; day counter + time-skip TODO
+- [x] Time of day clock + day counter; time-skip — HUD clock + **Day N** counter (midnight rollover) + **safehouse sleep** time-skip (shared.day, DayNight, Safehouse, HUD)
 - [ ] Respect/reputation + faction standing
 
 ## 16. Missions & content
@@ -765,6 +765,10 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
 - **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced that `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so strict `npm ci` fails. The lock can't be regenerated here (org egress policy 403s `@vercel/blob`) and there's no local dev env to do it either — but it's a non-issue: Vercel and CI both use `npm install`, which builds fine, so CI uses `npm install` to match. No action outstanding. (`e80c49c`→`67a8669`)
 - **Slice-load progress bar** + **vendor code-splitting** (three/r3f/rapier/react chunks) shipped and CI+Vercel-verified (`447b613`, `c1161d0`). Lockfile note resolved: no action outstanding (CI/Vercel both use `npm install`).
+
+### 2026-06-25 — World-gen artifact cleanup + resume plan loop
+- **World-gen cleanup (from playtest screenshots, merged PRs #29–#31):** building façade/window/storefront/roofline variety + per-ped colour/size variety + non-glowing player/hospital + reduced bloom; then a world-artifact pass — filtered **7.4k stray service/parking/alley/construction/corridor/track ways** at slice load (unnecessary roads), stopped `Props` decorating bridges + motorway/trunk (floating benches/trees over Rt 18), moved the **Battleship Cove fast-travel off the Braga Bridge deck**, dropped park/area polys below the road apron (green z-fight bleed), and dulled the steel **rails** so they stop mirroring the sky blue. (Stylized New-Bedford focus; earth/photoreal parked.)
+- **§15 day counter + sleep/time-skip:** the clock now integrates on `shared.hour` and bumps a `shared.day` counter at midnight; inside a safehouse on foot **T sleeps til 07:00** (heal + clear both wanted axes + advance day + save), with hint/confirm toasts. HUD shows **Day N**; New Game resets to Day 1 / 09:00. Shipped (`dd376e3`).
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
