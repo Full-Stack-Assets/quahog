@@ -5,6 +5,7 @@ import { useMission } from "../mission";
 import { useEconomy, BUSINESSES } from "../economy";
 import { sfx } from "../audio/sfx";
 import { radio } from "../audio/radioEngine";
+import { shared } from "../shared";
 
 // Pause / settings overlay (§26). Opens on Esc/P (handled in GameSystems).
 // Freezes the sim loops and exposes quick settings + a save reset.
@@ -24,6 +25,15 @@ const btn: React.CSSProperties = {
   cursor: "pointer",
 };
 
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid #221f38" }}>
+      <span style={{ opacity: 0.8 }}>{label}</span>
+      <span style={{ color: "#e7e0ff", textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
 export function PauseMenu() {
   const paused = useGame((s) => s.paused);
   const view = useGame((s) => s.view);
@@ -32,11 +42,16 @@ export function PauseMenu() {
   const shadows = useGame((s) => s.shadows);
   const reduceShake = useGame((s) => s.reduceShake);
   const cash = useStats((s) => s.cash);
+  const health = useStats((s) => s.health);
+  const police = useStats((s) => s.police);
+  const faction = useStats((s) => s.faction);
+  const scrimshaw = useGame((s) => s.scrimshaw);
   const owned = useEconomy((s) => s.owned);
   const mTitle = useMission((s) => s.title);
   const mDone = useMission((s) => s.done);
   const [vol, setVol] = useState(0.5);
   const [showCredits, setShowCredits] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   if (!paused) return null;
   const wlabel = weather === "rain" ? "Rain" : weather === "fog" ? "Fog" : "Clear";
 
@@ -90,6 +105,7 @@ export function PauseMenu() {
             style={{ width: "100%", marginTop: 4 }}
           />
         </div>
+        <button style={btn} onClick={() => setShowStats(true)}>📊 Stats</button>
         <button style={btn} onClick={() => setShowCredits(true)}>ⓘ Credits &amp; attribution</button>
         <button
           style={btn}
@@ -119,6 +135,43 @@ export function PauseMenu() {
           Esc / P to resume
         </div>
       </div>
+
+      {showStats && (
+        <div
+          style={{
+            position: "fixed", inset: 0, zIndex: 21,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            background: "rgba(6,8,16,.82)", backdropFilter: "blur(2px)",
+          }}
+          onClick={() => setShowStats(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 320, padding: 22,
+              background: "rgba(12,15,26,.97)", border: "1px solid #3a2a5e", borderRadius: 14,
+              color: "#cfc8e6", fontFamily: "'Courier New', monospace", fontSize: 13, lineHeight: 2,
+            }}
+          >
+            <div style={{ color: "#ff7ad9", fontWeight: 700, letterSpacing: 2, fontSize: 16, textAlign: "center", marginBottom: 12 }}>
+              STATS
+            </div>
+            <Row label="📅 Day" value={`${shared.day}`} />
+            <Row label="❤️ Health" value={`${Math.round(health)}%`} />
+            <Row label="💵 Cash" value={`$${Math.floor(cash).toLocaleString()}`} />
+            <Row label="🚓 Police heat" value={`${"★".repeat(Math.round(police))}${"☆".repeat(5 - Math.round(police))}`} />
+            <Row label="🔪 Faction heat" value={`${"★".repeat(Math.round(faction))}${"☆".repeat(5 - Math.round(faction))}`} />
+            <Row label="🏠 Fronts owned" value={`${Object.keys(owned).length} / ${BUSINESSES.length}`} />
+            <Row label="🦴 Scrimshaw" value={`${scrimshaw} / 8`} />
+            <Row label="🎯 Mission" value={mDone ? "Complete" : mTitle} />
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <button style={{ ...btn, width: "auto", display: "inline-block", padding: "8px 18px" }} onClick={() => setShowStats(false)}>
+                ← Back
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showCredits && (
         <div

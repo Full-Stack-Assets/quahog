@@ -291,7 +291,7 @@ time; keep the build green; be honest about status.
 ## 22. UI aesthetics & menus
 - [~] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit — courier/neon palette across HUD, menus, title, toasts; CRT shader/full kit TODO
 - [~] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene — title/start screen over the live world with tips (StartMenu.tsx); New/Continue/Load split TODO
-- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, volume, reset); mission/stats screens TODO
+- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, **shadows**, volume, reset) + **Stats overlay** (day/health/cash/wanted/fronts/scrimshaw/mission) + **Credits**; dedicated mission screen TODO
 - [~] Loading screens with art + tips/lore — title screen doubles as a loading screen with rotating tips (StartMenu.tsx); art TODO
 - [ ] Map/HUD icon set; mission-text styling; credits
 - [ ] Photo-mode UI (filters, frames, stickers)
@@ -771,7 +771,8 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **§15 day counter + sleep/time-skip:** the clock now integrates on `shared.hour` and bumps a `shared.day` counter at midnight; inside a safehouse on foot **T sleeps til 07:00** (heal + clear both wanted axes + advance day + save), with hint/confirm toasts. HUD shows **Day N**; New Game resets to Day 1 / 09:00. Shipped (`dd376e3`).
 - **§30 credits/attribution:** pause-menu **Credits & attribution** overlay (OSM ODbL, CesiumMan CC-BY, Three.js/R3F/Rapier/drei, procedural+ElevenLabs audio, parody/fiction disclaimer); added `T sleep` to the controls crib. Shipped (`b321c38`).
 - **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
-- **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped.
+- **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped (`c68b294`).
+- **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped.
 
 ### 2026-06-24 — Visual batch REVERTED per player feedback
 The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
