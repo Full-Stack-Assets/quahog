@@ -129,6 +129,17 @@ export function HUD({ sliceName }: { sliceName: string }) {
         />
       )}
 
+      {/* menu / pause button — the only way to open settings on touch (no Esc/P) */}
+      <button
+        onClick={() => useGame.getState().togglePause()}
+        title="Menu (Esc / P)"
+        style={{
+          position: "absolute", top: 12, left: 12, zIndex: 13,
+          width: 42, height: 42, borderRadius: "50%", pointerEvents: "auto", cursor: "pointer",
+          background: "rgba(12,15,26,.72)", border: "1px solid #3a2a5e", color: "#e7e0ff", fontSize: 18,
+        }}
+      >☰</button>
+
       {/* status panel (top-right under the radio is fine; use top-center-right) */}
       <div
         style={{
