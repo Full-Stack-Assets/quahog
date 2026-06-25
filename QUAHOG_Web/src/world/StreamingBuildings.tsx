@@ -91,6 +91,58 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   return g;
 }
 
+// A ground-floor base course / storefront band: a battered stone plinth at the
+// foot of each building. Bottom edge is pushed outward by OUT, top edge stays
+// flush with the wall — the face is angled (never coplanar with the wall, so no
+// z-fighting; top meets the wall corners exactly, so no gaps). Coloured a darker
+// cool stone with plain wall UV (no windows) so the street level reads as a
+// shopfront/granite base instead of more of the same window grid.
+function baseGeometry(b: Building, wall: THREE.Color, hash: number): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3 || b.height < 6) return null;
+  const baseH = Math.min(b.height >= 14 ? 3.6 : 2.6 + hash * 0.5, b.height * 0.5);
+  const OUT = 0.16; // how much wider the plinth is at grade than at its top
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const cz = -cn;
+  const pos: number[] = [];
+  for (let i = 0; i < fp.length; i++) {
+    const [e1, n1] = fp[i];
+    const [e2, n2] = fp[(i + 1) % fp.length];
+    const ax = e1, az = -n1, bx = e2, bz = -n2;
+    const dx = bx - ax, dz = bz - az;
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-3) continue;
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const outward = (-dz) * (mx - cx) + dx * (mz - cz) >= 0;
+    // outward unit normal (matching the winding test) to push the base out
+    let nx = -dz / len, nz = dx / len;
+    if (!outward) { nx = -nx; nz = -nz; }
+    const ox = nx * OUT, oz = nz * OUT;
+    const v0 = [ax + ox, 0, az + oz], v1 = [bx + ox, 0, bz + oz]; // splayed grade edge
+    const v2 = [bx, baseH, bz], v3 = [ax, baseH, az];             // flush top edge
+    if (outward) { pushTri(pos, v0, v1, v2); pushTri(pos, v0, v2, v3); }
+    else         { pushTri(pos, v0, v2, v1); pushTri(pos, v0, v3, v2); }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  // cool granite/shopfront tone: pull the wall colour toward dark stone + darken
+  const stone = wall.clone().lerp(new THREE.Color("#43474d"), 0.5).multiplyScalar(0.78);
+  for (let v = 0; v < count; v++) {
+    colors.set([stone.r, stone.g, stone.b], v * 3);
+    uv[v * 2] = 0.02; uv[v * 2 + 1] = 0.02; // plain wall UV → no windows on the base
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
 // Returns one merged geometry per façade variant (or null for an empty bucket).
 // Buildings are split across variants so neighbours show different window styles
 // instead of one shared texture — the core fix for the "repetitive boxes" read.
@@ -149,6 +201,8 @@ function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
     buckets[variant].push(g);
     const cap = parapetGeometry(b, wall, hash);
     if (cap) buckets[variant].push(cap);
+    const base = baseGeometry(b, wall, hash);
+    if (base) buckets[variant].push(base);
   });
   return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
 }
