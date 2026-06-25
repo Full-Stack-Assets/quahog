@@ -39,9 +39,15 @@ export function DayNight() {
   const [sunPos, setSunPos] = useState<[number, number, number]>([120, 120, 60]);
   const bg = useMemo(() => dayBg.clone(), []);
   const fogC = useMemo(() => dayFog.clone(), []);
+  // Atmospheric depth haze (the cinematic "fade into the horizon" look). Colour
+  // tracks the sky/time-of-day each frame; density rises in rain/coastal fog.
+  const fog = useMemo(() => new THREE.FogExp2(0xc4d6e6, 0.0013), []);
   const cSun = useMemo(() => new THREE.Color(), []);
   const glowTex = useMemo(() => makeGlow(), []);
   const glow = useRef<THREE.Sprite>(null);
+
+  // mount the depth haze on the scene (removed cleanly on unmount)
+  useEffect(() => { scene.fog = fog; return () => { if (scene.fog === fog) scene.fog = null; }; }, [scene, fog]);
 
   // the directional light's target must live in the scene to steer shadows
   useEffect(() => {
@@ -96,8 +102,10 @@ export function DayNight() {
     bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6).lerp(fogGrey, fogW * 0.8);
     fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7).lerp(fogGrey, fogW * 0.85);
     scene.background = bg;
-    // Fog removed entirely — open, fog-free view reads much better. We leave
-    // scene.fog unset; if anything ever re-adds it, this stays null-safe.
+    // depth haze: match the horizon colour so distance fades into the sky, and
+    // thicken it through rain / coastal fog for a moodier, more cinematic frame.
+    fog.color.copy(fogC);
+    fog.density = 0.0013 + rain * 0.0011 + fogW * 0.0045;
 
     skyThrottle.current += dt;
     if (skyThrottle.current > 0.25) {
