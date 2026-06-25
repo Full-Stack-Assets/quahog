@@ -14,11 +14,20 @@ Rationale:
   buildings, 561 roads, 15 landmarks) and is **already deployed**
   (https://projectsouthcoast.vercel.app).
 
+## New PC/console track
+
+`MountHope_Unreal/` is a separate Unreal Engine 5 vertical-slice scaffold for
+the premium PC/console direction. It does not replace the current runnable web
+slice in this sandbox; it captures the next product direction: single-player,
+GTA-like open-world crime structure, photoreal presentation, heavy cinematic
+vehicles, OSM-grounded map import, missions, NPCs, economy, and dialogue.
+
 ## What the other tracks were
 
 | Track | Engine | Status | Notes |
 |-------|--------|--------|-------|
 | `QUAHOG_Web/` | Three.js / R3F + Rapier | **canonical** | real data, deployed, walk/drive/collision + street life |
+| `MountHope_Unreal/` | Unreal Engine 5 | PC/console scaffold | separate vertical-slice track; requires Unreal editor |
 | `QUAHOG_Unity/` (PR #18) | Unity C# → WebGL | legacy | same slice idea; data was a placeholder grid; needs the Unity editor to build |
 | `QUAHOG_Godot/` | Godot GDScript | legacy | earlier port; predates the web decision |
 

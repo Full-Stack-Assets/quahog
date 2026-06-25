@@ -1,0 +1,65 @@
+# OSM to Unreal Import Notes
+
+The existing web game and map pipeline already contain usable source data for
+an Unreal graybox. The first Unreal pass should consume those artifacts before
+adding a new city.
+
+## Available inputs
+
+| Source | Use in Unreal |
+| --- | --- |
+| `../quahog-project-files/mapdata/southcoast.obj` | Initial static mesh for roads and water across New Bedford/Fall River. |
+| `../quahog-project-files/mapdata/southcoast-roads.json` | Runtime/editor road centerlines for traffic, pedestrians, navigation annotations, and future spline roads. |
+| `../QUAHOG_Web/public/slice-newbedford.json` | Current web vertical-slice blockout with roads, building footprints, landmarks, and local metric coordinates. |
+| `../quahog-project-files/mapdata/*.geojson` | Source GIS layers for re-baking custom Unreal meshes or adding metadata. |
+
+## Coordinate conversion
+
+The baked map data is already in local meters:
+
+- `x` = east
+- `z` = north in the mapdata pipeline
+- `y` = up
+
+Unreal uses centimeters:
+
+- Unreal `X` = source `x * 100`
+- Unreal `Y` = source `z * 100`
+- Unreal `Z` = source `y * 100`
+
+The web slice uses `z = -north`; confirm the source artifact before import and
+flip the Unreal `Y` axis only for data that came directly from the web slice.
+
+## First import path
+
+1. Import `southcoast.obj` into `/Game/OSM/SouthCoast`.
+2. Keep scale at `1.0` if the OBJ importer treats units as centimeters; use
+   `100.0` only if the mesh appears meter-scaled in Unreal.
+3. Split roads and water into separate materials.
+4. Create collision as simple complex collision only for the graybox pass.
+5. Add a World Partition Open World map at `/Game/Maps/MH_VerticalSlice`.
+6. Place the imported road/water mesh at the world origin.
+7. Add a small authored playable district volume instead of trying to polish
+   the entire city at once.
+
+## Next import path
+
+After the first mesh is visible in Unreal, write an Editor Utility Python script
+or C++ editor commandlet that:
+
+- reads `southcoast-roads.json`;
+- creates road splines per OSM road;
+- assigns road width by `highway` class;
+- adds traffic lane metadata;
+- tags mission-relevant roads and parking spots;
+- exports simplified navigation blockers for sidewalks, water, and buildings.
+
+## Brockton expansion
+
+Brockton is a good candidate for the next real-world anchor if the game needs a
+more inland crime/satire identity than the waterfront. Add it by extending the
+existing Overpass/GeoJSON pipeline first, then import the same road JSON and
+mesh formats into Unreal.
+
+Do not hand-build Brockton before the automated import path works; otherwise the
+project loses the main advantage of keeping OSM canonical.
