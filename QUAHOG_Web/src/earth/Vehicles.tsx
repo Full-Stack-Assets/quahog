@@ -60,12 +60,9 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
   // headlights/taillights come up at dusk; taillights flare under braking; and
   // wheels roll by self-measured world speed (works for any vehicle).
   useFrame(() => {
-    // dusk-gated so headlights/taillights are off in daylight and come up only
-    // as the sun drops (matches the city's window glow); taillights keep a faint
-    // base so the red lens still reads, and flare under braking at any hour.
-    const night = 1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3);
-    if (head.current) head.current.emissiveIntensity = night * 1.9;
-    if (tail.current) tail.current.emissiveIntensity = 0.15 + night * 1.0 + (brake?.() ? 2.2 : 0);
+    const night = 1 - shared.dayT;
+    if (head.current) head.current.emissiveIntensity = 0.3 + night * 1.6;
+    if (tail.current) tail.current.emissiveIntensity = 0.3 + night * 0.9 + (brake?.() ? 2.2 : 0);
     if (root.current) {
       root.current.getWorldPosition(_wp);
       if (prev.current) {

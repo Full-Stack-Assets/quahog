@@ -19,12 +19,13 @@ const TIPS = [
   "Buy fronts around the city (B) — they pay out every day.",
 ];
 
-export function StartMenu({ sliceName }: { sliceName: string }) {
+export function StartMenu({ sliceName, progress = 0 }: { sliceName: string; progress?: number }) {
   const started = useGame((s) => s.started);
   const [tip] = useState(() => TIPS[Math.floor(Math.random() * TIPS.length)]);
   const [save] = useState(hasSave);
   const loaded = sliceName !== "loading…";
   if (started) return null;
+  const pct = Math.round(progress * 100);
 
   const play = () => { sfx.setVolume(0.5); useGame.getState().setStarted(true); };
   const newGame = () => {
@@ -57,6 +58,15 @@ export function StartMenu({ sliceName }: { sliceName: string }) {
           {loaded ? (save ? "✦ NEW GAME" : "▶ NEW GAME") : "LOADING…"}
         </button>
       </div>
+
+      {!loaded && (
+        <div style={{ marginTop: 22, width: 280 }}>
+          <div style={{ height: 6, borderRadius: 4, background: "rgba(120,110,150,.25)", overflow: "hidden" }}>
+            <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg,#ff7ad9,#ffcf4a)", transition: "width .2s ease" }} />
+          </div>
+          <div style={{ marginTop: 6, fontSize: 11, opacity: 0.6, letterSpacing: 1 }}>LOADING NEW BEDFORD · {pct}%</div>
+        </div>
+      )}
 
       <div style={{ marginTop: 26, fontSize: 12, opacity: 0.6, maxWidth: 420 }}>TIP: {tip}</div>
       <div style={{ position: "absolute", bottom: 12, fontSize: 10, opacity: 0.5 }}>

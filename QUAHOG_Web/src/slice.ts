@@ -59,10 +59,36 @@ export const toWorld = (p: [number, number], y = 0): [number, number, number] =>
   -p[1],
 ];
 
-export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
+export async function loadSlice(
+  url = "slice-newbedford.json",
+  onProgress?: (frac: number) => void,
+): Promise<Slice> {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`failed to load slice: ${res.status}`);
-  const slice = (await res.json()) as Slice;
+  // Stream the (multi-MB) slice so the start screen can show a real progress
+  // bar. If the body isn't streamable or has no length, fall back to res.json()
+  // and just report indeterminate progress.
+  const total = Number(res.headers.get("content-length")) || 0;
+  let slice: Slice;
+  if (res.body && total > 0) {
+    const reader = res.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+      got += value.length;
+      onProgress?.(Math.min(0.95, got / total)); // reserve the tail for overlays
+    }
+    const buf = new Uint8Array(got);
+    let o = 0;
+    for (const c of chunks) { buf.set(c, o); o += c.length; }
+    slice = JSON.parse(new TextDecoder().decode(buf)) as Slice;
+  } else {
+    slice = (await res.json()) as Slice;
+  }
+  onProgress?.(0.95);
   // Optional island/wharf land polygons (islands-<name>.json). Absent file is
   // fine — just no holes get cut from the water.
   try {
@@ -84,5 +110,6 @@ export async function loadSlice(url = "slice-newbedford.json"): Promise<Slice> {
       if (r.ok) (slice as unknown as Record<string, unknown>)[key] = await r.json();
     } catch { /* absent overlay file is fine */ }
   }));
+  onProgress?.(1);
   return slice;
 }

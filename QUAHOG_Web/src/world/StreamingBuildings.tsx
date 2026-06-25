@@ -5,7 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
-import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID } from "./textures";
+import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID, FACADE_VARIANTS } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -52,7 +52,14 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   const fp = b.footprint;
   if (fp.length < 3) return null;
   const H = b.height;
-  const capH = H < 14 ? 0.5 + hash * 0.4
+  // Roofline variety so the skyline isn't a row of identically-rimmed boxes. A
+  // second hash (decoupled from the colour/window hash) picks the parapet style:
+  // ~28% of short blocks get a tall Main-Street "false front", the rest a normal
+  // cornice that still varies in height.
+  const r2 = (b.footprint.length * 0.27 + H * 0.13 + hash * 0.5) % 1;
+  const falseFront = H < 16 && r2 > 0.72;
+  const capH = falseFront ? 1.6 + r2 * 1.4
+             : H < 14 ? 0.5 + hash * 0.4
              : H < 32 ? 1.1 + hash * 0.7
              : 0.9 + hash * 0.5;
   let cx = 0, cn = 0;
@@ -91,8 +98,63 @@ function parapetGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Bu
   return g;
 }
 
-function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
-  const geoms: THREE.BufferGeometry[] = [];
+// A ground-floor base course / storefront band: a battered stone plinth at the
+// foot of each building. Bottom edge is pushed outward by OUT, top edge stays
+// flush with the wall — the face is angled (never coplanar with the wall, so no
+// z-fighting; top meets the wall corners exactly, so no gaps). Coloured a darker
+// cool stone with plain wall UV (no windows) so the street level reads as a
+// shopfront/granite base instead of more of the same window grid.
+function baseGeometry(b: Building, wall: THREE.Color, hash: number): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3 || b.height < 6) return null;
+  const baseH = Math.min(b.height >= 14 ? 3.6 : 2.6 + hash * 0.5, b.height * 0.5);
+  const OUT = 0.16; // how much wider the plinth is at grade than at its top
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const cz = -cn;
+  const pos: number[] = [];
+  for (let i = 0; i < fp.length; i++) {
+    const [e1, n1] = fp[i];
+    const [e2, n2] = fp[(i + 1) % fp.length];
+    const ax = e1, az = -n1, bx = e2, bz = -n2;
+    const dx = bx - ax, dz = bz - az;
+    const len = Math.hypot(dx, dz);
+    if (len < 1e-3) continue;
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    const outward = (-dz) * (mx - cx) + dx * (mz - cz) >= 0;
+    // outward unit normal (matching the winding test) to push the base out
+    let nx = -dz / len, nz = dx / len;
+    if (!outward) { nx = -nx; nz = -nz; }
+    const ox = nx * OUT, oz = nz * OUT;
+    const v0 = [ax + ox, 0, az + oz], v1 = [bx + ox, 0, bz + oz]; // splayed grade edge
+    const v2 = [bx, baseH, bz], v3 = [ax, baseH, az];             // flush top edge
+    if (outward) { pushTri(pos, v0, v1, v2); pushTri(pos, v0, v2, v3); }
+    else         { pushTri(pos, v0, v2, v1); pushTri(pos, v0, v3, v2); }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.computeVertexNormals();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  // cool granite/shopfront tone: pull the wall colour toward dark stone + darken
+  const stone = wall.clone().lerp(new THREE.Color("#43474d"), 0.5).multiplyScalar(0.78);
+  for (let v = 0; v < count; v++) {
+    colors.set([stone.r, stone.g, stone.b], v * 3);
+    uv[v * 2] = 0.02; uv[v * 2 + 1] = 0.02; // plain wall UV → no windows on the base
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
+
+// Returns one merged geometry per façade variant (or null for an empty bucket).
+// Buildings are split across variants so neighbours show different window styles
+// instead of one shared texture — the core fix for the "repetitive boxes" read.
+function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
+  const buckets: THREE.BufferGeometry[][] = Array.from({ length: FACADE_VARIANTS }, () => []);
   buildings.forEach((b, i) => {
     const shape = new THREE.Shape();
     b.footprint.forEach(([e, n], k) => (k === 0 ? shape.moveTo(e, n) : shape.lineTo(e, n)));
@@ -105,9 +167,14 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     const pal = b.height >= 14 ? GREY : WARM;
     const isHero = !!(b.name && HERO.has(b.name));
     const hash = (i * 0.6180339887) % 1;
+    const hash3 = (i * 0.3819660113) % 1;
     const wall = new THREE.Color(isHero ? (HERO_COLORS[b.name!] ?? "#c2bcae") : pal[i % pal.length]);
-    if (!isHero) wall.multiplyScalar(0.82 + hash * 0.34);
+    if (!isHero) wall.multiplyScalar(0.78 + hash * 0.42); // wider tonal spread between neighbours
     const roof = new THREE.Color(ROOF[i % ROOF.length]);
+    // Per-building window SCALE: floors run taller/shorter (and windows wider/
+    // narrower) building-to-building so the street isn't one repeated window grid
+    // — the biggest fix for the "repetitive boxes" read. ±~25% around the base.
+    const winTile = WIN_TILE * (0.8 + hash3 * 0.5);
     // Per-building façade phase (whole-window steps) so neighbours show a
     // different slice of the 4×4 window grid — varied lit pattern at night.
     const phaseX = Math.floor(hash * FACADE_GRID) / FACADE_GRID;
@@ -128,29 +195,38 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
         const ao = 0.66 + Math.min(1, y / 6) * 0.34; // 0.66 at base → 1.0 by ~6 m
         colors.set([wall.r * ao, wall.g * ao, wall.b * ao], v * 3);
         const horiz = Math.abs(nor.getX(v)) > Math.abs(nor.getZ(v)) ? z : x;
-        uv[v * 2] = horiz / WIN_TILE + phaseX; uv[v * 2 + 1] = y / WIN_TILE + phaseY;
+        uv[v * 2] = horiz / winTile + phaseX; uv[v * 2 + 1] = y / winTile + phaseY;
       }
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-    geoms.push(g);
+    // Façade variant: golden-angle hash spreads neighbours across styles; tall
+    // downtown blocks skip the residential-brick variant (0) so they read
+    // commercial/industrial rather than like oversized houses.
+    let variant = Math.floor(((i * 2.3999632297) % 1) * FACADE_VARIANTS) % FACADE_VARIANTS;
+    if (b.height >= 24 && variant === 0) variant = 1 + (i % 2);
+    buckets[variant].push(g);
     const cap = parapetGeometry(b, wall, hash);
-    if (cap) geoms.push(cap);
+    if (cap) buckets[variant].push(cap);
+    const base = baseGeometry(b, wall, hash);
+    if (base) buckets[variant].push(base);
   });
-  return geoms.length ? mergeGeometries(geoms, false) : null;
+  return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
 }
 
 function Tile({ buildings, colliders }: { buildings: Building[]; colliders: boolean }) {
-  const geom = useMemo(() => tileGeometry(buildings), [buildings]);
-  const maps = useMemo(() => makeFacadeMaps(), []);
+  const geoms = useMemo(() => tileGeometry(buildings), [buildings]);
+  const maps = useMemo(() => Array.from({ length: FACADE_VARIANTS }, (_, v) => makeFacadeMaps(v)), []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
-  const mat = useRef<THREE.MeshStandardMaterial>(null);
-  // Windows only light up at dusk/night. shared.dayT is the sun-elevation factor
-  // (1 at noon, 0 at/under the horizon); a linear (1 - dayT) ramp left windows
-  // glowing through the whole day. Gate it to the low end so daytime façades read
-  // as dark glass and lights come on only as the sun drops past ~dayT 0.3.
-  useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.15; });
+  const mats = useRef<(THREE.MeshStandardMaterial | null)[]>([]);
+  // Windows only light at dusk/night. A plain (1 - dayT) ramp left them glowing
+  // orange through the day; gate it to the low end so daytime glass reads dark.
+  // One material per façade variant, all driven from the same dusk ramp.
+  useFrame(() => {
+    const ei = (1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3)) * 1.1;
+    for (const m of mats.current) if (m) m.emissiveIntensity = ei;
+  });
 
   // Rooftop clutter for skyline depth: a primary unit sized by building class
   // (low AC box on short blocks, water tank on mid-rise, stair-penthouse on tall)
@@ -199,19 +275,22 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
   }, [roofs]);
 
-  if (!geom) return null;
-  const mesh = (
-    <mesh geometry={geom} castShadow={colliders} receiveShadow>
-      <meshStandardMaterial
-        ref={mat} vertexColors map={maps.albedo} emissiveMap={maps.emissive}
-        normalMap={nrm} normalScale={nrmScale}
-        emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.82} metalness={0.04}
-      />
-    </mesh>
+  if (!geoms.some(Boolean)) return null;
+  const meshes = geoms.map((g, v) =>
+    g ? (
+      <mesh key={v} geometry={g} castShadow={colliders} receiveShadow>
+        <meshStandardMaterial
+          ref={(m) => { mats.current[v] = m as THREE.MeshStandardMaterial | null; }}
+          vertexColors map={maps[v].albedo} emissiveMap={maps[v].emissive}
+          normalMap={nrm} normalScale={nrmScale}
+          emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.82} metalness={0.04}
+        />
+      </mesh>
+    ) : null,
   );
   return (
     <group>
-      {colliders ? <RigidBody type="fixed" colliders="trimesh">{mesh}</RigidBody> : mesh}
+      {colliders ? <RigidBody type="fixed" colliders="trimesh">{meshes}</RigidBody> : <>{meshes}</>}
       <instancedMesh ref={roofRef} args={[undefined, undefined, Math.max(1, roofs.length)]} castShadow>
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial color="#ffffff" roughness={0.9} />

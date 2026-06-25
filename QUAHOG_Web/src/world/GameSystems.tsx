@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useStats } from "../game";
 import { useGame } from "../store";
-import { useEconomy } from "../economy";
+import { useEconomy, rollRevenueEvent } from "../economy";
 import { useToasts } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
@@ -58,6 +58,17 @@ function applyRestore(r: PosRec) {
   }
 }
 
+// Reactive radio inserts read by whichever host is on after the player shakes a
+// chase (§19 milestone reactions). Host-agnostic so any voice can read them.
+const EVADE_FLASH = [
+  "Scanner's gone quiet down on the waterfront — whoever they were chasin', they're in the wind now. Tip your cap.",
+  "Word is the cops just lost somebody in the South End. Happens. Back to the music.",
+  "They had the cruisers all lit up a minute ago and now — nothin'. Somebody knows these streets better than the badges do.",
+  "Police scanner says 'lost visual.' Two words that make a getaway driver smile. Moving on.",
+  "Whoever just gave the law the slip by the bridge — you didn't hear it from me. Here's another one.",
+];
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
 // Runs the always-on gameplay loops (§15): heat decay + periodic autosave, and
 // loads the saved game on mount. Also handles global hotkeys (weather, pause).
 export function GameSystems() {
@@ -66,6 +77,8 @@ export function GameSystems() {
   const restored = useRef(false);
   const skidCool = useRef(0);
   const maxStars = useRef(0);
+  const revAcc = useRef(0);
+  const nextRev = useRef(75); // first revenue event after ~75s of ownership
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -122,6 +135,18 @@ export function GameSystems() {
     // passive business revenue (§15 RevenueManager)
     const income = useEconomy.getState().incomePerSec(DAY_SECONDS);
     if (income > 0) st.addCash(income * dt);
+    // occasional margin-leak / boom event on an owned front (§15 RevenueManager)
+    revAcc.current += dt;
+    if (revAcc.current > nextRev.current) {
+      revAcc.current = 0;
+      nextRev.current = 90 + Math.random() * 120; // next in 90–210s
+      const ev = rollRevenueEvent();
+      if (ev) {
+        st.addCash(ev.amount);
+        useToasts.getState().push(ev.text, ev.good ? "#7CFC00" : "#ff6a6a");
+        ev.good ? sfx.cash() : sfx.ui();
+      }
+    }
     // slow health regen out of combat (§11)
     if (st.health > 0 && st.health < 100 && useGame.getState().mode === "foot") st.setHealth(st.health + dt * 2.2);
     // wanted-up sting (§23): toast + chirp when police stars rise
@@ -135,6 +160,7 @@ export function GameSystems() {
       const bonus = maxStars.current * 50;
       st.addCash(bonus);
       useToasts.getState().push(`EVADED — +$${bonus}`, "#7CFC00"); sfx.cash();
+      radio.flashNews(pick(EVADE_FLASH)); // hosts react to the chase (§19 milestone)
       maxStars.current = 0;
     }
     prevStars.current = stars;

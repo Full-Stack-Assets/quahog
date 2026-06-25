@@ -89,12 +89,11 @@ export function Buildings({
   const chunkRefs = useRef<(THREE.Mesh | null)[]>([]);
   const camera = useThree((s) => s.camera);
   useFrame(() => {
-    // dusk-gated so far-building windows are dark by day, lit only near night
-    const night = 1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3);
+    const night = 1 - THREE.MathUtils.smoothstep(shared.dayT, 0, 0.3); // dusk-gated: dark by day
     const g = root.current;
     if (g) g.traverse((o) => {
       const m = (o as THREE.Mesh).material as THREE.MeshStandardMaterial | undefined;
-      if (m && m.isMeshStandardMaterial) m.emissiveIntensity = night * 0.5;
+      if (m && m.isMeshStandardMaterial) m.emissiveIntensity = night * 0.4;
     });
     const cp = camera.position;
     chunks.forEach((c, i) => {

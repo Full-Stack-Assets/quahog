@@ -57,12 +57,12 @@ time; keep the build green; be honest about status.
 - [x] Engine reconciliation: R3F canonical; Unity/Godot marked legacy
 - [x] Game named **Mount Hope**
 - [x] Design docs: README, ROADMAP, Characters & Missions bible, Gemini build spec
-- [ ] CI: typecheck/build check on PRs
-- [ ] Bundle code-splitting (main chunk >2 MB; split three/rapier/drei; lazy-load earth page)
-- [ ] Asset loading/preload screen + progress bar
-- [ ] Error boundary + crash overlay on the main game (exists on earth page)
-- [ ] Versioning / changelog; build stamp in-game (commit hash, build date)
-- [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
+- [x] CI: typecheck/build check on PRs — `.github/workflows/web-ci.yml` runs `tsc && vite build` on PRs/pushes touching `QUAHOG_Web` (uses `npm install`; lockfile drifts from package.json — `@vercel/blob` missing from the lock)
+- [~] Bundle code-splitting — `vite.config` `manualChunks` splits three / @react-three / rapier / react into long-lived vendor chunks; earth is already its own entry (lazy-load of the earth route still open)
+- [x] Asset loading/preload screen + progress bar — `loadSlice` streams the slice JSON and reports 0..1; StartMenu shows a progress bar + `LOADING NEW BEDFORD · NN%`
+- [x] Error boundary + crash overlay on the main game — `ui/ErrorBoundary.tsx` wraps `<App>` in `main.tsx` (recoverable overlay + reload + build stamp)
+- [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
+- [x] Analytics-free telemetry stub (FPS, load time) behind a debug flag — `ui/DebugStats.tsx`, off by default (`?debug` / localStorage / backtick toggle)
 
 ## 1. World data & pipeline
 - [x] OSM pull: New Bedford + Fall River (roads/water/rail/coastline/boundary)
@@ -72,9 +72,9 @@ time; keep the build green; be honest about status.
 - [ ] Expand slice: full Fall River, Brockton, Cape Cod
 - [ ] Real building heights/levels where OSM-tagged; roof shapes
 - [ ] POI/landmark dataset beyond New Bedford
-- [ ] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety
+- [x] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety — OSM overlays baked to `*-newbedford.json`, rendered by `FlatAreas` (parks/wood/cemetery green, parking grey, beach tan) + `Water`
 - [ ] Sidewalk/curb extraction (separate ped surfaces from roadway)
-- [ ] Railways, bridges, piers as distinct meshes
+- [x] Railways, bridges, piers as distinct meshes — `Rail`, `Bridges`, `Piers`
 - [ ] Street-name + address data for signage/navigation
 
 ## 2. World rendering & environment
@@ -87,8 +87,8 @@ time; keep the build green; be honest about status.
 - [x] Hero landmark: Seamen’s Bethel (modeled + collider)
 - [~] Satellite ground via signed Static Maps proxy — needs Vercel env vars + verify/align
 - [ ] Varied building façades (windows, doors, brick/clapboard/granite materials, storefronts, roof detail)
-- [ ] Curbs, sidewalks, crosswalks, road markings, manholes, potholes
-- [ ] Parks/grass/trees/foliage, planters, hedges
+- [~] Curbs, sidewalks, crosswalks, road markings, manholes, potholes — concrete apron curbs + dedicated sidewalk texture, `Crosswalks`, lane markings, `RoadFixtures` (manholes/grates), asphalt repair patches; potholes still open
+- [x] Parks/grass/trees/foliage, planters, hedges — `FlatAreas` greens + `AreaTrees`/`Props` trees + `Foliage` bushes/tufts
 - [ ] Distant skyline / horizon backdrop + atmospheric haze
 - [ ] Hand-detailed landmarks: Whaling Museum, Custom House, Double Bank, Battleship Cove, Lizzie Borden House, St. Anne’s, Braga/Verde Bridge, the mills
 - [ ] Interiors for key buildings (chapel, bar, gym, safehouse)
@@ -227,7 +227,7 @@ time; keep the build green; be honest about status.
 - [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
-- [~] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems); margin-leak events TODO
+- [x] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems) + one-off margin-leak/boom events on owned fronts (`rollRevenueEvent`, every 90–210s, toast + sfx)
 - [ ] **ChopShopArmsManager** (weapons gated to Quequechan Mill #4 tier)
 - [ ] **WeatherController** ↔ vehicle friction
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
@@ -264,7 +264,7 @@ time; keep the build green; be honest about status.
 
 ## 19. Audio & music
 - [x] Radio: 4 stations (WHALE, The Rage, The Anvil, Maré Alta) — TTS hosts, music, switching/mute
-- [~] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — scripts ~4x longer + ad/ident/news rotation + **wanted/weather reactions** (radioEngine); mission-milestone reactions TODO
+- [x] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — 50+ lines/host + ad/ident/news rotation + **wanted/weather reactions** + **milestone reactions** via `radio.flashNews()` (evade-chase, buy-a-front)
 - [ ] More stations + larger procedural/licensed-free music sets
 - [~] VO pipeline for NPC/mission dialogue (TTS now, recorded later) — ElevenLabs server proxy (api/tts.ts) + vo.ts client wired to radio hosts, Web-Speech fallback; NPC/mission dialogue hookup TODO
 - [ ] Mission/score adaptive music layers (calm/tension/chase)
@@ -750,3 +750,21 @@ Now pulling **real OpenStreetMap data live** (Overpass reachable this session) a
 - **Daytime window glow:** windows lit orange in full daylight — all three building systems (`StreamingBuildings`, `Buildings`, `SeamensBethel`) ramped emissive on a gentle `1-dayT` curve. Switched to a dusk-gated smoothstep (dayT 0→0.3) so glass is dark by day, lit only near dusk/night. (`8da26f7`)
 - **Trees:** blocky neon-green detail-0 icosahedron crowns → **detail-1 rounded canopies** (`Props`, `AreaTrees`) + muted green palettes. (`8da26f7`)
 - **Deferred (left as-is, by design):** bright horizon band is the no-fog Sky horizon (per the user's "remove fog entirely"); green pillar + magenta beam on the cobble are gameplay markers (collectible glow + mission objective beam), not bugs.
+
+### 2026-06-24 — Material/ground feedback pass + plan housekeeping (player screenshots)
+- **Ground flicker → solid:** flattened `makeGroundTexture` (dropped fine grit speckle + heavy mottle that shimmered like a satellite drape) and lowered the ground repeat to ~150 m/tile; base retoned to neutral urban grey. OSM overlays carry per-material colour (parks/grass/wood/cemetery green, parking grey, beach tan). (`1c29d68`)
+- **Sidewalks standardised:** dedicated `makeSidewalkTexture` (warm concrete + scored slab joints + light aggregate) on the road apron in a warmer/darker tone — one consistent, better sidewalk everywhere. (`1c29d68`)
+- **Beach tan + water bright blue:** beach `#e0cc94`; water `#1f86c9` (was dark teal) + brighter minimap water. (`1c29d68`)
+- **Daytime-glow consistency:** windows (all 3 building systems), vehicle head/taillights, and streetlamps now dusk-gated via `smoothstep(dayT,0,0.3)` — dark by day, lit at dusk/night. Trees rounded (detail-1 crowns) + muted greens. (`8da26f7`, `548970a`)
+- **Build stamp:** `vite.config` injects commit SHA + date; HUD shows `build <sha> · <date>` bottom-left. (`f1e07d6`)
+- **Bethel flag** now ripples in the wind (segmented plane, travelling sine).
+- **Plan housekeeping:** marked land-use layers, rail/bridges/piers, parks/foliage done; curbs/sidewalks + build-stamp partial.
+
+### 2026-06-24 — Resilience + CI batch (non-visual, safe during visual iteration)
+- **Build stamp** in HUD (commit SHA + date) so the live deploy is unambiguous after a hard refresh. (`f1e07d6`)
+- **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
+- **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced that `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so strict `npm ci` fails. The lock can't be regenerated here (org egress policy 403s `@vercel/blob`) and there's no local dev env to do it either — but it's a non-issue: Vercel and CI both use `npm install`, which builds fine, so CI uses `npm install` to match. No action outstanding. (`e80c49c`→`67a8669`)
+- **Slice-load progress bar** + **vendor code-splitting** (three/r3f/rapier/react chunks) shipped and CI+Vercel-verified (`447b613`, `c1161d0`). Lockfile note resolved: no action outstanding (CI/Vercel both use `npm install`).
+
+### 2026-06-24 — Visual batch REVERTED per player feedback
+The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.

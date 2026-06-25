@@ -80,9 +80,20 @@ export function makeZebra(): THREE.Texture {
 // only SOME windows light up after dark — a uniform single-window tile made every
 // window glow at once. Consumers scale wall UVs by FLOOR*FACADE_GRID. Singletons.
 export const FACADE_GRID = 4; // floors/windows per texture tile
-let _facade: { albedo: THREE.Texture; emissive: THREE.Texture } | null = null;
-export function makeFacadeMaps() {
-  if (_facade) return _facade;
+export const FACADE_VARIANTS = 3; // distinct façade "styles" cut across the city
+const _facades: ({ albedo: THREE.Texture; emissive: THREE.Texture } | null)[] = [];
+// Per-variant façade flavour so neighbouring buildings don't share one window
+// pattern: 0 = residential brick (tall sash), 1 = industrial mill (big multi-pane
+// windows, tight courses), 2 = commercial (mix of arched + shorter shopfront-ish).
+const FACADE_STYLE = [
+  { course: 9,  joint: 16, tall: 0.55, short: 0.80, cols: 2, litCool: 0.25 }, // brick residential
+  { course: 6,  joint: 11, tall: 0.85, short: 0.95, cols: 3, litCool: 0.45 }, // industrial mill
+  { course: 12, joint: 22, tall: 0.30, short: 0.62, cols: 2, litCool: 0.18 }, // commercial / arched
+];
+export function makeFacadeMaps(variant = 0) {
+  const v = ((variant % FACADE_VARIANTS) + FACADE_VARIANTS) % FACADE_VARIANTS;
+  if (_facades[v]) return _facades[v]!;
+  const sty = FACADE_STYLE[v];
   const G = FACADE_GRID;
   const CELL = 128;
   const S = CELL * G;
@@ -91,11 +102,12 @@ export function makeFacadeMaps() {
   // wall (albedo): white base, then faint masonry courses so flat walls aren't
   // dead colour — thin horizontal mortar lines (brick/clapboard) + sparse joints
   // gently darken the per-building base instead of reading as one flat slab.
+  // Course/joint spacing varies by variant (mill = tight, commercial = coarse).
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
   a.fillStyle = "rgba(108,98,86,0.11)";
-  for (let y = 4; y < S; y += 9) a.fillRect(0, y, S, 1);    // horizontal courses
+  for (let y = 4; y < S; y += sty.course) a.fillRect(0, y, S, 1);  // horizontal courses
   a.fillStyle = "rgba(108,98,86,0.06)";
-  for (let x = 8; x < S; x += 16) a.fillRect(x, 0, 1, S);   // vertical joints
+  for (let x = 8; x < S; x += sty.joint) a.fillRect(x, 0, 1, S);   // vertical joints
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
 
   // Each cell gets one of a few window styles (tall sash / shorter / arched) so a
@@ -115,10 +127,12 @@ export function makeFacadeMaps() {
     for (let gx = 0; gx < G; gx++) {
       const ox = gx * CELL, oy = gy * CELL;
       const x = ox + m, y = oy + m;
-      // style: 0 tall sash (2×3), 1 shorter (2×2), 2 arched (2×3 + round top)
+      // style: 0 tall sash (2×3), 1 shorter (2×2), 2 arched (2×3 + round top).
+      // Per-variant probabilities (sty.tall/short) bias the mix: mills favour tall
+      // multi-pane, commercial favours arched/short.
       const roll = Math.random();
-      const style = roll < 0.55 ? 0 : roll < 0.8 ? 1 : 2;
-      const cols = 2, rows = style === 1 ? 2 : 3, arch = style === 2;
+      const style = roll < sty.tall ? 0 : roll < sty.short ? 1 : 2;
+      const cols = sty.cols, rows = style === 1 ? 2 : 3, arch = style === 2;
 
       // lintel + sill (lighter trim) frame the opening
       a.fillStyle = "#dad4c8";
@@ -137,7 +151,7 @@ export function makeFacadeMaps() {
 
       // lit window (emissive): ~55% lit, a few cool-toned, matching the pane grid
       if (Math.random() < 0.55) {
-        e.fillStyle = Math.random() < 0.25 ? "#cfe0ff" : "#ffcf8a";
+        e.fillStyle = Math.random() < sty.litCool ? "#cfe0ff" : "#ffcf8a";
         if (arch) { archPath(e, x, y); e.fill(); } else e.fillRect(x, y, w, w);
         e.fillStyle = "#000000"; e.lineWidth = 0;
         for (let c = 1; c < cols; c++) e.fillRect(x + (w * c) / cols - 2, y, 4, w);
@@ -147,8 +161,8 @@ export function makeFacadeMaps() {
   }
   const albedo = asColor(new THREE.Texture(ca)); albedo.wrapS = albedo.wrapT = THREE.RepeatWrapping; albedo.needsUpdate = true;
   const emissive = asColor(new THREE.Texture(ce)); emissive.wrapS = emissive.wrapT = THREE.RepeatWrapping; emissive.needsUpdate = true;
-  _facade = { albedo, emissive };
-  return _facade;
+  _facades[v] = { albedo, emissive };
+  return _facades[v]!;
 }
 
 /** A 1980s flyer/poster (radio station or street-feast), procedural. */
@@ -213,65 +227,32 @@ export function makeGraffiti(variant: number): THREE.Texture {
   return asColor(new THREE.Texture(c));
 }
 export function makeGroundTexture(): THREE.Texture {
-  // A near-SOLID light neutral. It multiplies each mesh's own colour, so keeping
-  // it near-white lets the ground and overlays (grass green / parking grey /
-  // beach sand) read at their intended material tone. Deliberately almost flat:
-  // the old fine grit speckle + strong mottle shimmered/"flickered" like a
-  // satellite drape on the huge region plane at grazing angles. Only a faint,
-  // low-frequency tonal drift remains so it isn't dead plastic.
+  // A LIGHT, softly-mottled neutral. It multiplies each mesh's own colour, so
+  // keeping it near-white lets the ground (grey-green) and the road apron
+  // (concrete) read at their intended tone instead of darkening to near-black.
   const [c, ctx] = canvas(256);
-  ctx.fillStyle = "#dedcd2";
+  ctx.fillStyle = "#d8d6cc";
   ctx.fillRect(0, 0, 256, 256);
-  // a few big, very soft patches — low frequency tiles cleanly without shimmer
-  for (let i = 0; i < 16; i++) {
-    const x = Math.random() * 256, y = Math.random() * 256, r = 60 + Math.random() * 80;
-    const d = (Math.random() - 0.5) * 12;
+  // soft organic patches (lighter + darker) so the floor isn't a flat slab
+  for (let i = 0; i < 70; i++) {
+    const x = Math.random() * 256, y = Math.random() * 256, r = 10 + Math.random() * 46;
+    const d = (Math.random() - 0.5) * 30;
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, `rgba(${212 + d},${210 + d},${198 + d},0.10)`);
+    g.addColorStop(0, `rgba(${206 + d},${204 + d},${190 + d},0.16)`);
     g.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   }
+  // fine grit speckle (subtle, slightly warm)
+  for (let i = 0; i < 2200; i++) {
+    const v = 150 + Math.random() * 70;
+    ctx.fillStyle = `rgba(${v},${v - 6},${v - 18},${0.10 + Math.random() * 0.16})`;
+    const s = 1 + Math.random() * 2;
+    ctx.fillRect(Math.random() * 256, Math.random() * 256, s, s);
+  }
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   return asColor(t);
-}
-
-// Dedicated sidewalk/curb texture: warm concrete with faint scored expansion
-// joints + light aggregate grain. Richer than the flat ground so curbside
-// pavement reads as a real sidewalk, used uniformly by the road apron.
-let _sidewalk: THREE.Texture | null = null;
-export function makeSidewalkTexture(): THREE.Texture {
-  if (_sidewalk) return _sidewalk;
-  const S = 256;
-  const [c, ctx] = canvas(S);
-  ctx.fillStyle = "#c9c4b8"; // warm concrete (multiplies the mesh tone)
-  ctx.fillRect(0, 0, S, S);
-  // subtle aggregate flecks (low count → no grazing-angle shimmer)
-  for (let i = 0; i < 520; i++) {
-    const v = 150 + Math.random() * 60;
-    ctx.fillStyle = `rgba(${v},${v - 4},${v - 12},${0.06 + Math.random() * 0.1})`;
-    ctx.fillRect(Math.random() * S, Math.random() * S, 1.5, 1.5);
-  }
-  // scored expansion joints: one panel seam across each axis per tile so a
-  // tiled sidewalk shows regular slab divisions, not a busy grid
-  ctx.strokeStyle = "rgba(70,66,58,0.5)";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, S / 2); ctx.lineTo(S, S / 2);
-  ctx.moveTo(S / 2, 0); ctx.lineTo(S / 2, S);
-  ctx.stroke();
-  // faint highlight lip beside each joint for a little relief
-  ctx.strokeStyle = "rgba(255,253,245,0.35)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(0, S / 2 + 2); ctx.lineTo(S, S / 2 + 2);
-  ctx.moveTo(S / 2 + 2, 0); ctx.lineTo(S / 2 + 2, S);
-  ctx.stroke();
-  const t = new THREE.CanvasTexture(c);
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  _sidewalk = asColor(t);
-  return _sidewalk;
 }
 
 /** Cobblestone texture for the historic district (rounded granite setts). */

@@ -8,6 +8,7 @@ import { useStats } from "../game";
 import { useEconomy, BUSINESSES } from "../economy";
 import { consumeTap } from "../input";
 import { sfx } from "../audio/sfx";
+import { radio } from "../audio/radioEngine";
 
 // Buyable business fronts (§15/§17): a marker per front; stand on it and press B
 // to buy (if you can afford it). Owned fronts glow green and trickle income
@@ -63,6 +64,7 @@ export function Businesses() {
         useEconomy.getState().save();
         sfx.cash();
         useToasts.getState().push(`Bought ${b.name} — +$${b.perDay}/day`, "#4ad66d");
+        radio.flashNews(`Hear ${b.name} just changed hands — new owner, same ${b.blurb}. Money's movin' in this town.`);
       }
     }
   });
