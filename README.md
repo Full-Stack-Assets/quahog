@@ -22,6 +22,13 @@ waterfront** street grid + auto-extruded OSM building blockout, with ambient
 pedestrians and traffic. Buildable live and deployed.
 **Live:** https://projectsouthcoast.vercel.app · setup: [`QUAHOG_Web/README.md`](QUAHOG_Web/README.md)
 
+### `MountHope_Unreal/` — PC/console vertical-slice track
+An Unreal Engine 5 scaffold for a premium single-player PC/console version:
+GTA-like open-world crime structure, photoreal South Coast art direction,
+heavy cinematic driving, missions, NPCs, economy, dialogue, and OSM-grounded
+map import notes. It is separate from the web runtime and requires a local
+Unreal editor install to compile and author assets.
+
 ### Map data — `quahog-project-files/mapdata/`
 The canonical OpenStreetMap pipeline feeding the web game: real road/water/
 building geometry for New Bedford & Fall River → GeoJSON / PMTiles / OBJ and the

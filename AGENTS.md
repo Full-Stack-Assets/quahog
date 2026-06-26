@@ -10,6 +10,10 @@ An original 3D open-world game set on the real Massachusetts South Coast. See
 - **`QUAHOG_Web/` is the only canonical, runnable product** (Three.js / React
   Three Fiber + Rapier, Vite + TypeScript). This is what to run/test for an
   end-to-end check.
+- **`MountHope_Unreal/` is a separate UE5 PC/console scaffold**, not runnable in
+ this sandbox without a local Unreal editor install. Keep it aligned with the
+ existing OSM/map concept, but validate it here with repo-local scripts unless
+ an Unreal workstation is available.
 - `QUAHOG_Unity/` (Unity 6 C#) and `QUAHOG_Godot/` (Godot GDScript) are
   **legacy/reference only**. They require the Unity/Godot editors and **cannot
   be built or run in this sandbox**. The Unity WebGL CI workflow
