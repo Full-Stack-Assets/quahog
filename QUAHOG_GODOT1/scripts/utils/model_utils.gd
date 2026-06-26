@@ -120,6 +120,25 @@ static func scale_to_height(node: Node3D, target_meters: float) -> void :
 static func setup_character_for_movement(node: Node3D, target_height: float = 1.8) -> void :
     scale_to_height(node, target_height)
     ground_model(node)
+    mark_skeleton_unique(node)
+
+
+# The protagonist/ped animation libraries target bones via the scene-unique path
+# "%GeneralSkeleton:<bone>". When a GLB is instantiated at runtime that unique
+# name isn't registered, so the AnimationTree can't find the skeleton and the
+# model stays in its bind pose (T-pose). Flag the skeleton unique so "%..."
+# resolves and animations actually drive the bones.
+static func mark_skeleton_unique(model: Node) -> void :
+    if model == null:
+        return
+    var skel: Node = model.find_child("GeneralSkeleton", true, false)
+    if skel == null:
+        var skels: = model.find_children("*", "Skeleton3D", true, false)
+        if skels.size() > 0:
+            skel = skels[0]
+    if skel:
+        skel.name = "GeneralSkeleton"
+        skel.unique_name_in_owner = true
 
 
 static func fix_orientation(node: Node3D, angle_degrees: float = 180.0) -> void :
