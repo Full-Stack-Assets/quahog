@@ -9,6 +9,7 @@ const NPC_SCRIPT: = preload("res://scripts/npc.gd")
 const MISSION_GIVER_SCRIPT: = preload("res://scripts/mission_giver.gd")
 const HUD_SCRIPT: = preload("res://scripts/ui/hud.gd")
 const CityBuilderScript: = preload("res://scripts/world/city_builder.gd")
+const MapLoaderScript: = preload("res://scripts/world/map_loader.gd")
 const CarScript: = preload("res://scripts/vehicles/car.gd")
 const JobManagerScript: = preload("res://scripts/systems/job_manager.gd")
 const WantedSystemScript: = preload("res://scripts/systems/wanted_system.gd")
@@ -18,10 +19,16 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 
 const MAX_STATIC_CARS: = 12
 const DRIVABLE_CARS: = 8
+# How many 500 m tiles out from the New Bedford core to build at once. The web
+# build streams tiles; here we load a fixed core radius (P2 = streaming).
+const MAP_RADIUS: = 2
 
 var _tex_asphalt: Texture2D
 var _tex_concrete: Texture2D
-var _city: CityBuilder
+# Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
+# but exposes the same spawn fields (player_spawn, car_slots, light_slots,
+# npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
+var _city
 var _player: CharacterBody3D
 var _hud: CanvasLayer
 var _drivable_cars: Array = []
@@ -35,7 +42,6 @@ func _ready() -> void :
     _tex_concrete = load("res://assets/textures/floors/concrete_sidewalk.png")
 
     _setup_environment()
-    _make_ground()
     _build_city()
     _place_cars()
     _place_streetlights()
@@ -122,15 +128,11 @@ func _make_ground() -> void :
 
 
 func _build_city() -> void :
-    _city = CityBuilderScript.new()
-    var textures: = {
-        "asphalt": _tex_asphalt, 
-        "concrete": _tex_concrete, 
-        "brick": load("res://assets/textures/walls/facade_windows_dusk.png"), 
-        "concrete_office": load("res://assets/textures/walls/facade_concrete_office.png"), 
-        "storefront": load("res://assets/textures/walls/storefront_lit_strip.png"), 
-    }
-    _city.build(self, textures)
+    # Build the real New Bedford map (OSM footprints + roads + land use) instead
+    # of the procedural grid. MapLoader also lays a ground plane + collider and
+    # derives all the spawn fields game_world relies on.
+    _city = MapLoaderScript.new()
+    _city.build_region(self, Vector2i.ZERO, MAP_RADIUS)
 
 
 
@@ -257,9 +259,9 @@ func _build_systems() -> void :
 
 func _job_locations() -> Array[Vector3]:
     var pts: Array[Vector3] = []
-    for gx in CityBuilder.GRID:
-        for gz in CityBuilder.GRID:
-            pts.append(Vector3(gx, 0.5, gz))
+    if _city:
+        for p in _city.job_points:
+            pts.append(p)
     return pts
 
 
@@ -309,7 +311,7 @@ func _build_shop_menu() -> void :
 func _spawn_npcs() -> void :
     if _city == null:
         return
-    var waypoints: = _city.npc_waypoints
+    var waypoints: PackedVector3Array = _city.npc_waypoints
     var peds: = [
         ["res://assets/characters/pedestrian_male/pedestrian_male.glb", "res://assets/characters/pedestrian_male/pedestrian_male_animations.tres"], 
         ["res://assets/characters/pedestrian_female/pedestrian_female.glb", "res://assets/characters/pedestrian_female/pedestrian_female_animations.tres"], 

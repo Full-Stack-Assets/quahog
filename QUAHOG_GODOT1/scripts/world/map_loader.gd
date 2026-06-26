@@ -12,6 +12,11 @@ const TILE_M: = 500.0
 const Y_GROUND: = 0.0
 const Y_ROAD: = 0.04
 const Y_OVERLAY: = 0.02
+# Façade window texture tiled onto building walls (one repeat per ~4 m wide /
+# ~3.2 m floor) so the real map reads as a windowed city, not flat boxes.
+const FACADE_PATH: = "res://assets/textures/walls/facade_windows_dusk.png"
+const WALL_TILE_U: = 4.0
+const WALL_TILE_V: = 3.2
 
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
@@ -43,6 +48,7 @@ var npc_waypoints: = PackedVector3Array()
 var npc_spawns: Array[Vector3] = []
 var job_points: Array[Vector3] = []
 var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ...]
+var _facade_tex: Texture2D = null
 
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
@@ -67,6 +73,8 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
         (center_tile.y - radius_tiles) * TILE_M,
         (radius_tiles * 2 + 1) * TILE_M,
         (radius_tiles * 2 + 1) * TILE_M)
+    if _facade_tex == null and ResourceLoader.exists(FACADE_PATH):
+        _facade_tex = load(FACADE_PATH)
     _build_ground(parent, bbox)
     _build_overlays(parent, bbox)
     _build_roads(parent, bbox)
@@ -134,8 +142,11 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
     st.generate_normals()
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
-    mat.roughness = 0.9
+    mat.roughness = 0.92
     mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    if _facade_tex:
+        mat.albedo_texture = _facade_tex
+        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     st.set_material(mat)
     var mi: = MeshInstance3D.new()
     mi.name = "Tile_%d_%d" % [tx, ty]
@@ -166,7 +177,8 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
     for p in fp:
         poly2.append(Vector2(float(p[0]), float(p[1])))
 
-    # Roof cap (triangulated footprint at y = h).
+    # Roof cap (triangulated footprint at y = h). UV pinned to a single texel so
+    # the roof reads as a flat tone (no window grid up top).
     var tri: = Geometry2D.triangulate_polygon(poly2)
     var roof_col: = col.lightened(0.08)
     for i in range(0, tri.size(), 3):
@@ -174,22 +186,32 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
             var v2: = poly2[tri[i + k]]
             var v: = to_world(v2.x, v2.y, h)
             st.set_color(roof_col)
+            st.set_uv(Vector2(0.05, 0.05))
             st.add_vertex(v)
             faces.append(v)
 
-    # Walls (extrude each edge from ground to roof).
+    # Walls (extrude each edge from ground to roof) with window-grid UVs that
+    # tile by wall length and floor height.
+    var vmax: = h / WALL_TILE_V
     for i in range(n):
         var a2: = poly2[i]
         var b2: = poly2[(i + 1) % n]
+        var umax: = a2.distance_to(b2) / WALL_TILE_U
         var a0: = to_world(a2.x, a2.y, Y_GROUND)
         var b0: = to_world(b2.x, b2.y, Y_GROUND)
         var a1: = to_world(a2.x, a2.y, h)
         var b1: = to_world(b2.x, b2.y, h)
         # Two triangles: a0,b0,b1 and a0,b1,a1
-        for v in [a0, b0, b1, a0, b1, a1]:
+        var verts: = [a0, b0, b1, a0, b1, a1]
+        var uvs: = [
+            Vector2(0.0, vmax), Vector2(umax, vmax), Vector2(umax, 0.0),
+            Vector2(0.0, vmax), Vector2(umax, 0.0), Vector2(0.0, 0.0),
+        ]
+        for j in verts.size():
             st.set_color(col)
-            st.add_vertex(v)
-            faces.append(v)
+            st.set_uv(uvs[j])
+            st.add_vertex(verts[j])
+            faces.append(verts[j])
 
 
 func _build_roads(parent: Node3D, bbox: Rect2) -> void :
@@ -319,7 +341,7 @@ func _derive_spawns() -> void :
     mission_giver_rot = _road_samples[best][1]
 
     var n: = _road_samples.size()
-    var step: = max(1, int(n / 240.0))
+    var step: int = max(1, int(n / 240.0))
     var i2: = 0
     while i2 < n:
         var s: Array = _road_samples[i2]
