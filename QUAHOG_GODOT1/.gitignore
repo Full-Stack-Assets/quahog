@@ -1,0 +1,13 @@
+# Godot 4+ specific ignores
+# The editor regenerates this import/cache directory on open — never commit it.
+.godot/
+
+# Exported builds
+/build/
+/export/
+*.pck
+*.zip
+
+# Mono / .NET (unused here, but safe to ignore)
+.mono/
+mono_crash.*.json
