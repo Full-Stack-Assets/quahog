@@ -65,22 +65,24 @@ func _setup_environment() -> void :
         env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-    env.ambient_light_energy = 0.7
-    env.background_energy_multiplier = 0.95
+    env.ambient_light_energy = 0.55
+    env.background_energy_multiplier = 0.9
 
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
     env.tonemap_exposure = 1.0
 
     env.glow_enabled = true
-    env.glow_intensity = 0.5
-    env.glow_bloom = 0.15
+    env.glow_intensity = 0.4
+    env.glow_bloom = 0.1
 
-
+    # Lighter depth haze: the previous density (0.011) washed the whole city to
+    # flat grey. Pull it well back so streets/buildings read with contrast, keep
+    # just enough aerial perspective for distance.
     env.fog_enabled = true
-    env.fog_light_color = Color(0.52, 0.57, 0.6)
-    env.fog_density = 0.011
-    env.fog_sky_affect = 0.5
-    env.fog_aerial_perspective = 0.4
+    env.fog_light_color = Color(0.55, 0.60, 0.64)
+    env.fog_density = 0.0035
+    env.fog_sky_affect = 0.25
+    env.fog_aerial_perspective = 0.25
 
     var we: = WorldEnvironment.new()
     we.name = "WorldEnvironment"
