@@ -1,0 +1,9 @@
+[gd_resource type="Sky" format=3]
+
+[ext_resource type="Texture2D" uid="uid://dixdlojk2kkjw" path="res://assets/textures/skyboxes/south_coast_dusk_skybox.png" id="1"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_1"]
+panorama = ExtResource("1")
+
+[resource]
+sky_material = SubResource("PanoramaSkyMaterial_1")

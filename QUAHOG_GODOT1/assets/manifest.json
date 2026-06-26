@@ -1,0 +1,115 @@
+{
+  "characters": {
+    "pedestrian_male": {
+      "baseModel": "/var/games/game-20260625-57a9d774/assets/characters/pedestrian_male/pedestrian_male.glb",
+      "rigTaskId": "library:9aa6a15b363995423e9fd88855e3519a5e3c5af23f8187e2db7dc8822c19a603",
+      "animations": {}
+    },
+    "protagonist": {
+      "baseModel": "/var/games/game-20260625-57a9d774/assets/characters/protagonist/protagonist.glb",
+      "rigTaskId": "library:0db9c47491237f720876d17058abb9fff25fe54b8771e5925978277f340fffd4",
+      "animations": {}
+    },
+    "mission_giver": {
+      "baseModel": "/var/games/game-20260625-57a9d774/assets/characters/mission_giver/mission_giver.glb",
+      "rigTaskId": "2d9d3025-93f7-4d09-9038-6e6c2883e61b",
+      "animations": {}
+    },
+    "pedestrian_female": {
+      "baseModel": "/var/games/game-20260625-57a9d774/assets/characters/pedestrian_female/pedestrian_female.glb",
+      "rigTaskId": "926b0bc3-327c-44cb-b16c-4e731ebba9e6",
+      "animations": {}
+    },
+    "cop": {
+      "baseModel": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop.glb",
+      "rigTaskId": "library:13708044a401cd48407d3f39d4b492b44ab79fe9c4a19e12a678cc585c56dc74",
+      "animations": {
+        "ual1_Idle": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop_animations.tres",
+        "ual1_Walk": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop_animations.tres",
+        "ual1_Sprint": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop_animations.tres",
+        "ual1_Hit_Chest": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop_animations.tres",
+        "ual1_Death01": "/var/games/game-20260625-57a9d774/assets/characters/cop/cop_animations.tres"
+      }
+    }
+  },
+  "props": {
+    "fire_hydrant": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/decorations/fire_hydrant.glb",
+      "taskId": "library:d4f0159297c137dd7b1bc1425b705d62a5003743c656961bb735516c3f683802"
+    },
+    "streetlight": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/decorations/streetlight.glb",
+      "taskId": "library:18165b7293bd92a29c8cf5af07a25823a435125731f4b26753397ef0eda03611"
+    },
+    "dumpster": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/containers/dumpster.glb",
+      "taskId": "library:a2747e186f9d07fa8bb39391b85a832359acde38fade155642404f630ec5b675"
+    },
+    "park_bench": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/furniture/park_bench.glb",
+      "taskId": "library:3176170ad6ecbb7e0b7dfd4a0c46d9f95cbd1dce215fc8fd7be723f3213940d5"
+    },
+    "suv": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/vehicles/suv.glb",
+      "taskId": "library:03d7fd04ddc26edf1a0210c77bb66bfe808d9abc5f1d02edcc3d1d421b22e988"
+    },
+    "taxi": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/vehicles/taxi.glb",
+      "taskId": "library:fae4fea5c0fe071acffe7bbf0e39b52553eb524a7d472d8eed3e33aaf7cdc2b8"
+    },
+    "sedan": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/vehicles/sedan.glb",
+      "taskId": "165b9c32-8b38-4b3c-97f3-36ed8103dd72"
+    },
+    "pistol": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/weapons/pistol.glb",
+      "taskId": "library:066e43bd7e695e9e0e3022fa9ff402cf517990d6d5ea8007d1815d831b54fb83"
+    },
+    "bat": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/weapons/bat.glb",
+      "taskId": "library:2567b9e5bc9f1cdd9136c0247b6f48f94e00b9774a38f211f5657c8c288d0d13"
+    },
+    "shotgun": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/weapons/shotgun.glb",
+      "taskId": "library:0749b28785f4b036c92d5d61b0772a97fd6bdc779dc892816b88825b778340c7"
+    },
+    "rifle": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/weapons/rifle.glb",
+      "taskId": "library:d5327aa8b253da3c152a678b1c198fed96c8e7c8ea483acfd5b680faa3c91c98"
+    },
+    "armor_vest": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/items/armor_vest.glb",
+      "taskId": "library:a6f46ea36c805f855c45027383d6cbad1ca3364468c4039734fbd45fd220fa27"
+    },
+    "medkit": {
+      "model": "/var/games/game-20260625-57a9d774/assets/props/items/medkit.glb",
+      "taskId": "066f9bbb-13b8-42f1-8cec-83a75cd63d57"
+    }
+  },
+  "environment": {
+    "civic_building": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/civic_building.glb",
+      "taskId": "library:17b1cef2d4e01eaeb2be1606e00206c8ac4e5c8da8ff3a295f6ae1e33d3d0ebf"
+    },
+    "corner_store": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/corner_store.glb",
+      "taskId": "library:3f20d3747a13d82c8d7e63e51f69d705cbb082503d805ab407808233a263f19f"
+    },
+    "diner": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/diner.glb",
+      "taskId": "library:41eeab06e9d828060ef5095b832aad09770f9663f9f096f84c76d44a66cc12b0"
+    },
+    "pawn_shop": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/pawn_shop.glb",
+      "taskId": "library:cefa7c9c103350c4d57d2867302621d26943fa06a5e059066c1452afa9b0866c"
+    },
+    "triple_decker": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/triple_decker.glb",
+      "taskId": "d8f16fff-f968-4d26-a916-daa9074f607f"
+    },
+    "brick_mill": {
+      "model": "/var/games/game-20260625-57a9d774/assets/environment/buildings/brick_mill.glb",
+      "taskId": "458a36b9-1288-4efa-b3a6-e17e113d06e3"
+    }
+  }
+}
