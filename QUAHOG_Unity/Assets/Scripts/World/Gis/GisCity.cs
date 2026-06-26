@@ -31,7 +31,7 @@ namespace Quahog.SouthCoast.Gis
         // Shared materials (a handful, reused across all geometry — WebGL friendly).
         private Material _matGround;
         private Material _matRoad;
-        private Material _matBuilding;
+        private Material[] _matBuildings; // indexed by (int)BuildingCategory
         private Material _matWater;
 
         // Equirectangular projection origin + scale.
@@ -163,8 +163,17 @@ namespace Quahog.SouthCoast.Gis
         {
             _matGround   = MakeColorMaterial(new Color(0.30f, 0.36f, 0.28f)); // coastal grass/dirt
             _matRoad     = MakeColorMaterial(new Color(0.15f, 0.15f, 0.17f)); // asphalt
-            _matBuilding = MakeColorMaterial(new Color(0.74f, 0.73f, 0.70f)); // weathered clapboard
             _matWater    = MakeColorMaterial(new Color(0.16f, 0.32f, 0.45f)); // harbour blue
+
+            // Per-category building palettes (New Bedford tones) so blocks read as a
+            // mix of clapboard houses, brick storefronts, mills and stone civics
+            // instead of one uniform grey.
+            _matBuildings = new Material[5];
+            _matBuildings[(int)BuildingCategory.Default]     = MakeColorMaterial(new Color(0.74f, 0.73f, 0.70f)); // weathered clapboard
+            _matBuildings[(int)BuildingCategory.Residential] = MakeColorMaterial(new Color(0.80f, 0.75f, 0.66f)); // painted clapboard
+            _matBuildings[(int)BuildingCategory.Commercial]  = MakeColorMaterial(new Color(0.68f, 0.40f, 0.34f)); // brick storefront
+            _matBuildings[(int)BuildingCategory.Industrial]  = MakeColorMaterial(new Color(0.52f, 0.34f, 0.30f)); // dark mill brick
+            _matBuildings[(int)BuildingCategory.Civic]       = MakeColorMaterial(new Color(0.74f, 0.72f, 0.67f)); // granite/stone
         }
 
         // -----------------------------------------------------------------
@@ -269,36 +278,86 @@ namespace Quahog.SouthCoast.Gis
 
         private void BuildBuildings(List<BuildingFeature> buildings)
         {
-            var verts = new List<Vector3>();
-            var tris = new List<int>();
+            int cats = _matBuildings.Length;
+            var verts = new List<Vector3>[cats];
+            var tris = new List<int>[cats];
+            for (int i = 0; i < cats; i++) { verts[i] = new List<Vector3>(); tris[i] = new List<int>(); }
 
             foreach (var b in buildings)
             {
+                int ci = (int)b.Category;
+                if (ci < 0 || ci >= cats) ci = 0;
+
                 var ring = new List<Vector3>(b.Ring.Count);
                 foreach (var ll in b.Ring) ring.Add(Project(ll));
-                AddBuilding(ring, b.Height, verts, tris);
+
+                var holes = new List<List<Vector3>>(b.Holes.Count);
+                foreach (var h in b.Holes)
+                {
+                    var hr = new List<Vector3>(h.Count);
+                    foreach (var ll in h) hr.Add(Project(ll));
+                    holes.Add(hr);
+                }
+
+                AddBuilding(ring, holes, b.Height, verts[ci], tris[ci]);
             }
 
-            if (verts.Count > 0) Commit("Buildings", verts, tris, _matBuilding, collider: true);
+            // One merged mesh per category (a handful of draw calls, WebGL friendly).
+            for (int i = 0; i < cats; i++)
+                if (verts[i].Count > 0)
+                    Commit("Buildings_" + (BuildingCategory)i, verts[i], tris[i], _matBuildings[i], collider: true);
         }
 
-        private static void AddBuilding(List<Vector3> ring, float height,
+        private static void AddBuilding(List<Vector3> ring, List<List<Vector3>> holes, float height,
                                         List<Vector3> verts, List<int> tris)
         {
-            // Drop a duplicated closing vertex if present.
-            if (ring.Count >= 2 && (ring[0] - ring[ring.Count - 1]).sqrMagnitude < 1e-6f)
-                ring.RemoveAt(ring.Count - 1);
+            StripClosing(ring);
             int n = ring.Count;
             if (n < 3) return;
 
             float top = GroundTopY + height;
 
-            // Footprint centroid for outward-facing wall orientation.
+            // Outer walls (face outward, away from the footprint centroid).
             Vector3 centroid = Vector3.zero;
             for (int i = 0; i < n; i++) centroid += ring[i];
             centroid /= n;
+            AddRingWalls(ring, top, centroid, outward: true, verts, tris);
 
-            // Walls.
+            // Courtyard (hole) walls (face inward, toward the empty courtyard).
+            foreach (var hole in holes)
+            {
+                StripClosing(hole);
+                if (hole.Count < 3) continue;
+                Vector3 hc = Vector3.zero;
+                for (int i = 0; i < hole.Count; i++) hc += hole[i];
+                hc /= hole.Count;
+                AddRingWalls(hole, top, hc, outward: false, verts, tris);
+            }
+
+            // Roof cap (outer minus holes, triangulated in XZ, lifted to the top).
+            var outer2d = new Vector2[n];
+            for (int i = 0; i < n; i++) outer2d[i] = new Vector2(ring[i].x, ring[i].z);
+            var holes2d = new List<Vector2[]>();
+            foreach (var hole in holes)
+            {
+                if (hole.Count < 3) continue;
+                var h2 = new Vector2[hole.Count];
+                for (int i = 0; i < hole.Count; i++) h2[i] = new Vector2(hole[i].x, hole[i].z);
+                holes2d.Add(h2);
+            }
+
+            int[] idx = EarClipper.Triangulate(outer2d, holes2d, out Vector2[] merged);
+            int baseV = verts.Count;
+            for (int i = 0; i < merged.Length; i++) verts.Add(new Vector3(merged[i].x, top, merged[i].y));
+            for (int t = 0; t + 2 < idx.Length; t += 3)
+                AddTri(verts, tris, baseV + idx[t], baseV + idx[t + 1], baseV + idx[t + 2], Vector3.up);
+        }
+
+        /// <summary>Extrudes one closed ring into vertical walls between ground and top.</summary>
+        private static void AddRingWalls(List<Vector3> ring, float top, Vector3 facePoint,
+                                         bool outward, List<Vector3> verts, List<int> tris)
+        {
+            int n = ring.Count;
             for (int i = 0; i < n; i++)
             {
                 Vector3 a = ring[i];
@@ -311,22 +370,20 @@ namespace Quahog.SouthCoast.Gis
                 int bi = verts.Count;
                 verts.Add(a0); verts.Add(b0); verts.Add(b1); verts.Add(a1);
 
-                Vector3 outward = ((a0 + b0) * 0.5f) - centroid;
-                outward.y = 0f;
-                if (outward.sqrMagnitude < 1e-8f) outward = Vector3.forward;
-                outward.Normalize();
-                AddQuad(verts, tris, bi, bi + 1, bi + 2, bi + 3, outward);
+                Vector3 mid = (a0 + b0) * 0.5f;
+                Vector3 desired = outward ? (mid - facePoint) : (facePoint - mid);
+                desired.y = 0f;
+                if (desired.sqrMagnitude < 1e-8f) desired = Vector3.forward;
+                desired.Normalize();
+                AddQuad(verts, tris, bi, bi + 1, bi + 2, bi + 3, desired);
             }
+        }
 
-            // Roof cap (triangulated in XZ, lifted to the top, facing up).
-            var poly2d = new Vector2[n];
-            for (int i = 0; i < n; i++) poly2d[i] = new Vector2(ring[i].x, ring[i].z);
-            int[] idx = EarClipper.Triangulate(poly2d);
-
-            int baseV = verts.Count;
-            for (int i = 0; i < n; i++) verts.Add(new Vector3(ring[i].x, top, ring[i].z));
-            for (int t = 0; t + 2 < idx.Length; t += 3)
-                AddTri(verts, tris, baseV + idx[t], baseV + idx[t + 1], baseV + idx[t + 2], Vector3.up);
+        /// <summary>Drops a duplicated closing vertex (ring[0] == ring[last]) if present.</summary>
+        private static void StripClosing(List<Vector3> ring)
+        {
+            if (ring.Count >= 2 && (ring[0] - ring[ring.Count - 1]).sqrMagnitude < 1e-6f)
+                ring.RemoveAt(ring.Count - 1);
         }
 
         // -----------------------------------------------------------------
@@ -344,17 +401,29 @@ namespace Quahog.SouthCoast.Gis
             {
                 var ring = new List<Vector3>(w.Ring.Count);
                 foreach (var ll in w.Ring) ring.Add(Project(ll));
-                if (ring.Count >= 2 && (ring[0] - ring[ring.Count - 1]).sqrMagnitude < 1e-6f)
-                    ring.RemoveAt(ring.Count - 1);
+                StripClosing(ring);
                 int n = ring.Count;
                 if (n < 3) continue;
 
-                var poly2d = new Vector2[n];
-                for (int i = 0; i < n; i++) poly2d[i] = new Vector2(ring[i].x, ring[i].z);
-                int[] idx = EarClipper.Triangulate(poly2d);
+                var outer2d = new Vector2[n];
+                for (int i = 0; i < n; i++) outer2d[i] = new Vector2(ring[i].x, ring[i].z);
 
+                // Inner rings are islands — left unfilled so they read as land in water.
+                var holes2d = new List<Vector2[]>();
+                foreach (var h in w.Holes)
+                {
+                    var hr = new List<Vector3>(h.Count);
+                    foreach (var ll in h) hr.Add(Project(ll));
+                    StripClosing(hr);
+                    if (hr.Count < 3) continue;
+                    var h2 = new Vector2[hr.Count];
+                    for (int i = 0; i < hr.Count; i++) h2[i] = new Vector2(hr[i].x, hr[i].z);
+                    holes2d.Add(h2);
+                }
+
+                int[] idx = EarClipper.Triangulate(outer2d, holes2d, out Vector2[] merged);
                 int baseV = verts.Count;
-                for (int i = 0; i < n; i++) verts.Add(new Vector3(ring[i].x, waterY, ring[i].z));
+                for (int i = 0; i < merged.Length; i++) verts.Add(new Vector3(merged[i].x, waterY, merged[i].y));
                 for (int t = 0; t + 2 < idx.Length; t += 3)
                     AddTri(verts, tris, baseV + idx[t], baseV + idx[t + 1], baseV + idx[t + 2], Vector3.up);
             }

@@ -53,3 +53,44 @@ export const useEconomy = create<EconomyState>((set, get) => ({
   save: () => { try { localStorage.setItem(KEY, JSON.stringify(get().owned)); } catch { /* ignore */ } },
   load: () => { try { const r = localStorage.getItem(KEY); if (r) set({ owned: JSON.parse(r) }); } catch { /* ignore */ } },
 }));
+
+// --- RevenueManager: margin-leak / boom events (§15/§17) ---------------------
+// Beyond the steady passive trickle, owned fronts occasionally throw a one-off
+// windfall or loss — a feast-week rush, a skimmed register, a "protection"
+// envelope coming due. Flavour only; amounts scale to a fraction of the front's
+// daily take so they matter without swinging the economy.
+export interface RevenueEvent { good: boolean; text: string; amount: number }
+
+const BOOM = [
+  "{name}: feast-week rush — takings up {amt}",
+  "{name}: a tour bus emptied out front — +{amt}",
+  "{name}: the fleet came in heavy, big spenders — +{amt}",
+  "{name}: cash-only Friday, clean books — +{amt}",
+  "{name}: cruise-night crowd packed it — +{amt}",
+];
+const LEAK = [
+  "{name}: health inspector 'visit' — -{amt}",
+  "{name}: walk-in freezer died — -{amt}",
+  "{name}: register came up short — -{amt}",
+  "{name}: a pipe let go out back — -{amt}",
+  "{name}: protection envelope came due — -{amt}",
+];
+
+export function ownedBusinesses(): Business[] {
+  const { owned } = useEconomy.getState();
+  return BUSINESSES.filter((b) => owned[b.id]);
+}
+
+/** Roll one revenue event for a random owned front, or null if you own none. */
+export function rollRevenueEvent(rng: () => number = Math.random): RevenueEvent | null {
+  const owned = ownedBusinesses();
+  if (!owned.length) return null;
+  const b = owned[Math.floor(rng() * owned.length)];
+  const good = rng() < 0.55; // lean slightly toward booms
+  const amount = Math.round(b.perDay * (0.4 + rng() * 0.8));
+  const pool = good ? BOOM : LEAK;
+  const text = pool[Math.floor(rng() * pool.length)]
+    .replace("{name}", b.name)
+    .replace("{amt}", `$${amount}`);
+  return { good, text, amount: good ? amount : -amount };
+}

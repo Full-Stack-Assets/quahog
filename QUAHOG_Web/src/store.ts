@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { Slice } from "./slice";
+import { shared } from "./shared";
 
 export type Mode = "foot" | "car" | "boat";
 export type View = "third" | "first";
@@ -28,6 +29,8 @@ interface GameState {
   down: Down;
   started: boolean;
   fxOn: boolean;
+  shadows: boolean;
+  fov: number;
   reduceShake: boolean;
   photo: boolean;
   scrimshaw: number; // collectibles found (for the HUD counter)
@@ -53,6 +56,8 @@ interface GameState {
   setDown: (d: Down) => void;
   setStarted: (v: boolean) => void;
   toggleFx: () => void;
+  toggleShadows: () => void;
+  setFov: (n: number) => void;
   toggleReduceShake: () => void;
   togglePhoto: () => void;
   setScrimshaw: (n: number) => void;
@@ -80,6 +85,8 @@ export const useGame = create<GameState>((set) => ({
   down: null,
   started: false,
   fxOn: true,
+  shadows: true,
+  fov: 60,
   reduceShake: false,
   photo: false,
   scrimshaw: 0,
@@ -90,7 +97,8 @@ export const useGame = create<GameState>((set) => ({
   toggleView: () => set((s) => ({ view: s.view === "third" ? "first" : "third" })),
   setNearCar: (nearCar) => set((s) => (s.nearCar === nearCar ? s : { nearCar })),
   setNearLabel: (nearLabel) => set((s) => (s.nearLabel === nearLabel ? s : { nearLabel })),
-  toggleWeather: () => set((s) => ({ weather: s.weather === "clear" ? "rain" : s.weather === "rain" ? "fog" : "clear" })),
+  // Fog removed entirely (open view reads better) — cycle clear ↔ rain only.
+  toggleWeather: () => set((s) => ({ weather: s.weather === "clear" ? "rain" : "clear" })),
   togglePause: () => set((s) => ({ paused: !s.paused })),
   setPaused: (paused) => set({ paused }),
   setSlice: (slice) => set({ slice }),
@@ -105,14 +113,19 @@ export const useGame = create<GameState>((set) => ({
   setDown: (down) => set({ down }),
   setStarted: (started) => set({ started }),
   toggleFx: () => set((s) => ({ fxOn: !s.fxOn })),
+  toggleShadows: () => set((s) => ({ shadows: !s.shadows })),
+  setFov: (fov) => set({ fov: Math.max(45, Math.min(85, fov)) }),
   toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
   setScrimshaw: (scrimshaw) => set({ scrimshaw }),
   setWaypoint: (waypoint) => set({ waypoint }),
-  resetSession: () => set((s) => ({
-    mode: "foot", armed: false, weapon: "pistol", melee: "fists", down: null,
-    photo: false, weather: "clear", waypoint: null, scrimshaw: 0, gameId: s.gameId + 1,
-  })),
+  resetSession: () => {
+    shared.day = 1; shared.hour = 9; // fresh clock on New Game
+    set((s) => ({
+      mode: "foot", armed: false, weapon: "pistol", melee: "fists", down: null,
+      photo: false, weather: "clear", waypoint: null, scrimshaw: 0, gameId: s.gameId + 1,
+    }));
+  },
 }));
 
 // Lightweight toast notifications (§21).

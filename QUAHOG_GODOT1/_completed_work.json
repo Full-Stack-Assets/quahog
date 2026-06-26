@@ -1,0 +1,29 @@
+{
+  "card_title": "Add Driving, Jobs, Guns & Heat",
+  "completed": [
+    {"title": "Steal and drive cars", "description": "Walk up to a car, tap CAR, and drive it through the city with a smooth chase camera, revving engine and tire screech — tap again to hop out."},
+    {"title": "Street jobs for cash", "description": "Talk to a contact to take a delivery job: race to the glowing pickup, then to the drop-off, and get paid. Take on as many runs as you want."},
+    {"title": "Find and fire a pistol", "description": "Grab the pistol on the street and shoot, with muzzle flash, bullet impacts, recoil kick, limited ammo and reloading."},
+    {"title": "Police & a wanted level", "description": "Causing trouble — gunfire or taking down a cop — raises your wanted stars and brings police chasing through the streets. Lose them to cool off, or get caught and busted for a chunk of cash."},
+    {"title": "City minimap & districts", "description": "A live minimap shows the streets around you, your job markers, chasing cops and the name of the district you're in."}
+  ],
+  "next_features": [
+    {"id": "health-armor", "title": "Health, damage & getaways", "description": "Take damage from the cops and patch up, raising the stakes of every chase.", "priority": "high", "category": "gameplay"},
+    {"id": "weapon-variety", "title": "More weapons to find", "description": "Shotguns, rifles and melee weapons hidden around the city, each with its own feel.", "priority": "high", "category": "gameplay"},
+    {"id": "car-variety", "title": "Faster cars & damage", "description": "Distinct vehicles with different speed and handling, plus dents and crashes.", "priority": "medium", "category": "gameplay"},
+    {"id": "shops", "title": "Spend your cash", "description": "Stores where you can buy weapons, ammo and upgrades with the money you earn.", "priority": "medium", "category": "gameplay"},
+    {"id": "story-missions", "title": "Story missions with stakes", "description": "Hand-crafted jobs with bigger payouts, twists and rival crews.", "priority": "medium", "category": "gameplay"}
+  ],
+  "phase_summary": "Phase 2 complete — the crime gameplay loop is in: drive, take jobs, earn cash, draw heat",
+  "game_state": "Mount Hope is now a playable open-world crime game. You roam a large city on foot or behind the wheel of cars you can steal and drive. Contacts hand out paid delivery jobs you complete by driving to pickup and drop-off markers. You can find and fire a pistol with real ammo, recoil and impact effects. Trouble raises a wanted level that sends police chasing you across the grid, and getting caught busts you for cash. A live minimap with district names ties it all together, on top of fully customizable touch controls.",
+  "complexity": "complex",
+  "design_phase": "gameplay_added_polish_next",
+  "next_phase_prompt": {
+    "show_modal": false,
+    "headline": "The crime loop is live",
+    "body": "Drive, deliver, earn, and outrun the cops. Where should Mount Hope go next?",
+    "primary_cta_label": "Add more weapons",
+    "secondary_cta_label": "Keep building it out",
+    "suggested_feature_ids": ["health-armor", "weapon-variety"]
+  }
+}

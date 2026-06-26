@@ -36,8 +36,9 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
 
   return (
     <RigidBody type="fixed" colliders={false} position={[wx, 0, wz]}>
-      {/* solid mass collider (body + eaves) */}
-      <CuboidCollider args={[9.2, 4, 6.2]} position={[0, 4, 0]} />
+      {/* solid mass collider (body + projecting tower) */}
+      <CuboidCollider args={[9.0, 4, 6.2]} position={[0, 4, 0]} />
+      <CuboidCollider args={[1.8, 6.5, 1.8]} position={[8.4, 6.5, 0]} />
 
       {/* foundation */}
       <mesh position={[0, 0.25, 0]} receiveShadow castShadow>
@@ -66,47 +67,59 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
         </mesh>
       ))}
 
-      {/* belfry tower on the front peak */}
-      <mesh position={[8, 12.3, 0]} castShadow>
-        <boxGeometry args={[2.6, 3, 2.6]} />
-        <meshStandardMaterial color={WHITE} roughness={0.85} />
-      </mesh>
-      {/* belfry louvered openings (dark insets) */}
-      {[
-        [9.32, 0, Math.PI / 2],
-        [6.68, 0, Math.PI / 2],
-        [8, 1.31, 0],
-        [8, -1.31, 0],
-      ].map(([x, z, ry], i) => (
-        <mesh key={i} position={[x, 12.3, z]} rotation-y={ry}>
-          <boxGeometry args={[0.1, 1.8, 1.4]} />
-          <meshStandardMaterial color="#20242c" roughness={0.6} />
-        </mesh>
-      ))}
-      {/* spire */}
-      <mesh position={[8, 15.4, 0]} rotation-y={Math.PI / 4} castShadow>
-        <coneGeometry args={[1.95, 3.2, 4]} />
-        <meshStandardMaterial color={ROOF} roughness={0.7} flatShading />
-      </mesh>
-      <mesh position={[8, 17.2, 0]} castShadow>
-        <sphereGeometry args={[0.22, 8, 8]} />
-        <meshStandardMaterial color="#d8c270" metalness={0.6} roughness={0.3} />
-      </mesh>
-
-      {/* double doors on the front facade */}
-      <mesh position={[9.02, 2.0, 0]} castShadow>
-        <boxGeometry args={[0.25, 3, 2.4]} />
-        <meshStandardMaterial color={DOOR} roughness={0.7} />
-      </mesh>
-      <mesh position={[9.05, 3.5, 0]}>
-        <boxGeometry args={[0.2, 0.6, 2.8]} />
+      {/* front entablature / cornice across the gable base (Greek-revival) */}
+      <mesh position={[9.05, 7.55, 0]} castShadow>
+        <boxGeometry args={[0.5, 0.55, 12.6]} />
         <meshStandardMaterial color={TRIM} roughness={0.8} />
       </mesh>
 
-      {/* stone steps */}
+      {/* full square bell tower projecting from the front centre, rising through
+          the roofline — the dominant feature of the real chapel */}
+      <mesh position={[8.4, 9.5, 0]} castShadow receiveShadow>
+        <boxGeometry args={[3.4, 13, 3.4]} />
+        <meshStandardMaterial color={WHITE} roughness={0.85} />
+      </mesh>
+      {/* tower cornice cap */}
+      <mesh position={[8.4, 13.4, 0]} castShadow>
+        <boxGeometry args={[3.9, 0.4, 3.9]} />
+        <meshStandardMaterial color={TRIM} roughness={0.8} />
+      </mesh>
+      {/* belfry louvered arched openings near the top of the tower */}
+      {[
+        [10.12, 0, 0],
+        [6.68, 0, 0],
+        [8.4, 1.72, Math.PI / 2],
+        [8.4, -1.72, Math.PI / 2],
+      ].map(([x, z, ry], i) => (
+        <mesh key={i} position={[x, 11.8, z]} rotation-y={ry}>
+          <boxGeometry args={[0.12, 2.2, 1.6]} />
+          <meshStandardMaterial color="#20242c" roughness={0.6} />
+        </mesh>
+      ))}
+      {/* octagonal spire + gilded finial */}
+      <mesh position={[8.4, 15.6, 0]} castShadow>
+        <coneGeometry args={[2.2, 4.2, 8]} />
+        <meshStandardMaterial color={ROOF} roughness={0.7} flatShading />
+      </mesh>
+      <mesh position={[8.4, 18.0, 0]} castShadow>
+        <sphereGeometry args={[0.24, 8, 8]} />
+        <meshStandardMaterial color="#d8c270" metalness={0.6} roughness={0.3} />
+      </mesh>
+
+      {/* double doors on the tower's front face */}
+      <mesh position={[10.16, 2.0, 0]} castShadow>
+        <boxGeometry args={[0.25, 3, 2.2]} />
+        <meshStandardMaterial color={DOOR} roughness={0.7} />
+      </mesh>
+      <mesh position={[10.18, 3.6, 0]}>
+        <boxGeometry args={[0.2, 0.55, 2.6]} />
+        <meshStandardMaterial color={TRIM} roughness={0.8} />
+      </mesh>
+
+      {/* stone steps up to the tower entrance */}
       {[0, 1, 2].map((i) => (
-        <mesh key={i} position={[9.6 + i * 0.5, 0.45 - i * 0.15, 0]} castShadow receiveShadow>
-          <boxGeometry args={[0.5, 0.3, 3.6 + i * 0.6]} />
+        <mesh key={i} position={[10.7 + i * 0.5, 0.45 - i * 0.15, 0]} castShadow receiveShadow>
+          <boxGeometry args={[0.5, 0.3, 3.2 + i * 0.6]} />
           <meshStandardMaterial color={STONE} roughness={0.95} />
         </mesh>
       ))}
@@ -122,11 +135,41 @@ export function SeamensBethel({ landmark }: { landmark: Landmark }) {
       <ArchWindow position={[9.06, 3.6, 3.2]} axis="x" />
       <ArchWindow position={[9.06, 3.6, -3.2]} axis="x" />
 
+      {/* grass lawn the chapel sits on (set back from the street, like the photos) */}
+      <mesh position={[0, 0.05, 0]} rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[21, 16]} />
+        <meshStandardMaterial color="#4c6a3a" roughness={1} />
+      </mesh>
+      {/* flagpole + flag on the side lawn */}
+      <group position={[4, 0, 7]}>
+        <mesh position={[0, 3.5, 0]} castShadow>
+          <cylinderGeometry args={[0.07, 0.08, 7, 6]} />
+          <meshStandardMaterial color="#d8d8d0" metalness={0.4} roughness={0.5} />
+        </mesh>
+        <mesh position={[0.9, 6.2, 0]} castShadow>
+          <boxGeometry args={[1.8, 1.0, 0.04]} />
+          <meshStandardMaterial color="#b22234" roughness={0.7} />
+        </mesh>
+      </group>
+
+      {/* brick walkway from the street up to the steps */}
+      <mesh position={[13.8, 0.07, 0]} rotation-x={-Math.PI / 2} receiveShadow>
+        <planeGeometry args={[7.5, 2.6]} />
+        <meshStandardMaterial color="#8a5a44" roughness={0.95} />
+      </mesh>
+      {/* foundation shrubs flanking the front */}
+      {[[-1, 4.6], [-1, -4.6], [3.5, 5.6], [3.5, -5.6]].map(([x, z], i) => (
+        <mesh key={`shrub${i}`} position={[x, 0.6, z]} castShadow>
+          <icosahedronGeometry args={[0.9, 0]} />
+          <meshStandardMaterial color="#3f6630" roughness={1} flatShading />
+        </mesh>
+      ))}
+
       {/* name board over the door */}
       <Text
-        position={[9.15, 5.0, 0]}
+        position={[10.2, 5.4, 0]}
         rotation-y={Math.PI / 2}
-        fontSize={0.5}
+        fontSize={0.46}
         color="#2a2118"
         anchorX="center"
         anchorY="middle"

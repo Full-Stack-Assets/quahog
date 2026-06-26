@@ -1,0 +1,56 @@
+{
+  "missions": [
+    {
+      "title": "Off the Boat",
+      "steps": [
+        {
+          "text": "Meet Deacon Mealy at Seamen's Bethel",
+          "target": [-272.23, 0.0, 106.5],
+          "radius": 10.0,
+          "needVehicle": false,
+          "reward": 0
+        },
+        {
+          "text": "The deal soured - steal a car",
+          "target": [0.0, 0.0, 0.0],
+          "radius": 0.0,
+          "needVehicle": true,
+          "reward": 100
+        },
+        {
+          "text": "Shake the heat - reach the safehouse",
+          "target": [-188.0, 0.0, 40.0],
+          "radius": 12.0,
+          "needVehicle": true,
+          "reward": 500
+        }
+      ]
+    },
+    {
+      "title": "The Linguica Run",
+      "steps": [
+        {
+          "text": "Grab a car",
+          "target": [0.0, 0.0, 0.0],
+          "radius": 0.0,
+          "needVehicle": true,
+          "reward": 0
+        },
+        {
+          "text": "Pick up package at Off the Hook",
+          "target": [6092.0, 0.0, 4485.0],
+          "radius": 16.0,
+          "needVehicle": true,
+          "reward": 0
+        },
+        {
+          "text": "Run it downtown to Quohog Republic",
+          "target": [-240.0, 0.0, 122.0],
+          "radius": 16.0,
+          "needVehicle": true,
+          "reward": 900
+        }
+      ]
+    }
+  ]
+}

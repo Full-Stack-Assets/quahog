@@ -19,7 +19,7 @@ export function Ground() {
       <CuboidCollider args={[SIZE / 2, 0.1, SIZE / 2]} position={[0, -0.1, 0]} friction={1} />
       <mesh rotation-x={-Math.PI / 2} position={[0, 0, 0]} receiveShadow>
         <planeGeometry args={[SIZE, SIZE]} />
-        <meshStandardMaterial map={tex} color="#6c7163" roughness={0.97} />
+        <meshStandardMaterial map={tex} color="#7f8470" roughness={0.97} />
       </mesh>
     </RigidBody>
   );

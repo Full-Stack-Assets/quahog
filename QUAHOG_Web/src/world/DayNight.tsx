@@ -35,14 +35,19 @@ export function DayNight() {
   const { scene } = useThree();
   const sun = useRef<THREE.DirectionalLight>(null);
   const hemi = useRef<THREE.HemisphereLight>(null);
-  const hour = useRef(9);
   const skyThrottle = useRef(0);
   const [sunPos, setSunPos] = useState<[number, number, number]>([120, 120, 60]);
   const bg = useMemo(() => dayBg.clone(), []);
   const fogC = useMemo(() => dayFog.clone(), []);
+  // Atmospheric depth haze (the cinematic "fade into the horizon" look). Colour
+  // tracks the sky/time-of-day each frame; density rises in rain/coastal fog.
+  const fog = useMemo(() => new THREE.FogExp2(0xc4d6e6, 0.0013), []);
   const cSun = useMemo(() => new THREE.Color(), []);
   const glowTex = useMemo(() => makeGlow(), []);
   const glow = useRef<THREE.Sprite>(null);
+
+  // mount the depth haze on the scene (removed cleanly on unmount)
+  useEffect(() => { scene.fog = fog; return () => { if (scene.fog === fog) scene.fog = null; }; }, [scene, fog]);
 
   // the directional light's target must live in the scene to steer shadows
   useEffect(() => {
@@ -54,13 +59,17 @@ export function DayNight() {
 
   useFrame((_, dt) => {
     if (useGame.getState().paused) return; // freeze time in the pause menu
-    hour.current = (hour.current + dt * (24 / DAY_LENGTH)) % 24;
-    const a = ((hour.current - 6) / 12) * Math.PI; // 6am rise → 6pm set
+    // integrate on shared.hour (the canonical clock) so a safehouse sleep can
+    // skip it; rolling past midnight advances the day counter.
+    const prev = shared.hour;
+    const h = (prev + dt * (24 / DAY_LENGTH)) % 24;
+    if (h < prev) shared.day += 1; // wrapped 24→0
+    shared.hour = h;
+    const a = ((h - 6) / 12) * Math.PI; // 6am rise → 6pm set
     const elev = Math.sin(a);
     const dayT = THREE.MathUtils.clamp(elev, 0, 1);
     const dusk = THREE.MathUtils.clamp(1 - Math.abs(elev) * 4, 0, 1); // peaks near horizon
     shared.dayT = dayT;
-    shared.hour = hour.current;
     const weather = useGame.getState().weather;
     const rain = weather === "rain" ? 1 : 0;
     const fogW = weather === "fog" ? 1 : 0;
@@ -93,13 +102,10 @@ export function DayNight() {
     bg.copy(nightBg).lerp(dayBg, dayT).lerp(warm, dusk * 0.25).lerp(storm, rain * 0.6).lerp(fogGrey, fogW * 0.8);
     fogC.copy(nightFog).lerp(dayFog, dayT).lerp(warm, dusk * 0.18).lerp(storm, rain * 0.7).lerp(fogGrey, fogW * 0.85);
     scene.background = bg;
-    if (scene.fog) {
-      const f = scene.fog as THREE.Fog;
-      f.color.copy(fogC);
-      // dense coastal fog pulls the view right in; rain less so; clear is open
-      f.near = fogW ? 12 : 350;
-      f.far = fogW ? 180 : rain ? 700 : 1500;
-    }
+    // depth haze: match the horizon colour so distance fades into the sky, and
+    // thicken it through rain / coastal fog for a moodier, more cinematic frame.
+    fog.color.copy(fogC);
+    fog.density = 0.0013 + rain * 0.0011 + fogW * 0.0045;
 
     skyThrottle.current += dt;
     if (skyThrottle.current > 0.25) {
@@ -110,13 +116,12 @@ export function DayNight() {
 
   return (
     <>
-      <fog attach="fog" args={["#c4d6e6", 350, 1500]} />
       <Sky sunPosition={sunPos} turbidity={5} rayleigh={2.2} mieCoefficient={0.005} />
-      <Stars radius={400} depth={60} count={1500} factor={6} fade speed={0.3} />
+      <Stars radius={400} depth={60} count={2800} factor={6} fade speed={0.3} />
       <sprite ref={glow} scale={[180, 180, 1]}>
         <spriteMaterial map={glowTex} transparent depthWrite={false} opacity={0.8} blending={THREE.AdditiveBlending} />
       </sprite>
-      <ambientLight intensity={0.14} />
+      <ambientLight intensity={0.19} />
       <hemisphereLight ref={hemi} args={["#dbe7ff", "#3a342a", 0.8]} />
       <directionalLight
         ref={sun}

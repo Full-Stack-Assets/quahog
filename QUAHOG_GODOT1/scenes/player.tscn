@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://cf6h6bf5monfc"]
+
+[ext_resource type="Script" uid="uid://ddj42x5fvt4mq" path="res://scripts/player.gd" id="1"]
+
+[node name="Player" type="CharacterBody3D" unique_id=1846226484]
+collision_layer = 2
+script = ExtResource("1")

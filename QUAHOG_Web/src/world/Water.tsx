@@ -9,7 +9,18 @@ import { makeWaterNormal } from "./textures";
 // the ground and vanished in 3D (only the map showed water). 0.45 reads cleanly.
 const WATER_Y = 0.45;
 
-export function Water({ polys }: { polys: [number, number][][] }) {
+// Is point [e,n] inside ring? (ray cast) — used to assign island holes to the
+// water polygon that contains them.
+function inRing(e: number, n: number, ring: [number, number][]): boolean {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], ni = ring[i][1], xj = ring[j][0], nj = ring[j][1];
+    if ((ni > n) !== (nj > n) && e < ((xj - xi) * (n - ni)) / (nj - ni) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+export function Water({ polys, holes = [] }: { polys: [number, number][][]; holes?: [number, number][][] }) {
   const normalMap = useMemo(() => {
     const t = makeWaterNormal();
     t.repeat.set(60, 60);
@@ -17,11 +28,22 @@ export function Water({ polys }: { polys: [number, number][][] }) {
   }, []);
 
   const geometry = useMemo(() => {
+    // centroid of each island hole, to place it in its containing water polygon
+    const holeC = holes.map((h) => {
+      let e = 0, n = 0;
+      for (const p of h) { e += p[0]; n += p[1]; }
+      return [e / h.length, n / h.length] as [number, number];
+    });
     const geoms: THREE.BufferGeometry[] = [];
     for (const ring of polys) {
       if (ring.length < 3) continue;
       const shape = new THREE.Shape(ring.map(([e, n]) => new THREE.Vector2(e, n)));
-      const g = new THREE.ShapeGeometry(shape); // earcut, handles concave
+      // cut island/wharf land out of this water polygon (renders as land beneath)
+      for (let h = 0; h < holes.length; h++) {
+        if (holes[h].length >= 3 && inRing(holeC[h][0], holeC[h][1], ring))
+          shape.holes.push(new THREE.Path(holes[h].map(([e, n]) => new THREE.Vector2(e, n))));
+      }
+      const g = new THREE.ShapeGeometry(shape); // earcut, handles concave + holes
       g.rotateX(-Math.PI / 2); // (e,n) plane -> (x, -z) ground plane
       geoms.push(g);
     }
@@ -47,7 +69,7 @@ export function Water({ polys }: { polys: [number, number][][] }) {
     merged.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
     merged.computeVertexNormals();
     return merged;
-  }, [polys]);
+  }, [polys, holes]);
 
   // cache base vertex positions so we can ripple them each frame (§6 waves)
   const base = useMemo(() => (geometry ? (geometry.attributes.position.array as Float32Array).slice() : null), [geometry]);

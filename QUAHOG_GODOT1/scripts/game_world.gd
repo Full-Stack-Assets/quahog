@@ -1,0 +1,360 @@
+extends Node3D
+
+
+
+
+
+const PLAYER_SCENE: = preload("res://scenes/player.tscn")
+const NPC_SCRIPT: = preload("res://scripts/npc.gd")
+const MISSION_GIVER_SCRIPT: = preload("res://scripts/mission_giver.gd")
+const HUD_SCRIPT: = preload("res://scripts/ui/hud.gd")
+const CityBuilderScript: = preload("res://scripts/world/city_builder.gd")
+const CarScript: = preload("res://scripts/vehicles/car.gd")
+const JobManagerScript: = preload("res://scripts/systems/job_manager.gd")
+const WantedSystemScript: = preload("res://scripts/systems/wanted_system.gd")
+const WeaponPickupScript: = preload("res://scripts/weapons/weapon_pickup.gd")
+const ShopScript: = preload("res://scripts/world/shop.gd")
+const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
+
+const MAX_STATIC_CARS: = 12
+const DRIVABLE_CARS: = 8
+
+var _tex_asphalt: Texture2D
+var _tex_concrete: Texture2D
+var _city: CityBuilder
+var _player: CharacterBody3D
+var _hud: CanvasLayer
+var _drivable_cars: Array = []
+var _contacts: Array = []
+var _job_manager: Node = null
+var _wanted_system: Node = null
+
+
+func _ready() -> void :
+    _tex_asphalt = load("res://assets/textures/floors/wet_asphalt.png")
+    _tex_concrete = load("res://assets/textures/floors/concrete_sidewalk.png")
+
+    _setup_environment()
+    _make_ground()
+    _build_city()
+    _place_cars()
+    _place_streetlights()
+    _spawn_contacts()
+    _spawn_npcs()
+    _spawn_player()
+    _build_hud()
+    _build_systems()
+    _spawn_pickups()
+    _spawn_shops()
+    _build_shop_menu()
+    _start_audio()
+
+
+
+func _setup_environment() -> void :
+    var env: = Environment.new()
+    env.background_mode = Environment.BG_SKY
+    var sky: = load("res://assets/textures/skyboxes/south_coast_dusk_sky.tres") as Sky
+    if sky:
+        env.sky = sky
+    env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+    env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
+    env.ambient_light_energy = 0.7
+    env.background_energy_multiplier = 0.95
+
+    env.tonemap_mode = Environment.TONE_MAPPER_ACES
+    env.tonemap_exposure = 1.0
+
+    env.glow_enabled = true
+    env.glow_intensity = 0.5
+    env.glow_bloom = 0.15
+
+
+    env.fog_enabled = true
+    env.fog_light_color = Color(0.52, 0.57, 0.6)
+    env.fog_density = 0.011
+    env.fog_sky_affect = 0.5
+    env.fog_aerial_perspective = 0.4
+
+    var we: = WorldEnvironment.new()
+    we.name = "WorldEnvironment"
+    we.environment = env
+    add_child(we)
+
+    var sun: = DirectionalLight3D.new()
+    sun.name = "Sun"
+    sun.light_color = Color(1.0, 0.86, 0.72)
+    sun.light_energy = 0.8
+    sun.shadow_enabled = true
+    sun.shadow_bias = 0.05
+    sun.rotation_degrees = Vector3(-26.0, 52.0, 0.0)
+    add_child(sun)
+
+
+
+func _make_ground() -> void :
+    var body: = StaticBody3D.new()
+    body.name = "Ground"
+    body.collision_layer = 1
+    body.collision_mask = 0
+    add_child(body)
+
+    var col: = CollisionShape3D.new()
+    var box: = BoxShape3D.new()
+    box.size = Vector3(900, 1.0, 900)
+    col.shape = box
+    col.position.y = -0.5
+    body.add_child(col)
+
+    var mesh: = MeshInstance3D.new()
+    var plane: = PlaneMesh.new()
+    plane.size = Vector2(900, 900)
+    mesh.mesh = plane
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.15, 0.16, 0.17)
+    if _tex_concrete:
+        mat.albedo_texture = _tex_concrete
+        mat.uv1_scale = Vector3(150, 150, 1)
+    mat.roughness = 0.95
+    mesh.set_surface_override_material(0, mat)
+    body.add_child(mesh)
+
+
+
+func _build_city() -> void :
+    _city = CityBuilderScript.new()
+    var textures: = {
+        "asphalt": _tex_asphalt, 
+        "concrete": _tex_concrete, 
+        "brick": load("res://assets/textures/walls/facade_windows_dusk.png"), 
+        "concrete_office": load("res://assets/textures/walls/facade_concrete_office.png"), 
+        "storefront": load("res://assets/textures/walls/storefront_lit_strip.png"), 
+    }
+    _city.build(self, textures)
+
+
+
+func _place_cars() -> void :
+    if _city == null:
+        return
+
+    var models: = [
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0}, 
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0}, 
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0}, 
+    ]
+    var slots: Array = _city.car_slots
+
+    var drivable: int = min(DRIVABLE_CARS, slots.size())
+    for i in drivable:
+        var slot = slots[i]
+        var m: Dictionary = models[i % models.size()]
+        _spawn_drivable_car(m, slot[0], slot[1])
+
+    var placed: = 0
+    var idx: = drivable
+    while idx < slots.size() and placed < MAX_STATIC_CARS:
+        var slot2 = slots[idx]
+        var m2: Dictionary = models[(placed + 1) % models.size()]
+        _place_car(m2["path"], slot2[0], slot2[1], m2["h"])
+        placed += 1
+        idx += 2
+
+
+func _spawn_drivable_car(m: Dictionary, pos: Vector3, rot_y: float) -> void :
+    var car: = Node3D.new()
+    car.set_script(CarScript)
+    car.model_path = m["path"]
+    car.model_height = m["h"]
+    car.display_name = m["name"]
+    car.max_throttle = m["spd"]
+    car.torque = m["trq"]
+    add_child(car)
+    car.place_at(pos, rot_y)
+    _drivable_cars.append(car)
+
+
+func _place_car(path: String, pos: Vector3, rot_y: float, height: float) -> void :
+    var scene: = load(path) as PackedScene
+    if scene == null:
+        return
+    var inst: = scene.instantiate()
+    add_child(inst)
+    inst.position = pos
+    inst.rotation_degrees.y = rot_y
+    ModelUtils.scale_to_height(inst, height)
+    ModelUtils.ground_model(inst, 0.0)
+    ModelUtils.add_per_part_convex_collision(inst, 1)
+
+
+
+func _place_streetlights() -> void :
+    if _city == null:
+        return
+    var light_path: = "res://assets/props/decorations/streetlight.glb"
+    var scene: = load(light_path) as PackedScene
+    for pos in _city.light_slots:
+        if scene:
+            var inst: = scene.instantiate() as Node3D
+            add_child(inst)
+            inst.position = pos
+            ModelUtils.scale_to_height(inst, 6.0)
+            ModelUtils.ground_model(inst, 0.0)
+            ModelUtils.add_per_part_convex_collision(inst, 1)
+        var light: = OmniLight3D.new()
+        light.light_color = Color(1.0, 0.74, 0.42)
+        light.light_energy = 3.0
+        light.omni_range = 18.0
+        light.shadow_enabled = false
+        light.position = pos + Vector3(0, 5.4, 0)
+        add_child(light)
+
+
+
+func _spawn_contacts() -> void :
+
+    var spots: = [
+        [_city.mission_giver_pos if _city else Vector3(12, 0, 14), _city.mission_giver_rot if _city else 200.0], 
+        [Vector3(58.0, 0, 50.0), 220.0], 
+        [Vector3(-54.0, 0, -46.0), 30.0], 
+    ]
+    for s in spots:
+        var contact: = Node3D.new()
+        contact.set_script(MISSION_GIVER_SCRIPT)
+        add_child(contact)
+        contact.global_position = s[0]
+        contact.rotation_degrees.y = s[1]
+        _contacts.append(contact)
+
+
+func _build_systems() -> void :
+    if _player == null:
+        return
+    _wanted_system = Node.new()
+    _wanted_system.set_script(WantedSystemScript)
+    add_child(_wanted_system)
+    _wanted_system.setup(_player, self)
+
+    _job_manager = Node.new()
+    _job_manager.set_script(JobManagerScript)
+    add_child(_job_manager)
+    _job_manager.setup(_player, self, _job_locations())
+
+
+    for c in _contacts:
+        if is_instance_valid(c):
+            c.job_manager = _job_manager
+
+
+    var spawn: Vector3 = _city.player_spawn if _city else Vector3(8, 0.6, 8)
+    if _player.has_method("register_systems"):
+        _player.register_systems(_wanted_system, spawn)
+    if _player.has_method("register_cars"):
+        _player.register_cars(_drivable_cars)
+    if _hud and _hud.has_method("bind_systems"):
+        _hud.bind_systems(_job_manager, _wanted_system)
+
+
+func _job_locations() -> Array[Vector3]:
+    var pts: Array[Vector3] = []
+    for gx in CityBuilder.GRID:
+        for gz in CityBuilder.GRID:
+            pts.append(Vector3(gx, 0.5, gz))
+    return pts
+
+
+func _spawn_pickups() -> void :
+    if _player == null:
+        return
+    var spawn: Vector3 = _city.player_spawn if _city else Vector3(8, 0.6, 8)
+
+    var specs: = [
+        ["weapon", "pistol", spawn + Vector3(6.0, 0, -8.0)], 
+        ["weapon", "bat", Vector3(68.0, 0.5, 10.0)], 
+        ["weapon", "shotgun", Vector3(-48.0, 0.5, 66.0)], 
+        ["weapon", "rifle", Vector3(-100.0, 0.5, -98.0)], 
+        ["medkit", "", Vector3(12.0, 0.5, 64.0)], 
+        ["medkit", "", Vector3(64.0, 0.5, -64.0)], 
+        ["armor", "", Vector3(-64.0, 0.5, -8.0)], 
+        ["armor", "", Vector3(104.0, 0.5, 100.0)], 
+    ]
+    for s in specs:
+        var pickup: = Node3D.new()
+        pickup.set_script(WeaponPickupScript)
+        add_child(pickup)
+        pickup.setup(s[2], _player, s[0], s[1], 0)
+
+
+func _spawn_shops() -> void :
+    var spots: = [
+        Vector3(50.0, 0.0, 6.0), 
+        Vector3(-52.0, 0.0, -12.0), 
+        Vector3(6.0, 0.0, -110.0), 
+    ]
+    for p in spots:
+        var shop: = Node3D.new()
+        shop.set_script(ShopScript)
+        add_child(shop)
+        shop.setup(p, "gun")
+
+
+func _build_shop_menu() -> void :
+    var shop_menu: = CanvasLayer.new()
+    shop_menu.set_script(ShopMenuScript)
+    add_child(shop_menu)
+    if _player:
+        shop_menu.bind_player(_player)
+
+
+func _spawn_npcs() -> void :
+    if _city == null:
+        return
+    var waypoints: = _city.npc_waypoints
+    var peds: = [
+        ["res://assets/characters/pedestrian_male/pedestrian_male.glb", "res://assets/characters/pedestrian_male/pedestrian_male_animations.tres"], 
+        ["res://assets/characters/pedestrian_female/pedestrian_female.glb", "res://assets/characters/pedestrian_female/pedestrian_female_animations.tres"], 
+    ]
+    for i in _city.npc_spawns.size():
+        var npc: = CharacterBody3D.new()
+        npc.set_script(NPC_SCRIPT)
+        var ped = peds[i % peds.size()]
+        npc.setup(ped[0], ped[1], waypoints)
+        add_child(npc)
+        npc.global_position = _city.npc_spawns[i]
+
+
+func _spawn_player() -> void :
+    _player = PLAYER_SCENE.instantiate()
+    add_child(_player)
+    _player.global_position = _city.player_spawn if _city else Vector3(8, 0.6, 8)
+    if GameManager and GameManager.has_spawn_override:
+        _player.global_position = GameManager.player_spawn_override
+
+
+func _build_hud() -> void :
+    _hud = HUD_SCRIPT.new()
+    add_child(_hud)
+    if _player:
+        _hud.bind_player(_player)
+
+
+func _start_audio() -> void :
+    if not AudioManager:
+        return
+    var music: = load("res://assets/audio/music/music_exploration_explore_theme.mp3")
+    if music:
+        if music is AudioStreamMP3:
+            (music as AudioStreamMP3).loop = true
+        AudioManager.play_music(music, -10.0, 1.5)
+    var ambient: = load("res://assets/audio/ambient/ambient_coastal_city_coastal_city.mp3")
+    if ambient:
+        var amb: = AudioStreamPlayer.new()
+        amb.stream = ambient
+        amb.bus = "SFX"
+        amb.volume_db = -16.0
+        amb.autoplay = false
+        amb.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+        if ambient is AudioStreamMP3:
+            (ambient as AudioStreamMP3).loop = true
+        add_child(amb)
+        amb.play()

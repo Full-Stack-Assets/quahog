@@ -3,6 +3,7 @@ import { useGame } from "./store";
 import { useMission } from "./mission";
 import { shared } from "./shared";
 import { CIVIC } from "./places";
+import { useEconomy, BUSINESSES } from "./economy";
 
 // Player-centered radar (§21): draws nearby roads, the objective, and a heading
 // arrow on a small canvas. North-up. Cheap 2D — no WebGL.
@@ -33,6 +34,8 @@ export function Minimap() {
       }
     }
     const water = slice.water ?? [];
+    const parks = slice.parks ?? [];
+    const barrier = slice.barrier ?? [];
 
     const draw = () => {
       const body = useGame.getState().mode === "car" ? shared.car : shared.player;
@@ -63,6 +66,19 @@ export function Minimap() {
         ctx.fill();
       }
 
+      // parks / green spaces
+      ctx.fillStyle = "#2c4626";
+      for (const ring of parks) {
+        ctx.beginPath();
+        for (let i = 0; i < ring.length; i++) {
+          const sx = R + (ring[i][0] - px) * PPM;
+          const sy = R + (-ring[i][1] - pz) * PPM;
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
       // roads
       for (let i = 0; i < segs.length; i += 5) {
         const x1 = R + (segs[i] - px) * PPM;
@@ -80,10 +96,38 @@ export function Minimap() {
         ctx.stroke();
       }
 
+      // hurricane barrier (stone dike)
+      ctx.strokeStyle = "#9a978c";
+      ctx.lineWidth = 2.5;
+      for (const path of barrier) {
+        ctx.beginPath();
+        for (let i = 0; i < path.length; i++) {
+          const sx = R + (path[i][0] - px) * PPM;
+          const sy = R + (-path[i][1] - pz) * PPM;
+          i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+        }
+        ctx.stroke();
+      }
+
       // civic markers (police = blue, hospital = green)
       for (const c of CIVIC) {
         ctx.fillStyle = c.kind === "hospital" ? "#4ad66d" : "#3a6bff";
         ctx.fillRect(R + (c.pos[0] - px) * PPM - 3, R + (c.pos[2] - pz) * PPM - 3, 6, 6);
+      }
+
+      // business fronts (gold squares): owned = filled, buyable = hollow outline
+      const owned = useEconomy.getState().owned;
+      for (const b of BUSINESSES) {
+        const bx = R + (b.pos[0] - px) * PPM;
+        const by = R + (b.pos[2] - pz) * PPM;
+        if (owned[b.id]) {
+          ctx.fillStyle = "#ffcf4a";
+          ctx.fillRect(bx - 3, by - 3, 6, 6);
+          ctx.strokeStyle = "#0a0e18"; ctx.lineWidth = 1; ctx.strokeRect(bx - 3, by - 3, 6, 6);
+        } else {
+          ctx.strokeStyle = "#caa24a"; ctx.lineWidth = 1.5;
+          ctx.strokeRect(bx - 3, by - 3, 6, 6);
+        }
       }
 
       // cop blips (pulsing blue dots)

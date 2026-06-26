@@ -12,10 +12,10 @@ import type { Road } from "../slice";
 // no rigid bodies) so it can never shove the player's physics car — exactly the
 // constraint the Unity version held. Cars here follow the REAL OSM road network.
 
-const PED_COUNT = 20;
+const PED_COUNT = 32;
 const PED_SPEED = 1.5; // m/s
 const PED_WANDER = 32; // half-extent of wander box around origin
-const CAR_COUNT = 14;
+const CAR_COUNT = 20;
 const CAR_SPEED = 9; // m/s
 const CONNECT_R = 10; // how close road endpoints must be to count as joined
 
@@ -24,11 +24,13 @@ const DRIVABLE = new Set([
   "residential", "unclassified", "living_street", "service",
 ]);
 
-const PED_COLORS = ["#c0563f", "#3f6cc0", "#4a8c52", "#b8a23a", "#7a4a8c", "#c87a3f"];
-const PANTS = ["#2c2f3a", "#3a3326", "#23344f", "#4a4a4a", "#5a3a2a"];
-const SKINS = ["#caa07a", "#e0b48c", "#a87a52", "#8a5a36", "#d8a87a"];
-const HAIRS = ["#2a2018", "#4a3422", "#1a1a1a", "#6a5a3a", "#8a8a8a"];
-const CAR_COLORS = ["#9c3a3a", "#2f6f7a", "#caa24a", "#3a5a9c", "#5a5a5a", "#8c6a3a"];
+const PED_COLORS = ["#c0563f", "#3f6cc0", "#4a8c52", "#b8a23a", "#7a4a8c", "#c87a3f",
+  "#b03a5a", "#2f8c7a", "#5a5a6a", "#d0863a", "#356a9c", "#8a4a3a", "#6a8a3a", "#a0a0a8"];
+const PANTS = ["#2c2f3a", "#3a3326", "#23344f", "#4a4a4a", "#5a3a2a", "#1f2a1f", "#3a2a3a", "#454033"];
+const SKINS = ["#caa07a", "#e0b48c", "#a87a52", "#8a5a36", "#d8a87a", "#6a4226", "#b88a5e"];
+const HAIRS = ["#2a2018", "#4a3422", "#1a1a1a", "#6a5a3a", "#8a8a8a", "#3a2a1a", "#bcae8a"];
+const CAR_COLORS = ["#9c3a3a", "#2f6f7a", "#caa24a", "#3a5a9c", "#5a5a5a", "#8c6a3a",
+  "#5a1f1f", "#c9c2b4", "#3a2a22", "#1f3a2a", "#40506a", "#8a8f96", "#b56a3a", "#6a2a4a"];
 
 interface Route {
   pts: THREE.Vector3[];
@@ -79,6 +81,7 @@ function Pedestrians({ center }: { center: [number, number] }) {
       const pos = randInBox(center);
       return {
         pos, goal: randInBox(center), heading: 0, color: pick(PED_COLORS),
+        scale: 0.9 + Math.random() * 0.28, // overall size variety (origin at feet, so they stay planted) — not 32 clones
         down: 0, dead: false,
         vel: new THREE.Vector3(), y: 0, tumble: 0, // ragdoll launch state
         body: { pos: pos.clone(), push: new THREE.Vector3(), hit: 0 } as Body,
@@ -185,8 +188,10 @@ function Pedestrians({ center }: { center: [number, number] }) {
   return (
     <group>
       {state.current.map((p, i) => (
-        <group key={i} ref={(el) => (refs.current[i] = el)} position={p.pos}>
-          <ModelCharacter />
+        <group key={i} ref={(el) => (refs.current[i] = el)} position={p.pos} scale={p.scale}>
+          {/* tint per ped (the colour was computed but never used) so the crowd
+              reads as different people, not 32 identical white models */}
+          <ModelCharacter tint={p.color} moving={() => !p.dead && p.down <= 0} />
         </group>
       ))}
     </group>

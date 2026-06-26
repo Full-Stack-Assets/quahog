@@ -31,7 +31,7 @@ export function Effects() {
 
   return (
     <EffectComposer multisampling={0}>
-      <Bloom intensity={0.55} luminanceThreshold={0.78} luminanceSmoothing={0.25} mipmapBlur />
+      <Bloom intensity={0.48} luminanceThreshold={0.86} luminanceSmoothing={0.25} mipmapBlur />
       <ChromaticAberration offset={new THREE.Vector2(0.0008, 0.0008)} radialModulation modulationOffset={0.4} />
       <HueSaturation ref={hs} hue={0} saturation={0} />
       <BrightnessContrast ref={bc} brightness={0} contrast={0.06} />

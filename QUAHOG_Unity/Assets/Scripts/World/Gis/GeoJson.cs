@@ -21,17 +21,26 @@ namespace Quahog.SouthCoast.Gis
         public string Name;
     }
 
-    /// <summary>A building footprint (outer ring) plus an extrusion height in metres.</summary>
+    /// <summary>Coarse building class, used to vary colour + default height.</summary>
+    public enum BuildingCategory { Default, Residential, Commercial, Industrial, Civic }
+
+    /// <summary>
+    /// A building footprint: an outer ring, any inner rings (courtyards / holes),
+    /// an extrusion height, and a coarse category for material/height variety.
+    /// </summary>
     public sealed class BuildingFeature
     {
         public readonly List<LonLat> Ring = new List<LonLat>();
+        public readonly List<List<LonLat>> Holes = new List<List<LonLat>>();
         public float Height = 9f;
+        public BuildingCategory Category = BuildingCategory.Default;
     }
 
-    /// <summary>A flat area (e.g. harbour water) defined by an outer ring.</summary>
+    /// <summary>A flat area (e.g. harbour water) — outer ring plus inner holes (islands).</summary>
     public sealed class AreaFeature
     {
         public readonly List<LonLat> Ring = new List<LonLat>();
+        public readonly List<List<LonLat>> Holes = new List<List<LonLat>>();
     }
 
     /// <summary>The classified contents of one GeoJSON FeatureCollection.</summary>
@@ -96,12 +105,22 @@ namespace Quahog.SouthCoast.Gis
             // ---- Building? (polygon-like with a building tag) ----
             if (IsBuilding(props))
             {
-                float height = BuildingHeight(props);
-                foreach (var ring in OuterRings(gtype, coords))
+                BuildingCategory cat = ClassifyBuilding(props);
+                float explicitH = ExplicitHeight(props);
+                foreach (var rings in PolygonRingSets(gtype, coords))
                 {
-                    if (ring.Count < 3) continue;
-                    var b = new BuildingFeature { Height = height };
-                    b.Ring.AddRange(ring);
+                    var outer = ReadRing(rings[0]);
+                    if (outer.Count < 3) continue;
+                    // Seed default-height jitter from a coordinate so builds stay stable.
+                    double seed = Math.Abs(outer[0].Lon * 1000.0 + outer[0].Lat * 1731.0);
+                    float height = explicitH > 0f ? explicitH : DefaultHeight(cat, seed);
+                    var b = new BuildingFeature { Height = height, Category = cat };
+                    b.Ring.AddRange(outer);
+                    for (int i = 1; i < rings.Count; i++)
+                    {
+                        var hole = ReadRing(rings[i]);
+                        if (hole.Count >= 3) b.Holes.Add(hole);
+                    }
                     data.Buildings.Add(b);
                 }
                 return;
@@ -125,11 +144,17 @@ namespace Quahog.SouthCoast.Gis
             // ---- Water area? ----
             if (IsWater(props))
             {
-                foreach (var ring in OuterRings(gtype, coords))
+                foreach (var rings in PolygonRingSets(gtype, coords))
                 {
-                    if (ring.Count < 3) continue;
+                    var outer = ReadRing(rings[0]);
+                    if (outer.Count < 3) continue;
                     var w = new AreaFeature();
-                    w.Ring.AddRange(ring);
+                    w.Ring.AddRange(outer);
+                    for (int i = 1; i < rings.Count; i++)
+                    {
+                        var hole = ReadRing(rings[i]);
+                        if (hole.Count >= 3) w.Holes.Add(hole);
+                    }
                     data.Water.Add(w);
                 }
             }
@@ -139,14 +164,18 @@ namespace Quahog.SouthCoast.Gis
         // Geometry coordinate readers
         // -----------------------------------------------------------------
 
-        /// <summary>Outer rings for Polygon / MultiPolygon (inner holes ignored for v1).</summary>
-        private static IEnumerable<List<LonLat>> OuterRings(string gtype, object coords)
+        /// <summary>
+        /// Per-polygon ring sets for Polygon / MultiPolygon. Each yielded list is
+        /// [outerRing, hole1, hole2, ...] as raw coordinate objects; the caller reads
+        /// rings[0] as the outline and rings[1..] as inner holes (courtyards/islands).
+        /// </summary>
+        private static IEnumerable<List<object>> PolygonRingSets(string gtype, object coords)
         {
             if (gtype == "Polygon")
             {
                 var rings = AsList(coords);
                 if (rings != null && rings.Count > 0)
-                    yield return ReadRing(rings[0]);
+                    yield return rings;
             }
             else if (gtype == "MultiPolygon")
             {
@@ -156,7 +185,7 @@ namespace Quahog.SouthCoast.Gis
                     {
                         var rings = AsList(poly);
                         if (rings != null && rings.Count > 0)
-                            yield return ReadRing(rings[0]);
+                            yield return rings;
                     }
             }
         }
@@ -214,7 +243,8 @@ namespace Quahog.SouthCoast.Gis
             return false;
         }
 
-        private static float BuildingHeight(Dictionary<string, object> props)
+        /// <summary>Tagged height in metres, or -1 if neither height nor levels is set.</summary>
+        private static float ExplicitHeight(Dictionary<string, object> props)
         {
             // Explicit metric height wins.
             string hs = GetString(props, "height");
@@ -226,7 +256,64 @@ namespace Quahog.SouthCoast.Gis
             if (lvl != null && double.TryParse(StripUnits(lvl), NumberStyles.Float, CultureInfo.InvariantCulture, out double levels) && levels > 0)
                 return Mathf2.Clamp((float)(levels * 3.2), 3f, 120f);
 
-            return 9f; // ~3 storeys default
+            return -1f;
+        }
+
+        /// <summary>
+        /// Default height when OSM gives none — varies by category (triple-deckers
+        /// short, mills/commercial taller, civic tallest) with a deterministic ±18 %
+        /// jitter so a block of untagged buildings isn't a flat slab of one height.
+        /// </summary>
+        private static float DefaultHeight(BuildingCategory cat, double seed)
+        {
+            float baseH;
+            switch (cat)
+            {
+                case BuildingCategory.Residential: baseH = 7.5f; break; // 2–3 storey houses / triple-deckers
+                case BuildingCategory.Commercial:  baseH = 12f;  break;
+                case BuildingCategory.Industrial:  baseH = 11f;  break; // brick mills
+                case BuildingCategory.Civic:       baseH = 14f;  break;
+                default:                           baseH = 9f;   break;
+            }
+            double f = seed * 12.9898;
+            f -= Math.Floor(f);                       // fractional part in [0,1)
+            float jitter = (float)(0.82 + f * 0.36);  // 0.82 … 1.18
+            return Mathf2.Clamp(baseH * jitter, 3f, 120f);
+        }
+
+        /// <summary>Classify a footprint from its OSM building/shop/amenity tags.</summary>
+        private static BuildingCategory ClassifyBuilding(Dictionary<string, object> props)
+        {
+            string b = (GetString(props, "building") ?? "").Trim().ToLowerInvariant();
+            switch (b)
+            {
+                case "house": case "detached": case "residential": case "apartments":
+                case "terrace": case "semidetached_house": case "bungalow": case "dormitory":
+                case "hut": case "cabin": case "houseboat":
+                    return BuildingCategory.Residential;
+                case "commercial": case "retail": case "office": case "supermarket":
+                case "hotel": case "kiosk": case "mall":
+                    return BuildingCategory.Commercial;
+                case "industrial": case "warehouse": case "factory": case "manufacture":
+                case "hangar": case "works":
+                    return BuildingCategory.Industrial;
+                case "church": case "cathedral": case "chapel": case "civic": case "public":
+                case "school": case "university": case "hospital": case "government":
+                case "train_station": case "temple": case "mosque": case "synagogue":
+                case "museum": case "library": case "courthouse": case "fire_station":
+                    return BuildingCategory.Civic;
+            }
+
+            string amenity = (GetString(props, "amenity") ?? "").ToLowerInvariant();
+            if (props.ContainsKey("shop") || !string.IsNullOrEmpty(GetString(props, "office"))
+                || amenity == "restaurant" || amenity == "cafe" || amenity == "bar"
+                || amenity == "bank" || amenity == "pharmacy" || amenity == "fast_food")
+                return BuildingCategory.Commercial;
+            if (amenity == "place_of_worship" || amenity == "school" || amenity == "hospital"
+                || amenity == "townhall" || amenity == "university" || amenity == "library")
+                return BuildingCategory.Civic;
+
+            return BuildingCategory.Default;
         }
 
         /// <summary>Reasonable carriageway widths (metres) by OSM highway class.</summary>

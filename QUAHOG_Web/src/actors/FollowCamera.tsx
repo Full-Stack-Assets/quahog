@@ -4,7 +4,6 @@ import { consumeTap } from "../input";
 import { shared } from "../shared";
 import { useGame } from "../store";
 
-const BASE_FOV = 60;
 const _shake = new THREE.Vector3();
 let _photoYaw = 0;
 
@@ -39,7 +38,7 @@ export function FollowCamera() {
     // FOV widens with car speed for a sense of velocity (§13)
     const cam = camera as THREE.PerspectiveCamera;
     const speedT = mode === "car" ? THREE.MathUtils.clamp(Math.abs(shared.carSpeed) / 22, 0, 1) : 0;
-    const wantFov = BASE_FOV + speedT * 14;
+    const wantFov = game.fov + speedT * 14; // user FOV preference + speed widening
     if (Math.abs(cam.fov - wantFov) > 0.05) {
       cam.fov = THREE.MathUtils.lerp(cam.fov, wantFov, 1 - Math.exp(-dt * 4));
       cam.updateProjectionMatrix();

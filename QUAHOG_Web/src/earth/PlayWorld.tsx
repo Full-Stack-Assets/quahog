@@ -2,7 +2,11 @@ import { useContext, useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
-import { ModelCharacter } from "../world/ModelCharacter";
+// Rigid primitive humanoid, NOT the skinned CesiumMan: at the photoreal tiles'
+// earth-centered coordinates (~6.3M m from origin) GPU skinning shatters in
+// float32, so the skinned model explodes into shards. Rigid meshes render
+// camera-relative and stay crisp (same reason the car looks fine).
+import { Character } from "../world/Character";
 import { consumeTap, isDown, moveAxis } from "../input";
 import { DRIVABLE, followCam, forwardHit, frameUp, groundY, lerpAngle } from "./follow";
 import { playState, resetBodies, type Body } from "./playState";
@@ -172,7 +176,7 @@ export function PlayerRig({ spawn, view, onReady }: { spawn: Spawn; view: View; 
   return (
     <>
       <group ref={player}>
-        <ModelCharacter moving={() => s.current.moving} />
+        <Character moving={() => s.current.moving} shirt="#2f5fae" pants="#23262e" />
       </group>
       <group ref={car}>
         <Vehicle type="mustang" color="#b81d24" />
@@ -338,7 +342,7 @@ export function TileNpcs({ slice, center }: { slice: Slice; center: [number, num
     <group>
       {peds.current.map((p, i) => (
         <group key={`p${i}`} ref={(el) => (pedRefs.current[i] = el)}>
-          <ModelCharacter />
+          <Character shirt={p.shirt} pants={p.pants} skin={p.skin} moving={() => !p.dead && p.down <= 0} />
         </group>
       ))}
       {cars.current.map((c, i) => (

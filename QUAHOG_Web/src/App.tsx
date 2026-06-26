@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
 import { Experience } from "./Experience";
@@ -9,12 +9,18 @@ import { CharacterMenu } from "./ui/CharacterMenu";
 import { BigMap } from "./ui/BigMap";
 import { TouchControls } from "./ui/TouchControls";
 import { Toasts } from "./ui/Toasts";
+import { DebugStats } from "./ui/DebugStats";
 import { StartMenu } from "./ui/StartMenu";
 import { Radio } from "./audio/Radio";
 import { installInput } from "./input";
 
 export default function App() {
   const [sliceName, setSliceName] = useState("loading…");
+  const [progress, setProgress] = useState(0);
+
+  // stable callbacks so the Experience loader effect doesn't re-run each render
+  const onReady = useCallback((s: { name: string }) => setSliceName(s.name), []);
+  const onProgress = useCallback((f: number) => setProgress(f), []);
 
   useEffect(() => {
     installInput();
@@ -29,7 +35,7 @@ export default function App() {
         gl={{ antialias: false, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.05 }}
       >
         <Suspense fallback={null}>
-          <Experience onReady={(s) => setSliceName(s.name)} />
+          <Experience onReady={onReady} onProgress={onProgress} />
         </Suspense>
       </Canvas>
       <HUD sliceName={sliceName} />
@@ -40,7 +46,8 @@ export default function App() {
       <TouchControls />
       <Toasts />
       <Radio />
-      <StartMenu sliceName={sliceName} />
+      <DebugStats />
+      <StartMenu sliceName={sliceName} progress={progress} />
     </>
   );
 }

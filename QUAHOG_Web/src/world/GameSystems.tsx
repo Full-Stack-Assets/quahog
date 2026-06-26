@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useStats } from "../game";
 import { useGame } from "../store";
-import { useEconomy } from "../economy";
+import { useEconomy, rollRevenueEvent } from "../economy";
 import { useToasts } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
@@ -16,6 +16,7 @@ interface PosRec {
   mode: string; px?: number; py?: number; pz?: number; heading?: number;
   carx?: number; cary?: number; carz?: number; carYaw?: number;
   carType?: string; carColor?: string;
+  day?: number; hour?: number; // so Continue resumes the same in-game day/time
 }
 
 // Persist where the player is so "Continue" resumes them in place (§26). New
@@ -29,6 +30,7 @@ function savePos() {
       mode: g.mode, px: pl?.x, py: pl?.y, pz: pl?.z, heading: shared.heading,
       carx: car?.x, cary: car?.y, carz: car?.z, carYaw: shared.carYaw,
       carType: g.playerCarType, carColor: g.playerCarColor,
+      day: shared.day, hour: shared.hour,
     };
     localStorage.setItem(POS_KEY, JSON.stringify(rec));
   } catch { /* ignore */ }
@@ -40,6 +42,8 @@ function applyRestore(r: PosRec) {
   const pl = shared.player, car = shared.car;
   if (!pl) return;
   const g = useGame.getState();
+  if (typeof r.day === "number") shared.day = r.day;
+  if (typeof r.hour === "number") shared.hour = r.hour;
   if (r.mode === "car" && r.carx != null && car) {
     car.setTranslation({ x: r.carx, y: r.cary ?? 1.4, z: r.carz ?? 0 }, true);
     car.setLinvel({ x: 0, y: 0, z: 0 }, true);
@@ -58,6 +62,17 @@ function applyRestore(r: PosRec) {
   }
 }
 
+// Reactive radio inserts read by whichever host is on after the player shakes a
+// chase (§19 milestone reactions). Host-agnostic so any voice can read them.
+const EVADE_FLASH = [
+  "Scanner's gone quiet down on the waterfront — whoever they were chasin', they're in the wind now. Tip your cap.",
+  "Word is the cops just lost somebody in the South End. Happens. Back to the music.",
+  "They had the cruisers all lit up a minute ago and now — nothin'. Somebody knows these streets better than the badges do.",
+  "Police scanner says 'lost visual.' Two words that make a getaway driver smile. Moving on.",
+  "Whoever just gave the law the slip by the bridge — you didn't hear it from me. Here's another one.",
+];
+const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
+
 // Runs the always-on gameplay loops (§15): heat decay + periodic autosave, and
 // loads the saved game on mount. Also handles global hotkeys (weather, pause).
 export function GameSystems() {
@@ -66,6 +81,8 @@ export function GameSystems() {
   const restored = useRef(false);
   const skidCool = useRef(0);
   const maxStars = useRef(0);
+  const revAcc = useRef(0);
+  const nextRev = useRef(75); // first revenue event after ~75s of ownership
   useEffect(() => {
     useStats.getState().load();
     useEconomy.getState().load();
@@ -75,6 +92,8 @@ export function GameSystems() {
       const s = JSON.parse(localStorage.getItem("mounthope.settings.v1") || "{}");
       const g = useGame.getState();
       if (typeof s.fxOn === "boolean" && s.fxOn !== g.fxOn) g.toggleFx();
+      if (typeof s.shadows === "boolean" && s.shadows !== g.shadows) g.toggleShadows();
+      if (typeof s.fov === "number") g.setFov(s.fov);
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
       if (s.weather) useGame.setState({ weather: s.weather });
     } catch { /* ignore */ }
@@ -122,6 +141,18 @@ export function GameSystems() {
     // passive business revenue (§15 RevenueManager)
     const income = useEconomy.getState().incomePerSec(DAY_SECONDS);
     if (income > 0) st.addCash(income * dt);
+    // occasional margin-leak / boom event on an owned front (§15 RevenueManager)
+    revAcc.current += dt;
+    if (revAcc.current > nextRev.current) {
+      revAcc.current = 0;
+      nextRev.current = 90 + Math.random() * 120; // next in 90–210s
+      const ev = rollRevenueEvent();
+      if (ev) {
+        st.addCash(ev.amount);
+        useToasts.getState().push(ev.text, ev.good ? "#7CFC00" : "#ff6a6a");
+        ev.good ? sfx.cash() : sfx.ui();
+      }
+    }
     // slow health regen out of combat (§11)
     if (st.health > 0 && st.health < 100 && useGame.getState().mode === "foot") st.setHealth(st.health + dt * 2.2);
     // wanted-up sting (§23): toast + chirp when police stars rise
@@ -135,6 +166,7 @@ export function GameSystems() {
       const bonus = maxStars.current * 50;
       st.addCash(bonus);
       useToasts.getState().push(`EVADED — +$${bonus}`, "#7CFC00"); sfx.cash();
+      radio.flashNews(pick(EVADE_FLASH)); // hosts react to the chase (§19 milestone)
       maxStars.current = 0;
     }
     prevStars.current = stars;
@@ -145,7 +177,7 @@ export function GameSystems() {
       st.save();
       if (useGame.getState().started) savePos();
       const g = useGame.getState();
-      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
+      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
     }
   });
   return null;

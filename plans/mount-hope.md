@@ -57,12 +57,12 @@ time; keep the build green; be honest about status.
 - [x] Engine reconciliation: R3F canonical; Unity/Godot marked legacy
 - [x] Game named **Mount Hope**
 - [x] Design docs: README, ROADMAP, Characters & Missions bible, Gemini build spec
-- [ ] CI: typecheck/build check on PRs
-- [ ] Bundle code-splitting (main chunk >2 MB; split three/rapier/drei; lazy-load earth page)
-- [ ] Asset loading/preload screen + progress bar
-- [ ] Error boundary + crash overlay on the main game (exists on earth page)
-- [ ] Versioning / changelog; build stamp in-game (commit hash, build date)
-- [ ] Analytics-free telemetry stub (FPS, load time) behind a debug flag
+- [x] CI: typecheck/build check on PRs — `.github/workflows/web-ci.yml` runs `tsc && vite build` on PRs/pushes touching `QUAHOG_Web` (uses `npm install`; lockfile drifts from package.json — `@vercel/blob` missing from the lock)
+- [~] Bundle code-splitting — `vite.config` `manualChunks` splits three / @react-three / rapier / react into long-lived vendor chunks; earth is already its own entry (lazy-load of the earth route still open)
+- [x] Asset loading/preload screen + progress bar — `loadSlice` streams the slice JSON and reports 0..1; StartMenu shows a progress bar + `LOADING NEW BEDFORD · NN%`
+- [x] Error boundary + crash overlay on the main game — `ui/ErrorBoundary.tsx` wraps `<App>` in `main.tsx` (recoverable overlay + reload + build stamp)
+- [~] Versioning / changelog; **build stamp in-game (commit hash, build date) — done** (HUD bottom-left, injected by vite define); changelog still open
+- [x] Analytics-free telemetry stub (FPS, load time) behind a debug flag — `ui/DebugStats.tsx`, off by default (`?debug` / localStorage / backtick toggle)
 
 ## 1. World data & pipeline
 - [x] OSM pull: New Bedford + Fall River (roads/water/rail/coastline/boundary)
@@ -72,9 +72,9 @@ time; keep the build green; be honest about status.
 - [ ] Expand slice: full Fall River, Brockton, Cape Cod
 - [ ] Real building heights/levels where OSM-tagged; roof shapes
 - [ ] POI/landmark dataset beyond New Bedford
-- [ ] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety
+- [x] Land use layers (parks/grass, parking lots, beaches, water edges) for ground variety — OSM overlays baked to `*-newbedford.json`, rendered by `FlatAreas` (parks/wood/cemetery green, parking grey, beach tan) + `Water`
 - [ ] Sidewalk/curb extraction (separate ped surfaces from roadway)
-- [ ] Railways, bridges, piers as distinct meshes
+- [x] Railways, bridges, piers as distinct meshes — `Rail`, `Bridges`, `Piers`
 - [ ] Street-name + address data for signage/navigation
 
 ## 2. World rendering & environment
@@ -87,8 +87,8 @@ time; keep the build green; be honest about status.
 - [x] Hero landmark: Seamen’s Bethel (modeled + collider)
 - [~] Satellite ground via signed Static Maps proxy — needs Vercel env vars + verify/align
 - [ ] Varied building façades (windows, doors, brick/clapboard/granite materials, storefronts, roof detail)
-- [ ] Curbs, sidewalks, crosswalks, road markings, manholes, potholes
-- [ ] Parks/grass/trees/foliage, planters, hedges
+- [~] Curbs, sidewalks, crosswalks, road markings, manholes, potholes — concrete apron curbs + dedicated sidewalk texture, `Crosswalks`, lane markings, `RoadFixtures` (manholes/grates), asphalt repair patches; potholes still open
+- [x] Parks/grass/trees/foliage, planters, hedges — `FlatAreas` greens + `AreaTrees`/`Props` trees + `Foliage` bushes/tufts
 - [ ] Distant skyline / horizon backdrop + atmospheric haze
 - [ ] Hand-detailed landmarks: Whaling Museum, Custom House, Double Bank, Battleship Cove, Lizzie Borden House, St. Anne’s, Braga/Verde Bridge, the mills
 - [ ] Interiors for key buildings (chapel, bar, gym, safehouse)
@@ -194,7 +194,7 @@ time; keep the build green; be honest about status.
 - [x] Real car models (Bronco/Mustang/G/Z/RAV4) — player + traffic
 - [x] Arcade driving (accel/brake/steer/reverse), enter/exit, collision — faster top speed + speed-scaled steering; ram traffic to halt it; **carjack** traffic on foot (E) with model/colour swap
 - [ ] Wheel rotation + steering animation; suspension travel
-- [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking (Vehicles.tsx); reverse/turn signals TODO
+- [~] Working lights (head/tail/brake/reverse/turn signals) — head/tail emissive ramp at dusk, player taillights flare on braking, **white reverse lights when backing up** (Vehicles.tsx/Car.tsx); turn signals TODO
 - [ ] Damage/deformation, smoke when wrecked, explosions
 - [ ] Region-accurate spawns (“Townie”, “Linguiça” moped, “Codfish 40”, lowriders, preppy imports)
 - [~] Motorcycles/mopeds, boats, bicycles — **pilotable yacht** (Boat.tsx; board at the Long Island marina, drives on water, wake); motorcycles/mopeds/bicycles TODO
@@ -224,24 +224,24 @@ time; keep the build green; be honest about status.
 ## 15. Gameplay systems (canon)
 - [x] **MissionManager**: objective/trigger/state/reward engine + markers + waypoints — mission.ts + MissionRunner.tsx (objective beam/ring); waypoint trail TODO
 - [x] **Dual-axis Heat/Wanted**: Axis A police (1–5), Axis B faction aggro; decay; busted/wasted states — police+faction 0–5 + decay (game.ts); **busted/wasted** loop with respawn (Consequence.tsx)
-- [~] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves (Safehouse.tsx); sleep/time-skip TODO
+- [x] **Safehouses** (Maplecroft) — clear heat + save + sleep/time-skip — safehouse zone bleeds off heat + autosaves; **T sleeps til 07:00** (heal + clear heat + advance day + save) (Safehouse.tsx)
 - [x] **PlayerWallet** + currency UI — game.ts cash + addCash; HUD cash readout
 - [x] **AcquisitionEngine** (5 businesses) + property ownership/markers — 5 buyable fronts with markers + B-to-buy + persistence (economy.ts, Businesses.tsx)
-- [~] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems); margin-leak events TODO
+- [x] **RevenueManager** (daily yields, margin-leak events) — per-day yields trickle into the wallet (GameSystems) + one-off margin-leak/boom events on owned fronts (`rollRevenueEvent`, every 90–210s, toast + sfx)
 - [ ] **ChopShopArmsManager** (weapons gated to Quequechan Mill #4 tier)
 - [ ] **WeatherController** ↔ vehicle friction
 - [ ] **Dialect Engine** (non-rhotic barks; Chip Worthington hard-Rs)
 - [ ] **RadioManager** integration with story milestones
 - [~] Save/load (IndexedDB/localStorage) + autosave + multiple slots — localStorage save + 20s autosave (GameSystems.tsx); multi-slot TODO
-- [~] Time of day clock + day counter; time-skip — HUD clock from shared.hour; day counter + time-skip TODO
+- [x] Time of day clock + day counter; time-skip — HUD clock + **Day N** counter (midnight rollover) + **safehouse sleep** time-skip (shared.day, DayNight, Safehouse, HUD)
 - [ ] Respect/reputation + faction standing
 
 ## 16. Missions & content
 - [~] **“Off the Boat”** opener (arrival → Bethel → fish-pier ambush → fog getaway → safehouse) — 3-step playable version (Bethel → steal car → safehouse); ambush/fog beats TODO
-- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar live; remaining primitives TODO
+- [~] Mission framework primitives: go-to, follow, deliver, chase, escape, eliminate, protect, steal, tail, timed, stealth — go-to + steal/needCar + **deliver** + **escape (noHeat: lose the cops)** live; follow/eliminate/protect/tail/timed/stealth TODO
 - [ ] Cutscene system (scripted camera + dialogue + subtitles)
-- [ ] Act I (New Bedford): harbor takeover arc
-- [ ] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing)
+- [~] Act I (New Bedford): harbor takeover arc — **Auction Rules** (lean on Sully's collectors → cool the car at Reggie's) + **The Linguiça Run** + **Harbor Heat** (break Sully's grip, lose the cops) playable in the chain; Sully boss beat TODO
+- [~] Act II (Fall River): “Acquitted” (Borden) + “The Undefeated” (boxing) — **Spindle City** (I-195 over the Braga to Battleship Cove) + **Acquitted** (Borden House → run the ledger, lose the tail) playable; The Undefeated waits on the Brockton pull
 - [ ] Act III (Cape + “Gloria” storm) → Battleship Cove finale
 - [ ] Branching/optional outcomes; mission replay
 - [ ] Dialogue system (NPC conversations, choices where relevant)
@@ -264,7 +264,7 @@ time; keep the build green; be honest about status.
 
 ## 19. Audio & music
 - [x] Radio: 4 stations (WHALE, The Rage, The Anvil, Maré Alta) — TTS hosts, music, switching/mute
-- [~] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — scripts ~4x longer + ad/ident/news rotation + **wanted/weather reactions** (radioEngine); mission-milestone reactions TODO
+- [x] Radio depth: longer scripts, ad reads, weather/news, hosts react to milestones — 50+ lines/host + ad/ident/news rotation + **wanted/weather reactions** + **milestone reactions** via `radio.flashNews()` (evade-chase, buy-a-front)
 - [ ] More stations + larger procedural/licensed-free music sets
 - [~] VO pipeline for NPC/mission dialogue (TTS now, recorded later) — ElevenLabs server proxy (api/tts.ts) + vo.ts client wired to radio hosts, Web-Speech fallback; NPC/mission dialogue hookup TODO
 - [ ] Mission/score adaptive music layers (calm/tension/chase)
@@ -280,7 +280,7 @@ time; keep the build green; be honest about status.
 
 ## 21. UI / UX
 - [x] Basic HUD (title, controls, mode)
-- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, objective, heading, **cop blips + police-station marker**); property icons/rotation TODO
+- [~] Minimap/radar (rotation, streets, property icons, hostile blips, lighthouse sweep, objective) — player-centered radar (Minimap.tsx: roads, water, parks, objective, heading, cop blips, police/hospital markers, **business-front icons** (owned filled / buyable hollow), waypoint); rotation TODO
 - [~] Health/armor, stamina, wanted badges (police + faction), wallet, ammo, weapon — health + stamina bars + police/faction badges + wallet + clock + weapon (HUD.tsx); armor/ammo TODO
 - [~] Objective markers + waypoints + on-screen distance — world beam/ring marker + map blip + **on-screen metres** to objective (HUD); off-screen waypoint arrow TODO
 - [~] Interaction prompts + context hints — contextual prompts (E steal/enter, B buy) + control crib (HUD); richer context hints TODO
@@ -291,7 +291,7 @@ time; keep the build green; be honest about status.
 ## 22. UI aesthetics & menus
 - [~] **1986 retro UI** theme (fonts, colors, CRT/neon styling) — consistent kit — courier/neon palette across HUD, menus, title, toasts; CRT shader/full kit TODO
 - [~] Main menu (New/Continue/Load/Settings/Extras) with art + ambient scene — title/start screen over the live world with tips (StartMenu.tsx); New/Continue/Load split TODO
-- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, volume, reset); mission/stats screens TODO
+- [~] Pause menu, mission screen, stats/progress screen — pause/**settings** overlay (resume, view, weather, effects, **shadows**, volume, reset) + **Stats overlay** (day/health/cash/wanted/fronts/scrimshaw/mission) + **Credits**; dedicated mission screen TODO
 - [~] Loading screens with art + tips/lore — title screen doubles as a loading screen with rotating tips (StartMenu.tsx); art TODO
 - [ ] Map/HUD icon set; mission-text styling; credits
 - [ ] Photo-mode UI (filters, frames, stickers)
@@ -311,18 +311,18 @@ time; keep the build green; be honest about status.
 - [ ] Aim/over-the-shoulder camera; lock-on framing
 - [ ] Cinematic/cutscene camera rig; mission intro fly-bys
 - [ ] Photo mode free-cam (already exists on earth page — port + expand)
-- [ ] Smoothing, FOV options, motion-sickness comfort settings
+- [~] Smoothing, FOV options, motion-sickness comfort settings — **FOV slider (45–85°)** in pause settings, persisted, feeds the chase/eye camera base FOV (FollowCamera); per-axis comfort options TODO
 
 ## 25. Accessibility
 - [ ] Subtitles + size/background options
-- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + action buttons (incl. gun + fire) for phones, **drag-to-move + resize with persisted layout** (TouchControls.tsx); KB/M remap + gamepad TODO
+- [~] Full control remap; gamepad + KB/M; **touch** — on-screen thumb-stick + a **full action-button set** (enter, fire, hit, gun, **handbrake + sprint held**, horn, map, menu, buy, outfit, photo, sleep, weather, weapon 1–4), each **draggable + resizable + show/hide toggle**, layout persisted (TouchControls.tsx, input.setVirtualHold); KB/M remap TODO
 - [ ] Colorblind modes; UI scale; high-contrast
 - [ ] Aim assist; difficulty options; hold-vs-toggle
 - [ ] Reduce-motion / camera-shake toggle; flashing-lights warning
 
 ## 26. Save / settings / onboarding
 - [ ] Save/load UI + autosave + slots + cloud-ready format
-- [ ] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls
+- [~] Settings: graphics presets + toggles (shadows, post FX, draw distance), audio mix, controls — **Shadows on/off** + Effects on/off + volume + weather + camera-shake toggles, persisted (PauseMenu/GameSystems); draw-distance/quality presets + control remap TODO
 - [ ] First-time tutorial / control onboarding (the opener doubles as this)
 - [ ] Resume/“continue” flow; new-game-plus (stretch)
 
@@ -362,7 +362,7 @@ time; keep the build green; be honest about status.
 - [ ] Cross-browser + perf testing; input device testing
 - [ ] Bug tracker / known-issues list
 - [ ] Release notes + in-game version stamp
-- [ ] Legal/attribution page (OSM ODbL, model licenses, parody disclaimer)
+- [x] Legal/attribution page (OSM ODbL, model licenses, parody disclaimer) — Credits overlay in the pause menu (OSM ODbL, CesiumMan CC-BY, engine/audio credits, parody disclaimer) (PauseMenu.tsx)
 
 ## 31. Parked / external
 - [~] Photoreal Google 3D Tiles build (`earth.html`) — full play world built; **blocked on billed Google key**; revisit if resolved

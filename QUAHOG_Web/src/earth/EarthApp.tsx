@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Sky } from "@react-three/drei";
@@ -9,10 +9,10 @@ import {
   TilesAttributionOverlay,
   EastNorthUpFrame,
 } from "3d-tiles-renderer/r3f";
-import { GoogleCloudAuthPlugin } from "3d-tiles-renderer/plugins";
+import { GoogleCloudAuthPlugin, CesiumIonAuthPlugin } from "3d-tiles-renderer/plugins";
 import { WGS84_ELLIPSOID } from "3d-tiles-renderer/three";
 import { loadSlice, type Slice } from "../slice";
-import { installInput } from "../input";
+import { installInput, setVirtualMove, virtualTap } from "../input";
 import { computeSpawn } from "./follow";
 import { useContext } from "react";
 import { TilesRendererContext } from "3d-tiles-renderer/r3f";
@@ -20,9 +20,14 @@ import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
 import { Radio } from "../audio/Radio";
 
-// Mount Hope on Google Photorealistic 3D Tiles. Browser fetches tiles from
-// tile.googleapis.com. Provide a Google Maps key (Map Tiles API) via
-// ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
+// Mount Hope on Google Photorealistic 3D Tiles. Two ways to authenticate:
+//   • Cesium ion access token (FREE tier, easiest): ?ion=TOKEN or
+//     VITE_CESIUM_ION_TOKEN — streams the same Google tiles via ion asset 2275207.
+//   • Google Maps key (Map Tiles API): ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
+// If both are supplied, ion wins.
+
+// Cesium ion's hosted copy of Google Photorealistic 3D Tiles.
+const ION_GOOGLE_3D_TILES = "2275207";
 
 const FALLBACK = { lat: 41.636, lon: -70.9205 };
 const PED_CENTER: [number, number] = [-266, 100];
@@ -36,10 +41,17 @@ const SPOTS = [
   { name: "Fall River", sub: "Downtown", nb: false, lat: 41.7015, lon: -71.1547 },
 ];
 
-function getApiKey(): string | null {
-  const fromUrl = new URLSearchParams(window.location.search).get("key");
-  const fromEnv = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined;
-  return fromUrl || fromEnv || null;
+type TileSource = { kind: "ion" | "google"; token: string };
+
+// Cesium ion is preferred when present — a free ion token is much easier to get
+// than a billing-enabled Google Maps key, and serves the same photoreal tiles.
+function getTileSource(): TileSource | null {
+  const q = new URLSearchParams(window.location.search);
+  const ion = q.get("ion") || (import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined);
+  if (ion) return { kind: "ion", token: ion };
+  const key = q.get("key") || (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined);
+  if (key) return { kind: "google", token: key };
+  return null;
 }
 
 const WX: Record<Weather, { sun: number; sunColor: string; bg: string; fog: [number, number]; sky: boolean }> = {
@@ -49,7 +61,7 @@ const WX: Record<Weather, { sun: number; sunColor: string; bg: string; fog: [num
 };
 
 export function EarthApp() {
-  const apiKey = typeof window !== "undefined" ? getApiKey() : null;
+  const source = typeof window !== "undefined" ? getTileSource() : null;
   const [slice, setSlice] = useState<Slice | null>(null);
   const [mode, setMode] = useState<"play" | "orbit">("orbit");
   const [view, setView] = useState<View>("third");
@@ -68,7 +80,7 @@ export function EarthApp() {
     return () => clearInterval(id);
   }, []);
 
-  if (!apiKey) return <NoKeyNotice />;
+  if (!source) return <NoKeyNotice />;
 
   const spot = SPOTS[spotIdx];
   const anchor = spot.nb && slice ? slice.origin : { lat: spot.lat, lon: spot.lon };
@@ -80,7 +92,6 @@ export function EarthApp() {
       <Canvas shadows dpr={[1, 1.5]} camera={{ position: [0, 0, 2e7], near: 0.5, far: 1e8 }}>
         <ContextGuard />
         <color attach="background" args={[wx.bg]} />
-        {mode === "play" && <fog attach="fog" args={[wx.bg, wx.fog[0], wx.fog[1]]} />}
         {wx.sky && <Sky sunPosition={[120, 80, 60]} turbidity={weather === "cloudy" ? 8 : 3} rayleigh={1.2} />}
         <hemisphereLight args={["#dceaff", "#8a8678", 0.9]} />
         <directionalLight position={[120, 200, 80]} intensity={wx.sun} color={wx.sunColor} castShadow />
@@ -89,8 +100,12 @@ export function EarthApp() {
         {/* errorTarget: the higher it is, the coarser/faster tiles load. Street-
             level (play) cameras need this raised or the deepest LOD never streams
             in and the ground stays blank. */}
-        <TilesRenderer key={apiKey} errorTarget={32}>
-          <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: apiKey }]} />
+        <TilesRenderer key={source.token} errorTarget={32}>
+          {source.kind === "ion" ? (
+            <TilesPlugin plugin={CesiumIonAuthPlugin} args={[{ apiToken: source.token, assetId: ION_GOOGLE_3D_TILES, autoRefreshToken: true }]} />
+          ) : (
+            <TilesPlugin plugin={GoogleCloudAuthPlugin} args={[{ apiToken: source.token }]} />
+          )}
           <TilesDiag onMissing={() => setTilesProblem(true)} onOk={() => setTilesProblem(false)} />
 
           {mode === "orbit" ? (
@@ -122,6 +137,7 @@ export function EarthApp() {
         weather={weather}
       />
       <Radio />
+      {mode === "play" && <EarthTouch />}
       {mode === "play" && !ready && !tilesProblem && <Loading />}
       {tilesProblem && <TilesProblem />}
     </>
@@ -149,9 +165,11 @@ function TilesDiag({ onMissing, onOk }: { onMissing: () => void; onOk: () => voi
 function TilesProblem() {
   return (
     <div style={{ position: "fixed", left: "50%", bottom: 24, transform: "translateX(-50%)", zIndex: 5, maxWidth: 460, background: "rgba(40,10,10,.9)", border: "1px solid #7a2c2c", borderRadius: 8, padding: "10px 14px", color: "#ffd9d9", font: "12px/1.5 'Courier New', monospace", textAlign: "center" }}>
-      <b>Photoreal tiles aren't loading.</b> The map data isn't coming back from Google —
-      almost always the API key: Map Tiles API not enabled, billing off, or over quota.
-      Check the key in Google Cloud, then reload. (Movement still works; you're just on an empty surface.)
+      <b>Photoreal tiles aren't loading.</b> On the Cesium ion path this almost always
+      means you haven't added <b>Google Photorealistic 3D Tiles</b> to your ion assets
+      (Asset Depot → add, accept Google's terms) — or the token is bad/expired. On the
+      Google path: Map Tiles API not enabled, billing off, or over quota. Fix, then reload.
+      (Movement still works; you're just on an empty surface.)
     </div>
   );
 }
@@ -222,7 +240,7 @@ function Hud(props: {
           ))}
         </div>
         <div style={{ opacity: 0.55, fontSize: 9, marginTop: 8 }}>
-          Tiles © Google · Character: CesiumMan © Cesium, CC-BY 4.0
+          Tiles © Google
         </div>
       </div>
     </div>
@@ -239,19 +257,94 @@ function Loading() {
   );
 }
 
+// Minimal on-screen controls for phones in PLAY mode: a movement thumb-stick +
+// E (enter/exit car) and punch taps, feeding the shared virtual-input layer.
+// (The main game's TouchControls is bound to its own store, so earth needs its
+// own.) Only renders on coarse-pointer (touch) devices.
+function EarthTouch() {
+  const [touch, setTouch] = useState(false);
+  const [knob, setKnob] = useState({ x: 0, y: 0 });
+  const dragId = useRef<number | null>(null);
+  const stick = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const coarse = typeof window !== "undefined" &&
+      (window.matchMedia?.("(pointer: coarse)").matches || "ontouchstart" in window);
+    setTouch(!!coarse);
+  }, []);
+  if (!touch) return null;
+
+  const SZ = 130, KN = SZ * 0.42;
+  const moveStick = (cx: number, cy: number) => {
+    const el = stick.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    let dx = (cx - (r.left + r.width / 2)) / (r.width / 2);
+    let dy = (cy - (r.top + r.height / 2)) / (r.height / 2);
+    const m = Math.hypot(dx, dy); if (m > 1) { dx /= m; dy /= m; }
+    setKnob({ x: dx * (SZ / 2 - KN / 2), y: dy * (SZ / 2 - KN / 2) });
+    setVirtualMove(dx, -dy);
+  };
+
+  const tapBtn = (label: string, sub: string, action: string, style: React.CSSProperties, size: number) => (
+    <div
+      onPointerDown={(e) => { e.preventDefault(); e.currentTarget.setPointerCapture(e.pointerId); virtualTap(action); }}
+      style={{
+        position: "fixed", width: size, height: size, borderRadius: "50%", zIndex: 16, touchAction: "none",
+        background: "rgba(12,15,26,.7)", border: "2px solid rgba(120,110,170,.6)", color: "#fff",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+        fontFamily: "'Courier New', monospace", fontWeight: 700, lineHeight: 1, ...style,
+      }}
+    >
+      <span style={{ fontSize: size * 0.32 }}>{label}</span>
+      <span style={{ fontSize: Math.max(8, size * 0.15), opacity: 0.8 }}>{sub}</span>
+    </div>
+  );
+
+  return (
+    <>
+      <div
+        ref={stick}
+        onPointerDown={(e) => { dragId.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); moveStick(e.clientX, e.clientY); }}
+        onPointerMove={(e) => { if (dragId.current === e.pointerId) moveStick(e.clientX, e.clientY); }}
+        onPointerUp={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}
+        onPointerCancel={(e) => { if (dragId.current === e.pointerId) { dragId.current = null; setKnob({ x: 0, y: 0 }); setVirtualMove(0, 0); } }}
+        style={{
+          position: "fixed", left: 24, bottom: 24, width: SZ, height: SZ, borderRadius: "50%", zIndex: 16,
+          background: "rgba(12,15,26,.4)", border: "2px solid rgba(120,110,170,.5)", touchAction: "none",
+        }}
+      >
+        <div style={{
+          position: "absolute", left: SZ / 2 - KN / 2 + knob.x, top: SZ / 2 - KN / 2 + knob.y,
+          width: KN, height: KN, borderRadius: "50%",
+          background: "rgba(255,122,217,.6)", border: "2px solid rgba(255,255,255,.5)",
+        }} />
+      </div>
+      {tapBtn("E", "car", "KeyE", { right: 24, bottom: 30 }, 76)}
+      {tapBtn("👊", "punch", "KeyF", { right: 112, bottom: 30 }, 60)}
+    </>
+  );
+}
+
 function NoKeyNotice() {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#e7e0ff", background: "#05070d", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
-      <div style={{ maxWidth: 560 }}>
-        <h2 style={{ color: "#7ad9ff" }}>Mount Hope (photoreal) — needs a Google API key</h2>
-        <p>Renders Google's Photorealistic 3D Tiles. Needs a Google Maps Platform key with the <b>Map Tiles API</b> enabled.</p>
-        <p style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8 }}>
-          1. Google Cloud → enable <b>Map Tiles API</b>.<br />
-          2. Restrict the key to your site's domain.<br />
-          3. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?key=YOUR_KEY</code><br />
-          &nbsp;&nbsp;&nbsp;or set <code>VITE_GOOGLE_MAPS_API_KEY</code> at build time.
+      <div style={{ maxWidth: 600 }}>
+        <h2 style={{ color: "#7ad9ff" }}>Mount Hope (photoreal) — needs an access token</h2>
+        <p>Renders Google's Photorealistic 3D Tiles (real buildings + streets). Pick either source:</p>
+        <p style={{ textAlign: "left", background: "#0c1a14", padding: 12, borderRadius: 8, border: "1px solid #1f5c44" }}>
+          <b style={{ color: "#8ff0c2" }}>Cesium ion — free, easiest:</b><br />
+          1. Sign up at <code style={{ color: "#9fd8ff" }}>cesium.com/ion</code> (free).<br />
+          2. <b>Asset Depot</b> → add <b>Google Photorealistic 3D Tiles</b> to your assets
+          (accept Google's terms). <i>Without this the screen stays blank.</i><br />
+          3. Copy your <b>access token</b> from the dashboard.<br />
+          4. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?ion=YOUR_TOKEN</code><br />
+          &nbsp;&nbsp;&nbsp;or set <code>VITE_CESIUM_ION_TOKEN</code> at build time.
         </p>
-        <p style={{ opacity: 0.7 }}>Google bills per tile session and its terms govern use.</p>
+        <p style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8 }}>
+          <b style={{ color: "#9fd8ff" }}>Google Maps key — alternative:</b><br />
+          1. Google Cloud → enable <b>Map Tiles API</b> (needs billing on).<br />
+          2. Open: <code style={{ color: "#9fd8ff" }}>/earth.html?key=YOUR_KEY</code> or set <code>VITE_GOOGLE_MAPS_API_KEY</code>.
+        </p>
+        <p style={{ opacity: 0.7 }}>Either way the tiles are © Google and its terms govern use; metered per session.</p>
       </div>
     </div>
   );

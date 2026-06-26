@@ -6,10 +6,11 @@ import type { Road } from "../slice";
 // commercial frontages near the core — instanced, two-tone, angled out over the
 // "sidewalk". Cheap way to make streets read as shops, not blank walls.
 
-const RADIUS = 240;
-const MAX = 280;
+const RADIUS = 260;
+const MAX = 360;
 const COMMERCIAL = new Set(["primary", "secondary", "tertiary", "unclassified", "living_street"]);
-const COLORS = ["#9c2b2b", "#1f5e3a", "#21456e", "#7a4a8c", "#b5862b", "#2a6f6f"];
+const COLORS = ["#9c2b2b", "#1f5e3a", "#21456e", "#7a4a8c", "#b5862b", "#2a6f6f",
+  "#8a3a1f", "#3a5a8c", "#6a2a4a", "#2a6a3a", "#a8902b", "#444a55"];
 const _m = new THREE.Matrix4();
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
@@ -52,6 +53,7 @@ export function Awnings({ roads, center }: { roads: Road[]; center: [number, num
     for (let i = 0; i < places.length; i++) {
       _e.set(-0.5, places[i].rot, 0); // tilt the awning down/out
       _q.setFromEuler(_e);
+      _s.set(0.82 + ((i * 0.6180339887) % 1) * 0.5, 1, 0.85 + ((i * 0.382) % 1) * 0.4); // width/depth variety
       _m.compose(_p.set(places[i].x, 3, places[i].z), _q, _s);
       mesh.setMatrixAt(i, _m);
       mesh.setColorAt(i, _c.set(COLORS[places[i].c % COLORS.length]));

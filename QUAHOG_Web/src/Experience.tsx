@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
+import { useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
 import { useGame } from "./store";
-import { SatelliteGround } from "./world/SatelliteGround";
+import { Ground } from "./world/Ground";
 import { Roads } from "./world/Roads";
 import { Bridges } from "./world/Bridges";
 import { StreamingBuildings } from "./world/StreamingBuildings";
@@ -22,6 +23,19 @@ import { NeonSigns } from "./world/NeonSigns";
 import { StreetSigns } from "./world/StreetSigns";
 import { TrafficLights } from "./world/TrafficLights";
 import { ParkedCars } from "./world/ParkedCars";
+import { StreetExtras } from "./world/StreetExtras";
+import { RoadFixtures } from "./world/RoadFixtures";
+import { Foliage } from "./world/Foliage";
+import { Fences } from "./world/Fences";
+import { Billboards } from "./world/Billboards";
+import { Dumpsters } from "./world/Dumpsters";
+import { HurricaneBarrier } from "./world/HurricaneBarrier";
+import { FlatAreas } from "./world/FlatAreas";
+import { Rail } from "./world/Rail";
+import { Piers } from "./world/Piers";
+import { AreaTrees } from "./world/AreaTrees";
+import { CullByDistance } from "./world/CullByDistance";
+import { Steeples } from "./world/Steeples";
 import { Posters } from "./world/Posters";
 import { Collectibles } from "./world/Collectibles";
 import { Pickups } from "./world/Pickups";
@@ -29,6 +43,8 @@ import { HealthPickups } from "./world/HealthPickups";
 import { Race } from "./world/Race";
 import { Impacts } from "./world/Impacts";
 import { HarborProps } from "./world/HarborProps";
+import { Waterfront } from "./world/Waterfront";
+import { PortClutter } from "./world/PortClutter";
 import { Marina } from "./world/Marina";
 import { Gulls } from "./world/Gulls";
 import { SkidMarks } from "./world/SkidMarks";
@@ -58,30 +74,49 @@ function FxGate() {
   return on ? <Effects /> : null;
 }
 
+// Shadow rendering toggle (§26) — a real perf lever for low-end / mobile: when
+// off, the per-frame shadow-map pass is skipped entirely.
+function ShadowGate() {
+  const on = useGame((s) => s.shadows);
+  const gl = useThree((s) => s.gl);
+  useEffect(() => {
+    gl.shadowMap.enabled = on;
+    gl.shadowMap.needsUpdate = true;
+  }, [gl, on]);
+  return null;
+}
+
 // Landmarks rendered as hand-detailed models (so the generic beam/label is skipped).
 const MODELED = new Set(["Seamen's Bethel"]);
+// OSM highway types that are not real streets and only added stray pavement to
+// the city (driveways, parking-lot aisles, alleys, indoor corridors, etc.).
+const SKIP_HIGHWAY = new Set(["service", "construction", "corridor", "track", "proposed", "raceway", "bus_guideway", "busway", "escape"]);
 // Playable core (slice-local east, north) — drives building colliders + ped density.
 const CORE: [number, number] = [-266, -100];
 
-export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
+export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => void; onProgress?: (f: number) => void }) {
   const [slice, setSlice] = useState<Slice | null>(null);
   const gameId = useGame((s) => s.gameId); // remount per-game props (collectibles) on New Game
 
   useEffect(() => {
     let alive = true;
-    loadSlice()
+    loadSlice("slice-newbedford.json", (f) => { if (alive) onProgress?.(f); })
       .then((s) => {
         if (!alive) return;
+        // Drop non-street OSM ways that cluttered the map with stray pavement:
+        // service drives/parking aisles/alleys (7k+), plus construction/corridor/
+        // track. Real streets, footpaths, and highways are kept.
+        s.roads = s.roads.filter((r) => !SKIP_HIGHWAY.has(r.highway));
         setSlice(s);
         useGame.getState().setSlice(s);
-        setWaterZones(s.water ?? [], s.roads);
+        setWaterZones(s.water ?? [], s.roads, s.islands ?? [], s.barrier ?? []);
         onReady?.(s);
       })
       .catch((e) => console.error(e));
     return () => {
       alive = false;
     };
-  }, [onReady]);
+  }, [onReady, onProgress]);
 
   return (
     <>
@@ -93,7 +128,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       <Hazards />
 
       <Physics gravity={[0, -9.81, 0]}>
-        <SatelliteGround origin={slice?.origin} />
+        <Ground />
         <Player />
         <Car />
         <Boat />
@@ -113,12 +148,32 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
         )}
       </Physics>
 
-      {slice && slice.water?.length > 0 && <Water polys={slice.water} />}
+      {/* Area polys sit BELOW the road apron (0.04) so roads/sidewalks always
+          render over them — at the old 0.05-0.06 they tied the road surface
+          (0.06) and z-fought, bleeding green/grey through the pavement. */}
+      {slice && <FlatAreas polys={slice.parking} color="#46474d" y={0.03} repeat={0.06} roughness={0.95} />}
+      {slice && <FlatAreas polys={slice.beach} color="#c8b88a" y={0.026} repeat={0.04} />}
+      {slice && <FlatAreas polys={slice.wood} color="#39512c" y={0.032} />}
+      {slice && <FlatAreas polys={slice.cemetery} color="#566048" y={0.034} />}
+      {slice && <FlatAreas polys={slice.parks} color="#4f6e3a" y={0.036} />}
+      {slice && <Rail paths={slice.rail} />}
+      {slice && <Piers paths={slice.pier} />}
+      {slice && <AreaTrees areas={slice.wood} step={9} cap={800} />}
+      {slice && <AreaTrees areas={slice.parks} step={16} cap={300} />}
+      {slice && <Steeples points={slice.church} />}
+      {slice && slice.water?.length > 0 && <Water polys={slice.water} holes={slice.islands ?? []} />}
       {slice && slice.water?.length > 0 && (
         <HarborProps polys={slice.water} center={[CORE[0], -CORE[1]]} />
       )}
+      {slice && slice.water?.length > 0 && (
+        <Waterfront polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
+      {slice && slice.water?.length > 0 && (
+        <PortClutter polys={slice.water} center={[CORE[0], -CORE[1]]} />
+      )}
       <Marina />
       <Gulls />
+      <CullByDistance center={CORE} radius={820}>
       {slice && <Props roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Awnings roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
@@ -128,6 +183,14 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <StreetExtras roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <RoadFixtures roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Foliage roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Fences roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Billboards roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Dumpsters roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      </CullByDistance>
+      {slice && <HurricaneBarrier paths={slice.barrier} />}
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />
@@ -149,6 +212,7 @@ export function Experience({ onReady }: { onReady?: (s: Slice) => void }) {
 
       <FollowCamera />
       <FxGate />
+      <ShadowGate />
     </>
   );
 }
