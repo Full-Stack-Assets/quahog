@@ -1,0 +1,39 @@
+{
+  "businesses": [
+    {
+      "id": "anvil",
+      "name": "The Anvil Garage",
+      "cost": 500,
+      "dailyIncome": 220,
+      "pos": [-320.0, 0.0, 60.0]
+    },
+    {
+      "id": "quohog",
+      "name": "Quohog Republic",
+      "cost": 800,
+      "dailyIncome": 320,
+      "pos": [-240.0, 0.0, 122.0]
+    },
+    {
+      "id": "linguica_linq",
+      "name": "Linguica Linq",
+      "cost": 650,
+      "dailyIncome": 260,
+      "pos": [-300.0, 0.0, 92.0]
+    },
+    {
+      "id": "whaling_cab",
+      "name": "Whaling City Cab",
+      "cost": 900,
+      "dailyIncome": 360,
+      "pos": [-220.0, 0.0, 176.0]
+    },
+    {
+      "id": "off_the_hook",
+      "name": "Off the Hook Bar and Grill",
+      "cost": 1800,
+      "dailyIncome": 600,
+      "pos": [6092.0, 0.0, 4485.0]
+    }
+  ]
+}
