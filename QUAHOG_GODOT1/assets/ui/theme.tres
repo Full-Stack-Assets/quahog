@@ -1,0 +1,22 @@
+[gd_resource type="Theme" format=3]
+
+[ext_resource type="StyleBox" path="res://assets/ui/btn_play.tres" id="1"]
+[ext_resource type="StyleBox" path="res://assets/ui/panel_dialog.tres" id="2"]
+[ext_resource type="StyleBox" path="res://assets/ui/panel_hud.tres" id="3"]
+
+[resource]
+Button/colors/font_color = Color(0, 0, 0, 0)
+Button/colors/font_disabled_color = Color(0, 0, 0, 0)
+Button/colors/font_focus_color = Color(0, 0, 0, 0)
+Button/colors/font_hover_color = Color(0, 0, 0, 0)
+Button/colors/font_pressed_color = Color(0, 0, 0, 0)
+Button/styles/disabled = ExtResource("1")
+Button/styles/focus = ExtResource("1")
+Button/styles/hover = ExtResource("1")
+Button/styles/normal = ExtResource("1")
+Button/styles/pressed = ExtResource("1")
+DialogPanel/styles/panel = ExtResource("2")
+DialogPanelPanelContainer/styles/panel = ExtResource("2")
+HudPanel/styles/panel = ExtResource("3")
+HudPanelPanelContainer/styles/panel = ExtResource("3")
+Label/colors/font_color = Color(0.1, 0.1, 0.1, 1)

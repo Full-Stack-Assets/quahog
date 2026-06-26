@@ -1,0 +1,830 @@
+{
+  "version": 1,
+  "assets": {
+    "assets/characters/protagonist/protagonist.glb": {
+      "tool": "mcp__game-3d-models__generate_characters_batch",
+      "primary_prompt": "A working-class New England man in his mid-30s, short dark hair, light stubble, wearing a weathered dark canvas work jacket over a grey hoodie, faded blue jeans and scuffed brown work boots. Grounded, gritty, realistic. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe.",
+      "raw_input": {
+        "name": "protagonist",
+        "style": "realistic",
+        "prompt": "A working-class New England man in his mid-30s, short dark hair, light stubble, wearing a weathered dark canvas work jacket over a grey hoodie, faded blue jeans and scuffed brown work boots. Grounded, gritty, realistic. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe."
+      },
+      "tool_use_id": "toolu_01Lw3qBW6d8Qm8XURXk7fFDG",
+      "updated_at": "2026-06-25T19:40:49.311623"
+    },
+    "assets/characters/mission_giver/mission_giver.glb": {
+      "tool": "mcp__game-3d-models__generate_characters_batch",
+      "primary_prompt": "A shady middle-aged New England fixer, balding with grey stubble, slightly heavyset, wearing a long dark wool overcoat over a rumpled collared shirt, with a suspicious squinting expression. Grounded crime-drama character. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe.",
+      "raw_input": {
+        "name": "mission_giver",
+        "style": "realistic",
+        "prompt": "A shady middle-aged New England fixer, balding with grey stubble, slightly heavyset, wearing a long dark wool overcoat over a rumpled collared shirt, with a suspicious squinting expression. Grounded crime-drama character. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe."
+      },
+      "tool_use_id": "toolu_01Lw3qBW6d8Qm8XURXk7fFDG",
+      "updated_at": "2026-06-25T19:40:49.311623"
+    },
+    "assets/characters/pedestrian_male/pedestrian_male.glb": {
+      "tool": "mcp__game-3d-models__generate_characters_batch",
+      "primary_prompt": "An ordinary working-class man in his 40s, plaid flannel shirt, blue jeans, a worn baseball cap, average build, neutral expression. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe.",
+      "raw_input": {
+        "name": "pedestrian_male",
+        "style": "realistic",
+        "prompt": "An ordinary working-class man in his 40s, plaid flannel shirt, blue jeans, a worn baseball cap, average build, neutral expression. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe."
+      },
+      "tool_use_id": "toolu_01Lw3qBW6d8Qm8XURXk7fFDG",
+      "updated_at": "2026-06-25T19:40:49.311623"
+    },
+    "assets/characters/pedestrian_female/pedestrian_female.glb": {
+      "tool": "mcp__game-3d-models__generate_characters_batch",
+      "primary_prompt": "An ordinary working-class woman in her 30s wearing a navy puffer jacket, jeans and sneakers, brown hair in a ponytail, neutral expression. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe.",
+      "raw_input": {
+        "name": "pedestrian_female",
+        "style": "realistic",
+        "prompt": "An ordinary working-class woman in her 30s wearing a navy puffer jacket, jeans and sneakers, brown hair in a ponytail, neutral expression. Full body, standing upright in a T-pose, arms straight out to the sides, complete silhouette from head to toe."
+      },
+      "tool_use_id": "toolu_01Lw3qBW6d8Qm8XURXk7fFDG",
+      "updated_at": "2026-06-25T19:40:49.311623"
+    },
+    "assets/environment/buildings/triple_decker.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "A classic New England triple-decker apartment house: three stories tall, weathered grey clapboard siding, three stacked front porches with white railings, pitched shingle roof. Urban residential, worn and lived-in. Single freestanding building.",
+      "raw_input": {
+        "name": "triple_decker",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "A classic New England triple-decker apartment house: three stories tall, weathered grey clapboard siding, three stacked front porches with white railings, pitched shingle roof. Urban residential, worn and lived-in. Single freestanding building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/environment/buildings/brick_mill.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "An old New England textile mill building, weathered dark red brick, a tall grid of arched windows across four floors, flat roof, a tall brick smokestack on one side. Industrial early-1900s architecture. Single freestanding building.",
+      "raw_input": {
+        "name": "brick_mill",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "An old New England textile mill building, weathered dark red brick, a tall grid of arched windows across four floors, flat roof, a tall brick smokestack on one side. Industrial early-1900s architecture. Single freestanding building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/environment/buildings/diner.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "A small classic American roadside diner, stainless steel siding with brick base, large plate-glass windows, flat roof with a blank signage band, retro Americana, slightly weathered. Single freestanding building.",
+      "raw_input": {
+        "name": "diner",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "A small classic American roadside diner, stainless steel siding with brick base, large plate-glass windows, flat roof with a blank signage band, retro Americana, slightly weathered. Single freestanding building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/environment/buildings/pawn_shop.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "A small two-story urban storefront shop, weathered brick facade, large ground-floor display window, a metal roll-up security shutter, a blank signage band above the door, flat roof. Gritty city street building.",
+      "raw_input": {
+        "name": "pawn_shop",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "A small two-story urban storefront shop, weathered brick facade, large ground-floor display window, a metal roll-up security shutter, a blank signage band above the door, flat roof. Gritty city street building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/environment/buildings/civic_building.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "A small municipal civic building, grey granite stone facade, four columns flanking the entrance steps, tall arched windows, a low triangular pediment, official New England town-hall architecture, weathered. Single freestanding building.",
+      "raw_input": {
+        "name": "civic_building",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "A small municipal civic building, grey granite stone facade, four columns flanking the entrance steps, tall arched windows, a low triangular pediment, official New England town-hall architecture, weathered. Single freestanding building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/environment/buildings/corner_store.glb": {
+      "tool": "mcp__game-3d-models__generate_environment_batch",
+      "primary_prompt": "A two-story urban corner store, red brick lower level with a glass storefront, painted clapboard upper level, a fabric awning over the door, weathered city building. Single freestanding building.",
+      "raw_input": {
+        "name": "corner_store",
+        "category": "buildings",
+        "style": "realistic",
+        "prompt": "A two-story urban corner store, red brick lower level with a glass storefront, painted clapboard upper level, a fabric awning over the door, weathered city building. Single freestanding building."
+      },
+      "tool_use_id": "toolu_01SPtuta31ute4R39RynjRFZ",
+      "updated_at": "2026-06-25T19:43:12.376980"
+    },
+    "assets/props/decorations/streetlight.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A tall urban sodium-vapor streetlight: weathered grey metal pole with a single curved arm and an overhead cobra-head lamp fixture at the top.",
+      "raw_input": {
+        "name": "streetlight",
+        "category": "decorations",
+        "style": "realistic",
+        "prompt": "A tall urban sodium-vapor streetlight: weathered grey metal pole with a single curved arm and an overhead cobra-head lamp fixture at the top."
+      },
+      "tool_use_id": "toolu_01495ccWCh34M6YhGrCgibH1",
+      "updated_at": "2026-06-25T19:43:23.860250"
+    },
+    "assets/props/containers/dumpster.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A large dark green metal trash dumpster, dented and weathered, with a closed flat lid.",
+      "raw_input": {
+        "name": "dumpster",
+        "category": "containers",
+        "style": "realistic",
+        "prompt": "A large dark green metal trash dumpster, dented and weathered, with a closed flat lid."
+      },
+      "tool_use_id": "toolu_01495ccWCh34M6YhGrCgibH1",
+      "updated_at": "2026-06-25T19:43:23.860250"
+    },
+    "assets/props/decorations/fire_hydrant.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A weathered red city fire hydrant with yellow caps, slightly rusted.",
+      "raw_input": {
+        "name": "fire_hydrant",
+        "category": "decorations",
+        "style": "realistic",
+        "prompt": "A weathered red city fire hydrant with yellow caps, slightly rusted."
+      },
+      "tool_use_id": "toolu_01495ccWCh34M6YhGrCgibH1",
+      "updated_at": "2026-06-25T19:43:23.860250"
+    },
+    "assets/props/furniture/park_bench.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A weathered public park bench with green wooden slats and black cast-iron frame.",
+      "raw_input": {
+        "name": "park_bench",
+        "category": "furniture",
+        "style": "realistic",
+        "prompt": "A weathered public park bench with green wooden slats and black cast-iron frame."
+      },
+      "tool_use_id": "toolu_01495ccWCh34M6YhGrCgibH1",
+      "updated_at": "2026-06-25T19:43:23.860250"
+    },
+    "assets/textures/floors/wet_asphalt.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "wet dark grey asphalt road surface, subtle cracks and patches, faint worn lane paint, rain-slicked reflective sheen",
+      "raw_input": {
+        "name": "wet_asphalt",
+        "category": "floors",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "wet dark grey asphalt road surface, subtle cracks and patches, faint worn lane paint, rain-slicked reflective sheen"
+      },
+      "tool_use_id": "toolu_012kukscELRDqPUrvUaE8zD3",
+      "updated_at": "2026-06-25T19:14:20.666913"
+    },
+    "assets/textures/floors/concrete_sidewalk.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "grey concrete sidewalk pavement with expansion joint lines, weathered and slightly stained, urban",
+      "raw_input": {
+        "name": "concrete_sidewalk",
+        "category": "floors",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "grey concrete sidewalk pavement with expansion joint lines, weathered and slightly stained, urban"
+      },
+      "tool_use_id": "toolu_012kukscELRDqPUrvUaE8zD3",
+      "updated_at": "2026-06-25T19:14:20.666913"
+    },
+    "assets/textures/walls/weathered_brick.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "weathered dark red brick wall with grey mortar, aged and slightly stained, urban industrial",
+      "raw_input": {
+        "name": "weathered_brick",
+        "category": "walls",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "weathered dark red brick wall with grey mortar, aged and slightly stained, urban industrial"
+      },
+      "tool_use_id": "toolu_012kukscELRDqPUrvUaE8zD3",
+      "updated_at": "2026-06-25T19:14:20.666913"
+    },
+    "assets/textures/floors/cobblestone.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "old grey cobblestone street, worn uneven rounded stones, wet, industrial waterfront",
+      "raw_input": {
+        "name": "cobblestone",
+        "category": "floors",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "old grey cobblestone street, worn uneven rounded stones, wet, industrial waterfront"
+      },
+      "tool_use_id": "toolu_012kukscELRDqPUrvUaE8zD3",
+      "updated_at": "2026-06-25T19:14:20.666913"
+    },
+    "assets/ui/wordmark_title.png": {
+      "tool": "mcp__game-assets__generate_ui_kit",
+      "primary_prompt": "MOUNT HOPE \u2014 Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood.",
+      "raw_input": {
+        "element": {
+          "id": "wordmark_title",
+          "type": "wordmark",
+          "label": "MOUNT HOPE",
+          "size": {
+            "width": 900,
+            "height": 300
+          },
+          "aspect": "wide_3_1"
+        },
+        "kit_styleBrief": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood."
+      },
+      "tool_use_id": "toolu_011yKZcGJwsLpkyW6yozNaeP",
+      "updated_at": "2026-06-25T19:14:43.505525"
+    },
+    "assets/ui/btn_play.png": {
+      "tool": "mcp__game-assets__generate_ui_kit",
+      "primary_prompt": "Play \u2014 Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood.",
+      "raw_input": {
+        "element": {
+          "id": "btn_play",
+          "type": "button_9slice",
+          "label": "Play",
+          "size": {
+            "width": 256,
+            "height": 96
+          },
+          "aspect": "wide_3_1"
+        },
+        "kit_styleBrief": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood."
+      },
+      "tool_use_id": "toolu_011yKZcGJwsLpkyW6yozNaeP",
+      "updated_at": "2026-06-25T19:14:43.505525"
+    },
+    "assets/ui/panel_dialog.png": {
+      "tool": "mcp__game-assets__generate_ui_kit",
+      "primary_prompt": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood.",
+      "raw_input": {
+        "element": {
+          "id": "panel_dialog",
+          "type": "panel_9slice",
+          "size": {
+            "width": 512,
+            "height": 288
+          },
+          "aspect": "landscape_16_9"
+        },
+        "kit_styleBrief": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood."
+      },
+      "tool_use_id": "toolu_011yKZcGJwsLpkyW6yozNaeP",
+      "updated_at": "2026-06-25T19:14:43.505525"
+    },
+    "assets/ui/panel_hud.png": {
+      "tool": "mcp__game-assets__generate_ui_kit",
+      "primary_prompt": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood.",
+      "raw_input": {
+        "element": {
+          "id": "panel_hud",
+          "type": "panel_9slice",
+          "size": {
+            "width": 480,
+            "height": 160
+          },
+          "aspect": "wide_3_1"
+        },
+        "kit_styleBrief": "Gritty New England crime drama, cinematic noir. Weathered industrial metal and aged brick, distressed edges, muted slate-teal and sodium-amber palette, soft sodium-light glow, rain-slicked highlights. Serious, grounded, film-noir mood."
+      },
+      "tool_use_id": "toolu_011yKZcGJwsLpkyW6yozNaeP",
+      "updated_at": "2026-06-25T19:14:43.505525"
+    },
+    "assets/ui/title_poster.webp": {
+      "tool": "mcp__game-assets__generate_2d_images_batch",
+      "primary_prompt": "gritty South Coast Massachusetts crime district at dusk, wet empty streets, weathered brick textile mills, triple-decker houses, coastal fog, glowing sodium streetlights, a used sedan parked at the curb, Open-World Crime, moody cinematic noir, realistic, used sedan, brick mill smokestack, foggy harbor, sodium streetlight, wet asphalt reflections",
+      "raw_input": {
+        "type": "title_poster",
+        "gameName": "Mount Hope",
+        "theme": "gritty South Coast Massachusetts crime district at dusk, wet empty streets, weathered brick textile mills, triple-decker houses, coastal fog, glowing sodium streetlights, a used sedan parked at the curb",
+        "genre": "Open-World Crime",
+        "style": "realistic",
+        "mood": "moody cinematic noir",
+        "elements": [
+          "used sedan",
+          "brick mill smokestack",
+          "foggy harbor",
+          "sodium streetlight",
+          "wet asphalt reflections"
+        ]
+      },
+      "tool_use_id": "toolu_0136Ah6rjQfiaLiDUGoVjuDV",
+      "updated_at": "2026-06-25T19:15:01.757297"
+    },
+    "assets/ui/loading_screen.png": {
+      "tool": "mcp__game-assets__generate_2d_images_batch",
+      "primary_prompt": "foggy New England waterfront street at dusk, wet asphalt reflecting orange sodium lights, weathered brick buildings, mist rolling in from the harbor, realistic",
+      "raw_input": {
+        "type": "loading_screen",
+        "gameName": "Mount Hope",
+        "theme": "foggy New England waterfront street at dusk, wet asphalt reflecting orange sodium lights, weathered brick buildings, mist rolling in from the harbor",
+        "style": "realistic",
+        "includeProgressBar": true
+      },
+      "tool_use_id": "toolu_0136Ah6rjQfiaLiDUGoVjuDV",
+      "updated_at": "2026-06-25T19:15:01.757297"
+    },
+    "assets/audio/ambient/ambient_coastal_city_coastal_city.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Moody coastal city ambience: distant seagulls, a faint harbor foghorn, low traffic hum, gentle wind, occasional distant dog bark",
+      "raw_input": {
+        "type": "ambient",
+        "name": "coastal_city",
+        "environment": "coastal_city",
+        "duration": 20,
+        "description": "Moody coastal city ambience: distant seagulls, a faint harbor foghorn, low traffic hum, gentle wind, occasional distant dog bark"
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/audio/music/music_menu_menu_theme.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "moody noir crime drama, slow brooding solo cello and sparse piano with ambient synth pad, tense and melancholic, slow 70 BPM",
+      "raw_input": {
+        "type": "music",
+        "name": "menu_theme",
+        "gameState": "menu",
+        "style": "moody noir crime drama, slow brooding solo cello and sparse piano with ambient synth pad",
+        "mood": "tense and melancholic",
+        "tempo": "slow 70 BPM",
+        "durationSeconds": 60
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/audio/music/music_exploration_explore_theme.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "ambient noir downtempo, sparse electric guitar, deep bass, atmospheric pads, moody and gritty, slow 80 BPM",
+      "raw_input": {
+        "type": "music",
+        "name": "explore_theme",
+        "gameState": "exploration",
+        "style": "ambient noir downtempo, sparse electric guitar, deep bass, atmospheric pads",
+        "mood": "moody and gritty",
+        "tempo": "slow 80 BPM",
+        "durationSeconds": 60
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/audio/sfx/player/player_footstep_concrete.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "A single soft footstep on wet concrete pavement",
+      "raw_input": {
+        "type": "sfx",
+        "name": "footstep_concrete",
+        "category": "player",
+        "duration": 0.5,
+        "description": "A single soft footstep on wet concrete pavement"
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/audio/sfx/ui/ui_ui_click.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "click",
+      "raw_input": {
+        "type": "ui",
+        "name": "ui_click",
+        "uiType": "click",
+        "style": "modern"
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/audio/sfx/ui/ui_ui_confirm.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "confirm",
+      "raw_input": {
+        "type": "ui",
+        "name": "ui_confirm",
+        "uiType": "confirm",
+        "style": "modern"
+      },
+      "tool_use_id": "toolu_01513MaqJS9R4UvdnggFtkZS",
+      "updated_at": "2026-06-25T19:15:25.816565"
+    },
+    "assets/props/vehicles/sedan.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A weathered late-1990s American four-door sedan, dull faded maroon paint, slightly rusted wheel wells, plain steel hubcaps, parked and empty. Grounded realistic working-class car, complete clean silhouette.",
+      "raw_input": {
+        "name": "sedan",
+        "category": "vehicles",
+        "style": "realistic",
+        "prompt": "A weathered late-1990s American four-door sedan, dull faded maroon paint, slightly rusted wheel wells, plain steel hubcaps, parked and empty. Grounded realistic working-class car, complete clean silhouette."
+      },
+      "tool_use_id": "toolu_015ckVjskfA2VFyBDTs3DhFK",
+      "updated_at": "2026-06-25T20:32:22.773611"
+    },
+    "assets/props/vehicles/taxi.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "A worn yellow city taxi cab based on a boxy 1990s American sedan, scuffed yellow paint, small dome light on roof, checker stripe along the doors, parked and empty. Grounded realistic, complete clean silhouette.",
+      "raw_input": {
+        "name": "taxi",
+        "category": "vehicles",
+        "style": "realistic",
+        "prompt": "A worn yellow city taxi cab based on a boxy 1990s American sedan, scuffed yellow paint, small dome light on roof, checker stripe along the doors, parked and empty. Grounded realistic, complete clean silhouette."
+      },
+      "tool_use_id": "toolu_015ckVjskfA2VFyBDTs3DhFK",
+      "updated_at": "2026-06-25T20:32:22.773611"
+    },
+    "assets/props/vehicles/suv.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "An older boxy dark green sport utility vehicle from the early 2000s, dusty matte paint, black plastic bumpers, roof rack, parked and empty. Grounded realistic working-class vehicle, complete clean silhouette.",
+      "raw_input": {
+        "name": "suv",
+        "category": "vehicles",
+        "style": "realistic",
+        "prompt": "An older boxy dark green sport utility vehicle from the early 2000s, dusty matte paint, black plastic bumpers, roof rack, parked and empty. Grounded realistic working-class vehicle, complete clean silhouette."
+      },
+      "tool_use_id": "toolu_015ckVjskfA2VFyBDTs3DhFK",
+      "updated_at": "2026-06-25T20:32:22.773611"
+    },
+    "assets/textures/walls/facade_windows_dusk.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "Seamless tileable multi-story New England brick apartment building facade, grid of evenly spaced rectangular windows, dark red-brown brick between floors, some windows glowing warm yellow at dusk, others dark, weathered urban masonry, flat orthographic front view, repeating both horizontally and vertically, no perspective",
+      "raw_input": {
+        "name": "facade_windows_dusk",
+        "category": "walls",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "Seamless tileable multi-story New England brick apartment building facade, grid of evenly spaced rectangular windows, dark red-brown brick between floors, some windows glowing warm yellow at dusk, others dark, weathered urban masonry, flat orthographic front view, repeating both horizontally and vertically, no perspective"
+      },
+      "tool_use_id": "toolu_01VgpcEn9bRQNSqxRkcgSLUP",
+      "updated_at": "2026-06-25T21:07:25.824204"
+    },
+    "assets/textures/walls/facade_concrete_office.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "Seamless tileable mid-century concrete office building facade, regular grid of large square windows in dark glass, grey weathered concrete panels between, faint reflections, flat orthographic front view, repeating both horizontally and vertically, no perspective, overcast lighting",
+      "raw_input": {
+        "name": "facade_concrete_office",
+        "category": "walls",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "Seamless tileable mid-century concrete office building facade, regular grid of large square windows in dark glass, grey weathered concrete panels between, faint reflections, flat orthographic front view, repeating both horizontally and vertically, no perspective, overcast lighting"
+      },
+      "tool_use_id": "toolu_01VgpcEn9bRQNSqxRkcgSLUP",
+      "updated_at": "2026-06-25T21:07:25.824204"
+    },
+    "assets/textures/walls/storefront_lit_strip.png": {
+      "tool": "mcp__game-assets__generate_textures_batch",
+      "primary_prompt": "Seamless horizontally tileable row of small-town storefronts at dusk, warm lit shop windows, glass doors, faded awnings, brick pilasters between shops, neon and signage glow, flat orthographic street-level view, repeating horizontally, no perspective",
+      "raw_input": {
+        "name": "storefront_lit_strip",
+        "category": "walls",
+        "style": "realistic",
+        "seamless": true,
+        "size": "1024",
+        "prompt": "Seamless horizontally tileable row of small-town storefronts at dusk, warm lit shop windows, glass doors, faded awnings, brick pilasters between shops, neon and signage glow, flat orthographic street-level view, repeating horizontally, no perspective"
+      },
+      "tool_use_id": "toolu_01VgpcEn9bRQNSqxRkcgSLUP",
+      "updated_at": "2026-06-25T21:07:25.824204"
+    },
+    "assets/props/weapons/pistol.glb": {
+      "tool": "mcp__game-3d-models__generate_weapons_batch",
+      "primary_prompt": "A compact modern 9mm semi-automatic handgun, matte black metal slide and frame, slightly worn, realistic, barrel pointing forward. Clean game-ready silhouette.",
+      "raw_input": {
+        "name": "pistol",
+        "weaponType": "pistol",
+        "prompt": "A compact modern 9mm semi-automatic handgun, matte black metal slide and frame, slightly worn, realistic, barrel pointing forward. Clean game-ready silhouette."
+      },
+      "tool_use_id": "toolu_01GtP8s3LkzoipV73u3BNoFW",
+      "updated_at": "2026-06-25T21:21:24.882536"
+    },
+    "assets/characters/cop/cop.glb": {
+      "tool": "mcp__game-3d-models__generate_characters_batch",
+      "primary_prompt": "A full body American city police officer standing in a T-pose, complete silhouette from head to toe. Navy blue patrol uniform, badge, utility belt, peaked cap, dark trousers and black boots. Grounded realistic, neutral expression, arms straight out.",
+      "raw_input": {
+        "name": "cop",
+        "style": "realistic",
+        "prompt": "A full body American city police officer standing in a T-pose, complete silhouette from head to toe. Navy blue patrol uniform, badge, utility belt, peaked cap, dark trousers and black boots. Grounded realistic, neutral expression, arms straight out."
+      },
+      "tool_use_id": "toolu_01XcPgQvvR44rNU2uh4cgRwB",
+      "updated_at": "2026-06-25T21:21:31.631425"
+    },
+    "assets/audio/sfx/weapon/weapon_pistol_shot.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Sharp loud 9mm pistol gunshot, single shot, punchy crack with a short tail, urban echo",
+      "raw_input": {
+        "type": "sfx",
+        "name": "pistol_shot",
+        "category": "weapon",
+        "description": "Sharp loud 9mm pistol gunshot, single shot, punchy crack with a short tail, urban echo",
+        "duration": 1
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/weapon/weapon_bullet_impact.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Bullet hitting concrete and metal, sharp ricochet thwack with debris",
+      "raw_input": {
+        "type": "sfx",
+        "name": "bullet_impact",
+        "category": "weapon",
+        "description": "Bullet hitting concrete and metal, sharp ricochet thwack with debris",
+        "duration": 0.8
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/weapon/weapon_pistol_reload.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Handgun magazine reload, mag drop, insert, slide rack click",
+      "raw_input": {
+        "type": "sfx",
+        "name": "pistol_reload",
+        "category": "weapon",
+        "description": "Handgun magazine reload, mag drop, insert, slide rack click",
+        "duration": 1.5
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Idling and revving four-cylinder car engine, smooth continuous loop, mid-range hum",
+      "raw_input": {
+        "type": "sfx",
+        "name": "car_engine_loop",
+        "category": "vehicle",
+        "description": "Idling and revving four-cylinder car engine, smooth continuous loop, mid-range hum",
+        "duration": 6
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/vehicle/vehicle_tire_screech.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Car tires screeching on asphalt during a hard turn, short skid",
+      "raw_input": {
+        "type": "sfx",
+        "name": "tire_screech",
+        "category": "vehicle",
+        "description": "Car tires screeching on asphalt during a hard turn, short skid",
+        "duration": 1.2
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/vehicle/vehicle_car_enter.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Car door opening and closing, getting into a car, latch thunk",
+      "raw_input": {
+        "type": "sfx",
+        "name": "car_enter",
+        "category": "vehicle",
+        "description": "Car door opening and closing, getting into a car, latch thunk",
+        "duration": 1
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/pickup/pickup_cash_reward.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Satisfying cash reward sound, register cha-ching with bright chime",
+      "raw_input": {
+        "type": "sfx",
+        "name": "cash_reward",
+        "category": "pickup",
+        "description": "Satisfying cash reward sound, register cha-ching with bright chime",
+        "duration": 1.2
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/environment/environment_police_siren.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "American police car siren wail, urgent looping wail-yelp",
+      "raw_input": {
+        "type": "sfx",
+        "name": "police_siren",
+        "category": "environment",
+        "description": "American police car siren wail, urgent looping wail-yelp",
+        "duration": 6
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/ui/ui_job_accept.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Positive mission accepted notification, short confident two-note chime",
+      "raw_input": {
+        "type": "sfx",
+        "name": "job_accept",
+        "category": "ui",
+        "description": "Positive mission accepted notification, short confident two-note chime",
+        "duration": 1
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/audio/sfx/ui/ui_busted.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Dramatic failure sting, busted by police, descending tense brass hit",
+      "raw_input": {
+        "type": "sfx",
+        "name": "busted",
+        "category": "ui",
+        "description": "Dramatic failure sting, busted by police, descending tense brass hit",
+        "duration": 2
+      },
+      "tool_use_id": "toolu_01DiATon2kr2x8n4FUVZc1Ke",
+      "updated_at": "2026-06-25T21:21:58.257240"
+    },
+    "assets/props/weapons/shotgun.glb": {
+      "tool": "mcp__game-3d-models__generate_weapons_batch",
+      "primary_prompt": "A pump-action combat shotgun, matte black and gunmetal, short barrel, wooden pump grip, slightly worn, realistic, barrel pointing forward. Clean game-ready silhouette.",
+      "raw_input": {
+        "name": "shotgun",
+        "weaponType": "shotgun",
+        "prompt": "A pump-action combat shotgun, matte black and gunmetal, short barrel, wooden pump grip, slightly worn, realistic, barrel pointing forward. Clean game-ready silhouette."
+      },
+      "tool_use_id": "toolu_016a7Es5A7GwoRnNiEPDLv32",
+      "updated_at": "2026-06-25T21:47:10.625379"
+    },
+    "assets/props/weapons/rifle.glb": {
+      "tool": "mcp__game-3d-models__generate_weapons_batch",
+      "primary_prompt": "A compact military assault rifle, matte black polymer and steel, short magazine, tactical handguard, realistic, barrel pointing forward. Clean game-ready silhouette.",
+      "raw_input": {
+        "name": "rifle",
+        "weaponType": "rifle",
+        "prompt": "A compact military assault rifle, matte black polymer and steel, short magazine, tactical handguard, realistic, barrel pointing forward. Clean game-ready silhouette."
+      },
+      "tool_use_id": "toolu_016a7Es5A7GwoRnNiEPDLv32",
+      "updated_at": "2026-06-25T21:47:10.625379"
+    },
+    "assets/props/weapons/bat.glb": {
+      "tool": "mcp__game-3d-models__generate_weapons_batch",
+      "primary_prompt": "A worn wooden baseball bat used as a street weapon, scuffed varnish, taped handle, a couple of dents. Realistic, blade/striking end pointing forward, clean game-ready silhouette.",
+      "raw_input": {
+        "name": "bat",
+        "weaponType": "melee",
+        "prompt": "A worn wooden baseball bat used as a street weapon, scuffed varnish, taped handle, a couple of dents. Realistic, blade/striking end pointing forward, clean game-ready silhouette."
+      },
+      "tool_use_id": "toolu_016a7Es5A7GwoRnNiEPDLv32",
+      "updated_at": "2026-06-25T21:47:10.625379"
+    },
+    "assets/audio/sfx/weapon/weapon_shotgun_blast.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Loud pump-action shotgun blast, deep boom with a punchy crack and shell rack",
+      "raw_input": {
+        "type": "sfx",
+        "name": "shotgun_blast",
+        "category": "weapon",
+        "description": "Loud pump-action shotgun blast, deep boom with a punchy crack and shell rack",
+        "duration": 1.2
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/weapon/weapon_rifle_shot.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Sharp automatic assault rifle single shot, fast snappy crack with metallic tail",
+      "raw_input": {
+        "type": "sfx",
+        "name": "rifle_shot",
+        "category": "weapon",
+        "description": "Sharp automatic assault rifle single shot, fast snappy crack with metallic tail",
+        "duration": 0.6
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/weapon/weapon_melee_swing.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Fast whoosh of a baseball bat swung hard through the air",
+      "raw_input": {
+        "type": "sfx",
+        "name": "melee_swing",
+        "category": "weapon",
+        "description": "Fast whoosh of a baseball bat swung hard through the air",
+        "duration": 0.6
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/weapon/weapon_melee_hit.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Heavy blunt baseball bat impact thud on a body, dull crunchy thwack",
+      "raw_input": {
+        "type": "sfx",
+        "name": "melee_hit",
+        "category": "weapon",
+        "description": "Heavy blunt baseball bat impact thud on a body, dull crunchy thwack",
+        "duration": 0.7
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/player/player_player_hurt.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Male grunt of pain from taking a bullet hit, short and gritty",
+      "raw_input": {
+        "type": "sfx",
+        "name": "player_hurt",
+        "category": "player",
+        "description": "Male grunt of pain from taking a bullet hit, short and gritty",
+        "duration": 0.6
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/player/player_player_wasted.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Dramatic dark slow-motion sting for the player being taken down, ominous low brass and reverb",
+      "raw_input": {
+        "type": "sfx",
+        "name": "player_wasted",
+        "category": "player",
+        "description": "Dramatic dark slow-motion sting for the player being taken down, ominous low brass and reverb",
+        "duration": 2.5
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/pickup/pickup_heal_use.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Health restore sound, soft warm rising chime with a heartbeat thump",
+      "raw_input": {
+        "type": "sfx",
+        "name": "heal_use",
+        "category": "pickup",
+        "description": "Health restore sound, soft warm rising chime with a heartbeat thump",
+        "duration": 1
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/pickup/pickup_armor_equip.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Putting on body armor, sturdy velcro and metallic clasp clunk",
+      "raw_input": {
+        "type": "sfx",
+        "name": "armor_equip",
+        "category": "pickup",
+        "description": "Putting on body armor, sturdy velcro and metallic clasp clunk",
+        "duration": 1
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/ui/ui_shop_buy.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Successful purchase confirmation, bright cash register ka-ching with a positive chime",
+      "raw_input": {
+        "type": "ui",
+        "name": "shop_buy",
+        "uiType": "success",
+        "style": "modern",
+        "description": "Successful purchase confirmation, bright cash register ka-ching with a positive chime"
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/audio/sfx/ui/ui_shop_denied.mp3": {
+      "tool": "mcp__game-audio__generate_audio_batch",
+      "primary_prompt": "Purchase denied, short low buzzer for not enough money",
+      "raw_input": {
+        "type": "ui",
+        "name": "shop_denied",
+        "uiType": "error",
+        "style": "modern",
+        "description": "Purchase denied, short low buzzer for not enough money"
+      },
+      "tool_use_id": "toolu_013ngVHikY8B8KJwUSUxueHb",
+      "updated_at": "2026-06-25T21:47:33.445677"
+    },
+    "assets/props/items/medkit.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "a compact first-aid medical kit box, white with a bold red cross on the lid, clean modern emergency medkit, sitting closed, realistic game prop",
+      "raw_input": {
+        "name": "medkit",
+        "category": "items",
+        "prompt": "a compact first-aid medical kit box, white with a bold red cross on the lid, clean modern emergency medkit, sitting closed, realistic game prop",
+        "style": "realistic"
+      },
+      "tool_use_id": "toolu_01PN5km7AkhERo7sL66pZViZ",
+      "updated_at": "2026-06-25T21:57:09.076793"
+    },
+    "assets/props/items/armor_vest.glb": {
+      "tool": "mcp__game-3d-models__generate_props_batch",
+      "primary_prompt": "a black tactical body armor bulletproof vest, kevlar police flak jacket standing upright, realistic game prop",
+      "raw_input": {
+        "name": "armor_vest",
+        "category": "items",
+        "prompt": "a black tactical body armor bulletproof vest, kevlar police flak jacket standing upright, realistic game prop",
+        "style": "realistic"
+      },
+      "tool_use_id": "toolu_01PN5km7AkhERo7sL66pZViZ",
+      "updated_at": "2026-06-25T21:57:09.076793"
+    }
+  }
+}

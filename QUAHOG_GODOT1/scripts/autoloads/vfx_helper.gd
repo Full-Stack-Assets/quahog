@@ -1,15 +1,26 @@
 extends Node
 
 
+# Scene paths are loaded at runtime (not preloaded) so the project still
+# compiles and runs when the optional VFX assets aren't present in the repo,
+# matching how the rest of the codebase loads models/audio/scenes.
+
+const MUZZLE_PATH: = "res://assets/3d_vfx/muzzle_flash/effects/muzzle_flash/muzzle_flash_03.tscn"
+const IMPACT_PATH: = "res://assets/3d_vfx/impact_explosions/effects/impact/vfx_impact_02.tscn"
+
+var _muzzle_scene: PackedScene
+var _impact_scene: PackedScene
 
 
-
-const MUZZLE_SCENE: = preload("res://assets/3d_vfx/muzzle_flash/effects/muzzle_flash/muzzle_flash_03.tscn")
-const IMPACT_SCENE: = preload("res://assets/3d_vfx/impact_explosions/effects/impact/vfx_impact_02.tscn")
+func _ready() -> void :
+    if ResourceLoader.exists(MUZZLE_PATH):
+        _muzzle_scene = load(MUZZLE_PATH) as PackedScene
+    if ResourceLoader.exists(IMPACT_PATH):
+        _impact_scene = load(IMPACT_PATH) as PackedScene
 
 
 func spawn_muzzle(at: Vector3, dir: Vector3, scale_mul: float = 0.5) -> void :
-    var inst: = _spawn(MUZZLE_SCENE, at)
+    var inst: = _spawn(_muzzle_scene, at)
     if inst == null:
         return
     inst.scale = Vector3.ONE * scale_mul
@@ -17,7 +28,7 @@ func spawn_muzzle(at: Vector3, dir: Vector3, scale_mul: float = 0.5) -> void :
 
 
 func spawn_impact(at: Vector3, scale_mul: float = 0.5) -> void :
-    var inst: = _spawn(IMPACT_SCENE, at)
+    var inst: = _spawn(_impact_scene, at)
     if inst == null:
         return
     inst.scale = Vector3.ONE * scale_mul
