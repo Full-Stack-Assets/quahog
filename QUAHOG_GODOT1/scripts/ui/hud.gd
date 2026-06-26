@@ -1,0 +1,630 @@
+extends CanvasLayer
+
+
+
+
+
+
+
+const VirtualJoystick: = preload("res://scripts/ui/virtual_joystick.gd")
+const TouchButton: = preload("res://scripts/ui/touch_button.gd")
+const TouchCamera: = preload("res://scripts/ui/touch_camera.gd")
+const MinimapScript: = preload("res://scripts/ui/minimap.gd")
+
+const DESIGN: = Vector2(1920, 1080)
+const LAYOUT_PATH: = "user://controls_layout.json"
+
+var _player: CharacterBody3D = null
+var _root: Control
+var _cash_label: Label
+var _prompt_label: Label
+var _toast_label: Label
+var _pause_panel: Control
+var _edit_banner: Control
+var _font: Font
+
+
+var _minimap: Control = null
+var _objective_label: Label = null
+var _objective_panel: Control = null
+var _wanted_label: Label = null
+var _ammo_label: Label = null
+var _health_bar: ProgressBar = null
+var _armor_bar: ProgressBar = null
+var _job_manager: Node = null
+var _wanted_system: Node = null
+
+var _joystick
+var _look_area
+var _buttons: = {}
+var _editables: Array = []
+var _defaults: = {}
+var _toast_tween: Tween = null
+
+
+var _edit_mode: bool = false
+var _drag_target: Control = null
+var _drag_resize: bool = false
+var _drag_last: Vector2 = Vector2.ZERO
+
+
+func _ready() -> void :
+    layer = 10
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    _font = load("res://assets/fonts/noto_serif.ttf")
+
+    _root = Control.new()
+    _root.name = "HUDRoot"
+    _root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var theme: = load("res://assets/ui/theme.tres") as Theme
+    if theme:
+        _root.theme = theme
+    add_child(_root)
+    _root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    _build_look_area()
+    _build_top_bar()
+    _build_prompt()
+    _build_toast()
+    _build_touch_controls()
+    _build_gameplay_panels()
+    _build_pause()
+    _build_edit_banner()
+
+    _load_layout()
+
+    if GameManager:
+        GameManager.cash_changed.connect(_on_cash_changed)
+        GameManager.notify.connect(show_toast)
+        GameManager.wanted_changed.connect(_on_wanted_changed)
+        _on_cash_changed(GameManager.cash)
+        _on_wanted_changed(GameManager.wanted_level)
+
+
+func bind_player(player: CharacterBody3D) -> void :
+    _player = player
+    if _joystick:
+        _joystick.joystick_input.connect(_player.set_move_input)
+    if _look_area:
+        _look_area.look_delta.connect(_player.add_camera_look)
+
+    _wire_tap("jump", _player.do_jump)
+    _wire_tap("interact", _player.do_interact)
+    _wire_hold("fire", _player.set_fire_held)
+    _wire_tap("reload", _player.do_reload)
+    _wire_tap("vehicle", _player.try_enter_vehicle)
+    _wire_tap("swap", _player.switch_weapon)
+    _wire_hold("sprint", _player.set_sprint)
+    _wire_hold("aim", _player.set_aim)
+    _wire_hold("crouch", _player.set_crouch)
+
+    if _player.has_signal("interactable_changed"):
+        _player.interactable_changed.connect(_on_interactable_changed)
+    if _player.has_signal("weapon_changed"):
+        _player.weapon_changed.connect(_on_weapon_changed)
+    if _player.has_signal("driving_changed"):
+        _player.driving_changed.connect(_on_driving_changed)
+    if _player.has_signal("health_changed"):
+        _player.health_changed.connect(_on_health_changed)
+    if _minimap and _minimap.has_method("bind"):
+        _minimap.bind(_player, _job_manager, _wanted_system)
+
+
+func bind_systems(job_manager: Node, wanted_system: Node) -> void :
+    _job_manager = job_manager
+    _wanted_system = wanted_system
+    if _job_manager and _job_manager.has_signal("job_changed"):
+        _job_manager.job_changed.connect(_on_job_changed)
+    if _minimap and _minimap.has_method("bind"):
+        _minimap.bind(_player, _job_manager, _wanted_system)
+
+
+func _wire_tap(id: String, cb: Callable) -> void :
+    if _buttons.has(id):
+        _buttons[id].pressed.connect(cb)
+
+func _wire_hold(id: String, setter: Callable) -> void :
+    if _buttons.has(id):
+        _buttons[id].pressed.connect( func(): setter.call(true))
+        _buttons[id].released.connect( func(): setter.call(false))
+
+
+
+func _build_gameplay_panels() -> void :
+
+    _minimap = MinimapScript.new()
+    _root.add_child(_minimap)
+    _minimap.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _minimap.position = Vector2(24, 116)
+
+
+    _wanted_label = Label.new()
+    _wanted_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _apply_font(_wanted_label, 34, Color(0.98, 0.82, 0.2))
+    _wanted_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _wanted_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_wanted_label)
+    _wanted_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    _wanted_label.position = Vector2(-260, 92)
+    _wanted_label.custom_minimum_size = Vector2(236, 40)
+    _wanted_label.visible = false
+
+
+    _objective_panel = PanelContainer.new()
+    _objective_panel.theme_type_variation = "HudPanel"
+    _objective_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    _root.add_child(_objective_panel)
+    _objective_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+    _objective_panel.position = Vector2(-230, 22)
+    _objective_panel.custom_minimum_size = Vector2(460, 52)
+    _objective_panel.visible = false
+    var omargin: = MarginContainer.new()
+    for m in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+        omargin.add_theme_constant_override(m, 10)
+    _objective_panel.add_child(omargin)
+    _objective_label = Label.new()
+    _objective_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_objective_label, 26, Color(0.96, 0.86, 0.6))
+    omargin.add_child(_objective_label)
+
+
+    _ammo_label = Label.new()
+    _ammo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_ammo_label, 30, Color(0.95, 0.92, 0.85))
+    _ammo_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _ammo_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_ammo_label)
+    _ammo_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _ammo_label.position = Vector2(1410, 690)
+    _ammo_label.custom_minimum_size = Vector2(220, 76)
+    _ammo_label.visible = false
+
+
+    var hp_holder: = VBoxContainer.new()
+    hp_holder.add_theme_constant_override("separation", 6)
+    hp_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    _root.add_child(hp_holder)
+    hp_holder.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_LEFT)
+    hp_holder.position = Vector2(40, -150)
+
+    _health_bar = _make_stat_bar(Color(0.28, 0.78, 0.32), Color(0.5, 1.0, 0.55))
+    hp_holder.add_child(_health_bar)
+    _armor_bar = _make_stat_bar(Color(0.3, 0.55, 0.85), Color(0.5, 0.75, 1.0))
+    _armor_bar.value = 0
+    hp_holder.add_child(_armor_bar)
+
+
+func _make_stat_bar(bg: Color, fill: Color) -> ProgressBar:
+    var bar: = ProgressBar.new()
+    bar.custom_minimum_size = Vector2(360, 26)
+    bar.min_value = 0
+    bar.max_value = 100
+    bar.value = 100
+    bar.show_percentage = false
+    bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    var sb_bg: = StyleBoxFlat.new()
+    sb_bg.bg_color = Color(0.05, 0.06, 0.07, 0.8)
+    sb_bg.set_corner_radius_all(6)
+    sb_bg.set_border_width_all(2)
+    sb_bg.border_color = Color(0, 0, 0, 0.6)
+    bar.add_theme_stylebox_override("background", sb_bg)
+    var sb_fill: = StyleBoxFlat.new()
+    sb_fill.bg_color = fill
+    sb_fill.set_corner_radius_all(6)
+    bar.add_theme_stylebox_override("fill", sb_fill)
+    return bar
+
+
+func _on_health_changed(health: int, max_health: int, armor: int) -> void :
+    if _health_bar:
+        _health_bar.max_value = max_health
+        _health_bar.value = health
+    if _armor_bar:
+        _armor_bar.value = armor
+        _armor_bar.visible = armor > 0
+
+
+func _on_wanted_changed(level: int) -> void :
+    if _wanted_label == null:
+        return
+    if level <= 0:
+        _wanted_label.visible = false
+        return
+    _wanted_label.visible = true
+    _wanted_label.text = "★".repeat(level)
+
+
+func _on_weapon_changed(weapon_name: String, clip: int, reserve: int, melee: bool) -> void :
+    if _ammo_label == null:
+        return
+    _ammo_label.visible = true
+    if melee:
+        _ammo_label.text = weapon_name
+    else:
+        _ammo_label.text = "%s\n%d / %d" % [weapon_name, clip, reserve]
+
+
+func _on_driving_changed(driving: bool) -> void :
+    if _buttons.has("vehicle"):
+        _buttons["vehicle"].label_text = "EXIT" if driving else "CAR"
+        _buttons["vehicle"].queue_redraw()
+
+
+func _on_job_changed(active: bool, text: String, _target: Vector3) -> void :
+    if _objective_panel == null:
+        return
+    _objective_panel.visible = active
+    if active and _objective_label:
+        _objective_label.text = "● " + text
+
+
+
+func _build_look_area() -> void :
+    _look_area = TouchCamera.new()
+    _root.add_child(_look_area)
+    _look_area.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+
+func _build_top_bar() -> void :
+    var panel: = PanelContainer.new()
+    panel.theme_type_variation = "HudPanel"
+    panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    _root.add_child(panel)
+    panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    panel.position = Vector2(-260, 24)
+    panel.custom_minimum_size = Vector2(236, 64)
+
+    var margin: = MarginContainer.new()
+    margin.add_theme_constant_override("margin_left", 22)
+    margin.add_theme_constant_override("margin_right", 22)
+    margin.add_theme_constant_override("margin_top", 8)
+    margin.add_theme_constant_override("margin_bottom", 8)
+    panel.add_child(margin)
+
+    _cash_label = Label.new()
+    _cash_label.text = "$0"
+    _cash_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _cash_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    _apply_font(_cash_label, 34, Color(0.96, 0.81, 0.45))
+    margin.add_child(_cash_label)
+
+
+func _build_prompt() -> void :
+    _prompt_label = Label.new()
+    _prompt_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_prompt_label, 28, Color(0.98, 0.96, 0.92))
+    _prompt_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _prompt_label.add_theme_constant_override("outline_size", 6)
+    _root.add_child(_prompt_label)
+    _prompt_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    _prompt_label.position = Vector2(-260, -300)
+    _prompt_label.custom_minimum_size = Vector2(520, 40)
+    _prompt_label.visible = false
+
+
+func _build_toast() -> void :
+    _toast_label = Label.new()
+    _toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_toast_label, 30, Color(0.98, 0.93, 0.8))
+    _toast_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+    _toast_label.add_theme_constant_override("outline_size", 6)
+    _root.add_child(_toast_label)
+    _toast_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+    _toast_label.position = Vector2(-360, 110)
+    _toast_label.custom_minimum_size = Vector2(720, 44)
+    _toast_label.modulate.a = 0.0
+
+
+func _build_touch_controls() -> void :
+
+    _joystick = VirtualJoystick.new()
+    _joystick.control_id = "move"
+    _root.add_child(_joystick)
+    _joystick.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _joystick.position = Vector2(60, 800)
+    _register_editable(_joystick, "move")
+
+
+    var amber: = Color(0.79, 0.52, 0.16)
+    var specs: = [
+        {"id": "jump", "label": "JUMP", "accent": amber, "hold": false, "action": "jump", "pos": Vector2(1786, 912)}, 
+        {"id": "sprint", "label": "RUN", "accent": Color(0.6, 0.4, 0.18), "hold": true, "action": "sprint", "pos": Vector2(1786, 800)}, 
+        {"id": "interact", "label": "USE", "accent": Color(0.36, 0.55, 0.5), "hold": false, "action": "interact", "pos": Vector2(1674, 912)}, 
+        {"id": "fire", "label": "FIRE", "accent": Color(0.72, 0.27, 0.22), "hold": false, "action": "fire", "pos": Vector2(1674, 800)}, 
+        {"id": "vehicle", "label": "CAR", "accent": Color(0.3, 0.46, 0.6), "hold": false, "action": "enter_vehicle", "pos": Vector2(1562, 912)}, 
+        {"id": "aim", "label": "AIM", "accent": Color(0.42, 0.46, 0.5), "hold": true, "action": "aim", "pos": Vector2(1562, 800)}, 
+        {"id": "reload", "label": "RLD", "accent": Color(0.46, 0.46, 0.48), "hold": false, "action": "reload", "pos": Vector2(1450, 912)}, 
+        {"id": "crouch", "label": "DUCK", "accent": Color(0.35, 0.5, 0.32), "hold": true, "action": "crouch", "pos": Vector2(1450, 800)}, 
+        {"id": "swap", "label": "SWAP", "accent": Color(0.55, 0.4, 0.6), "hold": false, "action": "swap", "pos": Vector2(1338, 912)}, 
+    ]
+    for s in specs:
+        var b: = TouchButton.new()
+        b.control_id = s["id"]
+        b.label_text = s["label"]
+        b.accent = s["accent"]
+        b.hold_mode = s["hold"]
+        b.action_name = s["action"]
+        _root.add_child(b)
+        b.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+        b.position = s["pos"]
+        _buttons[s["id"]] = b
+        _register_editable(b, s["id"])
+
+
+func _register_editable(ctrl: Control, id: String) -> void :
+    _editables.append(ctrl)
+    _defaults[id] = {"pos": ctrl.position, "scale": 1.0}
+
+
+func _build_pause() -> void :
+
+    var pause_btn: = TouchButton.new()
+    pause_btn.label_text = "II"
+    pause_btn.custom_minimum_size = Vector2(72, 72)
+    pause_btn.size = pause_btn.custom_minimum_size
+    pause_btn.accent = Color(0.3, 0.37, 0.42)
+    _root.add_child(pause_btn)
+    pause_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    pause_btn.position = Vector2(28, 28)
+    pause_btn.pressed.connect(_toggle_pause)
+
+
+    var edit_btn: = TouchButton.new()
+    edit_btn.label_text = "EDIT"
+    edit_btn.custom_minimum_size = Vector2(80, 72)
+    edit_btn.size = edit_btn.custom_minimum_size
+    edit_btn.accent = Color(0.5, 0.42, 0.2)
+    _root.add_child(edit_btn)
+    edit_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    edit_btn.position = Vector2(116, 28)
+    edit_btn.pressed.connect(_toggle_edit)
+
+
+    _pause_panel = Control.new()
+    _pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _pause_panel.visible = false
+    _root.add_child(_pause_panel)
+    _pause_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.78)
+    _pause_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _pause_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var vbox: = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 22)
+    center.add_child(vbox)
+
+    var title: = Label.new()
+    title.text = "PAUSED"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 64, Color(0.96, 0.81, 0.45))
+    vbox.add_child(title)
+
+    vbox.add_child(_menu_button("Resume", _toggle_pause))
+    vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
+    vbox.add_child(_menu_button("Main Menu", _go_to_menu))
+
+
+func _menu_button(text: String, cb: Callable) -> Button:
+    var b: = Button.new()
+    b.text = text
+    b.custom_minimum_size = Vector2(320, 70)
+    _apply_font(b, 28, Color(0.98, 0.96, 0.92))
+    b.pressed.connect(cb)
+    return b
+
+
+func _build_edit_banner() -> void :
+    _edit_banner = PanelContainer.new()
+    _edit_banner.theme_type_variation = "HudPanel"
+    _edit_banner.visible = false
+    _root.add_child(_edit_banner)
+    _edit_banner.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+    _edit_banner.position = Vector2(-430, 26)
+    _edit_banner.custom_minimum_size = Vector2(860, 76)
+
+    var hb: = HBoxContainer.new()
+    hb.add_theme_constant_override("separation", 18)
+    hb.alignment = BoxContainer.ALIGNMENT_CENTER
+    var mc: = MarginContainer.new()
+    for m in ["margin_left", "margin_right", "margin_top", "margin_bottom"]:
+        mc.add_theme_constant_override(m, 10)
+    mc.add_child(hb)
+    _edit_banner.add_child(mc)
+
+    var lbl: = Label.new()
+    lbl.text = "Drag to move  •  drag corner to resize"
+    lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+    _apply_font(lbl, 26, Color(0.96, 0.86, 0.6))
+    hb.add_child(lbl)
+
+    var reset_b: = Button.new()
+    reset_b.text = "Reset"
+    reset_b.custom_minimum_size = Vector2(150, 56)
+    _apply_font(reset_b, 24, Color(0.98, 0.92, 0.85))
+    reset_b.pressed.connect(_reset_layout)
+    hb.add_child(reset_b)
+
+    var done_b: = Button.new()
+    done_b.text = "Done"
+    done_b.custom_minimum_size = Vector2(150, 56)
+    _apply_font(done_b, 24, Color(0.98, 0.96, 0.92))
+    done_b.pressed.connect(_toggle_edit)
+    hb.add_child(done_b)
+
+
+
+func _toggle_edit() -> void :
+    if _edit_mode:
+        _exit_edit()
+    else:
+        _enter_edit()
+
+
+func _enter_edit() -> void :
+    _edit_mode = true
+    get_tree().paused = true
+    if _look_area:
+        _look_area.visible = false
+    for e in _editables:
+        if e.has_method("set_edit_mode"):
+            e.set_edit_mode(true)
+    _edit_banner.visible = true
+
+
+func _exit_edit() -> void :
+    _edit_mode = false
+    _drag_target = null
+    get_tree().paused = false
+    if _look_area:
+        _look_area.visible = true
+    for e in _editables:
+        if e.has_method("set_edit_mode"):
+            e.set_edit_mode(false)
+    _edit_banner.visible = false
+    _save_layout()
+
+
+func _input(event: InputEvent) -> void :
+    if not _edit_mode:
+        return
+    if event is InputEventScreenTouch or event is InputEventMouseButton:
+        if event.pressed:
+            if _begin_drag(event.position):
+                get_viewport().set_input_as_handled()
+        else:
+            if _drag_target:
+                get_viewport().set_input_as_handled()
+            _drag_target = null
+    elif (event is InputEventScreenDrag or event is InputEventMouseMotion) and _drag_target:
+        var p: Vector2 = event.position
+        var d: Vector2 = p - _drag_last
+        _drag_last = p
+        if _drag_resize:
+            var ns: float = clampf(_drag_target.scale.x + (d.x + d.y) * 0.0016, 0.6, 2.4)
+            _drag_target.scale = Vector2(ns, ns)
+        else:
+            _drag_target.position += d
+            _clamp_into_screen(_drag_target)
+        _drag_target.queue_redraw()
+        get_viewport().set_input_as_handled()
+
+
+func _begin_drag(screen_pos: Vector2) -> bool:
+
+    for i in range(_editables.size() - 1, -1, -1):
+        var e: Control = _editables[i]
+        var vis_size: Vector2 = e.size * e.scale
+        var rect: = Rect2(e.position, vis_size)
+        if rect.has_point(screen_pos):
+            _drag_target = e
+            _drag_last = screen_pos
+            var grip: = Rect2(e.position + vis_size - Vector2(40, 40), Vector2(44, 44))
+            _drag_resize = grip.has_point(screen_pos)
+            return true
+    _drag_target = null
+    return false
+
+
+func _clamp_into_screen(ctrl: Control) -> void :
+    var vis_size: Vector2 = ctrl.size * ctrl.scale
+    ctrl.position.x = clampf(ctrl.position.x, 0.0, DESIGN.x - vis_size.x)
+    ctrl.position.y = clampf(ctrl.position.y, 0.0, DESIGN.y - vis_size.y)
+
+
+func _reset_layout() -> void :
+    for e in _editables:
+        var d = _defaults.get(e.control_id, null)
+        if d:
+            e.position = d["pos"]
+            e.scale = Vector2(d["scale"], d["scale"])
+            e.queue_redraw()
+    _save_layout()
+
+
+func _save_layout() -> void :
+    var data: = {}
+    for e in _editables:
+        data[e.control_id] = {"x": e.position.x, "y": e.position.y, "s": e.scale.x}
+    var f: = FileAccess.open(LAYOUT_PATH, FileAccess.WRITE)
+    if f:
+        f.store_string(JSON.stringify(data))
+        f.close()
+
+
+func _load_layout() -> void :
+    if not FileAccess.file_exists(LAYOUT_PATH):
+        return
+    var f: = FileAccess.open(LAYOUT_PATH, FileAccess.READ)
+    if not f:
+        return
+    var text: = f.get_as_text()
+    f.close()
+    var parsed: Variant = JSON.parse_string(text)
+    if typeof(parsed) != TYPE_DICTIONARY:
+        return
+    for e in _editables:
+        if parsed.has(e.control_id):
+            var c: Dictionary = parsed[e.control_id]
+            e.position = Vector2(float(c.get("x", e.position.x)), float(c.get("y", e.position.y)))
+            var s: float = float(c.get("s", 1.0))
+            e.scale = Vector2(s, s)
+            e.queue_redraw()
+
+
+
+func _on_cash_changed(value: int) -> void :
+    if _cash_label:
+        _cash_label.text = "$" + str(value)
+
+
+func _on_interactable_changed(prompt: String) -> void :
+    if not _prompt_label:
+        return
+    if prompt == "":
+        _prompt_label.visible = false
+    else:
+        _prompt_label.text = prompt + "   [ USE ]"
+        _prompt_label.visible = true
+
+
+func show_toast(message: String) -> void :
+    if not _toast_label:
+        return
+    _toast_label.text = message
+    if _toast_tween and _toast_tween.is_valid():
+        _toast_tween.kill()
+    _toast_label.modulate.a = 0.0
+    _toast_tween = create_tween()
+    _toast_tween.tween_property(_toast_label, "modulate:a", 1.0, 0.25)
+    _toast_tween.tween_interval(2.6)
+    _toast_tween.tween_property(_toast_label, "modulate:a", 0.0, 0.6)
+
+
+func _toggle_pause() -> void :
+    if _edit_mode:
+        return
+    var paused: = not get_tree().paused
+    get_tree().paused = paused
+    _pause_panel.visible = paused
+
+
+func _go_to_menu() -> void :
+    get_tree().paused = false
+    var ls = get_node_or_null("/root/LoadingScreen")
+    if ls and ls.has_method("change_scene"):
+        ls.change_scene("res://scenes/main.tscn")
+        return
+    get_tree().change_scene_to_file("res://scenes/main.tscn")
+
+
+func _apply_font(ctrl: Control, fsize: int, color: Color) -> void :
+    if _font:
+        ctrl.add_theme_font_override("font", _font)
+    ctrl.add_theme_font_size_override("font_size", fsize)
+    ctrl.add_theme_color_override("font_color", color)

@@ -1,0 +1,87 @@
+extends Node
+
+
+
+
+
+signal cash_changed(new_cash: int)
+signal notify(message: String)
+signal wanted_changed(level: int)
+signal open_shop_requested(shop_kind: String)
+
+const SAVE_PATH: = "user://mount_hope_save.json"
+const STARTING_CASH: = 40
+
+var cash: int = STARTING_CASH
+var missions_completed: int = 0
+var wanted_level: int = 0
+var player_spawn_override: = Vector3.ZERO
+var has_spawn_override: bool = false
+
+
+func set_wanted(level: int) -> void :
+    level = clampi(level, 0, 5)
+    if level == wanted_level:
+        return
+    wanted_level = level
+    wanted_changed.emit(wanted_level)
+
+func _ready() -> void :
+    load_game()
+
+func add_cash(amount: int) -> void :
+    cash += amount
+    cash = max(cash, 0)
+    cash_changed.emit(cash)
+    save_game()
+
+func spend_cash(amount: int) -> bool:
+    if cash < amount:
+        notify.emit("Not enough cash.")
+        return false
+    cash -= amount
+    cash_changed.emit(cash)
+    save_game()
+    return true
+
+func can_afford(amount: int) -> bool:
+    return cash >= amount
+
+func record_mission_complete() -> void :
+    missions_completed += 1
+    save_game()
+
+func show_message(message: String) -> void :
+    notify.emit(message)
+
+func save_game() -> void :
+    var data: = {
+        "cash": cash, 
+        "missions_completed": missions_completed, 
+    }
+    var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+    if f:
+        f.store_string(JSON.stringify(data))
+        f.close()
+
+func load_game() -> void :
+    if not FileAccess.file_exists(SAVE_PATH):
+        return
+    var f: = FileAccess.open(SAVE_PATH, FileAccess.READ)
+    if not f:
+        return
+    var text: = f.get_as_text()
+    f.close()
+    var parsed: Variant = JSON.parse_string(text)
+    if typeof(parsed) != TYPE_DICTIONARY:
+        return
+    var data: Dictionary = parsed
+    cash = int(data.get("cash", STARTING_CASH))
+    missions_completed = int(data.get("missions_completed", 0))
+    cash_changed.emit(cash)
+
+func reset_save() -> void :
+    cash = STARTING_CASH
+    missions_completed = 0
+    cash_changed.emit(cash)
+    save_game()

@@ -1,0 +1,83 @@
+extends Node
+
+const MAX_SFX: int = 8
+
+var music_player: AudioStreamPlayer
+var sfx_players: Array[AudioStreamPlayer] = []
+
+var _unlocked: bool = false
+var _pending_music: AudioStream = null
+var _pending_music_vol: float = -6.0
+
+func _ready() -> void :
+    process_mode = Node.PROCESS_MODE_ALWAYS
+    if not OS.has_feature("web"):
+        _unlocked = true
+    _setup_buses()
+    _create_players()
+
+func _input(event: InputEvent) -> void :
+    if _unlocked:
+        return
+    if event is InputEventMouseButton or event is InputEventKey or event is InputEventScreenTouch:
+        _unlocked = true
+        if _pending_music:
+            _play_music_now(_pending_music, _pending_music_vol, 1.0)
+            _pending_music = null
+
+func _setup_buses() -> void :
+    for bus_name in ["Music", "SFX"]:
+        if AudioServer.get_bus_index(bus_name) == -1:
+            AudioServer.add_bus()
+            var idx: = AudioServer.bus_count - 1
+            AudioServer.set_bus_name(idx, bus_name)
+            AudioServer.set_bus_send(idx, "Master")
+
+func _create_players() -> void :
+    music_player = AudioStreamPlayer.new()
+    music_player.bus = "Music"
+    music_player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+    add_child(music_player)
+    for i in MAX_SFX:
+        var p: = AudioStreamPlayer.new()
+        p.bus = "SFX"
+        p.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+        add_child(p)
+        sfx_players.append(p)
+
+func play_music(stream: AudioStream, volume_db: float = -6.0, fade_in: float = 0.0) -> void :
+    if stream == null:
+        return
+    if not _unlocked:
+        _pending_music = stream
+        _pending_music_vol = volume_db
+        return
+    _play_music_now(stream, volume_db, fade_in)
+
+func _play_music_now(stream: AudioStream, volume_db: float, fade_in: float = 0.0) -> void :
+    if music_player.stream == stream and music_player.playing:
+        return
+    music_player.stream = stream
+    if fade_in > 0.0:
+        music_player.volume_db = -40.0
+        music_player.play()
+        create_tween().tween_property(music_player, "volume_db", volume_db, fade_in)
+    else:
+        music_player.volume_db = volume_db
+        music_player.play()
+
+func stop_music() -> void :
+    music_player.stop()
+
+func play_sfx(stream: AudioStream, volume_db: float = 0.0, pitch_variation: float = 0.0) -> void :
+    if stream == null:
+        return
+    for p in sfx_players:
+        if not p.playing:
+            p.stream = stream
+            p.volume_db = volume_db
+            p.pitch_scale = 1.0
+            if pitch_variation > 0.0:
+                p.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
+            p.play()
+            return
