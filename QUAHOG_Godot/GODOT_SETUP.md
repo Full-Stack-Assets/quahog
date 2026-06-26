@@ -17,27 +17,33 @@ Download **Godot 4.2 or later** from [godotengine.org](https://godotengine.org/d
 2. Point it at the `QUAHOG_Godot/` folder (where `project.godot` lives)
 3. Let the engine import and index all scripts (takes ~10s on first open)
 
-### 3. Create the Bootstrap scene
-The main scene is set to `res://scenes/bootstrap/Bootstrap.tscn` — you need to create it:
+### 3. Press Play — the playable slice
+The main scene is now `res://scenes/world/Game.tscn`. It holds a single `Node3D`
+running `res://scripts/world/GameWorld.gd`, which assembles the whole playable
+world **in code** on `_ready()`:
 
-1. **Scene → New Scene**
-2. Root node: `Node` — rename to `Bootstrap`
-3. Add a child `WorldEnvironment` node (required by WeatherController, FogController, CoastalNeonPostProcess)
-4. Save as `res://scenes/bootstrap/Bootstrap.tscn`
+- a `WorldEnvironment` (procedural sky + filmic tonemap), wired into `WeatherController`
+- a directional **sun** with shadows
+- an **infinite ground collider** + a large ground plane (so you can walk)
+- the **real South Coast road mesh** baked from `data/southcoast-roads.json` via `MapMeshBaker`
+- a spawned **PlayerController** (capsule + first-person camera) dropped onto a New Bedford street
 
-That's it for a first boot. The 13 autoloads initialize automatically on run.
-
-### 4. Press Play
-Hit **F5** (or the Play button). In the **Output** panel you should see:
+Hit **F5** (or the Play button). In the **Output** panel you should see the autoload
+boot lines plus:
 ```
-[GameManager] State → Boot
-[WeatherController] Initialized — state: CLEAR
-[TimeOfDayClock] Day 1, 00:00
-[MissionManager] 22 missions registered. ns_01_intro → AVAILABLE
-[SafehouseManager] 4 safehouses initialized
+[MapMeshBaker] baked 12257 roads (… vertices)
+[GameWorld] Ready — player spawned at (…)
 ```
+The mouse is captured — **WASD** to walk, **mouse** to look, **Shift** to sprint,
+**Space** to jump, **Q** to take cover, **Esc** to release the mouse. The road network
+fades off toward the horizon under the sun.
 
-If you see those lines, the core engine is alive.
+> **Note on the old bootstrap:** `scenes/bootstrap/Bootstrap.tscn` (singleton-validation
+> + prologue fog) is still in the repo as the headless boot harness, but it is no longer
+> the main scene. `GameWorld.gd` performs the equivalent autoload wiring itself.
+
+> **Camera feel:** if look up/down is inverted for you, set `orbit_sensitivity_y` negative
+> on the Player, or tweak the first-person rig in `GameWorld._spawn_player()`.
 
 ---
 
