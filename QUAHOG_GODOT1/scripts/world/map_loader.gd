@@ -319,7 +319,7 @@ func _derive_spawns() -> void :
     mission_giver_rot = _road_samples[best][1]
 
     var n: = _road_samples.size()
-    var step: = max(1, int(n / 240.0))
+    var step: int = max(1, int(n / 240.0))
     var i2: = 0
     while i2 < n:
         var s: Array = _road_samples[i2]
