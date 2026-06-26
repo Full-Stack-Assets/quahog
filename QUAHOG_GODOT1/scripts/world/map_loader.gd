@@ -32,6 +32,18 @@ var roads_built: int = 0
 var overlays_built: int = 0
 var named_places: Array = []  # [{name, pos}] from footprints that carry a name
 
+# Spawn scaffolding derived from the road network so game_world can drive the
+# real map the same way it drove the procedural CityBuilder (drop-in fields).
+var player_spawn: Vector3 = Vector3(0, 0.6, 0)
+var mission_giver_pos: Vector3 = Vector3(6, 0, 6)
+var mission_giver_rot: float = 0.0
+var car_slots: Array = []                  # [[Vector3 pos, float rot_y_deg], ...]
+var light_slots: Array[Vector3] = []
+var npc_waypoints: = PackedVector3Array()
+var npc_spawns: Array[Vector3] = []
+var job_points: Array[Vector3] = []
+var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ...]
+
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
     return Vector3(x_east, y_up, -y_north)
@@ -59,6 +71,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     _build_overlays(parent, bbox)
     _build_roads(parent, bbox)
     _build_buildings(parent, center_tile, radius_tiles)
+    _derive_spawns()
 
 
 func _build_ground(parent: Node3D, bbox: Rect2) -> void :
@@ -203,6 +216,15 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
         _emit_road(st, pts, width * 0.5, rcol)
         roads_built += 1
+        # Sample the first segment for spawn scaffolding (pos + heading).
+        var a0: = Vector2(float(pts[0][0]), float(pts[0][1]))
+        var b0: = Vector2(float(pts[1][0]), float(pts[1][1]))
+        var mid: = (a0 + b0) * 0.5
+        var wdir: = Vector3(b0.x - a0.x, 0.0, -(b0.y - a0.y))
+        var roty: = 0.0
+        if wdir.length_squared() > 0.0001:
+            roty = rad_to_deg(atan2(wdir.x, wdir.z))
+        _road_samples.append([to_world(mid.x, mid.y, 0.0), roty])
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
     mat.roughness = 0.95
@@ -275,6 +297,53 @@ func _build_overlays(parent: Node3D, bbox: Rect2) -> void :
         mi.name = "Overlay_%s" % key
         mi.mesh = st.commit()
         root.add_child(mi)
+
+
+# Derive player/NPC/car/light spawn points from the sampled road network so the
+# real map is a drop-in for the procedural CityBuilder's spawn fields.
+func _derive_spawns() -> void :
+    if _road_samples.is_empty():
+        return
+    # Player spawns on the road nearest the map origin (the NB core).
+    var best: = 0
+    var best_d: = INF
+    for i in _road_samples.size():
+        var p: Vector3 = _road_samples[i][0]
+        var d: = p.x * p.x + p.z * p.z
+        if d < best_d:
+            best_d = d
+            best = i
+    var sp: Vector3 = _road_samples[best][0]
+    player_spawn = Vector3(sp.x, 0.6, sp.z)
+    mission_giver_pos = player_spawn + Vector3(6, 0, 6)
+    mission_giver_rot = _road_samples[best][1]
+
+    var n: = _road_samples.size()
+    var step: = max(1, int(n / 240.0))
+    var i2: = 0
+    while i2 < n:
+        var s: Array = _road_samples[i2]
+        var pos: Vector3 = s[0]
+        npc_waypoints.append(pos)
+        if car_slots.size() < 40:
+            car_slots.append([Vector3(pos.x, 0.0, pos.z), float(s[1])])
+        if light_slots.size() < 60:
+            light_slots.append(Vector3(pos.x, 0.0, pos.z))
+        if npc_spawns.size() < 30:
+            npc_spawns.append(Vector3(pos.x, 0.6, pos.z))
+        i2 += step
+
+    for pl in named_places:
+        if job_points.size() >= 30:
+            break
+        var pp: Vector3 = pl["pos"]
+        job_points.append(Vector3(pp.x, 0.5, pp.z))
+    if job_points.is_empty():
+        for s2 in _road_samples:
+            if job_points.size() >= 20:
+                break
+            var p3: Vector3 = s2[0]
+            job_points.append(Vector3(p3.x, 0.5, p3.z))
 
 
 func _centroid(fp: Array) -> Vector2:
