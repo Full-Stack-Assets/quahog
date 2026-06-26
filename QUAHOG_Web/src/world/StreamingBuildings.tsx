@@ -34,7 +34,73 @@ const HERO_COLORS: Record<string, string> = {
 };
 const HERO = new Set(Object.keys(HERO_COLORS));
 const FLOOR = 3.2; // metres per window row
-const WIN_TILE = FLOOR * FACADE_GRID; // metres spanned by one façade texture tile
+// Buildings shorter than this get a peaked (hip) roof — New Bedford's signature
+// triple-deckers/houses read as boxes when flat-topped. Taller granite downtown
+// + brick mills keep their realistic flat roofs.
+const PITCH_MAX_H = 14;
+
+/**
+ * A peaked hip roof capping a footprint: fan of triangles from each footprint
+ * edge (at wall height `h`) up to a single apex over the centroid. Robust for
+ * any polygon — concave footprints just give a slightly creased cap, never a
+ * crash. Returns a non-indexed BufferGeometry with position/normal/uv/color so
+ * it merges with the extruded walls. Plain UV (no window grid) + roof tone.
+ */
+function roofGeometry(footprint: [number, number][], h: number, roof: THREE.Color): THREE.BufferGeometry | null {
+  // de-dupe a closed ring's repeated last vertex
+  const pts = footprint.slice();
+  if (pts.length > 1) {
+    const [fe, fn] = pts[0], [le, ln] = pts[pts.length - 1];
+    if (Math.abs(fe - le) < 1e-6 && Math.abs(fn - ln) < 1e-6) pts.pop();
+  }
+  if (pts.length < 3) return null;
+  let cx = 0, cn = 0, minE = Infinity, maxE = -Infinity, minN = Infinity, maxN = -Infinity;
+  for (const [e, n] of pts) {
+    cx += e; cn += n;
+    if (e < minE) minE = e; if (e > maxE) maxE = e;
+    if (n < minN) minN = n; if (n > maxN) maxN = n;
+  }
+  cx /= pts.length; cn /= pts.length;
+  const minHalfSpan = Math.min(maxE - minE, maxN - minN) / 2;
+  if (minHalfSpan < 1.5) return null; // too thin to roof cleanly — leave flat
+  // Steep enough to clearly read as a New England pitched roof (~35-45°) on
+  // typical house/triple-decker widths, capped so wide blocks don't get spikes.
+  const pitch = Math.max(2.2, Math.min(5.5, minHalfSpan * 0.9));
+  // The fan triangles must wind so their normals face UP/outward, else they're
+  // backface-culled (invisible) and the flat extrude cap shows through. OSM
+  // footprint orientation varies, so derive the winding from the ring's signed
+  // area in world XZ (x=east, z=-north) rather than assuming a fixed order.
+  let area2 = 0;
+  for (let i = 0; i < pts.length; i++) {
+    const [ea, na] = pts[i];
+    const [eb, nb] = pts[(i + 1) % pts.length];
+    area2 += ea * -nb - eb * -na; // x_i*z_{i+1} - x_{i+1}*z_i, with z=-n
+  }
+  const flip = area2 > 0; // keeps apex-fan normals pointing up
+  const pos: number[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const [ea, na] = pts[i];
+    const [eb, nb] = pts[(i + 1) % pts.length];
+    if (Math.abs(ea - eb) < 1e-6 && Math.abs(na - nb) < 1e-6) continue; // degenerate edge
+    // world-local: x=east, y=up, z=-north
+    if (flip) pos.push(eb, h, -nb, ea, h, -na, cx, h + pitch, -cn);
+    else pos.push(ea, h, -na, eb, h, -nb, cx, h + pitch, -cn);
+  }
+  if (pos.length === 0) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(new Float32Array(pos), 3));
+  g.computeVertexNormals();
+  const count = g.attributes.position.count;
+  const colors = new Float32Array(count * 3);
+  const uv = new Float32Array(count * 2);
+  for (let v = 0; v < count; v++) {
+    colors.set([roof.r, roof.g, roof.b], v * 3);
+    uv[v * 2] = 0.04; uv[v * 2 + 1] = 0.04; // plain wall sample (no window grid)
+  }
+  g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return g;
+}
 
 interface Manifest { tile: number; keys: string[] }
 
@@ -200,16 +266,13 @@ function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-    // Façade variant: golden-angle hash spreads neighbours across styles; tall
-    // downtown blocks skip the residential-brick variant (0) so they read
-    // commercial/industrial rather than like oversized houses.
-    let variant = Math.floor(((i * 2.3999632297) % 1) * FACADE_VARIANTS) % FACADE_VARIANTS;
-    if (b.height >= 24 && variant === 0) variant = 1 + (i % 2);
-    buckets[variant].push(g);
-    const cap = parapetGeometry(b, wall, hash);
-    if (cap) buckets[variant].push(cap);
-    const base = baseGeometry(b, wall, hash);
-    if (base) buckets[variant].push(base);
+    geoms.push(g);
+    // short residential/commercial footprints get a peaked roof so the skyline
+    // stops reading as a field of flat boxes (heroes keep their modeled look).
+    if (!isHero && b.height < PITCH_MAX_H) {
+      const rg = roofGeometry(b.footprint, b.height, roof);
+      if (rg) geoms.push(rg);
+    }
   });
   return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
 }
@@ -236,25 +299,11 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
     const out: { x: number; y: number; z: number; sx: number; sy: number; sz: number }[] = [];
     let i = 0;
     for (const b of buildings) {
-      if (b.height < 7 || b.height > 60) { i++; continue; }
-      let cx = 0, cn = 0; for (const p of b.footprint) { cx += p[0]; cn += p[1]; }
-      const k = b.footprint.length || 1; cx /= k; cn /= k; const cz = -cn;
-      const h = (i * 0.6180339887) % 1;
-      const h2 = (i * 0.3819660113) % 1;
-
-      if (b.height >= 24)      out.push({ x: cx, y: b.height, z: cz, sx: 2.6 + h * 1.6, sy: 2.4 + h2 * 2.0, sz: 2.6 + h2 * 1.6 }); // penthouse
-      else if (b.height >= 12) out.push({ x: cx, y: b.height, z: cz, sx: 1.6 + h * 0.9, sy: 1.4 + h2 * 1.3, sz: 1.6 + h2 * 0.9 }); // water tank
-      else                     out.push({ x: cx, y: b.height, z: cz, sx: 1.4 + h * 0.7, sy: 0.55 + h2 * 0.4, sz: 1.4 + h * 0.7 }); // AC unit
-
-      // secondary prop offset toward a footprint corner (vent stack / chimney)
-      if (h2 > 0.45 && k >= 1) {
-        const vtx = b.footprint[i % k];
-        const px = cx + (vtx[0] - cx) * 0.55, pn = cn + (vtx[1] - cn) * 0.55;
-        const tall = b.height < 12; // chimney on houses, squat vent elsewhere
-        out.push({ x: px, y: b.height, z: -pn, sx: 0.6 + h * 0.4, sy: tall ? 1.6 + h * 1.0 : 0.7, sz: 0.6 + h2 * 0.4 });
-      }
-      if (out.length > 140) break;
-      i++;
+      if (b.height < PITCH_MAX_H || b.height > 45) continue; // only flat-roofed buildings
+      let x = 0, n = 0; for (const p of b.footprint) { x += p[0]; n += p[1]; }
+      const k = b.footprint.length;
+      out.push([x / k, b.height, -(n / k)]);
+      if (out.length > 90) break;
     }
     return out;
   }, [buildings]);

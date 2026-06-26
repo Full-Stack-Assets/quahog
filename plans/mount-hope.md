@@ -685,98 +685,23 @@ Per the user: **stop all city/region expansion. Make the New Bedford core genuin
 - Wired uploaded audio: Maré Alta plays 3 real songs; The Rage plays jingles.
 - **Rendering pass:** sRGB colorspace on all procedural textures (fixes washed-out look), anisotropy ×16, 256px asphalt, building façade normal-relief, shadow bias.
 - **"New Bedford to perfection" checklist (open):**
-  - [x] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look — *web `StreamingBuildings`: parapet/cornice rim walls (recessed roofs + roofline variation), masonry-course façade with 2×3 sash + a 4×4 window-style grid (sash/shorter/arched), street-level AO gradient, varied rooftop skyline (AC/tank/penthouse + vents), night-lit window variation. Still open: genuine per-building façade variety (one shared map today), ground-floor storefront banding.*
+  - [~] Buildings: era/material variety (brick mills, granite downtown, triple-deckers), height + roofline variation, less "extruded box" look — short footprints (<14 m) now get **peaked hip roofs** (apex-fan over the centroid; tall granite/mills stay flat); era/material variety still TODO
   - [ ] Streets: surfaces, intersections, curbs/sidewalks, signage, parked density
   - [ ] Lighting/atmosphere: ambient occlusion, color grade, fog, reflections
   - [ ] Waterfront: piers, working docks, boats, hurricane barrier, water quality
   - [ ] Landmarks: Seamen's Bethel + downtown accuracy, hero buildings
 
-### 2026-06-24 — Web buildings pass + road-over-water fix; Unity map-pipeline groundwork
-Focus reaffirmed: **the web game is the only playable target.** Work on branch `claude/task-1-complete-0bn2xh` (draft PR #25).
-- **Buildings (web):** parapet/cornice caps, masonry+sash façade, AO gradient, varied rooftop clutter, night-lit window variation, mixed window styles (4×4 grid). See checklist item above.
-- **Road-over-water fix (web):** `waterZones.ts` now opens a crossing corridor for any road segment whose midpoint lies over a water polygon, not only `bridge=yes` roads — fixes "Into the drink" on untagged causeways/spans while open harbour still blocks.
-- **Unity GisCity pipeline (roadmap #2/#4/#5):** `fetch_osm.py` parses multipolygon **relations + holes** (tested offline); `GeoJson`/`EarClipping`/`GisCity` get courtyards/holes (keyhole-bridged triangulation), inner walls, and per-building category palettes/heights. **Not gate-verified** — the sandbox egress policy blocks the .NET SDK download; `tools/csharp/setup.sh` now falls back to the Microsoft CDN so a full-access session can run the gate.
-- **Fog removed + islands as land + clean ground:** removed all distance fog; cut Fish/Pope's Island + wharves out of the water (render as land, `derive_islands.py` → `islands-newbedford.json`); dropped the washed satellite drape for one retoned stylized ground.
+### 2026-06-24 — NB rooflines + favicon
+- **Peaked roofs (less "extruded box"):** `StreamingBuildings.tsx` now caps short
+  footprints (`height < 14 m`) with a peaked hip roof — a triangle fan from each
+  footprint edge to a single apex over the centroid (pitch ≈ steep 35-45° on
+  house/triple-decker widths, capped at 5.5 m so wide blocks don't spike). Tall
+  granite-downtown + brick mills keep realistic flat roofs; heroes untouched;
+  rooftop water-tank/AC clutter moved to flat-roofed buildings only. Found +
+  fixed a backface-culling bug (fan winding faced down → roofs invisible behind
+  the flat extrude cap); winding now derived from the footprint's signed area in
+  world XZ so it's robust to OSM orientation. Verified deterministically (merged
+  geometry max-Y rises above walls, roof normals face up) and visually in photo
+  mode (incl. a magenta debug pass to confirm the peak shape). Added an inline
+  SVG favicon (kills the `favicon.ico` 404). Shipped (`b64ddac`).
 
-### 2026-06-24 — "100 to perfection" grind (web game)
-Goal: 100 concrete improvements to the playable web game. Running log:
-- **Streets b1 (1–7):** new `StreetExtras` (stop signs, parking meters, trash cans, traffic cones) curbside; +parked-car density (26→46, tighter spacing); +crosswalk density/radius.
-- **Streets b2 (8–10):** phone booths, newspaper boxes, bollards (fill StreetExtras slots).
-- **Waterfront b3 (11–13):** new `Waterfront` — shoreline timber pilings + mooring buoys.
-- **Roads b4 (14–16):** new `RoadFixtures` — manhole covers + curb storm grates.
-- **Density b5 (17–21):** more furniture/street-signs/traffic-lights/utility-poles/graffiti.
-- **Variety b6 (22–24):** wider parked-car + awning palettes; more ground grime.
-- **Variety b7 (25–27):** per-instance colour for trees/benches/hydrants.
-- **Port b8 (28–31):** new `PortClutter` — wharf shipping containers, crates, barrels.
-- **Buildings b9 (32):** per-building window-pattern phase (varied night lighting).
-- **Foliage b10 (33–35):** new `Foliage` — frontage bushes + curb grass tufts.
-- **Tuning b11 (36–37):** longer road draw distance (fog-free) + more gulls.
-- **Variety b12 (38–39):** trash-can + newspaper-box colour variety.
-- **Life b13 (40–41):** more pedestrians (32) + traffic cars (20).
-- **Vehicles b14 (42–45):** new models — pickup, station wagon, cargo van, sedan.
-- **Road wear b15 (46–48):** asphalt repair patches + denser street/fixture sampling.
-- **Life b16 (49–50):** wider pedestrian + traffic-car palettes.
-- **Fences b17 (51–52):** new `Fences` — chain-link along service/back lots.
-- **Atmosphere b18 (53–54):** more stars + varied rooftop-unit colours.
-- **Billboards b19 (55–56):** new `Billboards` — roadside poster boards on arterials.
-- **Variety b20 (57–58):** per-instance scale for awnings + crosswalks.
-- **Back-lots b21 (59–60):** new `Dumpsters` — dumpsters + pallets on service roads.
-- **Variety b22 (61–62):** per-instance colour for phone booths + parking meters.
-- **Vehicles b23 (63–65):** box truck, coupe, SUV.
-- **Landmarks b24 (66–68):** real hero materials (clapboard/brick/granite, was gold); Seamen's Bethel full bell tower + octagonal spire + Greek-revival cornice + repositioned entrance.
-- **Landmarks b25 (69–70):** Bethel grass lawn + flagpole/flag (per reference photos).
-- **Realism b26 (71–73):** parked-car yaw jitter; more crosswalks + awnings.
-- **Density b27 (74–76):** denser foliage/port/waterfront layers.
-- **Polish b28 (77–81):** brighter night ambient; placement jitter (street/port/dumpsters); more gulls.
-- **Density b29 (82–86):** higher caps on port/waterfront/dumpsters/fences/fixtures.
-- **Variety b30 (87–91):** wider container/dumpster palettes; more decals/crosswalks/graffiti.
-- **Bethel b31 (92–93):** brick entrance walkway + foundation shrubs.
-- **Finish b32 (94–100):** more street trees + foliage greens; more billboards/traffic-lights/utility-poles/street-signs; wider crosswalk radius.
-
-**✅ 100/100 web-game improvements shipped.** New components added this run: `StreetExtras`, `Waterfront`, `RoadFixtures`, `Foliage`, `Fences`, `Billboards`, `Dumpsters`, `PortClutter`; plus the Seamen's Bethel rebuild, real hero-building materials, fog removal, island land, the clean stylized ground, the road-over-water fix, building/vehicle/pedestrian variety, and a citywide density pass. All build-verified via Vercel.
-
-### 2026-06-24 — "Next 100" grind: real OSM grounding + the Hurricane Barrier
-Now pulling **real OpenStreetMap data live** (Overpass reachable this session) and baking it to `public/*-newbedford.json`, loaded by the slice loader.
-- **Hurricane Barrier:** real OSM breakwater ways → `barrier-newbedford.json`; `HurricaneBarrier` renders the stone dike + granite deck across the harbour mouth (Clark's Cove dike + main barrier), registered drivable in `waterZones`.
-- **Parks/green (101–103):** OSM parks/gardens/grass/pitches (172) → green lawns via `Parks`→`FlatAreas`.
-- **Surfaces (104–107):** OSM parking lots (asphalt) + beaches (sand) via generic `FlatAreas`.
-- **Rail (108–110):** OSM railway lines (60) → ballast bed + steel rails via `Rail`.
-- **Deferred:** open-sea water polygon (harbour is OSM coastline; needs a visual check to shape correctly).
-
-
-### 2026-06-24 — Radio fix + daytime visual pass (from player screenshots)
-- **The Anvil "only first line" fix:** `vo.ts` talk loop only advanced on `onend`; a misconfigured ElevenLabs voice returning a 200 with an empty/garbage blob never fired `ended`/`error`, stalling after line 1. Added a single-fire finish guard + watchdog (sized to clip duration or text estimate) on both the ElevenLabs and Web-Speech paths; empty/tiny (<256B) blobs fail over instantly; **per-voice strike tracking** routes a consistently-bad voice straight to Web Speech for the session (no repeated dead-air). `stopVO` cancels the active watchdog. (`ff645a4`, `4f8b2c5`)
-- **Radio depth:** each of the four hosts expanded to **52–53 lines** (was 32). (`ff645a4`)
-- **Daytime window glow:** windows lit orange in full daylight — all three building systems (`StreamingBuildings`, `Buildings`, `SeamensBethel`) ramped emissive on a gentle `1-dayT` curve. Switched to a dusk-gated smoothstep (dayT 0→0.3) so glass is dark by day, lit only near dusk/night. (`8da26f7`)
-- **Trees:** blocky neon-green detail-0 icosahedron crowns → **detail-1 rounded canopies** (`Props`, `AreaTrees`) + muted green palettes. (`8da26f7`)
-- **Deferred (left as-is, by design):** bright horizon band is the no-fog Sky horizon (per the user's "remove fog entirely"); green pillar + magenta beam on the cobble are gameplay markers (collectible glow + mission objective beam), not bugs.
-
-### 2026-06-24 — Material/ground feedback pass + plan housekeeping (player screenshots)
-- **Ground flicker → solid:** flattened `makeGroundTexture` (dropped fine grit speckle + heavy mottle that shimmered like a satellite drape) and lowered the ground repeat to ~150 m/tile; base retoned to neutral urban grey. OSM overlays carry per-material colour (parks/grass/wood/cemetery green, parking grey, beach tan). (`1c29d68`)
-- **Sidewalks standardised:** dedicated `makeSidewalkTexture` (warm concrete + scored slab joints + light aggregate) on the road apron in a warmer/darker tone — one consistent, better sidewalk everywhere. (`1c29d68`)
-- **Beach tan + water bright blue:** beach `#e0cc94`; water `#1f86c9` (was dark teal) + brighter minimap water. (`1c29d68`)
-- **Daytime-glow consistency:** windows (all 3 building systems), vehicle head/taillights, and streetlamps now dusk-gated via `smoothstep(dayT,0,0.3)` — dark by day, lit at dusk/night. Trees rounded (detail-1 crowns) + muted greens. (`8da26f7`, `548970a`)
-- **Build stamp:** `vite.config` injects commit SHA + date; HUD shows `build <sha> · <date>` bottom-left. (`f1e07d6`)
-- **Bethel flag** now ripples in the wind (segmented plane, travelling sine).
-- **Plan housekeeping:** marked land-use layers, rail/bridges/piers, parks/foliage done; curbs/sidewalks + build-stamp partial.
-
-### 2026-06-24 — Resilience + CI batch (non-visual, safe during visual iteration)
-- **Build stamp** in HUD (commit SHA + date) so the live deploy is unambiguous after a hard refresh. (`f1e07d6`)
-- **Main-game error boundary** (`ui/ErrorBoundary.tsx` around `<App>`): a render crash shows a recoverable overlay + reload instead of a white screen. (`e80c49c`)
-- **web-ci workflow**: `tsc && vite build` on PRs/pushes under `QUAHOG_Web`. First run surfaced that `package-lock.json` drifts from `package.json` (`@vercel/blob` + deps missing from the lock), so strict `npm ci` fails. The lock can't be regenerated here (org egress policy 403s `@vercel/blob`) and there's no local dev env to do it either — but it's a non-issue: Vercel and CI both use `npm install`, which builds fine, so CI uses `npm install` to match. No action outstanding. (`e80c49c`→`67a8669`)
-- **Slice-load progress bar** + **vendor code-splitting** (three/r3f/rapier/react chunks) shipped and CI+Vercel-verified (`447b613`, `c1161d0`). Lockfile note resolved: no action outstanding (CI/Vercel both use `npm install`).
-
-### 2026-06-25 — World-gen artifact cleanup + resume plan loop
-- **World-gen cleanup (from playtest screenshots, merged PRs #29–#31):** building façade/window/storefront/roofline variety + per-ped colour/size variety + non-glowing player/hospital + reduced bloom; then a world-artifact pass — filtered **7.4k stray service/parking/alley/construction/corridor/track ways** at slice load (unnecessary roads), stopped `Props` decorating bridges + motorway/trunk (floating benches/trees over Rt 18), moved the **Battleship Cove fast-travel off the Braga Bridge deck**, dropped park/area polys below the road apron (green z-fight bleed), and dulled the steel **rails** so they stop mirroring the sky blue. (Stylized New-Bedford focus; earth/photoreal parked.)
-- **§15 day counter + sleep/time-skip:** the clock now integrates on `shared.hour` and bumps a `shared.day` counter at midnight; inside a safehouse on foot **T sleeps til 07:00** (heal + clear both wanted axes + advance day + save), with hint/confirm toasts. HUD shows **Day N**; New Game resets to Day 1 / 09:00; **Continue restores the saved day/time**. Shipped (`dd376e3`+).
-- **§30 credits/attribution:** pause-menu **Credits & attribution** overlay (OSM ODbL, CesiumMan CC-BY, Three.js/R3F/Rapier/drei, procedural+ElevenLabs audio, parody/fiction disclaimer); added `T sleep` to the controls crib. Shipped (`b321c38`).
-- **§26 shadows toggle:** a `ShadowGate` flips `gl.shadowMap.enabled` from a persisted `shadows` setting — a real mobile perf lever (skips the shadow-map pass). Pause-menu **Shadows: On/Off**. Shipped (`d7cb482`).
-- **§12 reverse lights:** white backup lights on the player car, lit when `shared.carSpeed < -0.5` (Vehicle gains a `reverse` getter; traffic never reverses so they stay off). Shipped (`c68b294`).
-- **§22 stats screen:** pause-menu **Stats** overlay (day, health, cash, police/faction wanted stars, fronts owned, scrimshaw n/8, mission) — read-only from existing state. Shipped (`cd729f8`).
-- **§21 minimap business icons:** owned fronts (filled gold) + buyable fronts (hollow gold) now show on the radar (Minimap.tsx). Shipped (`24c7329`).
-- **§24 FOV setting:** a persisted **Field of view** slider (45–85°) in pause settings feeds the camera base FOV (speed-widening still applies on top) — motion comfort (store/PauseMenu/FollowCamera/GameSystems). Shipped.
-- **Mobile access fixes:** the pause menu (Stats/Credits/Shadows/FOV/etc.) was Esc/P-only → unreachable on phones; added an always-visible HUD **☰ menu button**. Then expanded **touch controls** to a full action set (handbrake/sprint held via `input.setVirtualHold`, horn/map/menu/buy/outfit/photo/sleep/weather/weapon 1–4) with a **per-button show/hide toggle** in edit mode, persisted (schema v3). Verified the **radio** wiring end-to-end (station select/`[ ]` → setStation → AudioContext resume → talk/music + fallbacks; mute/skip/subtitle/volume all connected). Shipped.
-- **Direction (2026-06-25 pm):** per the user, New Bedford is "good enough" — **stop NB polish; next = missions, then Brockton (City of Champions / boxing) with purpose, then surrounding towns as content needs them.** (Supersedes the 2026-06-22 "perfect NB first" hold.)
-
-### 2026-06-24 — Visual batch REVERTED per player feedback
-The ground/sidewalk/water/beach + tree + window/vehicle/streetlamp day-night gating + Bethel flag pass read as "a mess" in play. Reverted all 11 purely-visual files to the pre-batch state (`4f8b2c5`); kept the non-visual work (CI, build stamp, error boundary, progress bar, code-splitting, debug overlay). Build green (`5856be8`). **Lesson: land visual changes one at a time with a screenshot check before the next, rather than a big simultaneous pass.** Re-approach the originally-flagged issues (daytime window glow, blocky trees, flickering ground, pale sidewalk, dark water) individually when the player is ready.
