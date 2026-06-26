@@ -17,6 +17,8 @@ const Y_OVERLAY: = 0.02
 const FACADE_PATH: = "res://assets/textures/walls/facade_windows_dusk.png"
 const WALL_TILE_U: = 4.0
 const WALL_TILE_V: = 3.2
+const ASPHALT_PATH: = "res://assets/textures/floors/wet_asphalt.png"
+const ROAD_TILE: = 8.0  # metres per asphalt texture repeat (planar UV)
 
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
@@ -49,6 +51,7 @@ var npc_spawns: Array[Vector3] = []
 var job_points: Array[Vector3] = []
 var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ...]
 var _facade_tex: Texture2D = null
+var _asphalt_tex: Texture2D = null
 
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
@@ -75,6 +78,8 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
         (radius_tiles * 2 + 1) * TILE_M)
     if _facade_tex == null and ResourceLoader.exists(FACADE_PATH):
         _facade_tex = load(FACADE_PATH)
+    if _asphalt_tex == null and ResourceLoader.exists(ASPHALT_PATH):
+        _asphalt_tex = load(ASPHALT_PATH)
     _build_ground(parent, bbox)
     _build_overlays(parent, bbox)
     _build_roads(parent, bbox)
@@ -247,9 +252,13 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         if wdir.length_squared() > 0.0001:
             roty = rad_to_deg(atan2(wdir.x, wdir.z))
         _road_samples.append([to_world(mid.x, mid.y, 0.0), roty])
+    st.generate_normals()
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
     mat.roughness = 0.95
+    if _asphalt_tex:
+        mat.albedo_texture = _asphalt_tex
+        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     st.set_material(mat)
     var mi: = MeshInstance3D.new()
     mi.name = "Roads"
@@ -276,6 +285,7 @@ func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :
         var vb_r: = to_world(b_r.x, b_r.y, Y_ROAD)
         for v in [va_l, va_r, vb_r, va_l, vb_r, vb_l]:
             st.set_color(col)
+            st.set_uv(Vector2(v.x / ROAD_TILE, v.z / ROAD_TILE))
             st.add_vertex(v)
 
 
