@@ -25,7 +25,7 @@ export function Effects() {
     }
     if (bc.current) {
       bc.current.brightness = -0.05 * night;
-      bc.current.contrast = 0.06 + 0.05 * night;
+      bc.current.contrast = 0.11 + 0.05 * night;
     }
   });
 
@@ -34,7 +34,7 @@ export function Effects() {
       <Bloom intensity={0.48} luminanceThreshold={0.86} luminanceSmoothing={0.25} mipmapBlur />
       <ChromaticAberration offset={new THREE.Vector2(0.0008, 0.0008)} radialModulation modulationOffset={0.4} />
       <HueSaturation ref={hs} hue={0} saturation={0} />
-      <BrightnessContrast ref={bc} brightness={0} contrast={0.06} />
+      <BrightnessContrast ref={bc} brightness={0} contrast={0.11} />
       <Noise premultiply blendFunction={BlendFunction.OVERLAY} opacity={0.16} />
       <Vignette eskil={false} offset={0.28} darkness={0.68} />
       <SMAA />
