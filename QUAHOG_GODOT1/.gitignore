@@ -2,11 +2,16 @@
 # The editor regenerates this import/cache directory on open — never commit it.
 .godot/
 
-# Exported builds
+# Exported builds (produced fresh at deploy time by build_web.sh)
 /build/
 /export/
 *.pck
 *.zip
+# ...but the committed web export template must be tracked.
+!.godot-templates/web_nothreads_release.zip
+
+# Vercel build workspace (downloaded Godot binary + templates)
+.vercel-godot/
 
 # Mono / .NET (unused here, but safe to ignore)
 .mono/
