@@ -19,6 +19,7 @@ var _root: Control
 var _cash_label: Label
 var _prompt_label: Label
 var _toast_label: Label
+var _radio_label: Label = null
 var _pause_panel: Control
 var _edit_banner: Control
 var _font: Font
@@ -69,6 +70,7 @@ func _ready() -> void :
     _build_touch_controls()
     _build_gameplay_panels()
     _build_pause()
+    _build_radio()
     _build_edit_banner()
 
     _load_layout()
@@ -378,6 +380,51 @@ func _build_pause() -> void :
     edit_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
     edit_btn.position = Vector2(116, 28)
     edit_btn.pressed.connect(_toggle_edit)
+
+
+func _build_radio() -> void :
+    # Tap to cycle OFF -> WHALE -> The Rage -> The Anvil -> Maré Alta -> OFF.
+    var radio_btn: = TouchButton.new()
+    radio_btn.control_id = "radio"
+    radio_btn.label_text = "RADIO"
+    radio_btn.custom_minimum_size = Vector2(104, 64)
+    radio_btn.size = radio_btn.custom_minimum_size
+    radio_btn.accent = Color(0.42, 0.3, 0.5)
+    _root.add_child(radio_btn)
+    radio_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    radio_btn.position = Vector2(208, 28)
+    radio_btn.pressed.connect(_on_radio_pressed)
+
+    _radio_label = Label.new()
+    _apply_font(_radio_label, 24, Color(0.86, 0.80, 0.94))
+    _radio_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _radio_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_radio_label)
+    _radio_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _radio_label.position = Vector2(208, 98)
+    _radio_label.custom_minimum_size = Vector2(420, 30)
+    _radio_label.text = "RADIO: OFF"
+
+    var radio: = get_node_or_null("/root/Radio")
+    if radio:
+        radio.station_changed.connect(_on_radio_station)
+        radio.now_playing.connect(_on_radio_track)
+
+
+func _on_radio_pressed() -> void :
+    var radio: = get_node_or_null("/root/Radio")
+    if radio:
+        radio.cycle()
+
+
+func _on_radio_station(_index: int, station_name: String) -> void :
+    if _radio_label:
+        _radio_label.text = "RADIO: " + station_name
+
+
+func _on_radio_track(title: String) -> void :
+    if _radio_label and title != "":
+        _radio_label.text = "♪ " + title
 
 
     _pause_panel = Control.new()

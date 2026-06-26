@@ -1,0 +1,44 @@
+[
+ {
+  "key": "whale",
+  "name": "WHALE 92.1",
+  "tracks": [
+   "res://assets/audio/music/radio/whale/Buzzards_Bay1.mp3",
+   "res://assets/audio/music/radio/whale/Buzzards_Bay2.mp3",
+   "res://assets/audio/music/radio/whale/Whaling_City1.mp3",
+   "res://assets/audio/music/radio/whale/Whaling_City2.mp3"
+  ]
+ },
+ {
+  "key": "rage",
+  "name": "THE RAGE 1480",
+  "tracks": [
+   "res://assets/audio/music/radio/rage/Georges_Cafe_Saturday_Night.mp3",
+   "res://assets/audio/music/radio/rage/Georges_Cafe_Saturday_Night2.mp3",
+   "res://assets/audio/music/radio/rage/Lights_at_Marciano.mp3",
+   "res://assets/audio/music/radio/rage/Quahog_Republic_Saturday_Night1.mp3",
+   "res://assets/audio/music/radio/rage/Quahog_Republic_Saturday_Night2.mp3",
+   "res://assets/audio/music/radio/rage/Under_the_Lights_at_Marciano2.mp3"
+  ]
+ },
+ {
+  "key": "anvil",
+  "name": "THE ANVIL",
+  "tracks": [
+   "res://assets/audio/music/radio/anvil/Mill_Town_Heart.mp3",
+   "res://assets/audio/music/radio/anvil/Northbound_on_TwentyFour.mp3",
+   "res://assets/audio/music/radio/anvil/Route_TwentyFour2.mp3",
+   "res://assets/audio/music/radio/anvil/Shoe_City_Heart.mp3",
+   "res://assets/audio/music/radio/anvil/Tower_Hill.mp3"
+  ]
+ },
+ {
+  "key": "mare",
+  "name": "MARÉ ALTA",
+  "tracks": [
+   "res://assets/audio/music/radio/mare/Carta pra Mãe2.mp3",
+   "res://assets/audio/music/radio/mare/Festa na Avenida1.mp3",
+   "res://assets/audio/music/radio/mare/Maré Alta2.mp3"
+  ]
+ }
+]
