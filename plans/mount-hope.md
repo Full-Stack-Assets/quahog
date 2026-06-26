@@ -2,17 +2,18 @@
 
 The one file to track everything. Update the **checklist** as work lands and append
 to the **running log** every working session. Keep it honest: only check a box when
-it's actually built, verified (build passes), and shipped.
+it's actually built, verified (the Godot project compiles), and shipped.
 
 - **Working title:** Mount Hope (retired “Project QUAHOG”)
-- **Canonical engine:** `QUAHOG_Web/` — Three.js / React Three Fiber + Rapier (web; runs & deploys today). Unity/Godot = legacy reference (`ENGINES.md`).
-- **Live:** https://projectsouthcoast.vercel.app · branch `claude/determined-thompson-9jg8o1` → `main` (Vercel auto-deploy)
-- **Photoreal experiment:** `QUAHOG_Web/earth.html` (Google 3D Tiles) — blocked on a billed Google key; parked.
+- **Canonical engine (build target):** `QUAHOG_GODOT1/` — **Godot 4.6**, GL Compatibility (mobile/web export), pure GDScript. This is what we ship.
+- **Reference spec (port FROM here):** `QUAHOG_Web/` — Three.js / React Three Fiber + Rapier. The web build is the most complete realization of Mount Hope; **Parts I–III below describe its feature set and are the target the Godot port recreates.** Live: https://projectsouthcoast.vercel.app
+- **Goal:** recreate the web game in Godot — the exact New Bedford map (buildings, roads, waterfront), the characters/heroes, vehicles, and the full GTA-style gameplay loop — as a faithful port, then carry it forward natively.
+- **Cadence:** months of daily iteration via the **Working loop** below. One coherent task per cycle; keep the Godot project compiling; restructure freely as the port’s reality dictates.
 - **Design canon:** `quahog-project-files/CHARACTERS_AND_MISSIONS.md`, `GEMINI_BUILD_PROMPT.md`, `ROADMAP.md`.
-- **Hard external blocker:** AAA console release needs Sony/Microsoft registered-dev + devkits (a business/legal step, not buildable here).
+- **Verification:** headless compile — `godot --headless --path QUAHOG_GODOT1 --import` must report zero script/parse errors before shipping.
 
-Legend: `[x]` done & shipped · `[~]` partial/in progress · `[ ]` not started.
-Everything below is scoped to be **achievable in the web engine** unless marked *(parked/external)*.
+Legend: `[x]` done & shipped **in Godot** · `[~]` partial/in progress in Godot · `[ ]` not started in Godot.
+> **Re-baselining note:** Parts I–III were authored against the **web** build and their boxes reflect *web* status. They are kept as the **target spec**. Live Godot port progress is tracked in **§G0 (current state)** and the **Recreation roadmap** immediately below; as each web feature is ported, mirror it into the relevant Part I–III box with a `(Godot)` note.
 
 ---
 
@@ -51,6 +52,40 @@ time; keep the build green; be honest about status.
 - The user can interrupt to re-prioritize at any point; honor it, then resume the loop.
 
 ---
+
+## §G0. Godot port — current state (baseline)
+
+What `QUAHOG_GODOT1/` actually has today (from the initial upload), verified compiling
+on Godot 4.6. This is the floor we build the recreation on.
+
+- [x] Project boots: `project.godot` (Mount Hope, GL Compatibility, mobile/landscape), autoloads (LoadingScreen, AudioManager, GameManager, VFX), input map (move/jump/sprint/interact/fire/aim/reload/enter_vehicle/crouch/pause).
+- [x] Main menu scene → game world scene flow (`scenes/main.tscn`, `game_world.tscn`, `player.tscn`).
+- [x] Player controller: walk/sprint, health/armor/damage (`take_damage`), melee + gunfire, hooks for models/audio (load-at-runtime, degrades without assets).
+- [x] Weapons data + behavior: fists/bat/pistol/shotgun/rifle (`data/weapon_db.gd`), pickups.
+- [x] NPCs + police (3-HP enemies, pursuit), wanted system, job manager (deliveries), shops (weapons/ammo).
+- [x] UI: HUD, minimap, shop menu, touch controls (virtual joystick + buttons).
+- [~] City: **procedural grid** city (`world/city_builder.gd`) — placeholder; **to be replaced by the real New Bedford map** (see roadmap P1).
+- [ ] Real OSM map, real heroes/characters, missions, economy, radio, weather/VFX depth — all to be ported from the web spec.
+
+## §GR. Recreation roadmap (phased — the Godot port of the web game)
+
+Coarse phases; each expands into working-loop tasks. Order: world foundation → actors →
+systems → content → aesthetics/polish. Re-order freely as reality dictates.
+
+- [~] **P1 — World foundation: the real map.** Import the web map data (`slice-newbedford.json` roads, `public/tiles/*` building footprints, land-use overlays) into the Godot project and build it: extruded buildings + colliders, road network, water/parks/beaches. Replace the procedural grid. *(in progress this cycle)*
+- [ ] **P2 — Streaming & scale.** Distance-based tile streaming (mirror the web's 500 m tiles), LOD/culling, so the full region runs on mobile/web export.
+- [ ] **P3 — Player & camera parity.** Chase + first-person cameras, on-foot + driving feel matched to the web build; wall/ground collision on the real geometry.
+- [ ] **P4 — Vehicles & traffic.** Real car models/handling, enter/exit/carjack, ambient traffic on the road graph, parked cars.
+- [ ] **P5 — NPCs & police.** Pedestrians, flee/panic, traffic AI, police pursuit/heat parity.
+- [ ] **P6 — Gameplay systems.** Missions (Off the Boat opener + chain), dual-axis heat/wanted, safehouses, wallet/economy, businesses, save/load, day-night clock.
+- [ ] **P7 — Heroes & landmarks.** Seamen’s Bethel, Hurricane Barrier, Battleship Cove (USS Massachusetts), Lizzie Borden House, Braga Bridge, the mills — on real coords.
+- [ ] **P8 — Aesthetics & atmosphere.** Day/night, weather, water shading, post FX, façade/material variety, lighting — toward the web build’s look within GL Compatibility.
+- [ ] **P9 — Audio & radio.** SFX, engine/ambience, the 4 radio stations + VO pipeline.
+- [ ] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD/menus parity, touch/gamepad, settings, optimization, smoke tests.
+
+---
+
+# Part I — Target spec (web build feature set; boxes reflect WEB status)
 
 ## 0. Foundations & ops
 - [x] Repo + branch workflow; Vercel project + git auto-deploy (`projectsouthcoast`)
