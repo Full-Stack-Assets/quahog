@@ -34,6 +34,9 @@ const HERO_COLORS: Record<string, string> = {
 };
 const HERO = new Set(Object.keys(HERO_COLORS));
 const FLOOR = 3.2; // metres per window row
+// Base wall-UV tile: one façade texture (FACADE_GRID windows) spans FLOOR*GRID
+// metres. Per-building winTile scales this so neighbours don't share one grid.
+const WIN_TILE = FLOOR * FACADE_GRID;
 // Buildings shorter than this get a peaked (hip) roof — New Bedford's signature
 // triple-deckers/houses read as boxes when flat-topped. Taller granite downtown
 // + brick mills keep their realistic flat roofs.
@@ -266,12 +269,15 @@ function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
     }
     g.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
-    geoms.push(g);
+    // assign each building to one façade variant so neighbours show different
+    // window styles (the maps are per-variant); roof shares the same bucket.
+    const variant = i % FACADE_VARIANTS;
+    buckets[variant].push(g);
     // short residential/commercial footprints get a peaked roof so the skyline
     // stops reading as a field of flat boxes (heroes keep their modeled look).
     if (!isHero && b.height < PITCH_MAX_H) {
       const rg = roofGeometry(b.footprint, b.height, roof);
-      if (rg) geoms.push(rg);
+      if (rg) buckets[variant].push(rg);
     }
   });
   return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
@@ -297,12 +303,20 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   // reads as a real skyline, not a field of identical boxes.
   const roofs = useMemo(() => {
     const out: { x: number; y: number; z: number; sx: number; sy: number; sz: number }[] = [];
-    let i = 0;
+    let idx = 0;
     for (const b of buildings) {
       if (b.height < PITCH_MAX_H || b.height > 45) continue; // only flat-roofed buildings
       let x = 0, n = 0; for (const p of b.footprint) { x += p[0]; n += p[1]; }
       const k = b.footprint.length;
-      out.push([x / k, b.height, -(n / k)]);
+      const hash = (idx * 0.6180339887) % 1;
+      // size the rooftop unit by building class: mid-rise gets a small AC/water-
+      // tank box, taller blocks a chunkier stair-penthouse/tank.
+      const big = b.height >= 28;
+      const sx = (big ? 3.5 : 1.8) + hash * 1.8;
+      const sy = (big ? 3.0 : 1.6) + hash * 1.6;
+      const sz = (big ? 3.5 : 1.8) + hash * 1.8;
+      out.push({ x: x / k, y: b.height, z: -(n / k), sx, sy, sz });
+      idx++;
       if (out.length > 90) break;
     }
     return out;
