@@ -473,10 +473,8 @@ func _respawn() -> void :
 
 func fast_travel_to(target: Vector3) -> void :
     # Map-tap teleport. Raycast down from high above the target to land on the
-    # street/terrain instead of clipping into a building or floating. Falls back
-    # to a fixed height if nothing is hit.
-    if _driving:
-        exit_car()
+    # street/terrain instead of clipping into a building or floating. If you're
+    # driving, your car comes with you (it's your ride across the South Coast).
     var space: = get_world_3d().direct_space_state
     var from: = Vector3(target.x, 400.0, target.z)
     var to: = Vector3(target.x, -200.0, target.z)
@@ -489,8 +487,15 @@ func fast_travel_to(target: Vector3) -> void :
         if GameManager and GameManager.has_method("show_message"):
             GameManager.show_message("Can't fast-travel there.")
         return
-    var y: float = (hit["position"] as Vector3).y + 1.2
-    global_position = Vector3(target.x, y, target.z)
+    var ground: float = (hit["position"] as Vector3).y
+    if _driving and current_car != null and is_instance_valid(current_car) and current_car.has_method("place_at"):
+        current_car.place_at(Vector3(target.x, ground + 0.5, target.z), rad_to_deg(get_map_heading()))
+        global_position = Vector3(target.x, ground + 1.2, target.z)
+        velocity = Vector3.ZERO
+        if GameManager and GameManager.has_method("show_message"):
+            GameManager.show_message("Fast travelled (with car).")
+        return
+    global_position = Vector3(target.x, ground + 1.2, target.z)
     velocity = Vector3.ZERO
     if GameManager and GameManager.has_method("show_message"):
         GameManager.show_message("Fast travelled.")

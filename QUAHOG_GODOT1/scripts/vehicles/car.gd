@@ -123,9 +123,15 @@ func place_at(pos: Vector3, yaw_deg: float) -> void :
     global_position = pos
     if sphere:
         sphere.global_position = pos + Vector3(0, 0.5, 0)
+        sphere.linear_velocity = Vector3.ZERO
+        sphere.angular_velocity = Vector3.ZERO
     if vehicle_model:
         vehicle_model.global_position = pos
         vehicle_model.rotation.y = deg_to_rad(yaw_deg)
+        prev_position = vehicle_model.position
+    linear_velocity = Vector3.ZERO
+    if active:
+        _snap_camera()
 
 
 func enter(_driver: Node) -> void :
