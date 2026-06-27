@@ -44,6 +44,18 @@ func _ready() -> void :
     mouse_filter = Control.MOUSE_FILTER_STOP
     _font = load("res://assets/fonts/noto_serif.ttf")
 
+    var close_btn: = Button.new()
+    close_btn.text = "✕ CLOSE"
+    close_btn.focus_mode = Control.FOCUS_NONE
+    close_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    close_btn.position = Vector2(-180, 40)
+    close_btn.custom_minimum_size = Vector2(140, 56)
+    if _font:
+        close_btn.add_theme_font_override("font", _font)
+    close_btn.add_theme_font_size_override("font_size", 26)
+    close_btn.pressed.connect(func(): visible = false)
+    add_child(close_btn)
+
 
 func toggle() -> void :
     visible = not visible
@@ -58,29 +70,28 @@ func _process(_delta: float) -> void :
 
 
 func _gui_input(event: InputEvent) -> void :
-    if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
-        var mb: = event as InputEventMouseButton
-        # Tap a spot to fast-travel there. If the tap lands near a named
-        # destination label, snap to that exact spot; otherwise free-travel.
-        if player != null and is_instance_valid(player):
-            var scale: float = minf(size.x, size.y) / VIEW_M
-            var cpx: Vector2 = size * 0.5
-            var center: Vector3 = player.global_position
-            # Default: free-travel to the tapped point. If the tap lands near a
-            # named destination, snap to that exact spot instead.
-            var rel: Vector2 = (mb.position - cpx) / scale
-            var target: = Vector3(center.x + rel.x, center.y, center.z + rel.y)
-            for d in DESTINATIONS:
-                var dp: Vector2 = d["pos"]
-                var screen: Vector2 = cpx + (dp - Vector2(center.x, center.z)) * scale
-                if mb.position.distance_to(screen) <= SNAP_PX:
-                    target = Vector3(dp.x, center.y, dp.y)
-                    break
+    if not (event is InputEventMouseButton and (event as InputEventMouseButton).pressed):
+        return
+    var mb: = event as InputEventMouseButton
+    if player == null or not is_instance_valid(player):
+        return
+    # Fast-travel ONLY when a tap lands on a named destination — empty taps do
+    # nothing (so you can read the map without it closing or flinging you into
+    # the harbour). Close with the X button or the M key.
+    var scale: float = minf(size.x, size.y) / VIEW_M
+    var cpx: Vector2 = size * 0.5
+    var center: Vector3 = player.global_position
+    for d in DESTINATIONS:
+        var dp: Vector2 = d["pos"]
+        var screen: Vector2 = cpx + (dp - Vector2(center.x, center.z)) * scale
+        if mb.position.distance_to(screen) <= SNAP_PX:
+            var target: = Vector3(dp.x, center.y, dp.y)
             if player.has_method("fast_travel_to"):
                 player.fast_travel_to(target)
             else:
                 player.global_position = target
-        visible = false
+            visible = false
+            return
 
 
 func _load_roads() -> void :
@@ -186,4 +197,4 @@ func _draw() -> void :
 
     if _font:
         draw_string(_font, Vector2(40, 64), "MOUNT HOPE — MAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.96, 0.86, 0.6))
-        draw_string(_font, Vector2(40, size.y - 36), "Tap anywhere to fast-travel (names snap exactly) · M to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))
+        draw_string(_font, Vector2(40, size.y - 36), "Tap a gold place name to fast-travel there · ✕ or M to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))

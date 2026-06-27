@@ -481,7 +481,13 @@ func fast_travel_to(target: Vector3) -> void :
     var q: = PhysicsRayQueryParameters3D.create(from, to)
     q.exclude = [get_rid()]
     var hit: Dictionary = space.intersect_ray(q)
-    var y: float = (hit["position"] as Vector3).y + 1.2 if hit.has("position") else 2.0
+    # No ground below the target (open water / void) — refuse rather than fling
+    # the player into the sky over the harbor.
+    if not hit.has("position"):
+        if GameManager and GameManager.has_method("show_message"):
+            GameManager.show_message("Can't fast-travel there.")
+        return
+    var y: float = (hit["position"] as Vector3).y + 1.2
     global_position = Vector3(target.x, y, target.z)
     velocity = Vector3.ZERO
     if GameManager and GameManager.has_method("show_message"):
