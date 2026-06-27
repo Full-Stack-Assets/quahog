@@ -683,6 +683,19 @@ func _unhandled_key_input(event: InputEvent) -> void :
     if k.keycode == KEY_M:
         _on_map_pressed()
         get_viewport().set_input_as_handled()
+        return
+    # Radio: number keys 1-9 pick a station, 0 turns it off (R stays reload).
+    var radio: = get_node_or_null("/root/Radio")
+    if radio == null:
+        return
+    if k.keycode == KEY_0:
+        radio.set_station(-1)
+        get_viewport().set_input_as_handled()
+    elif k.keycode >= KEY_1 and k.keycode <= KEY_9:
+        var idx: int = k.keycode - KEY_1
+        if idx < radio.station_count():
+            radio.set_station(idx)
+            get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void :
