@@ -74,6 +74,8 @@ func _ready() -> void :
     for npc in _npcs:
         if is_instance_valid(npc):
             npc.player = _player
+    if _player.has_signal("shots_fired"):
+        _player.shots_fired.connect(_on_shots_fired)
     _build_hud()
     _build_systems()
     _spawn_pickups()
@@ -442,6 +444,13 @@ func _build_shop_menu() -> void :
     add_child(shop_menu)
     if _player:
         shop_menu.bind_player(_player)
+
+
+# Gunfire scatters nearby pedestrians.
+func _on_shots_fired(at: Vector3) -> void :
+    for npc in _npcs:
+        if is_instance_valid(npc) and npc.has_method("panic"):
+            npc.panic(at)
 
 
 func _spawn_npcs() -> void :

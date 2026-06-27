@@ -6,6 +6,7 @@ extends CharacterBody3D
 signal interactable_changed(prompt: String)
 signal weapon_changed(weapon_name: String, clip: int, reserve: int, melee: bool)
 signal driving_changed(driving: bool)
+signal shots_fired(at: Vector3)
 signal health_changed(health: int, max_health: int, armor: int)
 
 @export var speed: float = 2.6
@@ -326,6 +327,7 @@ func do_fire() -> void :
         return
     _weapons[_current_weapon]["clip"] -= 1
     _emit_weapon()
+    shots_fired.emit(global_position)
     _camera_rotation.y = clamp(_camera_rotation.y + 0.035, -1.1, 0.45)
 
     var origin: Vector3 = camera.global_position if camera else global_position + Vector3(0, 1.4, 0)

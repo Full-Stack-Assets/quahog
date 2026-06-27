@@ -15,10 +15,27 @@ var _playback: AnimationNodeStateMachinePlayback
 
 const FAR_DIST: float = 200.0       # respawn near the player past this range
 
+const RUN_SPEED: float = 4.6        # flee speed when panicking
+const PANIC_RADIUS: float = 26.0    # hear gunfire within this range
+
 var player: Node3D = null
 var _target: Vector3 = Vector3.ZERO
 var _idle_timer: float = 0.0
 var _has_target: bool = false
+var _flee_timer: float = 0.0
+var _flee_dir: Vector3 = Vector3.ZERO
+
+
+# Called when the player fires nearby: bolt away from the shot for a few seconds.
+func panic(from: Vector3) -> void :
+    if global_position.distance_to(from) > PANIC_RADIUS:
+        return
+    var away: Vector3 = global_position - from
+    away.y = 0.0
+    if away.length() < 0.1:
+        away = Vector3(randf() - 0.5, 0.0, randf() - 0.5)
+    _flee_dir = away.normalized()
+    _flee_timer = randf_range(2.5, 4.5)
 
 
 func setup(p_model: String, p_lib: String, p_waypoints: PackedVector3Array) -> void :
@@ -132,6 +149,17 @@ func _physics_process(delta: float) -> void :
         velocity.y = 0.0
 
     var moving: = false
+    if _flee_timer > 0.0:
+        _flee_timer -= delta
+        velocity.x = _flee_dir.x * RUN_SPEED
+        velocity.z = _flee_dir.z * RUN_SPEED
+        if mesh_root:
+            mesh_root.rotation.y = lerp_angle(mesh_root.rotation.y, atan2( - _flee_dir.x, - _flee_dir.z), 10.0 * delta)
+        moving = true
+        move_and_slide()
+        if _playback:
+            _playback.travel("walk")
+        return
     if _idle_timer > 0.0:
         _idle_timer -= delta
         velocity.x = move_toward(velocity.x, 0.0, 10.0 * delta)
