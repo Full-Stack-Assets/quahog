@@ -29,6 +29,7 @@ var job_manager: Node = null
 
 var _font: Font
 var _road_cells: Dictionary = {}
+var _landmarks: Array = []          # [{name:String, pos:Vector2(x,z), hero:bool}]
 var _loaded: bool = false
 
 
@@ -111,6 +112,20 @@ func _load_roads() -> void :
             arr.append(a)
             arr.append(b)
 
+    var lms: Variant = data.get("landmarks", [])
+    if lms is Array:
+        for l in lms:
+            if not (l is Dictionary):
+                continue
+            var p: Variant = l.get("pos")
+            if not (p is Array) or p.size() < 2:
+                continue
+            _landmarks.append({
+                "name": str(l.get("name", "")),
+                "pos": Vector2(float(p[0]), - float(p[1])),
+                "hero": bool(l.get("hero", false)),
+            })
+
 
 func _draw() -> void :
     if not visible:
@@ -143,6 +158,18 @@ func _draw() -> void :
         var obj: Vector3 = job_manager.get_objective_position()
         var op: = cpx + Vector2(obj.x - center.x, obj.z - center.z) * scale
         draw_circle(op, 9.0, Color(0.97, 0.8, 0.3))
+
+    # Real New Bedford landmarks (reference only). Hero landmarks get a label;
+    # the rest are small dots so the map stays readable.
+    for lm in _landmarks:
+        var lp: Vector2 = lm["pos"]
+        var sp2: Vector2 = cpx + (lp - Vector2(center.x, center.z)) * scale
+        if sp2.x < 0 or sp2.y < 0 or sp2.x > size.x or sp2.y > size.y:
+            continue
+        var is_hero: bool = lm["hero"]
+        draw_circle(sp2, 3.0 if is_hero else 2.0, Color(0.55, 0.78, 0.85, 0.9 if is_hero else 0.55))
+        if is_hero and _font:
+            draw_string(_font, sp2 + Vector2(6, 4), str(lm["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(0.66, 0.84, 0.9, 0.85))
 
     # Named fast-travel destinations.
     for d in DESTINATIONS:
