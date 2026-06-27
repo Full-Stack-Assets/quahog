@@ -23,6 +23,17 @@ var saved_pos: = Vector3.ZERO
 var saved_yaw: float = 0.0
 var has_saved_pos: bool = false
 
+# World clock + weather, written by game_world so the HUD can display them.
+# day_phase 0 = dusk; the loop runs dusk→night→dawn→day→dusk.
+var day_phase: float = 0.0
+var raining: bool = false
+
+func time_string() -> String:
+    var hours: float = fmod(day_phase * 24.0 + 18.0, 24.0)
+    var h: int = int(hours)
+    var m: int = int((hours - h) * 60.0)
+    return "%02d:%02d" % [h, m]
+
 
 func set_wanted(level: int) -> void :
     level = clampi(level, 0, 5)

@@ -152,6 +152,9 @@ func _process(delta: float) -> void :
     _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()
     _update_weather(delta)
+    if GameManager:
+        GameManager.day_phase = _day_phase
+        GameManager.raining = _raining
 
 
 func _update_weather(delta: float) -> void :
