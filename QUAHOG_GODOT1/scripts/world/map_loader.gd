@@ -35,6 +35,17 @@ const COL_GUARDRAIL: = Color(0.55, 0.56, 0.58)
 const COL_GANTRY: = Color(0.30, 0.31, 0.33)
 const COL_SIGN: = Color(0.04, 0.30, 0.16)  # MUTCD highway-guide green
 
+# The Braga ("Verde") Bridge — Fall River's icon — carries I-195 over the Taunton
+# beside Battleship Cove. In the OSM data it's just flat asphalt, so we frame the
+# real deck span with a green through-truss anchored to the exact crossing. The
+# asphalt underneath stays drivable; the truss is visual only.
+const BRAGA_A: = Vector2(-20701.0, 8078.0)   # span ends in slice space (x_east, y_north)
+const BRAGA_B: = Vector2(-20044.0, 7582.0)
+const BRAGA_HALF: = 15.0      # half deck width framed by the trusses
+const BRAGA_RISE: = 15.0      # arch peak above the deck at mid-span
+const BRAGA_DECK_Y: = 0.6
+const COL_BRAGA: = Color(0.13, 0.42, 0.24)   # Braga Bridge green
+
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
     "motorway": Color(0.16, 0.16, 0.18), "trunk": Color(0.16, 0.16, 0.18),
@@ -111,6 +122,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     _build_ground(parent, FULL_BBOX)
     _build_overlays(parent, FULL_BBOX)
     _build_roads(parent, FULL_BBOX)
+    _build_braga_bridge(parent)
     _buildings_root = Node3D.new()
     _buildings_root.name = "Buildings"
     parent.add_child(_buildings_root)
@@ -521,6 +533,101 @@ func _emit_box_rot(st: SurfaceTool, c: Vector3, sz: Vector3, yaw: float, col: Co
             st.set_color(col)
             st.set_uv(Vector2.ZERO)
             st.add_vertex(v)
+
+
+# A box-section beam between two arbitrary 3D points (square cross-section of side
+# `thick`), oriented along the segment. Used to weld the Braga truss from chords,
+# verticals, and diagonals.
+func _emit_beam(st: SurfaceTool, p0: Vector3, p1: Vector3, thick: float, col: Color) -> void :
+    var axis: = p1 - p0
+    var length: float = axis.length()
+    if length < 0.001:
+        return
+    axis = axis / length
+    var up: = Vector3.UP
+    if absf(axis.dot(up)) > 0.99:
+        up = Vector3.RIGHT
+    var right: = axis.cross(up).normalized()
+    var up2: = right.cross(axis).normalized()
+    var hr: = right * (thick * 0.5)
+    var hu: = up2 * (thick * 0.5)
+    var center: = (p0 + p1) * 0.5
+    var corners: = PackedVector3Array()
+    for sl: float in [-1.0, 1.0]:
+        for sr: float in [-1.0, 1.0]:
+            for su: float in [-1.0, 1.0]:
+                corners.append(center + axis * (length * 0.5 * sl) + hr * sr + hu * su)
+    var idx: Array = [
+        PackedInt32Array([0, 1, 3, 0, 3, 2]),
+        PackedInt32Array([4, 6, 7, 4, 7, 5]),
+        PackedInt32Array([0, 4, 5, 0, 5, 1]),
+        PackedInt32Array([2, 3, 7, 2, 7, 6]),
+        PackedInt32Array([0, 2, 6, 0, 6, 4]),
+        PackedInt32Array([1, 5, 7, 1, 7, 3]),
+    ]
+    for fi: int in range(idx.size()):
+        var face: PackedInt32Array = idx[fi]
+        for k: int in face:
+            var v: Vector3 = corners[k]
+            st.set_color(col)
+            st.set_uv(Vector2.ZERO)
+            st.add_vertex(v)
+
+
+# Green through-truss framing the I-195 deck over the Taunton (the Braga Bridge).
+# Built once over the real crossing; the asphalt deck below stays drivable.
+func _build_braga_bridge(parent: Node3D) -> void :
+    var a: = BRAGA_A
+    var b: = BRAGA_B
+    var total: float = a.distance_to(b)
+    if total < 1.0:
+        return
+    var dir2: = (b - a) / total
+    var perp2: = Vector2(-dir2.y, dir2.x)
+    var bays: int = maxi(10, int(total / 26.0))
+    var top_l: = PackedVector3Array()
+    var top_r: = PackedVector3Array()
+    var bot_l: = PackedVector3Array()
+    var bot_r: = PackedVector3Array()
+    for i in range(bays + 1):
+        var frac: float = float(i) / float(bays)
+        var t: float = total * frac
+        var arch: float = BRAGA_RISE * sin(PI * frac)
+        for s: float in [1.0, -1.0]:
+            var planar: = a + dir2 * t + perp2 * (BRAGA_HALF * s)
+            var bn: = to_world(planar.x, planar.y, BRAGA_DECK_Y + 0.8)
+            var tn: = to_world(planar.x, planar.y, BRAGA_DECK_Y + 5.0 + arch)
+            if s > 0.0:
+                bot_l.append(bn)
+                top_l.append(tn)
+            else:
+                bot_r.append(bn)
+                top_r.append(tn)
+    var st: = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for i in range(bays + 1):
+        _emit_beam(st, bot_l[i], top_l[i], 0.6, COL_BRAGA)   # verticals
+        _emit_beam(st, bot_r[i], top_r[i], 0.6, COL_BRAGA)
+        if i % 4 == 0:
+            _emit_beam(st, top_l[i], top_r[i], 0.6, COL_BRAGA)   # portal bracing across the top
+    for i in range(bays):
+        _emit_beam(st, top_l[i], top_l[i + 1], 0.7, COL_BRAGA)   # top chords
+        _emit_beam(st, top_r[i], top_r[i + 1], 0.7, COL_BRAGA)
+        _emit_beam(st, bot_l[i], bot_l[i + 1], 0.7, COL_BRAGA)   # bottom chords
+        _emit_beam(st, bot_r[i], bot_r[i + 1], 0.7, COL_BRAGA)
+        _emit_beam(st, bot_l[i], top_l[i + 1], 0.4, COL_BRAGA)   # web diagonals
+        _emit_beam(st, bot_r[i], top_r[i + 1], 0.4, COL_BRAGA)
+    st.generate_normals()
+    var mat: = StandardMaterial3D.new()
+    mat.vertex_color_use_as_albedo = true
+    mat.roughness = 0.7
+    mat.metallic = 0.25
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    st.set_material(mat)
+    var mi: = MeshInstance3D.new()
+    mi.name = "BragaBridge"
+    mi.mesh = st.commit()
+    parent.add_child(mi)
 
 
 func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :
