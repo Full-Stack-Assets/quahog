@@ -674,6 +674,17 @@ func _exit_edit() -> void :
     _save_layout()
 
 
+func _unhandled_key_input(event: InputEvent) -> void :
+    if _edit_mode or get_tree().paused:
+        return
+    var k: = event as InputEventKey
+    if k == null or not k.pressed or k.echo:
+        return
+    if k.keycode == KEY_M:
+        _on_map_pressed()
+        get_viewport().set_input_as_handled()
+
+
 func _input(event: InputEvent) -> void :
     if not _edit_mode:
         return
