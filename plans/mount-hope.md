@@ -91,14 +91,11 @@ expanding outward from the New Bedford core along the real highway spine.
 - [x] **Minimap** — real OSM streets binned into cells, player heading, objective/cop blips, district label.
 - [x] **Big Map** (HUD `MAP`) — full street network zoomed out, player + objective markers.
 - [x] **Fast travel** — `player.fast_travel_to()` raycasts to ground; Big Map shows named destinations (Downtown, Whaling Museum, State Pier, North/South End, Fort Taber, Fairhaven, Clark's Cove), tap a name to jump.
-- [ ] **Big Map polish** — pan/zoom, set-waypoint, street-name labels, water/parks fill, legend.
-- [ ] **Corridor slice expansion (data).** The current `slice-newbedford.json` ends around Dartmouth/Fairhaven/Fort Taber; **RT18, I-195, Westport, and Fall River are outside it.** Re-pull the OSM slice west along the spine and merge (dedupe by id) — the web build already did this (68k buildings / 16k roads to the Braga Bridge); port that pulled data, not a fresh pull. Order:
-  1. **MA-18 (JFK Memorial Hwy)** — the New Bedford waterfront connector, downtown ↔ I-195.
-  2. **I-195** — the east-west spine, NB ↔ Westport ↔ Fall River; render as highway ribbons + drivable bridges.
-  3. **Westport / Dartmouth gap towns** — Route 6 corridor, Lincoln Park area.
-  4. **Fall River (Spindle City)** — granite mills, Battleship Cove, Lizzie Borden House; Braga (“Verde”) Bridge over the Taunton.
-- [ ] **Corridor fast-travel destinations** — once the slice covers them, add Westport, Fall River downtown, Battleship Cove, Braga Bridge to `BigMap.DESTINATIONS`.
-- [ ] **Drivable highways** — extrude I-195/RT18 carriageways with median barriers + ramps; fast travel brings your car (web parity).
+- [ ] **Big Map polish** — set-waypoint, street-name labels, water/parks fill, legend. (Pan/zoom intentionally omitted per user.)
+- [x] **Corridor unlocked (2026-06-27).** The full South Coast was already in the Godot data (16,167 roads spanning NB→Westport→Fall River; 955 building tiles to X=−44 ≈ 22 km west). Rather than re-pull, the loader now builds ground + land-use + the **entire road network** once over the full extent, and **streams building tiles** within `_stream_radius` of the player (re-streamed on tile-cross / after fast travel). So NB ↔ Dartmouth ↔ Westport ↔ Fall River are all explorable at constant per-frame cost.
+- [x] **Corridor fast-travel** — Big Map **TRAVEL** button column: New Bedford / Fort Taber / Fairhaven / Dartmouth / Westport / Fall River (real coords); lands on the ground, tiles stream in.
+- [ ] **Drivable highways detailing** — RT18/I-195 carriageways render as part of the road network; still want median barriers + ramps + guide signs, and fast travel bringing your car.
+- [ ] **Fall River heroes** — Braga (“Verde”) Bridge as a drivable green span, Battleship Cove (USS Massachusetts), Lizzie Borden House, granite mills as hero models on their real coords.
 
 ---
 
