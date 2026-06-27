@@ -215,10 +215,38 @@ func _build_buttons() -> void :
         spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
         vbox.add_child(spacer)
 
+    # Continue (resume the saved spot) appears only when a save exists. The
+    # image PLAY button below it starts a fresh game.
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and gm.has_method("has_save") and gm.has_save():
+        vbox.add_child(_make_text_button("▶ CONTINUE", _on_continue_pressed))
+
     var n: = BUTTON_IDS.size()
     for i in n:
         var btn: = _make_button(BUTTON_IDS[i], BUTTON_STYLEBOXES[i])
         vbox.add_child(btn)
+
+
+func _make_text_button(text: String, cb: Callable) -> Button:
+    var b: = Button.new()
+    b.text = text
+    b.focus_mode = Control.FOCUS_NONE
+    b.custom_minimum_size = Vector2(360, 64)
+    if _font:
+        b.add_theme_font_override("font", _font)
+    b.add_theme_font_size_override("font_size", 30)
+    b.add_theme_color_override("font_color", Color(1.0, 0.81, 0.28))
+    b.pressed.connect(cb)
+    return b
+
+
+func _on_continue_pressed() -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and "has_saved_pos" in gm and gm.has_saved_pos:
+        gm.player_spawn_override = gm.saved_pos
+        gm.has_spawn_override = true
+    _go_to_play()
 
 
 func _make_button(id: String, stylebox_path: String) -> Button:
@@ -249,8 +277,10 @@ func _on_button_hover(btn: Button, entering: bool) -> void :
 func _on_button_pressed(id: String) -> void :
     _play_click_sfx()
     match id:
-        "play", "continue", "new_game":
-            _go_to_play()
+        "play", "new_game":
+            _on_new_game()
+        "continue":
+            _on_continue_pressed()
         "settings", "options":
             _open_settings_or_noop()
         "credits":
@@ -264,6 +294,15 @@ func _on_button_pressed(id: String) -> void :
 
 
             push_warning("Main menu: unknown button id '" + id + "' (no action wired).")
+
+
+func _on_new_game() -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        gm.has_spawn_override = false
+        if gm.has_method("reset_save"):
+            gm.reset_save()
+    _go_to_play()
 
 
 func _go_to_play() -> void :

@@ -57,6 +57,7 @@ var dead: bool = false
 var _regen_delay: float = 0.0
 var _hurt_sfx_cd: float = 0.0
 var _invuln: float = 0.0
+var _autosave_t: float = 0.0
 
 
 var _driving: bool = false
@@ -562,6 +563,13 @@ func _physics_process(delta: float) -> void :
     _fire_cooldown = max(0.0, _fire_cooldown - delta)
     _hurt_sfx_cd = max(0.0, _hurt_sfx_cd - delta)
     _invuln = max(0.0, _invuln - delta)
+
+    # Light autosave so the menu's Continue resumes where you left off.
+    _autosave_t += delta
+    if _autosave_t >= 5.0:
+        _autosave_t = 0.0
+        if not dead and GameManager and GameManager.has_method("save_position"):
+            GameManager.save_position(global_position, get_map_heading())
 
 
     if not dead and health < max_health:

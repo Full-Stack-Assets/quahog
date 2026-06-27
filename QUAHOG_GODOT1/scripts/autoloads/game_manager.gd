@@ -18,6 +18,11 @@ var wanted_level: int = 0
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
 
+# Last known player position/heading, persisted so the menu can offer Continue.
+var saved_pos: = Vector3.ZERO
+var saved_yaw: float = 0.0
+var has_saved_pos: bool = false
+
 
 func set_wanted(level: int) -> void :
     level = clampi(level, 0, 5)
@@ -54,10 +59,24 @@ func record_mission_complete() -> void :
 func show_message(message: String) -> void :
     notify.emit(message)
 
+# Called by the player on a light interval so Continue resumes where you left off.
+func save_position(pos: Vector3, yaw: float) -> void :
+    saved_pos = pos
+    saved_yaw = yaw
+    has_saved_pos = true
+    save_game()
+
+func has_save() -> bool:
+    return has_saved_pos or FileAccess.file_exists(SAVE_PATH)
+
 func save_game() -> void :
     var data: = {
-        "cash": cash, 
-        "missions_completed": missions_completed, 
+        "cash": cash,
+        "missions_completed": missions_completed,
+        "wanted_level": wanted_level,
+        "has_pos": has_saved_pos,
+        "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
+        "yaw": saved_yaw,
     }
     var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f:
@@ -78,10 +97,19 @@ func load_game() -> void :
     var data: Dictionary = parsed
     cash = int(data.get("cash", STARTING_CASH))
     missions_completed = int(data.get("missions_completed", 0))
+    wanted_level = int(data.get("wanted_level", 0))
+    has_saved_pos = bool(data.get("has_pos", false))
+    if has_saved_pos:
+        saved_pos = Vector3(float(data.get("px", 0.0)), float(data.get("py", 0.0)), float(data.get("pz", 0.0)))
+        saved_yaw = float(data.get("yaw", 0.0))
     cash_changed.emit(cash)
 
 func reset_save() -> void :
     cash = STARTING_CASH
     missions_completed = 0
+    wanted_level = 0
+    has_saved_pos = false
+    saved_pos = Vector3.ZERO
+    saved_yaw = 0.0
     cash_changed.emit(cash)
     save_game()
