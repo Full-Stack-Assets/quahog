@@ -83,6 +83,23 @@ systems → content → aesthetics/polish. Re-order freely as reality dictates.
 - [ ] **P9 — Audio & radio.** SFX, engine/ambience, the 4 radio stations + VO pipeline.
 - [ ] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD/menus parity, touch/gamepad, settings, optimization, smoke tests.
 
+### §GR-FT. Maps, fast travel & the New Bedford ↔ Fall River corridor
+
+Reference-heavy navigation (web parity): minimap + full-screen Big Map + fast travel,
+expanding outward from the New Bedford core along the real highway spine.
+
+- [x] **Minimap** — real OSM streets binned into cells, player heading, objective/cop blips, district label.
+- [x] **Big Map** (HUD `MAP`) — full street network zoomed out, player + objective markers.
+- [x] **Fast travel** — `player.fast_travel_to()` raycasts to ground; Big Map shows named destinations (Downtown, Whaling Museum, State Pier, North/South End, Fort Taber, Fairhaven, Clark's Cove), tap a name to jump.
+- [ ] **Big Map polish** — pan/zoom, set-waypoint, street-name labels, water/parks fill, legend.
+- [ ] **Corridor slice expansion (data).** The current `slice-newbedford.json` ends around Dartmouth/Fairhaven/Fort Taber; **RT18, I-195, Westport, and Fall River are outside it.** Re-pull the OSM slice west along the spine and merge (dedupe by id) — the web build already did this (68k buildings / 16k roads to the Braga Bridge); port that pulled data, not a fresh pull. Order:
+  1. **MA-18 (JFK Memorial Hwy)** — the New Bedford waterfront connector, downtown ↔ I-195.
+  2. **I-195** — the east-west spine, NB ↔ Westport ↔ Fall River; render as highway ribbons + drivable bridges.
+  3. **Westport / Dartmouth gap towns** — Route 6 corridor, Lincoln Park area.
+  4. **Fall River (Spindle City)** — granite mills, Battleship Cove, Lizzie Borden House; Braga (“Verde”) Bridge over the Taunton.
+- [ ] **Corridor fast-travel destinations** — once the slice covers them, add Westport, Fall River downtown, Battleship Cove, Braga Bridge to `BigMap.DESTINATIONS`.
+- [ ] **Drivable highways** — extrude I-195/RT18 carriageways with median barriers + ramps; fast travel brings your car (web parity).
+
 ---
 
 # Part I — Target spec (web build feature set; boxes reflect WEB status)
