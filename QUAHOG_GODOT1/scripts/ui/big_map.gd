@@ -9,6 +9,21 @@ const SLICE: = "res://data/map/slice-newbedford.json"
 const CELL: = 200.0
 const VIEW_M: = 1800.0  # metres shown across the shorter screen axis
 
+# Named fast-travel destinations, in world XZ (x=east, z=south). Only points
+# inside the current New Bedford OSM slice — the RT18 / I-195 / Fall River
+# corridor is a planned slice expansion (see plans/mount-hope.md §GR).
+const DESTINATIONS: Array = [
+    {"name": "Downtown", "pos": Vector2(0, 0)},
+    {"name": "Whaling Museum", "pos": Vector2(-219, 107)},
+    {"name": "State Pier", "pos": Vector2(120, -40)},
+    {"name": "North End", "pos": Vector2(-200, -3000)},
+    {"name": "South End", "pos": Vector2(-500, 2600)},
+    {"name": "Fort Taber", "pos": Vector2(1300, 4750)},
+    {"name": "Fairhaven", "pos": Vector2(1381, 178)},
+    {"name": "Clark's Cove", "pos": Vector2(-1400, 2200)},
+]
+const SNAP_PX: = 34.0  # tap within this many pixels of a label snaps to it
+
 var player: Node3D = null
 var job_manager: Node = null
 
@@ -44,17 +59,22 @@ func _process(_delta: float) -> void :
 func _gui_input(event: InputEvent) -> void :
     if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
         var mb: = event as InputEventMouseButton
-        # Tap a spot to fast-travel there, then close.
+        # Tap a spot to fast-travel there. If the tap lands near a named
+        # destination label, snap to that exact spot; otherwise free-travel.
         if player != null and is_instance_valid(player):
             var scale: float = minf(size.x, size.y) / VIEW_M
             var cpx: Vector2 = size * 0.5
             var center: Vector3 = player.global_position
-            var rel: Vector2 = (mb.position - cpx) / scale
-            var target: = Vector3(center.x + rel.x, center.y, center.z + rel.y)
-            if player.has_method("fast_travel_to"):
-                player.fast_travel_to(target)
-            else:
-                player.global_position = target
+            for d in DESTINATIONS:
+                var dp: Vector2 = d["pos"]
+                var screen: Vector2 = cpx + (dp - Vector2(center.x, center.z)) * scale
+                if mb.position.distance_to(screen) <= SNAP_PX:
+                    var target: = Vector3(dp.x, center.y, dp.y)
+                    if player.has_method("fast_travel_to"):
+                        player.fast_travel_to(target)
+                    else:
+                        player.global_position = target
+                    break
         visible = false
 
 
@@ -120,9 +140,19 @@ func _draw() -> void :
         var op: = cpx + Vector2(obj.x - center.x, obj.z - center.z) * scale
         draw_circle(op, 9.0, Color(0.97, 0.8, 0.3))
 
+    # Named fast-travel destinations.
+    for d in DESTINATIONS:
+        var dp: Vector2 = d["pos"]
+        var sp: Vector2 = cpx + (dp - Vector2(center.x, center.z)) * scale
+        if sp.x < 0 or sp.y < 0 or sp.x > size.x or sp.y > size.y:
+            continue
+        draw_circle(sp, 4.0, Color(0.95, 0.9, 0.8))
+        if _font:
+            draw_string(_font, sp + Vector2(8, 5), str(d["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.92, 0.88, 0.78))
+
     draw_circle(cpx, 7.0, Color(0.45, 0.8, 1.0))
     draw_circle(cpx, 7.0, Color(1, 1, 1), false, 2.0)
 
     if _font:
         draw_string(_font, Vector2(40, 64), "MOUNT HOPE — MAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.96, 0.86, 0.6))
-        draw_string(_font, Vector2(40, size.y - 36), "Tap to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))
+        draw_string(_font, Vector2(40, size.y - 36), "Tap a place name to fast-travel · tap elsewhere to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))

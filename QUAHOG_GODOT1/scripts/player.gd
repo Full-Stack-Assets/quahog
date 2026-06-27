@@ -468,6 +468,25 @@ func _respawn() -> void :
     health_changed.emit(health, max_health, armor)
 
 
+func fast_travel_to(target: Vector3) -> void :
+    # Map-tap teleport. Raycast down from high above the target to land on the
+    # street/terrain instead of clipping into a building or floating. Falls back
+    # to a fixed height if nothing is hit.
+    if _driving:
+        exit_car()
+    var space: = get_world_3d().direct_space_state
+    var from: = Vector3(target.x, 400.0, target.z)
+    var to: = Vector3(target.x, -200.0, target.z)
+    var q: = PhysicsRayQueryParameters3D.create(from, to)
+    q.exclude = [get_rid()]
+    var hit: Dictionary = space.intersect_ray(q)
+    var y: float = (hit["position"] as Vector3).y + 1.2 if hit.has("position") else 2.0
+    global_position = Vector3(target.x, y, target.z)
+    velocity = Vector3.ZERO
+    if GameManager and GameManager.has_method("show_message"):
+        GameManager.show_message("Fast travelled.")
+
+
 func try_enter_vehicle() -> void :
     if _driving:
         exit_car()
