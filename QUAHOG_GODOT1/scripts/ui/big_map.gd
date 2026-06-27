@@ -43,6 +43,18 @@ func _process(_delta: float) -> void :
 
 func _gui_input(event: InputEvent) -> void :
     if event is InputEventMouseButton and (event as InputEventMouseButton).pressed:
+        var mb: = event as InputEventMouseButton
+        # Tap a spot to fast-travel there, then close.
+        if player != null and is_instance_valid(player):
+            var scale: float = minf(size.x, size.y) / VIEW_M
+            var cpx: Vector2 = size * 0.5
+            var center: Vector3 = player.global_position
+            var rel: Vector2 = (mb.position - cpx) / scale
+            var target: = Vector3(center.x + rel.x, center.y, center.z + rel.y)
+            if player.has_method("fast_travel_to"):
+                player.fast_travel_to(target)
+            else:
+                player.global_position = target
         visible = false
 
 

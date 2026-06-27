@@ -412,6 +412,35 @@ func _build_pause() -> void :
     edit_btn.position = Vector2(116, 28)
     edit_btn.pressed.connect(_toggle_edit)
 
+    _pause_panel = Control.new()
+    _pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _pause_panel.visible = false
+    _root.add_child(_pause_panel)
+    _pause_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.78)
+    _pause_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _pause_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var vbox: = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 22)
+    center.add_child(vbox)
+
+    var title: = Label.new()
+    title.text = "PAUSED"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 64, Color(0.96, 0.81, 0.45))
+    vbox.add_child(title)
+
+    vbox.add_child(_menu_button("Resume", _toggle_pause))
+    vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
+    vbox.add_child(_menu_button("Main Menu", _go_to_menu))
+
 
 func _build_radio() -> void :
     # Tap to cycle OFF -> WHALE -> The Rage -> The Anvil -> Maré Alta -> OFF.
@@ -472,36 +501,6 @@ func _on_radio_station(_index: int, station_name: String) -> void :
 func _on_radio_track(title: String) -> void :
     if _radio_label and title != "":
         _radio_label.text = "♪ " + title
-
-
-    _pause_panel = Control.new()
-    _pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
-    _pause_panel.visible = false
-    _root.add_child(_pause_panel)
-    _pause_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-    var dim: = ColorRect.new()
-    dim.color = Color(0.02, 0.03, 0.04, 0.78)
-    _pause_panel.add_child(dim)
-    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-    var center: = CenterContainer.new()
-    _pause_panel.add_child(center)
-    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-
-    var vbox: = VBoxContainer.new()
-    vbox.add_theme_constant_override("separation", 22)
-    center.add_child(vbox)
-
-    var title: = Label.new()
-    title.text = "PAUSED"
-    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    _apply_font(title, 64, Color(0.96, 0.81, 0.45))
-    vbox.add_child(title)
-
-    vbox.add_child(_menu_button("Resume", _toggle_pause))
-    vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
-    vbox.add_child(_menu_button("Main Menu", _go_to_menu))
 
 
 func _menu_button(text: String, cb: Callable) -> Button:
