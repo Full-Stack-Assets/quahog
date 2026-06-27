@@ -72,16 +72,16 @@ on Godot 4.6. This is the floor we build the recreation on.
 Coarse phases; each expands into working-loop tasks. Order: world foundation → actors →
 systems → content → aesthetics/polish. Re-order freely as reality dictates.
 
-- [~] **P1 — World foundation: the real map.** Import the web map data (`slice-newbedford.json` roads, `public/tiles/*` building footprints, land-use overlays) into the Godot project and build it: extruded buildings + colliders, road network, water/parks/beaches. Replace the procedural grid. *(in progress this cycle)*
-- [ ] **P2 — Streaming & scale.** Distance-based tile streaming (mirror the web's 500 m tiles), LOD/culling, so the full region runs on mobile/web export.
-- [ ] **P3 — Player & camera parity.** Chase + first-person cameras, on-foot + driving feel matched to the web build; wall/ground collision on the real geometry.
-- [ ] **P4 — Vehicles & traffic.** Real car models/handling, enter/exit/carjack, ambient traffic on the road graph, parked cars.
-- [ ] **P5 — NPCs & police.** Pedestrians, flee/panic, traffic AI, police pursuit/heat parity.
-- [ ] **P6 — Gameplay systems.** Missions (Off the Boat opener + chain), dual-axis heat/wanted, safehouses, wallet/economy, businesses, save/load, day-night clock.
-- [ ] **P7 — Heroes & landmarks.** Seamen’s Bethel, Hurricane Barrier, Battleship Cove (USS Massachusetts), Lizzie Borden House, Braga Bridge, the mills — on real coords.
-- [ ] **P8 — Aesthetics & atmosphere.** Day/night, weather, water shading, post FX, façade/material variety, lighting — toward the web build’s look within GL Compatibility.
-- [ ] **P9 — Audio & radio.** SFX, engine/ambience, the 4 radio stations + VO pipeline.
-- [ ] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD/menus parity, touch/gamepad, settings, optimization, smoke tests.
+- [x] **P1 — World foundation: the real map.** `MapLoader` imports `slice-newbedford.json` (roads/buildings/land-use/landmarks/water) and builds extruded buildings + per-tile colliders, road ribbons (asphalt), ground plane + collider; derives all spawn fields. Procedural grid replaced.
+- [~] **P2 — Streaming & scale.** Fixed core radius built at load; ambient traffic/pedestrians stream player-relative (respawn when far). Tile streaming/LOD still open.
+- [x] **P3 — Player & camera parity.** Chase + look cameras, on-foot + driving, wall/ground collision on the real geometry; T-pose fixed (skeleton unique-name).
+- [x] **P4 — Vehicles & traffic.** Drivable physics car (enter/exit, speedometer, engine/screech audio) + parked cars + ambient kinematic traffic (sedan/taxi/SUV) cruising the road graph and following the player.
+- [x] **P5 — NPCs & police.** Pedestrians wander + follow the player + flee from gunfire; police pursue/shoot/arrest on heat; cop blips on the minimap.
+- [~] **P6 — Gameplay systems.** Delivery job loop (pickup→dropoff→payout), dual-axis heat/wanted (gunfire draws police), wallet/economy, save/Continue (position+heading+cash+wanted), day/night clock. Mission chain + safehouses/businesses still open.
+- [~] **P7 — Heroes & landmarks.** Real landmark dataset surfaced on the Big Map + minimap (Seamen’s Bethel, Whaling Museum, etc.). 3D hero models (Battleship Cove, Braga, Lizzie Borden) still open (need corridor slice).
+- [x] **P8 — Aesthetics & atmosphere.** Dusk look + day/night cycle, rain weather, day/night streetlights, fog/glow tuning, façade/asphalt textures — within GL Compatibility.
+- [~] **P9 — Audio & radio.** SFX (weapons/footsteps/pickups/vehicle), exploration score + coastal ambience, 4 radio stations (manifest, shuffle, HUD + number keys, score-ducking). VO pipeline still open.
+- [~] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD parity (cash/wanted/clock/speedometer/objective/radio), main menu + Settings (volume) + pause, touch controls, M-map/number-radio keys, headless smoke tests green. Gamepad/perf pass still open.
 
 ### §GR-FT. Maps, fast travel & the New Bedford ↔ Fall River corridor
 
@@ -756,4 +756,31 @@ Per the user: **stop all city/region expansion. Make the New Bedford core genuin
   geometry max-Y rises above walls, roof normals face up) and visually in photo
   mode (incl. a magenta debug pass to confirm the peak shape). Added an inline
   SVG favicon (kills the `favicon.ico` 404). Shipped (`b64ddac`).
+
+### 2026-06-27 — GODOT PORT: world load fix + systems sprint (deployed)
+The Godot build (`QUAHOG_GODOT1`, deployed at quahog.vercel.app) went from a
+broken deploy to a feature-complete vertical slice. Every commit verified with a
+full `--export-release "Web"` (release export = warnings-as-errors) **and** a
+headless game-world boot scan (0 script errors / leaks).
+- **Critical fix:** the pause-panel construction had been orphaned into
+  `_on_radio_track()` (local `title` collided with the param), a hard release-export
+  parse error that cascaded to "Could not resolve hud.gd" → `game_world.gd` failed
+  to load → the **entire world failed to boot in the deployed build**. Moved back
+  into `_build_pause()`.
+- **Navigation:** minimap (real streets + nearest-landmark label) · full-screen Big
+  Map (streets, landmarks, named destinations, ✕/M close) · fast travel
+  (`player.fast_travel_to`, ground-raycast, refuses open water; tap a named place).
+  Fixed two playtest bugs: map flinging the player over the harbour + closing on any
+  tap.
+- **Atmosphere:** dusk-anchored day/night cycle (sun/ambient/fog/glow), rain weather,
+  day/night-driven streetlights, HUD clock + ☔.
+- **Living city:** ambient traffic (`traffic_car.gd`) + pedestrians both follow the
+  player (respawn when far); pedestrians flee gunfire; police pursue/shoot/arrest;
+  firing in public draws a star.
+- **Systems/UI:** Save/Continue (pos+heading+cash+wanted; menu Continue vs New Game)
+  · Settings volume sliders (persisted) · main-menu web-parity text · radio (4
+  stations, HUD button + number keys, ducks the score) · speedometer.
+- **Open (need a decision):** corridor slice port (RT18/I-195/Fall River — port the
+  web build's pulled OSM region) · web first-load size (~200 MB, 58 MB radio MP3s;
+  needs ffmpeg re-encode or asset trim) · gamepad/perf pass · mission chain.
 
