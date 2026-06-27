@@ -50,6 +50,7 @@ var _hud: CanvasLayer
 var _drivable_cars: Array = []
 var _traffic: Array = []
 var _npcs: Array = []
+var _street_lights: Array = []
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -202,6 +203,11 @@ func _apply_day_night() -> void :
     _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
     _env.fog_density = lerp(0.0065, 0.0030, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
+    # Streetlights warm up at dusk and glow through the night.
+    var lamp_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 3.0
+    for lamp in _street_lights:
+        if is_instance_valid(lamp):
+            lamp.light_energy = lamp_e
 
 
 func _make_ground() -> void :
@@ -334,11 +340,12 @@ func _place_streetlights() -> void :
             ModelUtils.add_per_part_convex_collision(inst, 1)
         var light: = OmniLight3D.new()
         light.light_color = Color(1.0, 0.74, 0.42)
-        light.light_energy = 3.0
+        light.light_energy = 0.0      # day/night drives this (on at night)
         light.omni_range = 18.0
         light.shadow_enabled = false
         light.position = pos + Vector3(0, 5.4, 0)
         add_child(light)
+        _street_lights.append(light)
 
 
 
