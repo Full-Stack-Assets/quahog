@@ -22,6 +22,19 @@ const ROAD_TILE: = 8.0  # metres per asphalt texture repeat (planar UV)
 const CURB_WIDTH: = 1.7  # concrete sidewalk apron width (m) flanking each road
 const Y_SIDEWALK: = 0.12  # raised slightly above the asphalt
 
+# Highway furniture (I-195 / RT18 corridor): steel guardrails flank limited-access
+# roads and green guide-sign gantries span them at intervals, so motorways read as
+# highways instead of plain asphalt. All visual only — driving uses the ground plane.
+const HIGHWAY_CLASSES: = ["motorway", "trunk", "motorway_link", "trunk_link"]
+const GUARDRAIL_OFFSET: = 0.6   # metres beyond the carriageway edge
+const GUARDRAIL_Y0: = 0.45      # rail band bottom / top (m)
+const GUARDRAIL_Y1: = 0.85
+const GANTRY_MIN_LEN: = 140.0   # only long mainline runs get an overhead sign
+const GANTRY_HEIGHT: = 6.2
+const COL_GUARDRAIL: = Color(0.55, 0.56, 0.58)
+const COL_GANTRY: = Color(0.30, 0.31, 0.33)
+const COL_SIGN: = Color(0.04, 0.30, 0.16)  # MUTCD highway-guide green
+
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
     "motorway": Color(0.16, 0.16, 0.18), "trunk": Color(0.16, 0.16, 0.18),
@@ -296,6 +309,9 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var sw: = SurfaceTool.new()      # concrete sidewalk aprons
     sw.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var hf: = SurfaceTool.new()      # highway furniture (guardrails + sign gantries)
+    hf.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var hf_any: = false
     for r in roads:
         if not (r is Dictionary):
             continue
@@ -310,8 +326,14 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         var width: float = float(r.get("width", 6.0))
         var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
         _emit_road(st, pts, width * 0.5, rcol)
-        # Footways/service alleys don't get curbed sidewalks.
-        if hw != "footway" and hw != "service":
+        if hw in HIGHWAY_CLASSES:
+            # Limited-access roads: steel guardrails, no pedestrian sidewalk.
+            _emit_guardrail(hf, pts, width * 0.5)
+            hf_any = true
+            if _emit_gantry(hf, pts, width * 0.5, hw):
+                hf_any = true
+        elif hw != "footway" and hw != "service":
+            # Footways/service alleys don't get curbed sidewalks either.
             _emit_sidewalk(sw, pts, width * 0.5)
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
@@ -347,6 +369,19 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     smi.mesh = sw.commit()
     parent.add_child(smi)
 
+    if hf_any:
+        hf.generate_normals()
+        var hmat: = StandardMaterial3D.new()
+        hmat.vertex_color_use_as_albedo = true
+        hmat.roughness = 0.6
+        hmat.metallic = 0.2
+        hmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+        hf.set_material(hmat)
+        var hmi: = MeshInstance3D.new()
+        hmi.name = "HighwayFurniture"
+        hmi.mesh = hf.commit()
+        parent.add_child(hmi)
+
 
 # Concrete apron strips flanking a road (visual only; the ground plane carries
 # collision). Two quads per segment — one each side, inner edge at the kerb.
@@ -373,6 +408,116 @@ func _emit_sidewalk(st: SurfaceTool, pts: Array, half: float) -> void :
                 st.set_color(col)
                 st.set_uv(Vector2(v.x * 0.25, v.z * 0.25))
                 st.add_vertex(v)
+
+
+# Steel guardrail band flanking a limited-access road (visual only). One vertical
+# strip each side, just outside the carriageway, between GUARDRAIL_Y0 and _Y1.
+func _emit_guardrail(st: SurfaceTool, pts: Array, half: float) -> void :
+    var off: float = half + GUARDRAIL_OFFSET
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s: float in [1.0, -1.0]:
+            var ea: = a + perp * (off * s)
+            var eb: = b + perp * (off * s)
+            var a0: = to_world(ea.x, ea.y, GUARDRAIL_Y0)
+            var b0: = to_world(eb.x, eb.y, GUARDRAIL_Y0)
+            var a1: = to_world(ea.x, ea.y, GUARDRAIL_Y1)
+            var b1: = to_world(eb.x, eb.y, GUARDRAIL_Y1)
+            for v in [a0, b0, b1, a0, b1, a1]:
+                st.set_color(COL_GUARDRAIL)
+                st.set_uv(Vector2.ZERO)
+                st.add_vertex(v)
+
+
+# Overhead green guide-sign gantry at the midpoint of a long mainline run. Two
+# posts straddling the carriageway, a cross beam, and a green sign panel. Returns
+# true when one was placed. Links never get a gantry (handled by the caller).
+func _emit_gantry(st: SurfaceTool, pts: Array, half: float, hw: String) -> bool:
+    if hw.ends_with("_link"):
+        return false
+    var total: float = 0.0
+    for i in range(pts.size() - 1):
+        total += Vector2(float(pts[i][0]), float(pts[i][1])).distance_to(Vector2(float(pts[i + 1][0]), float(pts[i + 1][1])))
+    if total < GANTRY_MIN_LEN:
+        return false
+    # Walk to the halfway point along the polyline for the gantry centre + heading.
+    var target: float = total * 0.5
+    var run: float = 0.0
+    var mid: = Vector2.ZERO
+    var dir: = Vector2(1, 0)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var seg: float = a.distance_to(b)
+        if seg < 0.0001:
+            continue
+        if run + seg >= target:
+            var t: float = (target - run) / seg
+            mid = a.lerp(b, t)
+            dir = (b - a).normalized()
+            break
+        run += seg
+    var perp: = Vector2(-dir.y, dir.x)
+    var span: float = half + GUARDRAIL_OFFSET + 0.6
+    var left: = mid + perp * span
+    var right: = mid - perp * span
+    # Posts (square columns) at each edge.
+    _emit_box(st, to_world(left.x, left.y, GANTRY_HEIGHT * 0.5), Vector3(0.5, GANTRY_HEIGHT, 0.5), COL_GANTRY)
+    _emit_box(st, to_world(right.x, right.y, GANTRY_HEIGHT * 0.5), Vector3(0.5, GANTRY_HEIGHT, 0.5), COL_GANTRY)
+    # Cross beam spanning the carriageway near the top.
+    var beam_c: = (left + right) * 0.5
+    var beam_len: float = left.distance_to(right) + 0.5
+    var ang: float = atan2(perp.y, perp.x)
+    _emit_box_rot(st, to_world(beam_c.x, beam_c.y, GANTRY_HEIGHT - 0.4), Vector3(beam_len, 0.4, 0.4), -ang, COL_GANTRY)
+    # Green sign panel hung under the beam.
+    _emit_box_rot(st, to_world(beam_c.x, beam_c.y, GANTRY_HEIGHT - 1.6), Vector3(beam_len * 0.8, 1.7, 0.18), -ang, COL_SIGN)
+    return true
+
+
+# Axis-aligned box (12 tris) centred at c with the given full-extent size.
+func _emit_box(st: SurfaceTool, c: Vector3, sz: Vector3, col: Color) -> void :
+    _emit_box_rot(st, c, sz, 0.0, col)
+
+
+# Box centred at c, sized sz (x=length, y=height, z=depth), yawed by yaw radians
+# about the world Y axis. Visual only — appended to the furniture surface.
+func _emit_box_rot(st: SurfaceTool, c: Vector3, sz: Vector3, yaw: float, col: Color) -> void :
+    var hx: float = sz.x * 0.5
+    var hy: float = sz.y * 0.5
+    var hz: float = sz.z * 0.5
+    var cs: float = cos(yaw)
+    var sn: float = sin(yaw)
+    var corners: Array = []
+    for sxp: float in [-1.0, 1.0]:
+        for syp: float in [-1.0, 1.0]:
+            for szp: float in [-1.0, 1.0]:
+                var lx: float = sxp * hx
+                var lz: float = szp * hz
+                var wx: float = lx * cs - lz * sn
+                var wz: float = lx * sn + lz * cs
+                corners.append(c + Vector3(wx, syp * hy, wz))
+    # corner index = (sx?4)+(sy?2)+(sz?1) with -1->0,+1->1
+    var idx: Array = [
+        PackedInt32Array([0, 1, 3, 0, 3, 2]),  # x-
+        PackedInt32Array([4, 6, 7, 4, 7, 5]),  # x+
+        PackedInt32Array([0, 4, 5, 0, 5, 1]),  # y-
+        PackedInt32Array([2, 3, 7, 2, 7, 6]),  # y+
+        PackedInt32Array([0, 2, 6, 0, 6, 4]),  # z-
+        PackedInt32Array([1, 5, 7, 1, 7, 3]),  # z+
+    ]
+    for fi: int in range(idx.size()):
+        var face: PackedInt32Array = idx[fi]
+        for k: int in face:
+            var v: Vector3 = corners[k]
+            st.set_color(col)
+            st.set_uv(Vector2.ZERO)
+            st.add_vertex(v)
 
 
 func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :
