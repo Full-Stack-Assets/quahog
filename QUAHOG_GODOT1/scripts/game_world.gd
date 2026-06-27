@@ -11,6 +11,7 @@ const HUD_SCRIPT: = preload("res://scripts/ui/hud.gd")
 const CityBuilderScript: = preload("res://scripts/world/city_builder.gd")
 const MapLoaderScript: = preload("res://scripts/world/map_loader.gd")
 const CarScript: = preload("res://scripts/vehicles/car.gd")
+const TrafficCarScript: = preload("res://scripts/vehicles/traffic_car.gd")
 const JobManagerScript: = preload("res://scripts/systems/job_manager.gd")
 const WantedSystemScript: = preload("res://scripts/systems/wanted_system.gd")
 const WeaponPickupScript: = preload("res://scripts/weapons/weapon_pickup.gd")
@@ -19,6 +20,7 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 
 const MAX_STATIC_CARS: = 12
 const DRIVABLE_CARS: = 8
+const TRAFFIC_CARS: = 10
 # How many 500 m tiles out from the New Bedford core to build at once. The web
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
 const MAP_RADIUS: = 2
@@ -44,6 +46,7 @@ func _ready() -> void :
     _setup_environment()
     _build_city()
     _place_cars()
+    _spawn_traffic()
     _place_streetlights()
     _spawn_contacts()
     _spawn_npcs()
@@ -190,6 +193,28 @@ func _place_car(path: String, pos: Vector3, rot_y: float, height: float) -> void
     ModelUtils.ground_model(inst, 0.0)
     ModelUtils.add_per_part_convex_collision(inst, 1)
 
+
+# Ambient moving traffic — kinematic cars cruising the road-derived waypoints.
+func _spawn_traffic() -> void :
+    if _city == null:
+        return
+    var waypoints: PackedVector3Array = _city.npc_waypoints
+    if waypoints.size() < 2:
+        return
+    var models: = [
+        ["res://assets/props/vehicles/sedan.glb", 1.5, 8.5],
+        ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
+        ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
+    ]
+    var n: int = min(TRAFFIC_CARS, waypoints.size())
+    for i in n:
+        var m: Array = models[i % models.size()]
+        var tc: = CharacterBody3D.new()
+        tc.set_script(TrafficCarScript)
+        tc.setup(m[0], m[1], m[2], waypoints)
+        add_child(tc)
+        var wp: Vector3 = waypoints[(i * 7) % waypoints.size()]
+        tc.global_position = Vector3(wp.x, 0.6, wp.z)
 
 
 func _place_streetlights() -> void :
