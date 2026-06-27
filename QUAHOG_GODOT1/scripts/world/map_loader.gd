@@ -123,6 +123,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     _build_overlays(parent, FULL_BBOX)
     _build_roads(parent, FULL_BBOX)
     _build_braga_bridge(parent)
+    _build_battleship(parent)
     _buildings_root = Node3D.new()
     _buildings_root.name = "Buildings"
     parent.add_child(_buildings_root)
@@ -626,6 +627,53 @@ func _build_braga_bridge(parent: Node3D) -> void :
     st.set_material(mat)
     var mi: = MeshInstance3D.new()
     mi.name = "BragaBridge"
+    mi.mesh = st.commit()
+    parent.add_child(mi)
+
+
+# USS Massachusetts ("Big Mamie") moored at Battleship Cove beside the Braga
+# Bridge — a stylized grey battleship silhouette (hull, deck, superstructure,
+# conning tower, funnel, mast, fore/aft turrets with twin barrels). Visual only;
+# built once over the real cove coords and aligned to the bridge axis.
+func _build_battleship(parent: Node3D) -> void :
+    var base: = to_world(-20180.0, 7882.0, 0.0)
+    var aw: = to_world(BRAGA_A.x, BRAGA_A.y, 0.0)
+    var bw: = to_world(BRAGA_B.x, BRAGA_B.y, 0.0)
+    var d: = bw - aw
+    var yaw: float = atan2(d.z, d.x)
+    var lx: = Vector3(cos(yaw), 0.0, sin(yaw))           # length axis (bow↔stern)
+    var px: = Vector3(-lx.z, 0.0, lx.x)                   # beam axis (port↔starboard)
+    var hull: = Color(0.40, 0.43, 0.46)
+    var deck: = Color(0.34, 0.30, 0.24)
+    var ssup: = Color(0.47, 0.49, 0.51)
+    var dark: = Color(0.20, 0.21, 0.23)
+    var st: = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    _emit_box_rot(st, base + Vector3(0, 4.0, 0), Vector3(208, 8, 27), yaw, hull)        # hull
+    _emit_box_rot(st, base + Vector3(0, 8.3, 0), Vector3(198, 0.7, 23), yaw, deck)      # deck
+    _emit_box_rot(st, base + Vector3(0, 12.5, 0), Vector3(66, 8, 16), yaw, ssup)        # superstructure
+    _emit_box_rot(st, base + Vector3(0, 18.5, 0), Vector3(32, 6, 12), yaw, ssup)
+    _emit_box_rot(st, base - lx * 6.0 + Vector3(0, 23.0, 0), Vector3(13, 13, 11), yaw, ssup)  # conning tower
+    _emit_box_rot(st, base + lx * 10.0 + Vector3(0, 24.0, 0), Vector3(11, 9, 10), yaw, dark)  # funnel
+    _emit_beam(st, base - lx * 6.0 + Vector3(0, 29.0, 0), base - lx * 6.0 + Vector3(0, 46.0, 0), 1.0, dark)  # mast
+    # Main-battery turrets: two forward, two aft (superfiring pairs), twin barrels.
+    for slot: float in [58.0, 40.0, -40.0, -58.0]:
+        var sgn: float = 1.0 if slot > 0.0 else -1.0
+        var tc: = base + lx * slot
+        _emit_box_rot(st, tc + Vector3(0, 10.0, 0), Vector3(16, 5, 18), yaw, ssup)
+        for off: float in [-3.2, 3.2]:
+            var b0: = tc + px * off + Vector3(0, 11.0, 0) + lx * (sgn * 8.0)
+            var b1: = b0 + lx * (sgn * 15.0)
+            _emit_beam(st, b0, b1, 1.2, dark)
+    st.generate_normals()
+    var mat: = StandardMaterial3D.new()
+    mat.vertex_color_use_as_albedo = true
+    mat.roughness = 0.8
+    mat.metallic = 0.3
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    st.set_material(mat)
+    var mi: = MeshInstance3D.new()
+    mi.name = "Battleship"
     mi.mesh = st.commit()
     parent.add_child(mi)
 
