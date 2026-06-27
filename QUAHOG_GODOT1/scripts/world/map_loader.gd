@@ -324,7 +324,7 @@ func _emit_sidewalk(st: SurfaceTool, pts: Array, half: float) -> void :
             continue
         dir = dir.normalized()
         var perp: = Vector2(-dir.y, dir.x)
-        for s in [1.0, -1.0]:
+        for s: float in [1.0, -1.0]:
             var ai: = a + perp * (half * s)
             var ao: = a + perp * ((half + CURB_WIDTH) * s)
             var bi: = b + perp * (half * s)
