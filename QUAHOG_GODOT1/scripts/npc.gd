@@ -13,6 +13,9 @@ var anim_player: AnimationPlayer
 var anim_tree: AnimationTree
 var _playback: AnimationNodeStateMachinePlayback
 
+const FAR_DIST: float = 200.0       # respawn near the player past this range
+
+var player: Node3D = null
 var _target: Vector3 = Vector3.ZERO
 var _idle_timer: float = 0.0
 var _has_target: bool = false
@@ -91,11 +94,38 @@ func _pick_target() -> void :
     if waypoints.size() == 0:
         _has_target = false
         return
+    if player != null and is_instance_valid(player):
+        var here: = player.global_position
+        for _i in range(8):
+            var cand: Vector3 = waypoints[randi() % waypoints.size()]
+            var d: float = here.distance_to(cand)
+            if d > 10.0 and d < 160.0:
+                _target = cand
+                _has_target = true
+                return
     _target = waypoints[randi() % waypoints.size()]
     _has_target = true
 
 
+func _respawn_near_player() -> void :
+    if player == null or not is_instance_valid(player) or waypoints.size() == 0:
+        return
+    var here: = player.global_position
+    for _i in range(12):
+        var cand: Vector3 = waypoints[randi() % waypoints.size()]
+        var d: float = here.distance_to(cand)
+        if d > 40.0 and d < 160.0:
+            global_position = Vector3(cand.x, 0.6, cand.z)
+            velocity = Vector3.ZERO
+            _pick_target()
+            return
+
+
 func _physics_process(delta: float) -> void :
+    if player != null and is_instance_valid(player):
+        if global_position.distance_to(player.global_position) > FAR_DIST:
+            _respawn_near_player()
+
     if not is_on_floor():
         velocity.y -= gravity * delta
     else:

@@ -49,6 +49,7 @@ var _player: CharacterBody3D
 var _hud: CanvasLayer
 var _drivable_cars: Array = []
 var _traffic: Array = []
+var _npcs: Array = []
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -69,6 +70,9 @@ func _ready() -> void :
     for tc in _traffic:
         if is_instance_valid(tc):
             tc.player = _player
+    for npc in _npcs:
+        if is_instance_valid(npc):
+            npc.player = _player
     _build_hud()
     _build_systems()
     _spawn_pickups()
@@ -448,6 +452,7 @@ func _spawn_npcs() -> void :
         npc.setup(ped[0], ped[1], waypoints)
         add_child(npc)
         npc.global_position = _city.npc_spawns[i]
+        _npcs.append(npc)
 
 
 func _spawn_player() -> void :
