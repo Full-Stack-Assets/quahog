@@ -21,6 +21,7 @@ var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
 var _pause_panel: Control
+var _settings_panel: Control
 var _edit_banner: Control
 var _font: Font
 
@@ -438,8 +439,98 @@ func _build_pause() -> void :
     vbox.add_child(title)
 
     vbox.add_child(_menu_button("Resume", _toggle_pause))
+    vbox.add_child(_menu_button("Settings", _open_settings))
     vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
     vbox.add_child(_menu_button("Main Menu", _go_to_menu))
+
+    _build_settings()
+
+
+# Audio settings overlay (web parity): Master / Music / SFX volume sliders,
+# persisted to user://settings.cfg and re-applied on launch.
+func _build_settings() -> void :
+    _settings_panel = Control.new()
+    _settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _settings_panel.visible = false
+    _root.add_child(_settings_panel)
+    _settings_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.88)
+    _settings_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _settings_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var vbox: = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 18)
+    vbox.custom_minimum_size = Vector2(540, 0)
+    center.add_child(vbox)
+
+    var title: = Label.new()
+    title.text = "SETTINGS"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 56, Color(0.96, 0.81, 0.45))
+    vbox.add_child(title)
+
+    vbox.add_child(_volume_row("Master", "Master"))
+    vbox.add_child(_volume_row("Music", "Music"))
+    vbox.add_child(_volume_row("Sound FX", "SFX"))
+
+    var back: = _menu_button("Back", _close_settings)
+    vbox.add_child(back)
+
+
+func _volume_row(label_text: String, bus_name: String) -> Control:
+    var row: = VBoxContainer.new()
+    row.add_theme_constant_override("separation", 4)
+    var lbl: = Label.new()
+    lbl.text = label_text
+    _apply_font(lbl, 26, Color(0.92, 0.9, 0.86))
+    row.add_child(lbl)
+    var slider: = HSlider.new()
+    slider.min_value = 0.0
+    slider.max_value = 1.0
+    slider.step = 0.01
+    slider.custom_minimum_size = Vector2(500, 36)
+    var idx: int = AudioServer.get_bus_index(bus_name)
+    slider.value = db_to_linear(AudioServer.get_bus_volume_db(idx)) if idx >= 0 else 1.0
+    slider.value_changed.connect(_on_volume_changed.bind(bus_name))
+    row.add_child(slider)
+    return row
+
+
+func _on_volume_changed(value: float, bus_name: String) -> void :
+    var idx: int = AudioServer.get_bus_index(bus_name)
+    if idx >= 0:
+        AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(value, 0.0001)))
+    _save_settings()
+
+
+func _open_settings() -> void :
+    if _pause_panel:
+        _pause_panel.visible = false
+    if _settings_panel:
+        _settings_panel.visible = true
+        _settings_panel.move_to_front()
+
+
+func _close_settings() -> void :
+    if _settings_panel:
+        _settings_panel.visible = false
+    if _pause_panel:
+        _pause_panel.visible = true
+
+
+func _save_settings() -> void :
+    var cfg: = ConfigFile.new()
+    for bus_name in ["Master", "Music", "SFX"]:
+        var idx: int = AudioServer.get_bus_index(bus_name)
+        if idx >= 0:
+            cfg.set_value("audio", bus_name, AudioServer.get_bus_volume_db(idx))
+    cfg.save("user://settings.cfg")
 
 
 func _build_radio() -> void :
@@ -705,6 +796,8 @@ func _toggle_pause() -> void :
     var paused: = not get_tree().paused
     get_tree().paused = paused
     _pause_panel.visible = paused
+    if not paused and _settings_panel:
+        _settings_panel.visible = false
 
 
 func _go_to_menu() -> void :
