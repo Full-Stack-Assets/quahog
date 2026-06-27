@@ -48,6 +48,7 @@ var _city
 var _player: CharacterBody3D
 var _hud: CanvasLayer
 var _drivable_cars: Array = []
+var _traffic: Array = []
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -65,6 +66,9 @@ func _ready() -> void :
     _spawn_contacts()
     _spawn_npcs()
     _spawn_player()
+    for tc in _traffic:
+        if is_instance_valid(tc):
+            tc.player = _player
     _build_hud()
     _build_systems()
     _spawn_pickups()
@@ -308,6 +312,7 @@ func _spawn_traffic() -> void :
         add_child(tc)
         var wp: Vector3 = waypoints[(i * 7) % waypoints.size()]
         tc.global_position = Vector3(wp.x, 0.6, wp.z)
+        _traffic.append(tc)
 
 
 func _place_streetlights() -> void :

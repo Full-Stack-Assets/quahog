@@ -15,6 +15,9 @@ var model_height: float = 1.5
 var speed: float = 8.0
 var waypoints: PackedVector3Array = PackedVector3Array()
 
+const FAR_DIST: float = 240.0       # respawn near the player past this range
+
+var player: Node3D = null
 var mesh_root: Node3D
 var _target: Vector3 = Vector3.ZERO
 var _has_target: bool = false
@@ -58,11 +61,41 @@ func _pick_target() -> void :
     if waypoints.size() == 0:
         _has_target = false
         return
+    # Prefer a waypoint reasonably near the player so traffic stays where the
+    # action is; fall back to a random one.
+    if player != null and is_instance_valid(player):
+        var here: = player.global_position
+        for _i in range(8):
+            var cand: Vector3 = waypoints[randi() % waypoints.size()]
+            var d: float = here.distance_to(cand)
+            if d > 30.0 and d < 200.0:
+                _target = cand
+                _has_target = true
+                return
     _target = waypoints[randi() % waypoints.size()]
     _has_target = true
 
 
+func _respawn_near_player() -> void :
+    if player == null or not is_instance_valid(player) or waypoints.size() == 0:
+        return
+    var here: = player.global_position
+    for _i in range(12):
+        var cand: Vector3 = waypoints[randi() % waypoints.size()]
+        var d: float = here.distance_to(cand)
+        if d > 60.0 and d < 200.0:
+            global_position = Vector3(cand.x, 0.6, cand.z)
+            velocity = Vector3.ZERO
+            _pick_target()
+            return
+
+
 func _physics_process(delta: float) -> void :
+    # Keep traffic near the player: if it drifts too far, hop to a road near you.
+    if player != null and is_instance_valid(player):
+        if global_position.distance_to(player.global_position) > FAR_DIST:
+            _respawn_near_player()
+
     if not is_on_floor():
         velocity.y -= GRAVITY * delta
     else:
