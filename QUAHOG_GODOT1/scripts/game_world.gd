@@ -27,6 +27,14 @@ const MAP_RADIUS: = 2
 
 var _tex_asphalt: Texture2D
 var _tex_concrete: Texture2D
+
+# Day/night: a slow clock (phase 0..1 over DAY_LENGTH seconds) drives the sun
+# angle + ambient/fog. Anchored so dusk — the game's signature look — sits at
+# the start and recurs each cycle.
+const DAY_LENGTH: float = 600.0     # seconds for a full day→night→day loop
+var _sun: DirectionalLight3D = null
+var _env: Environment = null
+var _day_phase: float = 0.0
 # Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
 # but exposes the same spawn fields (player_spawn, car_slots, light_slots,
 # npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
@@ -91,6 +99,7 @@ func _setup_environment() -> void :
     we.name = "WorldEnvironment"
     we.environment = env
     add_child(we)
+    _env = env
 
     var sun: = DirectionalLight3D.new()
     sun.name = "Sun"
@@ -100,7 +109,37 @@ func _setup_environment() -> void :
     sun.shadow_bias = 0.05
     sun.rotation_degrees = Vector3(-26.0, 52.0, 0.0)
     add_child(sun)
+    _sun = sun
+    _apply_day_night()
 
+
+# Drive the sun + ambient/fog from _day_phase (0=dusk → night → dawn → day →
+# back to dusk). Kept warm and gentle so the city keeps its dusk character.
+func _process(delta: float) -> void :
+    _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
+    _apply_day_night()
+
+
+func _apply_day_night() -> void :
+    if _sun == null or _env == null:
+        return
+    # Sun elevation: high at midday, below horizon at night. phase 0 = dusk.
+    var ang: float = _day_phase * TAU
+    var elevation: float = sin(ang + PI)        # +1 midday, -1 midnight; 0 at dusk/dawn
+    _sun.rotation_degrees = Vector3(lerp(-2.0, -62.0, clampf((elevation + 1.0) * 0.5, 0.0, 1.0)), 52.0, 0.0)
+    var daylight: float = clampf(elevation, 0.0, 1.0)        # 0 at/below horizon, 1 midday
+    var night: float = clampf( - elevation, 0.0, 1.0)
+    # Warm low sun, cooler bright midday; sun fades out at night.
+    var warm: = Color(1.0, 0.66, 0.42)
+    var noon: = Color(1.0, 0.93, 0.82)
+    _sun.light_color = warm.lerp(noon, daylight)
+    _sun.light_energy = lerp(0.18, 1.05, daylight)
+    _env.ambient_light_energy = lerp(0.28, 0.7, daylight)
+    _env.background_energy_multiplier = lerp(0.45, 1.0, daylight)
+    # Heavier blue haze at night, light warm haze by day.
+    _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
+    _env.fog_density = lerp(0.0065, 0.0030, daylight)
+    _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
 
 
 func _make_ground() -> void :
