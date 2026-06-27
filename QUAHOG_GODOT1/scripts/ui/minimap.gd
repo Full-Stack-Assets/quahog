@@ -17,6 +17,7 @@ var _font: Font
 # Real road network binned into CELL-sized cells of [Vector2 a, Vector2 b]
 # segments in world XZ (x=east, z=-north), so _draw only iterates nearby roads.
 var _road_cells: Dictionary = {}
+var _landmarks: Array = []          # [{name:String, pos:Vector2(x,z)}]
 var _roads_loaded: bool = false
 
 var _scale: float = 1.0
@@ -72,6 +73,31 @@ func _load_roads() -> void :
             var arr: Array = _road_cells[key]
             arr.append(a)
             arr.append(b)
+
+    var lms: Variant = data.get("landmarks", [])
+    if lms is Array:
+        for l in lms:
+            if not (l is Dictionary):
+                continue
+            var lp: Variant = l.get("pos")
+            if not (lp is Array) or lp.size() < 2:
+                continue
+            _landmarks.append({"name": str(l.get("name", "")), "pos": Vector2(float(lp[0]), - float(lp[1]))})
+
+
+# Nearest real landmark within range, else the synthetic district name.
+func _location_name(p: Vector3) -> String:
+    var here: = Vector2(p.x, p.z)
+    var best: String = ""
+    var best_d: float = 220.0
+    for lm in _landmarks:
+        var d: float = here.distance_to(lm["pos"])
+        if d < best_d:
+            best_d = d
+            best = str(lm["name"])
+    if best != "":
+        return best
+    return _district_name(p)
 
 
 func _world_to_map(w: Vector3, center: Vector3) -> Vector2:
@@ -138,7 +164,7 @@ func _draw() -> void :
 
     draw_rect(rect, Color(0.79, 0.52, 0.16, 0.85), false, 2.0)
     if _font:
-        var dn: = _district_name(center)
+        var dn: = _location_name(center)
         draw_string(_font, Vector2(8, size.y - 10), dn, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.95, 0.86, 0.6))
 
 
