@@ -168,14 +168,19 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
 
 
 func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float) -> void :
-    # Per-building tint by height: low = clapboard tan, mid = brick, tall = granite.
-    var col: Color
+    # Per-building tint by height tier, with deterministic variety inside each tier
+    # so the streetscape reads as mixed eras (granite civic / brick mills / painted
+    # triple-deckers) instead of three flat tones. Seed from the footprint so a
+    # given building always paints the same colour (no flicker).
+    var seed_i: int = int(absf(float(fp[0][0]) * 73856.0 + float(fp[0][1]) * 19349.0))
+    var palette: Array
     if h >= 24.0:
-        col = Color(0.52, 0.53, 0.55)
+        palette = [Color(0.52, 0.53, 0.55), Color(0.49, 0.50, 0.52), Color(0.56, 0.56, 0.55), Color(0.47, 0.48, 0.50)]
     elif h >= 13.0:
-        col = Color(0.45, 0.27, 0.22)
+        palette = [Color(0.45, 0.27, 0.22), Color(0.50, 0.26, 0.20), Color(0.39, 0.28, 0.25), Color(0.55, 0.43, 0.33), Color(0.44, 0.40, 0.40)]
     else:
-        col = Color(0.58, 0.50, 0.42)
+        palette = [Color(0.58, 0.50, 0.42), Color(0.80, 0.78, 0.72), Color(0.55, 0.60, 0.62), Color(0.46, 0.53, 0.44), Color(0.74, 0.68, 0.47), Color(0.57, 0.34, 0.30), Color(0.60, 0.60, 0.58)]
+    var col: Color = palette[seed_i % palette.size()]
 
     var n: = fp.size()
     var poly2: = PackedVector2Array()
