@@ -51,6 +51,7 @@ var _drivable_cars: Array = []
 var _traffic: Array = []
 var _npcs: Array = []
 var _street_lights: Array = []
+var _last_stream_tile: Vector2i = Vector2i(999999, 999999)
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -163,9 +164,25 @@ func _process(delta: float) -> void :
     _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()
     _update_weather(delta)
+    _update_streaming()
     if GameManager:
         GameManager.day_phase = _day_phase
         GameManager.raining = _raining
+
+
+# Stream building tiles around the player as they cross the 500 m tile grid, so
+# the whole South Coast (NB → Westport → Fall River) is explorable without
+# loading every tile at once.
+func _update_streaming() -> void :
+    if _city == null or _player == null or not is_instance_valid(_player):
+        return
+    var p: Vector3 = _player.global_position
+    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
+    if tile == _last_stream_tile:
+        return
+    _last_stream_tile = tile
+    if _city.has_method("stream_buildings"):
+        _city.stream_buildings(p)
 
 
 func _update_weather(delta: float) -> void :

@@ -55,6 +55,18 @@ var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ..
 var _facade_tex: Texture2D = null
 var _asphalt_tex: Texture2D = null
 
+# Building-tile streaming: the whole South Coast lives in tiles/, but only the
+# tiles within _stream_radius of the player are built at any time (built/freed as
+# the player moves or fast-travels), so the full region is explorable at constant
+# cost instead of loading ~67k buildings at once.
+var _buildings_root: Node3D = null
+var _tiles: Dictionary = {}                # Vector2i tile -> MeshInstance3D
+var _stream_radius: int = 2
+
+# Full data extent (slice x = east, y = north) with margin, for the ground plane,
+# road network, and land-use overlays (all built once up front).
+const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 23000.0)
+
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
     return Vector3(x_east, y_up, -y_north)
@@ -72,21 +84,57 @@ func _read_json(path: String) -> Variant:
 
 # Build the map for a square block of tiles around center_tile (in tile indices).
 # radius_tiles = 3 → a 7x7 = up to 49-tile core around New Bedford's center.
-func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_tiles: int = 4) -> void :
-    var bbox: = Rect2(
-        (center_tile.x - radius_tiles) * TILE_M,
-        (center_tile.y - radius_tiles) * TILE_M,
-        (radius_tiles * 2 + 1) * TILE_M,
-        (radius_tiles * 2 + 1) * TILE_M)
+func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_tiles: int = 2) -> void :
+    _stream_radius = max(radius_tiles, 2)
     if _facade_tex == null and ResourceLoader.exists(FACADE_PATH):
         _facade_tex = load(FACADE_PATH)
     if _asphalt_tex == null and ResourceLoader.exists(ASPHALT_PATH):
         _asphalt_tex = load(ASPHALT_PATH)
-    _build_ground(parent, bbox)
-    _build_overlays(parent, bbox)
-    _build_roads(parent, bbox)
-    _build_buildings(parent, center_tile, radius_tiles)
+    # Ground, land-use and the full road network span the whole South Coast and
+    # are built once. Buildings stream around the player (see stream_buildings).
+    _build_ground(parent, FULL_BBOX)
+    _build_overlays(parent, FULL_BBOX)
+    _build_roads(parent, FULL_BBOX)
+    _buildings_root = Node3D.new()
+    _buildings_root.name = "Buildings"
+    parent.add_child(_buildings_root)
     _derive_spawns()
+    # Seed the tiles around the initial spawn (NB core) so the player loads into
+    # a built city immediately.
+    stream_buildings(player_spawn)
+
+
+# Build the building tiles within _stream_radius of center and free those that
+# have moved out of range. Call as the player moves / after fast travel.
+func stream_buildings(center: Vector3) -> void :
+    if _buildings_root == null:
+        return
+    var ctx: int = int(floor(center.x / TILE_M))
+    var cty: int = int(floor(-center.z / TILE_M))   # world z = -north
+    var r: int = _stream_radius
+    for dx in range(-r, r + 1):
+        for dy in range(-r, r + 1):
+            var key: = Vector2i(ctx + dx, cty + dy)
+            if not _tiles.has(key):
+                _build_streamed_tile(key)
+    # Free tiles beyond the radius (with one tile of hysteresis).
+    for key in _tiles.keys():
+        if absi(key.x - ctx) > r + 1 or absi(key.y - cty) > r + 1:
+            var node: Node = _tiles[key]
+            if is_instance_valid(node):
+                node.queue_free()
+            _tiles.erase(key)
+
+
+func _build_streamed_tile(key: Vector2i) -> void :
+    _tiles[key] = null   # reserve so we don't re-attempt a missing tile every pass
+    var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, key.x, key.y]
+    var data: Variant = _read_json(path)
+    if data == null or not (data is Array):
+        return
+    var mi: = _build_tile(_buildings_root, data, key.x, key.y)
+    if mi != null:
+        _tiles[key] = mi
 
 
 func _build_ground(parent: Node3D, bbox: Rect2) -> void :
@@ -113,20 +161,7 @@ func _build_ground(parent: Node3D, bbox: Rect2) -> void :
     parent.add_child(body)
 
 
-func _build_buildings(parent: Node3D, center_tile: Vector2i, radius_tiles: int) -> void :
-    var root: = Node3D.new()
-    root.name = "Buildings"
-    parent.add_child(root)
-    for tx in range(center_tile.x - radius_tiles, center_tile.x + radius_tiles + 1):
-        for ty in range(center_tile.y - radius_tiles, center_tile.y + radius_tiles + 1):
-            var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, tx, ty]
-            var data: Variant = _read_json(path)
-            if data == null or not (data is Array):
-                continue
-            _build_tile(root, data, tx, ty)
-
-
-func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
+func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> MeshInstance3D:
     var st: = SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var faces: = PackedVector3Array()
@@ -145,7 +180,7 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
             var c: = _centroid(fp)
             named_places.append({"name": b["name"], "pos": to_world(c.x, c.y, h)})
     if not any:
-        return
+        return null
     st.generate_normals()
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
@@ -167,6 +202,7 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
     col.shape = shape
     body.add_child(col)
     mi.add_child(body)
+    return mi
 
 
 func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float) -> void :
