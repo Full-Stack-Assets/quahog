@@ -468,6 +468,8 @@ func _spawn_player() -> void :
     _player.global_position = _city.player_spawn if _city else Vector3(8, 0.6, 8)
     if GameManager and GameManager.has_spawn_override:
         _player.global_position = GameManager.player_spawn_override
+        if GameManager.has_saved_pos and _player.has_method("set_heading"):
+            _player.set_heading(GameManager.saved_yaw)
 
 
 func _build_hud() -> void :

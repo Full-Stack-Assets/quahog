@@ -549,6 +549,11 @@ func on_busted() -> void :
     global_position = home_spawn if home_spawn != Vector3.ZERO else global_position
     velocity = Vector3.ZERO
 
+func set_heading(yaw: float) -> void :
+    if mesh_root:
+        mesh_root.rotation.y = yaw
+
+
 func get_map_heading() -> float:
     if _driving and current_car and is_instance_valid(current_car) and "vehicle_model" in current_car and current_car.vehicle_model:
         return current_car.vehicle_model.rotation.y
