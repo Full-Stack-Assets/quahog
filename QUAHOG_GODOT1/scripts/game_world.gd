@@ -25,6 +25,27 @@ const TRAFFIC_CARS: = 10
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
 const MAP_RADIUS: = 2
 
+# Curated South Coast hero landmarks (real OSM coords, world XZ where z = -north).
+# Each gets an emissive dusk beacon + a billboard name so the corridor towns are
+# recognizable the moment you fast-travel in — not anonymous streamed blocks.
+const HERO_LANDMARKS: Array = [
+    {"name": "Whaling Museum", "pos": Vector2(-219, 107)},
+    {"name": "Seamen's Bethel", "pos": Vector2(-272, 106)},
+    {"name": "New Bedford City Hall", "pos": Vector2(-582, 60)},
+    {"name": "Fort Taber", "pos": Vector2(1495, 4560)},
+    {"name": "Clark's Point Light", "pos": Vector2(1598, 4764)},
+    {"name": "Fairhaven", "pos": Vector2(1539, 32)},
+    {"name": "Dartmouth Town Hall", "pos": Vector2(-3744, 806)},
+    {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
+    {"name": "Westport", "pos": Vector2(-11897, 1521)},
+    {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
+    {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
+    {"name": "St. Mary's Cathedral", "pos": Vector2(-19696, -6969)},
+    {"name": "Notre Dame Cathedral", "pos": Vector2(-17596, -6054)},
+    {"name": "Narrows Center", "pos": Vector2(-20164, -7470)},
+    {"name": "Green Monstah Mural", "pos": Vector2(-19570, -9192)},
+]
+
 var _tex_asphalt: Texture2D
 var _tex_concrete: Texture2D
 
@@ -66,6 +87,7 @@ func _ready() -> void :
     _place_cars()
     _spawn_traffic()
     _place_streetlights()
+    _place_landmark_beacons()
     _spawn_contacts()
     _spawn_npcs()
     _spawn_player()
@@ -84,6 +106,45 @@ func _ready() -> void :
     _build_shop_menu()
     _start_audio()
     _setup_weather()
+
+
+# Emissive dusk beacon + billboard name at each curated hero landmark, so the
+# corridor towns read as recognizable places from a distance. Cheap (one mesh +
+# one Label3D each); placed once at load over the whole region.
+func _place_landmark_beacons() -> void :
+    var root: = Node3D.new()
+    root.name = "Landmarks"
+    add_child(root)
+    var font: Font = load("res://assets/fonts/noto_serif.ttf")
+    for lm in HERO_LANDMARKS:
+        var p: Vector2 = lm["pos"]
+        var nm: String = str(lm["name"])
+        var beacon: = MeshInstance3D.new()
+        var cyl: = CylinderMesh.new()
+        cyl.top_radius = 0.25
+        cyl.bottom_radius = 0.7
+        cyl.height = 12.0
+        beacon.mesh = cyl
+        var m: = StandardMaterial3D.new()
+        m.albedo_color = Color(0.95, 0.72, 0.36)
+        m.emission_enabled = true
+        m.emission = Color(1.0, 0.74, 0.34)
+        m.emission_energy_multiplier = 2.4
+        beacon.material_override = m
+        beacon.position = Vector3(p.x, 11.0, p.y)
+        root.add_child(beacon)
+        var lbl: = Label3D.new()
+        lbl.text = nm
+        lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        lbl.modulate = Color(1.0, 0.91, 0.68)
+        lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.85)
+        lbl.font_size = 64
+        lbl.outline_size = 14
+        lbl.pixel_size = 0.03
+        lbl.position = Vector3(p.x, 19.0, p.y)
+        if font:
+            lbl.font = font
+        root.add_child(lbl)
 
 
 func _setup_weather() -> void :
