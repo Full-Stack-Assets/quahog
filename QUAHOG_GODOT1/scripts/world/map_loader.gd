@@ -241,7 +241,13 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
     # given building always paints the same colour (no flicker).
     var seed_i: int = int(absf(float(fp[0][0]) * 73856.0 + float(fp[0][1]) * 19349.0))
     var palette: Array
-    if h >= 24.0:
+    # Fall River / Westport mill belt (west of x ≈ −16 km): bias the larger
+    # buildings to deep mill brick + granite so the old textile-mill city reads
+    # differently from New Bedford's painted waterfront.
+    var mill_belt: bool = float(fp[0][0]) < -16000.0
+    if mill_belt and h >= 11.0:
+        palette = [Color(0.46, 0.23, 0.18), Color(0.41, 0.21, 0.17), Color(0.52, 0.29, 0.21), Color(0.44, 0.42, 0.40), Color(0.37, 0.36, 0.35), Color(0.49, 0.27, 0.22)]
+    elif h >= 24.0:
         palette = [Color(0.52, 0.53, 0.55), Color(0.49, 0.50, 0.52), Color(0.56, 0.56, 0.55), Color(0.47, 0.48, 0.50)]
     elif h >= 13.0:
         palette = [Color(0.45, 0.27, 0.22), Color(0.50, 0.26, 0.20), Color(0.39, 0.28, 0.25), Color(0.55, 0.43, 0.33), Color(0.44, 0.40, 0.40)]
