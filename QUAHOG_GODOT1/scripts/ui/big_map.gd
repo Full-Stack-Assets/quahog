@@ -22,6 +22,17 @@ const DESTINATIONS: Array = [
     {"name": "Fairhaven", "pos": Vector2(1381, 178)},
     {"name": "Clark's Cove", "pos": Vector2(-1400, 2200)},
 ]
+
+# Region fast-travel: the whole South Coast, reachable from a button column
+# (the zoomed map can't show towns 20 km away, so these are always available).
+const REGIONS: Array = [
+    {"name": "New Bedford", "pos": Vector2(0, 0)},
+    {"name": "Fort Taber", "pos": Vector2(1300, 4750)},
+    {"name": "Fairhaven", "pos": Vector2(1381, 178)},
+    {"name": "Dartmouth", "pos": Vector2(-3744, 806)},
+    {"name": "Westport", "pos": Vector2(-12046, -2216)},
+    {"name": "Fall River", "pos": Vector2(-19475, -7216)},
+]
 const SNAP_PX: = 34.0  # tap within this many pixels of a label snaps to it
 
 var player: Node3D = null
@@ -58,6 +69,42 @@ func _ready() -> void :
     close_btn.add_theme_font_size_override("font_size", 26)
     close_btn.pressed.connect(func(): visible = false)
     add_child(close_btn)
+
+    # Region fast-travel column (top-left): jump anywhere on the South Coast.
+    var col: = VBoxContainer.new()
+    col.add_theme_constant_override("separation", 8)
+    col.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    col.offset_left = 36
+    col.offset_top = 96
+    add_child(col)
+    var hdr: = Label.new()
+    hdr.text = "TRAVEL"
+    if _font:
+        hdr.add_theme_font_override("font", _font)
+    hdr.add_theme_font_size_override("font_size", 22)
+    hdr.add_theme_color_override("font_color", Color(0.96, 0.86, 0.6))
+    col.add_child(hdr)
+    for d in REGIONS:
+        var dp: Vector2 = d["pos"]
+        var btn: = Button.new()
+        btn.text = str(d["name"])
+        btn.focus_mode = Control.FOCUS_NONE
+        btn.custom_minimum_size = Vector2(220, 48)
+        if _font:
+            btn.add_theme_font_override("font", _font)
+        btn.add_theme_font_size_override("font_size", 22)
+        btn.pressed.connect(_travel_to.bind(dp))
+        col.add_child(btn)
+
+
+func _travel_to(dp: Vector2) -> void :
+    if player != null and is_instance_valid(player):
+        var target: = Vector3(dp.x, player.global_position.y, dp.y)
+        if player.has_method("fast_travel_to"):
+            player.fast_travel_to(target)
+        else:
+            player.global_position = target
+    visible = false
 
 
 func toggle() -> void :
