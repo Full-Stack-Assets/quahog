@@ -65,16 +65,20 @@ func _gui_input(event: InputEvent) -> void :
             var scale: float = minf(size.x, size.y) / VIEW_M
             var cpx: Vector2 = size * 0.5
             var center: Vector3 = player.global_position
+            # Default: free-travel to the tapped point. If the tap lands near a
+            # named destination, snap to that exact spot instead.
+            var rel: Vector2 = (mb.position - cpx) / scale
+            var target: = Vector3(center.x + rel.x, center.y, center.z + rel.y)
             for d in DESTINATIONS:
                 var dp: Vector2 = d["pos"]
                 var screen: Vector2 = cpx + (dp - Vector2(center.x, center.z)) * scale
                 if mb.position.distance_to(screen) <= SNAP_PX:
-                    var target: = Vector3(dp.x, center.y, dp.y)
-                    if player.has_method("fast_travel_to"):
-                        player.fast_travel_to(target)
-                    else:
-                        player.global_position = target
+                    target = Vector3(dp.x, center.y, dp.y)
                     break
+            if player.has_method("fast_travel_to"):
+                player.fast_travel_to(target)
+            else:
+                player.global_position = target
         visible = false
 
 
@@ -155,4 +159,4 @@ func _draw() -> void :
 
     if _font:
         draw_string(_font, Vector2(40, 64), "MOUNT HOPE — MAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.96, 0.86, 0.6))
-        draw_string(_font, Vector2(40, size.y - 36), "Tap a place name to fast-travel · tap elsewhere to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))
+        draw_string(_font, Vector2(40, size.y - 36), "Tap anywhere to fast-travel (names snap exactly) · M to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))
