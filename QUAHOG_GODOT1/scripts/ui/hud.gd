@@ -28,6 +28,9 @@ var _font: Font
 var _minimap: Control = null
 var _objective_label: Label = null
 var _objective_panel: Control = null
+var _obj_active: bool = false
+var _obj_text: String = ""
+var _obj_target: Vector3 = Vector3.ZERO
 var _wanted_label: Label = null
 var _ammo_label: Label = null
 var _health_bar: ProgressBar = null
@@ -252,12 +255,30 @@ func _on_driving_changed(driving: bool) -> void :
         _buttons["vehicle"].queue_redraw()
 
 
-func _on_job_changed(active: bool, text: String, _target: Vector3) -> void :
+func _on_job_changed(active: bool, text: String, target: Vector3) -> void :
+    _obj_active = active
+    _obj_text = text
+    _obj_target = target
     if _objective_panel == null:
         return
     _objective_panel.visible = active
     if active and _objective_label:
         _objective_label.text = "● " + text
+
+
+func _process(_delta: float) -> void :
+    # Live distance to the objective, like the web HUD ("… — 636 m").
+    if not _obj_active or _objective_label == null:
+        return
+    if _player == null or not is_instance_valid(_player):
+        return
+    var d: float = _player.global_position.distance_to(_obj_target)
+    var dist_str: String = ""
+    if d < 1000.0:
+        dist_str = "%d m" % int(d)
+    else:
+        dist_str = "%.1f km" % (d / 1000.0)
+    _objective_label.text = "● %s — %s" % [_obj_text, dist_str]
 
 
 
