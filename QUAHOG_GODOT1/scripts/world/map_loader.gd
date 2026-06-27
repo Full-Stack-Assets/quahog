@@ -19,6 +19,8 @@ const WALL_TILE_U: = 4.0
 const WALL_TILE_V: = 3.2
 const ASPHALT_PATH: = "res://assets/textures/floors/wet_asphalt.png"
 const ROAD_TILE: = 8.0  # metres per asphalt texture repeat (planar UV)
+const CURB_WIDTH: = 1.7  # concrete sidewalk apron width (m) flanking each road
+const Y_SIDEWALK: = 0.12  # raised slightly above the asphalt
 
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
@@ -256,6 +258,8 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         return
     var st: = SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var sw: = SurfaceTool.new()      # concrete sidewalk aprons
+    sw.begin(Mesh.PRIMITIVE_TRIANGLES)
     for r in roads:
         if not (r is Dictionary):
             continue
@@ -270,6 +274,9 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         var width: float = float(r.get("width", 6.0))
         var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
         _emit_road(st, pts, width * 0.5, rcol)
+        # Footways/service alleys don't get curbed sidewalks.
+        if hw != "footway" and hw != "service":
+            _emit_sidewalk(sw, pts, width * 0.5)
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
         var a0: = Vector2(float(pts[0][0]), float(pts[0][1]))
@@ -292,6 +299,44 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     mi.name = "Roads"
     mi.mesh = st.commit()
     parent.add_child(mi)
+
+    sw.generate_normals()
+    var smat: = StandardMaterial3D.new()
+    smat.vertex_color_use_as_albedo = true
+    smat.roughness = 0.96
+    smat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    sw.set_material(smat)
+    var smi: = MeshInstance3D.new()
+    smi.name = "Sidewalks"
+    smi.mesh = sw.commit()
+    parent.add_child(smi)
+
+
+# Concrete apron strips flanking a road (visual only; the ground plane carries
+# collision). Two quads per segment — one each side, inner edge at the kerb.
+func _emit_sidewalk(st: SurfaceTool, pts: Array, half: float) -> void :
+    var col: = Color(0.62, 0.62, 0.60)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s in [1.0, -1.0]:
+            var ai: = a + perp * (half * s)
+            var ao: = a + perp * ((half + CURB_WIDTH) * s)
+            var bi: = b + perp * (half * s)
+            var bo: = b + perp * ((half + CURB_WIDTH) * s)
+            var vai: = to_world(ai.x, ai.y, Y_SIDEWALK)
+            var vao: = to_world(ao.x, ao.y, Y_SIDEWALK)
+            var vbi: = to_world(bi.x, bi.y, Y_SIDEWALK)
+            var vbo: = to_world(bo.x, bo.y, Y_SIDEWALK)
+            for v in [vai, vao, vbo, vai, vbo, vbi]:
+                st.set_color(col)
+                st.set_uv(Vector2(v.x * 0.25, v.z * 0.25))
+                st.add_vertex(v)
 
 
 func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :
