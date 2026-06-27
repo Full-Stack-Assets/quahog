@@ -49,8 +49,19 @@ const CREDITS_SCENE_CANDIDATES: PackedStringArray = [
     "res://scenes/credits.tscn", 
 ]
 
+const TIPS: PackedStringArray = [
+    "WASD to move · Shift to sprint · F to grab a car.",
+    "Heat climbs when you cause trouble. Lay low to cool off.",
+    "Tap MAP for the city — tap a place name to fast-travel.",
+    "Tap RADIO to cycle the stations: WHALE · The Rage · The Anvil · Maré Alta.",
+    "Ram a car to stop it, then jack it on foot.",
+    "Take jobs from the contact downtown to earn your first dollars.",
+]
+const FONT_PATH: = "res://assets/fonts/noto_serif.ttf"
+
 var _click_sfx_stream: AudioStream = null
 var _wordmark: TextureRect = null
+var _font: Font = null
 
 
 func _ready() -> void :
@@ -64,9 +75,70 @@ func _ready() -> void :
     if sfx_path != "":
         _click_sfx_stream = load(sfx_path) as AudioStream
 
+    if ResourceLoader.exists(FONT_PATH):
+        _font = load(FONT_PATH)
+
     _build_background()
     _build_wordmark()
     _build_buttons()
+    _build_text_overlay()
+
+
+# Web StartMenu parity: era tag, subtitle, a rotating tip, and the OSM
+# attribution footer.
+func _build_text_overlay() -> void :
+    var era: = _make_label("SOUTH COAST · 1986", 22, Color(1.0, 0.48, 0.85, 0.9))
+    era.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    add_child(era)
+    era.anchor_left = 0.0
+    era.anchor_right = 1.0
+    era.anchor_top = 0.0
+    era.offset_top = 36
+    era.offset_bottom = 70
+
+    var subtitle: = _make_label("New Bedford · the Whaling City", 26, Color(0.9, 0.86, 0.78, 0.85))
+    subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    add_child(subtitle)
+    subtitle.anchor_left = 0.0
+    subtitle.anchor_right = 1.0
+    subtitle.anchor_top = 0.0
+    subtitle.offset_top = 396
+    subtitle.offset_bottom = 436
+
+    var tip_i: int = int(Time.get_unix_time_from_system()) % TIPS.size()
+    var tip: = _make_label("TIP: " + TIPS[tip_i], 22, Color(0.82, 0.82, 0.86, 0.8))
+    tip.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    add_child(tip)
+    tip.anchor_left = 0.0
+    tip.anchor_right = 1.0
+    tip.anchor_bottom = 1.0
+    tip.anchor_top = 1.0
+    tip.offset_top = -110
+    tip.offset_bottom = -64
+
+    var attrib: = _make_label("Map data © OpenStreetMap contributors, ODbL · An original work", 16, Color(0.7, 0.7, 0.74, 0.6))
+    attrib.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    add_child(attrib)
+    attrib.anchor_left = 0.0
+    attrib.anchor_right = 1.0
+    attrib.anchor_bottom = 1.0
+    attrib.anchor_top = 1.0
+    attrib.offset_top = -34
+    attrib.offset_bottom = -10
+
+
+func _make_label(text: String, font_size: int, color: Color) -> Label:
+    var lbl: = Label.new()
+    lbl.text = text
+    lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    lbl.add_theme_color_override("font_color", color)
+    lbl.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    lbl.add_theme_constant_override("outline_size", 5)
+    lbl.add_theme_font_size_override("font_size", font_size)
+    if _font:
+        lbl.add_theme_font_override("font", _font)
+    return lbl
 
 
 func _first_existing(paths: PackedStringArray) -> String:
