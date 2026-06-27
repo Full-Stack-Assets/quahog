@@ -46,6 +46,9 @@ const OVERLAY_COLORS: = {
     "parks": Color(0.22, 0.40, 0.20), "wood": Color(0.18, 0.34, 0.18),
     "cemetery": Color(0.26, 0.40, 0.26), "parking": Color(0.30, 0.30, 0.32),
     "beach": Color(0.78, 0.72, 0.52), "pier": Color(0.45, 0.36, 0.27),
+    "islands": Color(0.20, 0.36, 0.18),   # land in the harbour
+    "rail": Color(0.20, 0.18, 0.16),      # railbed gravel/ties
+    "barrier": Color(0.42, 0.42, 0.44),   # NB Hurricane Barrier (granite/concrete)
 }
 
 # Stats for verification/logging.
