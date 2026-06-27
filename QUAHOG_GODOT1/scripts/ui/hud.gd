@@ -21,6 +21,8 @@ var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
 var _clock_label: Label = null
+var _speed_label: Label = null
+var _driving_now: bool = false
 var _pause_panel: Control
 var _settings_panel: Control
 var _edit_banner: Control
@@ -265,6 +267,9 @@ func _on_driving_changed(driving: bool) -> void :
     if _buttons.has("vehicle"):
         _buttons["vehicle"].label_text = "EXIT" if driving else "CAR"
         _buttons["vehicle"].queue_redraw()
+    _driving_now = driving
+    if _speed_label:
+        _speed_label.visible = driving
 
 
 func _on_job_changed(active: bool, text: String, target: Vector3) -> void :
@@ -284,6 +289,13 @@ func _process(_delta: float) -> void :
         var gm: = get_node_or_null("/root/GameManager")
         if gm and gm.has_method("time_string"):
             _clock_label.text = ("%s  ☔" % gm.time_string()) if gm.raining else gm.time_string()
+
+    # Speedometer while driving.
+    if _driving_now and _speed_label and _player != null and is_instance_valid(_player):
+        var car: Variant = _player.current_car
+        if car != null and is_instance_valid(car) and car.has_method("get_speed_kmh"):
+            var mph: int = int(round(float(car.get_speed_kmh()) * 0.621371))
+            _speed_label.text = "%d MPH" % mph
 
     # Live distance to the objective, like the web HUD ("… — 636 m").
     if not _obj_active or _objective_label == null:
@@ -575,6 +587,19 @@ func _build_radio() -> void :
     _clock_label.offset_right = -28
     _clock_label.offset_top = 28
     _clock_label.text = "18:00"
+
+    _speed_label = Label.new()
+    _apply_font(_speed_label, 40, Color(0.96, 0.92, 0.78))
+    _speed_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _speed_label.add_theme_constant_override("outline_size", 6)
+    _speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _speed_label.visible = false
+    _root.add_child(_speed_label)
+    _speed_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+    _speed_label.offset_left = -320
+    _speed_label.offset_right = -40
+    _speed_label.offset_top = -210
+    _speed_label.offset_bottom = -150
 
     _radio_label = Label.new()
     _apply_font(_radio_label, 24, Color(0.86, 0.80, 0.94))
