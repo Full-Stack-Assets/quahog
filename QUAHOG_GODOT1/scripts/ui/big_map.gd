@@ -48,7 +48,10 @@ func _ready() -> void :
     close_btn.text = "✕ CLOSE"
     close_btn.focus_mode = Control.FOCUS_NONE
     close_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-    close_btn.position = Vector2(-180, 40)
+    close_btn.offset_left = -168
+    close_btn.offset_right = -28
+    close_btn.offset_top = 40
+    close_btn.offset_bottom = 96
     close_btn.custom_minimum_size = Vector2(140, 56)
     if _font:
         close_btn.add_theme_font_override("font", _font)

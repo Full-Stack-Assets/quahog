@@ -299,7 +299,7 @@ func _spawn_traffic() -> void :
         ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
         ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
     ]
-    var n: int = min(TRAFFIC_CARS, waypoints.size())
+    var n: int = mini(TRAFFIC_CARS, waypoints.size())
     for i in n:
         var m: Array = models[i % models.size()]
         var tc: = CharacterBody3D.new()
