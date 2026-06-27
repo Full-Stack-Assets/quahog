@@ -57,6 +57,13 @@ func _create_players() -> void :
         add_child(p)
         sfx_players.append(p)
 
+# The radio uses this to silence the background score while a station plays
+# (otherwise the explore theme and the radio overlap on the Music bus).
+func set_score_muted(muted: bool) -> void :
+    if music_player:
+        music_player.stream_paused = muted
+
+
 func play_music(stream: AudioStream, volume_db: float = -6.0, fade_in: float = 0.0) -> void :
     if stream == null:
         return

@@ -54,12 +54,20 @@ func set_station(i: int) -> void :
         current = -1
         _player.stop()
         _player.stream = null
+        _set_score_muted(false)
         station_changed.emit(-1, "OFF")
         now_playing.emit("")
         return
+    _set_score_muted(true)
     _build_order()
     station_changed.emit(current, station_name(current))
     _play_current()
+
+
+func _set_score_muted(muted: bool) -> void :
+    var am: = get_node_or_null("/root/AudioManager")
+    if am and am.has_method("set_score_muted"):
+        am.set_score_muted(muted)
 
 
 # OFF -> station 0 -> 1 ... -> last -> OFF
