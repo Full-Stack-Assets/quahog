@@ -164,6 +164,8 @@ func _draw() -> void :
 
     draw_rect(rect, Color(0.79, 0.52, 0.16, 0.85), false, 2.0)
     if _font:
+        # North indicator (the minimap is north-up, so N sits at the top edge).
+        draw_string(_font, Vector2(size.x - 22, 20), "N", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.95, 0.86, 0.6))
         var dn: = _location_name(center)
         draw_string(_font, Vector2(8, size.y - 10), dn, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.95, 0.86, 0.6))
 
