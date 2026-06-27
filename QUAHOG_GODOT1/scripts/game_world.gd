@@ -446,11 +446,14 @@ func _build_shop_menu() -> void :
         shop_menu.bind_player(_player)
 
 
-# Gunfire scatters nearby pedestrians.
+# Gunfire scatters nearby pedestrians and draws police attention.
 func _on_shots_fired(at: Vector3) -> void :
     for npc in _npcs:
         if is_instance_valid(npc) and npc.has_method("panic"):
             npc.panic(at)
+    # Firing in public draws the law: first shot earns a star; cops escalate it.
+    if _wanted_system and _wanted_system.has_method("add_heat") and GameManager and GameManager.wanted_level < 1:
+        _wanted_system.add_heat(1)
 
 
 func _spawn_npcs() -> void :
