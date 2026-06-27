@@ -26,6 +26,7 @@ var _font: Font
 
 
 var _minimap: Control = null
+var _big_map: Control = null
 var _objective_label: Label = null
 var _objective_panel: Control = null
 var _obj_active: bool = false
@@ -113,6 +114,8 @@ func bind_player(player: CharacterBody3D) -> void :
         _player.health_changed.connect(_on_health_changed)
     if _minimap and _minimap.has_method("bind"):
         _minimap.bind(_player, _job_manager, _wanted_system)
+    if _big_map and _big_map.has_method("bind"):
+        _big_map.bind(_player, _job_manager)
 
 
 func bind_systems(job_manager: Node, wanted_system: Node) -> void :
@@ -122,6 +125,8 @@ func bind_systems(job_manager: Node, wanted_system: Node) -> void :
         _job_manager.job_changed.connect(_on_job_changed)
     if _minimap and _minimap.has_method("bind"):
         _minimap.bind(_player, _job_manager, _wanted_system)
+    if _big_map and _big_map.has_method("bind"):
+        _big_map.bind(_player, _job_manager)
 
 
 func _wire_tap(id: String, cb: Callable) -> void :
@@ -136,6 +141,11 @@ func _wire_hold(id: String, setter: Callable) -> void :
 
 
 func _build_gameplay_panels() -> void :
+
+    var big_map_script: Variant = load("res://scripts/ui/big_map.gd")
+    if big_map_script:
+        _big_map = big_map_script.new()
+        _root.add_child(_big_map)
 
     _minimap = MinimapScript.new()
     _root.add_child(_minimap)
@@ -416,6 +426,17 @@ func _build_radio() -> void :
     radio_btn.position = Vector2(208, 28)
     radio_btn.pressed.connect(_on_radio_pressed)
 
+    var map_btn: = TouchButton.new()
+    map_btn.control_id = "map"
+    map_btn.label_text = "MAP"
+    map_btn.custom_minimum_size = Vector2(96, 64)
+    map_btn.size = map_btn.custom_minimum_size
+    map_btn.accent = Color(0.3, 0.46, 0.5)
+    _root.add_child(map_btn)
+    map_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    map_btn.position = Vector2(320, 28)
+    map_btn.pressed.connect(_on_map_pressed)
+
     _radio_label = Label.new()
     _apply_font(_radio_label, 24, Color(0.86, 0.80, 0.94))
     _radio_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
@@ -436,6 +457,11 @@ func _on_radio_pressed() -> void :
     var radio: = get_node_or_null("/root/Radio")
     if radio:
         radio.cycle()
+
+
+func _on_map_pressed() -> void :
+    if _big_map and _big_map.has_method("toggle"):
+        _big_map.toggle()
 
 
 func _on_radio_station(_index: int, station_name: String) -> void :
