@@ -35,6 +35,12 @@ const DAY_LENGTH: float = 600.0     # seconds for a full day→night→day loop
 var _sun: DirectionalLight3D = null
 var _env: Environment = null
 var _day_phase: float = 0.0
+
+# Weather: rain drifts in and out. The emitter rides above the player; when it's
+# raining the fog thickens a touch on top of the day/night base.
+var _rain: CPUParticles3D = null
+var _weather_t: float = 25.0
+var _raining: bool = false
 # Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
 # but exposes the same spawn fields (player_spawn, car_slots, light_slots,
 # npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
@@ -65,6 +71,33 @@ func _ready() -> void :
     _spawn_shops()
     _build_shop_menu()
     _start_audio()
+    _setup_weather()
+
+
+func _setup_weather() -> void :
+    var rain: = CPUParticles3D.new()
+    rain.name = "Rain"
+    rain.amount = 700
+    rain.lifetime = 1.1
+    rain.local_coords = false
+    rain.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+    rain.emission_box_extents = Vector3(26.0, 0.5, 26.0)
+    rain.direction = Vector3(0.05, -1.0, 0.0)
+    rain.spread = 2.0
+    rain.gravity = Vector3(0.0, -32.0, 0.0)
+    rain.initial_velocity_min = 16.0
+    rain.initial_velocity_max = 22.0
+    var streak: = BoxMesh.new()
+    streak.size = Vector3(0.015, 0.5, 0.015)
+    rain.mesh = streak
+    var mat: = StandardMaterial3D.new()
+    mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.albedo_color = Color(0.7, 0.78, 0.9, 0.5)
+    rain.material_override = mat
+    rain.emitting = false
+    add_child(rain)
+    _rain = rain
 
 
 
@@ -118,6 +151,24 @@ func _setup_environment() -> void :
 func _process(delta: float) -> void :
     _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()
+    _update_weather(delta)
+
+
+func _update_weather(delta: float) -> void :
+    if _rain == null:
+        return
+    # Keep the emitter riding above the player.
+    if _player != null and is_instance_valid(_player):
+        _rain.global_position = _player.global_position + Vector3(0.0, 22.0, 0.0)
+    # Flip weather on a long-ish timer (rain spells ~40s, dry ~90s).
+    _weather_t -= delta
+    if _weather_t <= 0.0:
+        _raining = not _raining
+        _rain.emitting = _raining
+        _weather_t = 40.0 if _raining else 90.0
+    # Rain thickens the haze on top of the day/night base.
+    if _raining and _env != null:
+        _env.fog_density += 0.004
 
 
 func _apply_day_night() -> void :
