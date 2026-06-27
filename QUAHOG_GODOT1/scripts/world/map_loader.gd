@@ -187,18 +187,41 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
     for p in fp:
         poly2.append(Vector2(float(p[0]), float(p[1])))
 
-    # Roof cap (triangulated footprint at y = h). UV pinned to a single texel so
-    # the roof reads as a flat tone (no window grid up top).
-    var tri: = Geometry2D.triangulate_polygon(poly2)
+    # Roof. UV pinned to a single texel so the roof reads as a flat tone (no
+    # window grid up top). Short footprints (houses / triple-deckers) get a
+    # peaked hip roof — a fan from each footprint edge up to an apex over the
+    # centroid — so they aren't flat-topped boxes. Tall granite/mills stay flat.
     var roof_col: = col.lightened(0.08)
-    for i in range(0, tri.size(), 3):
-        for k in range(3):
-            var v2: = poly2[tri[i + k]]
-            var v: = to_world(v2.x, v2.y, h)
-            st.set_color(roof_col)
-            st.set_uv(Vector2(0.05, 0.05))
-            st.add_vertex(v)
-            faces.append(v)
+    if h < 14.0:
+        var cx: = 0.0
+        var cy: = 0.0
+        for p2 in poly2:
+            cx += p2.x
+            cy += p2.y
+        cx /= float(poly2.size())
+        cy /= float(poly2.size())
+        var peak: = clampf(h * 0.45, 1.8, 4.5)
+        var apex: = to_world(cx, cy, h + peak)
+        for i in range(poly2.size()):
+            var ea: = poly2[i]
+            var eb: = poly2[(i + 1) % poly2.size()]
+            var va: = to_world(ea.x, ea.y, h)
+            var vb: = to_world(eb.x, eb.y, h)
+            for v in [va, vb, apex]:
+                st.set_color(roof_col)
+                st.set_uv(Vector2(0.05, 0.05))
+                st.add_vertex(v)
+                faces.append(v)
+    else:
+        var tri: = Geometry2D.triangulate_polygon(poly2)
+        for i in range(0, tri.size(), 3):
+            for k in range(3):
+                var v2: = poly2[tri[i + k]]
+                var v: = to_world(v2.x, v2.y, h)
+                st.set_color(roof_col)
+                st.set_uv(Vector2(0.05, 0.05))
+                st.add_vertex(v)
+                faces.append(v)
 
     # Walls (extrude each edge from ground to roof) with window-grid UVs that
     # tile by wall length and floor height.
