@@ -199,12 +199,7 @@ func _region_screen(rp: Vector2, center: Vector3, scale: float, cpx: Vector2) ->
 
 func _load_roads() -> void :
     _loaded = true
-    if not FileAccess.file_exists(SLICE):
-        return
-    var f: = FileAccess.open(SLICE, FileAccess.READ)
-    if f == null:
-        return
-    var data: Variant = JSON.parse_string(f.get_as_text())
+    var data: Variant = MapLoader.read_json_any(SLICE)
     if not (data is Dictionary):
         return
     var roads: Variant = data.get("roads", [])

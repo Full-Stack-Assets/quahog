@@ -125,14 +125,31 @@ static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector
     return Vector3(x_east, y_up, -y_north)
 
 
+# Map data (tiles + the road slice) is stored gzip-compressed (e.g.
+# b_X_Y.json.gz) to keep the web download small — JSON of footprint coords
+# compresses ~85%. Reads the plain file if present, else falls back to the .gz
+# beside it and inflates. Static so big_map/minimap can share it for the slice.
+static func read_json_any(path: String) -> Variant:
+    if FileAccess.file_exists(path):
+        var f: = FileAccess.open(path, FileAccess.READ)
+        if f == null:
+            return null
+        return JSON.parse_string(f.get_as_text())
+    var gz: = path + ".gz"
+    if not FileAccess.file_exists(gz):
+        return null
+    var gf: = FileAccess.open(gz, FileAccess.READ)
+    if gf == null:
+        return null
+    var raw: PackedByteArray = gf.get_buffer(gf.get_length())
+    var out: PackedByteArray = raw.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+    if out.is_empty():
+        return null
+    return JSON.parse_string(out.get_string_from_utf8())
+
+
 func _read_json(path: String) -> Variant:
-    if not FileAccess.file_exists(path):
-        return null
-    var f: = FileAccess.open(path, FileAccess.READ)
-    if f == null:
-        return null
-    var parsed: Variant = JSON.parse_string(f.get_as_text())
-    return parsed
+    return read_json_any(path)
 
 
 # Build the map for a square block of tiles around center_tile (in tile indices).
