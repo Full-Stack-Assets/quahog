@@ -7,12 +7,12 @@ commit. Checkboxes flip as they land.
 ## A. Driving & vehicles
 1. [ ] Water is non-drivable — cars/player can't cross the harbor (collision or slow/stop zone).
 2. [ ] Car model faces its travel direction (no rear-first driving).
-3. [ ] Camera collision — chase cam doesn't clip through buildings.
+3. [x] Camera collision — chase cam doesn't clip through buildings.
 4. [ ] Brake vs reverse feel + handbrake.
-5. [ ] Flip/stuck recovery (right the car if overturned or wedged).
+5. [x] Flip/stuck recovery (right the car if overturned or wedged).
 6. [ ] Horn (button + SFX).
 7. [ ] Headlights on at night.
-8. [ ] Speedometer correctness (km/h) + needle.
+8. [x] Speedometer correctness (km/h) + needle.
 9. [ ] Per-model handling spread (mass/grip/top speed).
 10. [ ] Minimap shows player heading + nearby cars.
 

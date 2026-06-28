@@ -191,13 +191,39 @@ func set_drive_input(steer: float, throttle: float) -> void :
 
 
 func get_speed_kmh() -> float:
-    return linear_velocity.length() * 3.0
+    return linear_velocity.length() * 3.6   # m/s -> km/h
+
+
+# Seconds the car has been on its side/roof; used to auto-right it.
+var _flip_t: float = 0.0
 
 
 func _physics_process(delta: float) -> void :
     _drive(delta)
+    _recover_if_flipped(delta)
     if active:
         _update_camera(delta)
+
+
+# If the car ends up on its roof/side for more than a moment, flip it upright in
+# place so the player is never stranded (keeps yaw, clears spin).
+func _recover_if_flipped(delta: float) -> void :
+    if not is_instance_valid(vehicle_model) or not is_instance_valid(sphere):
+        return
+    if vehicle_model.global_basis.y.dot(Vector3.UP) < 0.25:
+        _flip_t += delta
+    else:
+        _flip_t = 0.0
+    if _flip_t > 1.5:
+        _flip_t = 0.0
+        var yaw: float = vehicle_model.rotation.y
+        vehicle_model.global_position += Vector3(0, 1.0, 0)
+        vehicle_model.rotation = Vector3(0, yaw, 0)
+        sphere.global_position = vehicle_model.global_position + Vector3(0, 0.5, 0)
+        sphere.linear_velocity = Vector3.ZERO
+        sphere.angular_velocity = Vector3.ZERO
+        linear_speed = 0.0
+        angular_speed = 0.0
 
 
 func _drive(delta: float) -> void :
@@ -294,11 +320,31 @@ func _chase_pos(car_pos: Vector3) -> Vector3:
     return car_pos - forward * dist + Vector3(0, height, 0)
 
 
+# Pull the chase cam in if a building/ground is between it and the car, so it
+# never clips through geometry.
+func _cam_unobstructed(car_pos: Vector3, want: Vector3) -> Vector3:
+    if not is_inside_tree():
+        return want
+    var space: = get_world_3d().direct_space_state
+    if space == null:
+        return want
+    var eye: = car_pos + Vector3(0, 1.2, 0)
+    var q: = PhysicsRayQueryParameters3D.create(eye, want)
+    q.collision_mask = 1
+    if is_instance_valid(sphere):
+        q.exclude = [sphere.get_rid()]
+    var hit: = space.intersect_ray(q)
+    if hit.is_empty():
+        return want
+    return (hit.position as Vector3) + (eye - want).normalized() * 0.5
+
+
 func _update_camera(delta: float) -> void :
     if camera == null:
         return
     var car_pos: Vector3 = vehicle_model.global_position
-    camera.global_position = camera.global_position.lerp(_chase_pos(car_pos), clampf(delta * 6.0, 0.0, 1.0))
+    var want: = _cam_unobstructed(car_pos, _chase_pos(car_pos))
+    camera.global_position = camera.global_position.lerp(want, clampf(delta * 6.0, 0.0, 1.0))
     camera.look_at(car_pos + Vector3(0, 1.2, 0), Vector3.UP)
 
 
@@ -306,7 +352,7 @@ func _snap_camera() -> void :
     if camera == null or vehicle_model == null:
         return
     var car_pos: Vector3 = vehicle_model.global_position
-    camera.global_position = _chase_pos(car_pos)
+    camera.global_position = _cam_unobstructed(car_pos, _chase_pos(car_pos))
     camera.look_at(car_pos + Vector3(0, 1.2, 0), Vector3.UP)
 
 
