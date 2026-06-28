@@ -489,7 +489,11 @@ func _spawn_traffic() -> void :
     var want_traffic: int = TRAFFIC_CARS
     if GameManager:
         want_traffic = int(round(float(TRAFFIC_CARS) * GameManager.cheat_traffic_mult))
-    var n: int = mini(want_traffic, waypoints.size())
+        # Time-of-day: roughly full traffic by day, ~45% in the small hours.
+        var elev: float = sin(GameManager.day_phase * TAU + PI)
+        var daylight: float = clampf((elev + 1.0) * 0.5, 0.0, 1.0)
+        want_traffic = int(round(want_traffic * lerpf(0.45, 1.0, daylight)))
+    var n: int = mini(max(want_traffic, 1), waypoints.size())
     for i in n:
         var m: Array = models[i % models.size()]
         var tc: = CharacterBody3D.new()

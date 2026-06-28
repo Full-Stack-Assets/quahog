@@ -57,7 +57,7 @@ commit. Checkboxes flip as they land.
 42. [ ] Big-map markers for missions/shops.
 43. [ ] Weapon wheel / inventory UI.
 44. [ ] Health/armor pickups in the world.
-45. [ ] Time-of-day affects traffic/ped density.
+45. [x] Time-of-day affects traffic/ped density.
 
 ## F. Performance & tech
 46. [ ] Streaming radius + per-frame build budget tuning.
