@@ -507,7 +507,7 @@ func try_enter_vehicle() -> void :
         exit_car()
         return
     var nearest: Node = null
-    var best: = 5.0
+    var best: = 7.5
     for c in _cars:
         if is_instance_valid(c):
             var d: float = global_position.distance_to(c.global_position)

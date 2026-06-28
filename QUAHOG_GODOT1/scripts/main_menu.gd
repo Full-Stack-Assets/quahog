@@ -62,6 +62,16 @@ const FONT_PATH: = "res://assets/fonts/noto_serif.ttf"
 var _click_sfx_stream: AudioStream = null
 var _wordmark: TextureRect = null
 var _font: Font = null
+var _cheats_overlay: Control = null
+
+# Quick-start spawn presets for testing (world XZ; y lifted so you drop onto the
+# street). Lets you jump straight into any corner of the South Coast.
+const SPAWN_PRESETS: Array = [
+    {"name": "Downtown New Bedford", "pos": Vector3(-219, 1.5, 107)},
+    {"name": "Fort Taber", "pos": Vector3(1495, 1.5, 4560)},
+    {"name": "Fall River (City Hall)", "pos": Vector3(-19475, 1.5, -7216)},
+    {"name": "Battleship Cove", "pos": Vector3(-20180, 1.5, -7790)},
+]
 
 
 func _ready() -> void :
@@ -226,6 +236,8 @@ func _build_buttons() -> void :
         var btn: = _make_button(BUTTON_IDS[i], BUTTON_STYLEBOXES[i])
         vbox.add_child(btn)
 
+    vbox.add_child(_make_text_button("⚙ CHEATS", _open_cheats))
+
 
 func _make_text_button(text: String, cb: Callable) -> Button:
     var b: = Button.new()
@@ -303,6 +315,92 @@ func _on_new_game() -> void :
         if gm.has_method("reset_save"):
             gm.reset_save()
     _go_to_play()
+
+
+# --- Cheats / test panel ----------------------------------------------------
+
+func _open_cheats() -> void :
+    _play_click_sfx()
+    if _cheats_overlay != null and is_instance_valid(_cheats_overlay):
+        return
+    var gm: = get_node_or_null("/root/GameManager")
+
+    var overlay: = Control.new()
+    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    add_child(overlay)
+    _cheats_overlay = overlay
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0, 0, 0, 0.7)
+    dim.mouse_filter = Control.MOUSE_FILTER_STOP
+    overlay.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    overlay.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var box: = VBoxContainer.new()
+    box.add_theme_constant_override("separation", 12)
+    center.add_child(box)
+
+    var title: = _make_label("CHEATS · TEST TOOLS", 34, Color(1.0, 0.81, 0.28))
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    box.add_child(title)
+
+    # Police toggle (cheat_no_police true => police OFF).
+    var police_btn: = _make_text_button("", _noop)
+    _refresh_police_btn(police_btn, gm)
+    police_btn.pressed.connect(_toggle_police.bind(police_btn))
+    box.add_child(police_btn)
+
+    box.add_child(_make_label("Quick start (fresh game):", 20, Color(0.85, 0.85, 0.88)))
+    for preset in SPAWN_PRESETS:
+        var p: Dictionary = preset
+        var pos: Vector3 = p["pos"]
+        var b: = _make_text_button("▶ " + str(p["name"]), _cheat_spawn.bind(pos))
+        box.add_child(b)
+
+    box.add_child(_make_text_button("✕ CLOSE", _close_cheats))
+
+
+func _noop() -> void :
+    pass
+
+
+func _refresh_police_btn(btn: Button, gm: Node) -> void :
+    var off: bool = gm != null and bool(gm.cheat_no_police)
+    btn.text = "POLICE: OFF (no heat)" if off else "POLICE: ON"
+    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if off else Color(1.0, 0.6, 0.5))
+
+
+func _toggle_police(btn: Button) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        gm.cheat_no_police = not bool(gm.cheat_no_police)
+        if gm.has_method("save_game"):
+            gm.save_game()
+        _refresh_police_btn(btn, gm)
+
+
+func _cheat_spawn(pos: Vector3) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        if gm.has_method("reset_save"):
+            gm.reset_save()
+        gm.player_spawn_override = pos
+        gm.has_spawn_override = true
+    _go_to_play()
+
+
+func _close_cheats() -> void :
+    _play_click_sfx()
+    if _cheats_overlay != null and is_instance_valid(_cheats_overlay):
+        _cheats_overlay.queue_free()
+    _cheats_overlay = null
 
 
 func _go_to_play() -> void :

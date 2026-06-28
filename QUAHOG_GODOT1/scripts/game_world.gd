@@ -18,9 +18,11 @@ const WeaponPickupScript: = preload("res://scripts/weapons/weapon_pickup.gd")
 const ShopScript: = preload("res://scripts/world/shop.gd")
 const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 
-const MAX_STATIC_CARS: = 12
-const DRIVABLE_CARS: = 8
-const TRAFFIC_CARS: = 10
+# Cars everywhere: every parked car is a real, takeable drivable car (parked
+# cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
+# get in one). TRAFFIC_CARS are the moving ambient cars.
+const DRIVABLE_CARS: = 80
+const TRAFFIC_CARS: = 16
 # How many 500 m tiles out from the New Bedford core to build at once. The web
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
 const MAP_RADIUS: = 2
@@ -339,20 +341,12 @@ func _place_cars() -> void :
     ]
     var slots: Array = _city.car_slots
 
-    var drivable: int = min(DRIVABLE_CARS, slots.size())
+    # Every slot becomes a takeable drivable car (dormant until entered).
+    var drivable: int = mini(DRIVABLE_CARS, slots.size())
     for i in drivable:
         var slot = slots[i]
         var m: Dictionary = models[i % models.size()]
         _spawn_drivable_car(m, slot[0], slot[1])
-
-    var placed: = 0
-    var idx: = drivable
-    while idx < slots.size() and placed < MAX_STATIC_CARS:
-        var slot2 = slots[idx]
-        var m2: Dictionary = models[(placed + 1) % models.size()]
-        _place_car(m2["path"], slot2[0], slot2[1], m2["h"])
-        placed += 1
-        idx += 2
 
 
 func _spawn_drivable_car(m: Dictionary, pos: Vector3, rot_y: float) -> void :
@@ -560,6 +554,10 @@ func _spawn_player() -> void :
         _player.global_position = GameManager.player_spawn_override
         if GameManager.has_saved_pos and _player.has_method("set_heading"):
             _player.set_heading(GameManager.saved_yaw)
+        # Seed the building stream around the override (e.g. a cheat spawn far from
+        # downtown) so you don't drop into an empty area before _process catches up.
+        if _city and _city.has_method("stream_buildings"):
+            _city.stream_buildings(_player.global_position)
 
 
 func _build_hud() -> void :
@@ -570,22 +568,8 @@ func _build_hud() -> void :
 
 
 func _start_audio() -> void :
-    if not AudioManager:
-        return
-    var music: = load("res://assets/audio/music/music_exploration_explore_theme.mp3")
-    if music:
-        if music is AudioStreamMP3:
-            (music as AudioStreamMP3).loop = true
-        AudioManager.play_music(music, -10.0, 1.5)
-    var ambient: = load("res://assets/audio/ambient/ambient_coastal_city_coastal_city.mp3")
-    if ambient:
-        var amb: = AudioStreamPlayer.new()
-        amb.stream = ambient
-        amb.bus = "SFX"
-        amb.volume_db = -16.0
-        amb.autoplay = false
-        amb.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
-        if ambient is AudioStreamMP3:
-            (ambient as AudioStreamMP3).loop = true
-        add_child(amb)
-        amb.play()
+    # No auto-started background music: the radio (number keys 1-9 / HUD) is the
+    # only music source, so the world is quiet until the player tunes a station.
+    # The looping exploration theme + coastal-city ambience were removed on
+    # request — they played over everything whether or not the radio was on.
+    pass

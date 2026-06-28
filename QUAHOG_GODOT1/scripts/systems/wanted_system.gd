@@ -30,6 +30,9 @@ func get_cops() -> Array:
 
 
 func add_heat(stars: int) -> void :
+    # Cheat: suppress all police heat while testing.
+    if GameManager and GameManager.cheat_no_police:
+        return
     if _busted_cooldown > 0.0:
         return
     GameManager.set_wanted(GameManager.wanted_level + stars)

@@ -922,12 +922,17 @@ func _build_overlays(parent: Node3D, bbox: Rect2) -> void :
 func _derive_spawns() -> void :
     if _road_samples.is_empty():
         return
-    # Player spawns on the road nearest the map origin (the NB core).
+    # Player spawns on the street nearest downtown New Bedford (by the Whaling
+    # Museum / historic district) rather than the bare map origin, so a new game
+    # starts somewhere recognizable instead of an arbitrary waterfront edge.
+    var anchor: = Vector2(-219.0, 107.0)   # world (x, z) of the downtown core
     var best: = 0
     var best_d: = INF
     for i in _road_samples.size():
         var p: Vector3 = _road_samples[i][0]
-        var d: = p.x * p.x + p.z * p.z
+        var dx: float = p.x - anchor.x
+        var dz: float = p.z - anchor.y
+        var d: = dx * dx + dz * dz
         if d < best_d:
             best_d = d
             best = i
@@ -943,7 +948,7 @@ func _derive_spawns() -> void :
         var s: Array = _road_samples[i2]
         var pos: Vector3 = s[0]
         npc_waypoints.append(pos)
-        if car_slots.size() < 40:
+        if car_slots.size() < 120:
             car_slots.append([Vector3(pos.x, 0.0, pos.z), float(s[1])])
         if light_slots.size() < 60:
             light_slots.append(Vector3(pos.x, 0.0, pos.z))
