@@ -417,6 +417,8 @@ func do_reload() -> void :
 
 
 func take_damage(amount: int) -> void :
+    if GameManager and GameManager.cheat_godmode:
+        return
     if dead or _invuln > 0.0:
         return
     _regen_delay = 5.0

@@ -21,6 +21,10 @@ var has_spawn_override: bool = false
 # Cheats (toggled from the main-menu CHEATS panel; persisted with the save).
 # no_police suppresses all wanted-heat so you can test freely. Defaults ON.
 var cheat_no_police: bool = true
+var cheat_godmode: bool = false
+# Forced time of day: -1 = normal day/night clock; otherwise a fixed day_phase
+# (0=dusk, 0.25=night, 0.5=dawn, 0.75=midday).
+var cheat_time_phase: float = -1.0
 
 # Last known player position/heading, persisted so the menu can offer Continue.
 var saved_pos: = Vector3.ZERO
@@ -93,6 +97,8 @@ func save_game() -> void :
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
         "cheat_no_police": cheat_no_police,
+        "cheat_godmode": cheat_godmode,
+        "cheat_time_phase": cheat_time_phase,
     }
     var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f:
@@ -115,6 +121,8 @@ func load_game() -> void :
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
     cheat_no_police = bool(data.get("cheat_no_police", true))
+    cheat_godmode = bool(data.get("cheat_godmode", false))
+    cheat_time_phase = float(data.get("cheat_time_phase", -1.0))
     has_saved_pos = bool(data.get("has_pos", false))
     if has_saved_pos:
         saved_pos = Vector3(float(data.get("px", 0.0)), float(data.get("py", 0.0)), float(data.get("pz", 0.0)))

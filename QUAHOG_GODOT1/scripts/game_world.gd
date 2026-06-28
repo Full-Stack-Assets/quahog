@@ -224,7 +224,11 @@ func _setup_environment() -> void :
 # Drive the sun + ambient/fog from _day_phase (0=dusk → night → dawn → day →
 # back to dusk). Kept warm and gentle so the city keeps its dusk character.
 func _process(delta: float) -> void :
-    _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
+    # Cheat: a forced time of day pins the clock; otherwise it advances normally.
+    if GameManager and GameManager.cheat_time_phase >= 0.0:
+        _day_phase = GameManager.cheat_time_phase
+    else:
+        _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()
     _update_weather(delta)
     _update_streaming()

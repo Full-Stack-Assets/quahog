@@ -73,6 +73,16 @@ const SPAWN_PRESETS: Array = [
     {"name": "Battleship Cove", "pos": Vector3(-20180, 1.5, -7790)},
 ]
 
+# Forced time-of-day cycle for the cheats panel (day_phase: 0=dusk, 0.25=night,
+# 0.5=dawn, 0.75=midday; -1 = normal clock).
+const TIME_CYCLE: Array = [
+    {"name": "Normal", "ph": -1.0},
+    {"name": "Dusk", "ph": 0.0},
+    {"name": "Day", "ph": 0.75},
+    {"name": "Night", "ph": 0.25},
+    {"name": "Dawn", "ph": 0.5},
+]
+
 
 func _ready() -> void :
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -355,6 +365,18 @@ func _open_cheats() -> void :
     police_btn.pressed.connect(_toggle_police.bind(police_btn))
     box.add_child(police_btn)
 
+    var god_btn: = _make_text_button("", _noop)
+    _refresh_god_btn(god_btn, gm)
+    god_btn.pressed.connect(_toggle_god.bind(god_btn))
+    box.add_child(god_btn)
+
+    var time_btn: = _make_text_button("", _noop)
+    _refresh_time_btn(time_btn, gm)
+    time_btn.pressed.connect(_cycle_time.bind(time_btn))
+    box.add_child(time_btn)
+
+    box.add_child(_make_text_button("+ ADD $10,000", _add_cash))
+
     box.add_child(_make_label("Quick start (fresh game):", 20, Color(0.85, 0.85, 0.88)))
     for preset in SPAWN_PRESETS:
         var p: Dictionary = preset
@@ -383,6 +405,56 @@ func _toggle_police(btn: Button) -> void :
         if gm.has_method("save_game"):
             gm.save_game()
         _refresh_police_btn(btn, gm)
+
+
+func _refresh_god_btn(btn: Button, gm: Node) -> void :
+    var on: bool = gm != null and bool(gm.cheat_godmode)
+    btn.text = "GOD MODE: ON" if on else "GOD MODE: OFF"
+    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if on else Color(1.0, 0.81, 0.28))
+
+
+func _toggle_god(btn: Button) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        gm.cheat_godmode = not bool(gm.cheat_godmode)
+        if gm.has_method("save_game"):
+            gm.save_game()
+        _refresh_god_btn(btn, gm)
+
+
+func _refresh_time_btn(btn: Button, gm: Node) -> void :
+    var ph: float = gm.cheat_time_phase if gm != null else -1.0
+    var label: = "Normal"
+    for t in TIME_CYCLE:
+        if absf(float(t["ph"]) - ph) < 0.001:
+            label = str(t["name"])
+            break
+    btn.text = "TIME: " + label
+
+
+func _cycle_time(btn: Button) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm == null:
+        return
+    var cur: int = 0
+    for i in TIME_CYCLE.size():
+        if absf(float(TIME_CYCLE[i]["ph"]) - gm.cheat_time_phase) < 0.001:
+            cur = i
+            break
+    var nxt: Dictionary = TIME_CYCLE[(cur + 1) % TIME_CYCLE.size()]
+    gm.cheat_time_phase = float(nxt["ph"])
+    if gm.has_method("save_game"):
+        gm.save_game()
+    _refresh_time_btn(btn, gm)
+
+
+func _add_cash() -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and gm.has_method("add_cash"):
+        gm.add_cash(10000)
 
 
 func _cheat_spawn(pos: Vector3) -> void :
