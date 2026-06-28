@@ -376,6 +376,7 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         if hw in ARTERIAL_CLASSES:
             _emit_center_double(ln, pts)
             _emit_stop_bars(ln, pts, width * 0.5, junctions)
+            _emit_crosswalks(ln, pts, width * 0.5, junctions)
             ln_any = true
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
@@ -557,6 +558,32 @@ func _emit_stop_bars(st: SurfaceTool, pts: Array, half: float, junctions: Dictio
         var center: = node + d * 2.5
         var bw: float = half * 0.9
         _strip(st, center - perp * bw, center + perp * bw, d, 0.3, COL_LINE)
+
+
+# Continental ("zebra") crosswalk on each arterial approach to a junction:
+# stripes oriented along the travel direction, spaced across the carriageway,
+# sitting just inside the stop bar.
+func _emit_crosswalks(st: SurfaceTool, pts: Array, half: float, junctions: Dictionary) -> void :
+    var ends: Array = [PackedInt32Array([0, 1]), PackedInt32Array([pts.size() - 1, pts.size() - 2])]
+    for ei: int in range(ends.size()):
+        var e: PackedInt32Array = ends[ei]
+        var node: = Vector2(float(pts[e[0]][0]), float(pts[e[0]][1]))
+        var key: = Vector2i(roundi(node.x), roundi(node.y))
+        if int(junctions.get(key, 0)) < 3:
+            continue
+        var nxt: = Vector2(float(pts[e[1]][0]), float(pts[e[1]][1]))
+        var d: = (nxt - node)
+        if d.length_squared() < 0.0001:
+            continue
+        d = d.normalized()
+        var perp: = Vector2(-d.y, d.x)
+        var reach: float = half * 0.85
+        var a_near: = node + d * 0.6
+        var a_far: = node + d * 2.1
+        var off: float = -reach
+        while off <= reach + 0.001:
+            _strip(st, a_near + perp * off, a_far + perp * off, perp, 0.22, COL_LINE)
+            off += 0.9
 
 
 func _emit_center_double(st: SurfaceTool, pts: Array) -> void :
