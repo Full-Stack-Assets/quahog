@@ -106,9 +106,10 @@ var _road_tiles: Dictionary = {}           # Vector2i tile -> Node3D
 var _junctions: Dictionary = {}
 
 # Full data extent (slice x = east, y = north) with margin, for the ground plane,
-# road network, and land-use overlays (all built once up front). Extends ~60 km
-# north of New Bedford up the RT-140 / RT-24 corridor through Brockton to Stoughton.
-const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 70000.0)
+# road network, and land-use overlays (all built once up front). Extends ~82 km
+# north of New Bedford up the RT-140 / RT-24 / I-93 corridor through Brockton and
+# Stoughton to the Boston-area towns (Randolph / Canton / Braintree / Quincy).
+const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 92000.0)
 
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
