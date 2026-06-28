@@ -34,6 +34,12 @@ const GANTRY_HEIGHT: = 6.2
 const COL_GUARDRAIL: = Color(0.55, 0.56, 0.58)
 const COL_GANTRY: = Color(0.30, 0.31, 0.33)
 const COL_SIGN: = Color(0.04, 0.30, 0.16)  # MUTCD highway-guide green
+# Lane markings on limited-access roads: solid white edge lines + a dashed white
+# lane divider down each carriageway. Painted just above the asphalt.
+const Y_LINE: = 0.06
+const COL_LINE: = Color(0.82, 0.82, 0.78)
+const DASH_ON: = 3.0    # metres of paint per dash
+const DASH_GAP: = 6.0   # metres of gap between dashes
 
 # The Braga ("Verde") Bridge — Fall River's icon — carries I-195 over the Taunton
 # beside Battleship Cove. In the OSM data it's just flat asphalt, so we frame the
@@ -334,6 +340,9 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     var hf: = SurfaceTool.new()      # highway furniture (guardrails + sign gantries)
     hf.begin(Mesh.PRIMITIVE_TRIANGLES)
     var hf_any: = false
+    var ln: = SurfaceTool.new()      # lane markings (edge lines + dashed dividers)
+    ln.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var ln_any: = false
     for r in roads:
         if not (r is Dictionary):
             continue
@@ -349,11 +358,14 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
         _emit_road(st, pts, width * 0.5, rcol)
         if hw in HIGHWAY_CLASSES:
-            # Limited-access roads: steel guardrails, no pedestrian sidewalk.
+            # Limited-access roads: steel guardrails, lane paint, no sidewalk.
             _emit_guardrail(hf, pts, width * 0.5)
             hf_any = true
             if _emit_gantry(hf, pts, width * 0.5, hw):
                 hf_any = true
+            _emit_lane_lines(ln, pts, width * 0.5)
+            _emit_dashes(ln, pts)
+            ln_any = true
         elif hw != "footway" and hw != "service":
             # Footways/service alleys don't get curbed sidewalks either.
             _emit_sidewalk(sw, pts, width * 0.5)
@@ -403,6 +415,18 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         hmi.name = "HighwayFurniture"
         hmi.mesh = hf.commit()
         parent.add_child(hmi)
+
+    if ln_any:
+        ln.generate_normals()
+        var lmat: = StandardMaterial3D.new()
+        lmat.vertex_color_use_as_albedo = true
+        lmat.roughness = 0.9
+        lmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+        ln.set_material(lmat)
+        var lmi: = MeshInstance3D.new()
+        lmi.name = "LaneMarkings"
+        lmi.mesh = ln.commit()
+        parent.add_child(lmi)
 
 
 # Concrete apron strips flanking a road (visual only; the ground plane carries
@@ -455,6 +479,60 @@ func _emit_guardrail(st: SurfaceTool, pts: Array, half: float) -> void :
                 st.set_color(COL_GUARDRAIL)
                 st.set_uv(Vector2.ZERO)
                 st.add_vertex(v)
+
+
+# A flat paint strip (one quad in the XZ plane at Y_LINE) running from ca to cb,
+# `hw` metres to each side of that centreline. Used for lane paint.
+func _strip(st: SurfaceTool, ca: Vector2, cb: Vector2, perp: Vector2, hw: float, col: Color) -> void :
+    var a0: = to_world(ca.x + perp.x * hw, ca.y + perp.y * hw, Y_LINE)
+    var a1: = to_world(ca.x - perp.x * hw, ca.y - perp.y * hw, Y_LINE)
+    var b0: = to_world(cb.x + perp.x * hw, cb.y + perp.y * hw, Y_LINE)
+    var b1: = to_world(cb.x - perp.x * hw, cb.y - perp.y * hw, Y_LINE)
+    for v in [a0, b0, b1, a0, b1, a1]:
+        st.set_color(col)
+        st.set_uv(Vector2.ZERO)
+        st.add_vertex(v)
+
+
+# Solid white edge lines just inside both carriageway edges.
+func _emit_lane_lines(st: SurfaceTool, pts: Array, half: float) -> void :
+    var eo: float = maxf(half - 0.4, 0.4)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s: float in [1.0, -1.0]:
+            _strip(st, a + perp * (eo * s), b + perp * (eo * s), perp, 0.12, COL_LINE)
+
+
+# Dashed white lane divider down the centreline, with the dash phase carried
+# across segments so the pattern stays continuous along the whole road.
+func _emit_dashes(st: SurfaceTool, pts: Array) -> void :
+    var cycle: float = DASH_ON + DASH_GAP
+    var traveled: float = 0.0
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var seg: = (b - a)
+        var seg_len: float = seg.length()
+        if seg_len < 0.0001:
+            continue
+        var dir: = seg / seg_len
+        var perp: = Vector2(-dir.y, dir.x)
+        var s: float = 0.0
+        while s < seg_len:
+            var ph: float = fmod(traveled + s, cycle)
+            if ph < DASH_ON:
+                var dash_end: float = minf(s + (DASH_ON - ph), seg_len)
+                _strip(st, a + dir * s, a + dir * dash_end, perp, 0.1, COL_LINE)
+                s = dash_end
+            else:
+                s += (cycle - ph)
+        traveled += seg_len
 
 
 # Overhead green guide-sign gantry at the midpoint of a long mainline run. Two
