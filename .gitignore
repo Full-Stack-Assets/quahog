@@ -7,3 +7,7 @@
 quahog-project-files/mapdata/nb_slice.osm.json
 *.osm.json.bak
 QUAHOG_GODOT1/.vrf/
+
+# Python bytecode caches (mapgen tools)
+__pycache__/
+*.pyc
