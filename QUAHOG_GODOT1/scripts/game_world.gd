@@ -216,9 +216,9 @@ func _setup_environment() -> void :
     # Cheap colour grade (works in the GL Compatibility web renderer, unlike
     # SSAO/SDFGI): a little more contrast + saturation lifts the flat dusk look.
     env.adjustment_enabled = true
-    env.adjustment_brightness = 1.03
-    env.adjustment_contrast = 1.08
-    env.adjustment_saturation = 1.14
+    env.adjustment_brightness = 1.12
+    env.adjustment_contrast = 1.06
+    env.adjustment_saturation = 1.12
 
     # Lighter depth haze: the previous density (0.011) washed the whole city to
     # flat grey. Pull it well back so streets/buildings read with contrast, keep
@@ -325,12 +325,13 @@ func _apply_day_night() -> void :
     var warm: = Color(1.0, 0.66, 0.42)
     var noon: = Color(1.0, 0.93, 0.82)
     _sun.light_color = warm.lerp(noon, daylight)
-    _sun.light_energy = lerp(0.18, 1.05, daylight)
-    _env.ambient_light_energy = lerp(0.28, 0.7, daylight)
-    _env.background_energy_multiplier = lerp(0.45, 1.0, daylight)
-    # Heavier blue haze at night, light warm haze by day.
-    _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
-    _env.fog_density = lerp(0.0065, 0.0030, daylight)
+    # Much brighter floors so dusk/night reads clearly instead of near-black.
+    _sun.light_energy = lerp(0.6, 1.4, daylight)
+    _env.ambient_light_energy = lerp(0.85, 1.15, daylight)
+    _env.background_energy_multiplier = lerp(0.75, 1.1, daylight)
+    # Lighter haze overall (it was crushing the foreground to black).
+    _env.fog_light_color = Color(0.34, 0.38, 0.46).lerp(Color(0.58, 0.63, 0.67), daylight)
+    _env.fog_density = lerp(0.0030, 0.0016, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
     # Time-of-day colour grade: richer, moodier at dusk/night; flatter by day.
     _env.adjustment_saturation = lerp(1.22, 1.10, daylight)

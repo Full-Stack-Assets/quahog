@@ -324,14 +324,13 @@ func set_cam_orbit(yaw: float, pitch: float) -> void :
 
 
 func _chase_pos(car_pos: Vector3) -> Vector3:
-    # Measured: forward throttle moves the car toward +basis.z. The chase cam
-    # sits on the opposite side (car_pos - global_basis.z*dist) so it looks the
-    # way you drive — push up, the car drives away into the screen. cam_yaw lets
-    # the driver orbit it.
+    # Chase cam anchored on the +Z side (opposite the previous placement, per
+    # playtest): the car drives into the screen on "up" and we look from behind
+    # its rear. cam_yaw lets the driver orbit it.
     var forward: Vector3 = vehicle_model.global_basis.z.normalized().rotated(Vector3.UP, cam_yaw)
     var dist: float = 9.0
     var height: float = 4.6 + cam_pitch * 5.0
-    return car_pos - forward * dist + Vector3(0, height, 0)
+    return car_pos + forward * dist + Vector3(0, height, 0)
 
 
 # Pull the chase cam in if a building/ground is between it and the car, so it
