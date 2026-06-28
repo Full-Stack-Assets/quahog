@@ -22,6 +22,11 @@ var _order_i: int = 0
 func _ready() -> void :
     _player = AudioStreamPlayer.new()
     _player.bus = "Music" if AudioServer.get_bus_index("Music") >= 0 else "Master"
+    # The web export is a NO-THREADS build. Audio must be routed through the Web
+    # Audio worklet via PLAYBACK_TYPE_STREAM (same as the car engine audio, which
+    # works); the default type mixes on the main thread and aborts the WASM
+    # runtime when streaming a multi-MB mp3 — that was the radio "force close".
+    _player.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
     _player.finished.connect(_on_finished)
     add_child(_player)
     _load_manifest()
