@@ -20,6 +20,7 @@ const BOOL_CHEATS: Array = [
     ["Infinite Cash", "cheat_infinite_cash"],
     ["Car Turbo", "cheat_car_turbo"],
     ["Teleport Anywhere (map)", "cheat_teleport_anywhere"],
+    ["Debug Overlay (FPS/mem)", "cheat_show_debug"],
 ]
 const SPAWN_PRESETS: Array = [
     {"name": "Downtown New Bedford", "pos": Vector3(-219, 1.5, 107)},
