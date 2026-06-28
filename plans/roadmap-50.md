@@ -34,7 +34,7 @@ commit. Checkboxes flip as they land.
 23. [ ] Animated water ripples (shader) + sun glint.
 24. [ ] Façade UV scale = one window row per floor.
 25. [ ] Distance fade / LOD for far tiles.
-26. [ ] Directional shadow cascade + bias tuning.
+26. [x] Directional shadow cascade + bias tuning.
 27. [ ] Baked-ish vertex AO on buildings (compat-safe).
 28. [ ] Rain: puddle sheen + wet roads.
 29. [ ] Car headlights/taillights geometry.
