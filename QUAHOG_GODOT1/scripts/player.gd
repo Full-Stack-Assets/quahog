@@ -489,8 +489,9 @@ func fast_travel_to(target: Vector3) -> void :
         return
     var ground: float = (hit["position"] as Vector3).y
     if _driving and current_car != null and is_instance_valid(current_car) and current_car.has_method("place_at"):
+        # The car-follow in _physics_process slaves the player to the car, so we
+        # only need to move the car; it parks stationary at the destination.
         current_car.place_at(Vector3(target.x, ground + 0.5, target.z), rad_to_deg(get_map_heading()))
-        global_position = Vector3(target.x, ground + 1.2, target.z)
         velocity = Vector3.ZERO
         if GameManager and GameManager.has_method("show_message"):
             GameManager.show_message("Fast travelled (with car).")
