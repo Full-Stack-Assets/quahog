@@ -17,6 +17,8 @@ var vehicle_model: Node3D
 var camera: Camera3D
 var engine_sound: AudioStreamPlayer3D
 var screech_sound: AudioStreamPlayer3D
+var headlight: SpotLight3D
+var _taillights: Array = []   # tail-light StandardMaterial3Ds (emission ramped at night)
 
 
 var active: bool = false
@@ -130,6 +132,34 @@ func _ensure_cabin() -> void :
         if screech_sound.stream is AudioStreamMP3:
             (screech_sound.stream as AudioStreamMP3).loop = true
         vehicle_model.add_child(screech_sound)
+    if headlight == null:
+        # One spotlight aimed forward (+Z travel). Built only on the driven car,
+        # so the map's parked cars stay cheap. Energy ramps up after dark.
+        headlight = SpotLight3D.new()
+        headlight.name = "Headlights"
+        headlight.spot_range = 34.0
+        headlight.spot_angle = 38.0
+        headlight.spot_attenuation = 1.2
+        headlight.light_energy = 0.0
+        headlight.light_color = Color(1.0, 0.95, 0.82)
+        headlight.position = Vector3(0.0, 0.7, 1.9)
+        headlight.rotation_degrees = Vector3(-9.0, 180.0, 0.0)   # aim +Z, slightly down
+        vehicle_model.add_child(headlight)
+        # Red emissive tail panels at the rear (-Z).
+        for sx in [-0.7, 0.7]:
+            var tl: = MeshInstance3D.new()
+            var qm: = QuadMesh.new()
+            qm.size = Vector2(0.45, 0.22)
+            tl.mesh = qm
+            var tm: = StandardMaterial3D.new()
+            tm.albedo_color = Color(0.5, 0.05, 0.05)
+            tm.emission_enabled = true
+            tm.emission = Color(1.0, 0.1, 0.05)
+            tm.emission_energy_multiplier = 1.4
+            tl.material_override = tm
+            tl.position = Vector3(sx, 0.55, -2.0)
+            vehicle_model.add_child(tl)
+            _taillights.append(tm)
 
 
 # A parked car freezes its physics body and stops per-frame driving; entering
@@ -213,6 +243,23 @@ func _physics_process(delta: float) -> void :
     _recover_if_flipped(delta)
     if active:
         _update_camera(delta)
+        _update_lights()
+
+
+# Headlights/taillights glow after dark (driven car only). night derived from the
+# world clock the same way game_world does (day_phase 0 = dusk).
+func _update_lights() -> void :
+    if headlight == null:
+        return
+    var night: float = 0.0
+    if GameManager:
+        var elev: float = sin(GameManager.day_phase * TAU + PI)
+        night = clampf( - elev, 0.0, 1.0)
+    headlight.light_energy = lerpf(headlight.light_energy, 3.5 * clampf(night * 1.3, 0.0, 1.0), 0.1)
+    var glow: float = 0.6 + night * 1.6
+    for tm in _taillights:
+        if tm:
+            tm.emission_energy_multiplier = glow
 
 
 # If the car ends up on its roof/side for more than a moment, flip it upright in

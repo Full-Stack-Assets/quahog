@@ -11,7 +11,7 @@ commit. Checkboxes flip as they land.
 4. [x] Brake vs reverse feel + handbrake.
 5. [x] Flip/stuck recovery (right the car if overturned or wedged).
 6. [ ] Horn (button + SFX).
-7. [ ] Headlights on at night.
+7. [x] Headlights on at night.
 8. [x] Speedometer correctness (km/h) + needle.
 9. [x] Per-model handling spread (mass/grip/top speed).
 10. [x] Minimap shows player heading + nearby cars.
@@ -37,7 +37,7 @@ commit. Checkboxes flip as they land.
 26. [x] Directional shadow cascade + bias tuning.
 27. [ ] Baked-ish vertex AO on buildings (compat-safe).
 28. [ ] Rain: puddle sheen + wet roads.
-29. [ ] Car headlights/taillights geometry.
+29. [x] Car headlights/taillights geometry.
 30. [x] Per-time-of-day colour grade.
 
 ## D. Audio
