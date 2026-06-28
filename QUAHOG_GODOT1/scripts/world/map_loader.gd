@@ -40,6 +40,9 @@ const Y_LINE: = 0.06
 const COL_LINE: = Color(0.82, 0.82, 0.78)
 const DASH_ON: = 3.0    # metres of paint per dash
 const DASH_GAP: = 6.0   # metres of gap between dashes
+# Undivided city arterials get a double-yellow centreline (no-passing) instead.
+const ARTERIAL_CLASSES: = ["primary", "secondary", "tertiary", "primary_link", "secondary_link"]
+const COL_YELLOW: = Color(0.80, 0.66, 0.16)
 
 # The Braga ("Verde") Bridge — Fall River's icon — carries I-195 over the Taunton
 # beside Battleship Cove. In the OSM data it's just flat asphalt, so we frame the
@@ -369,6 +372,9 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         elif hw != "footway" and hw != "service":
             # Footways/service alleys don't get curbed sidewalks either.
             _emit_sidewalk(sw, pts, width * 0.5)
+        if hw in ARTERIAL_CLASSES:
+            _emit_center_double(ln, pts)
+            ln_any = true
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
         var a0: = Vector2(float(pts[0][0]), float(pts[0][1]))
@@ -507,6 +513,20 @@ func _emit_lane_lines(st: SurfaceTool, pts: Array, half: float) -> void :
         var perp: = Vector2(-dir.y, dir.x)
         for s: float in [1.0, -1.0]:
             _strip(st, a + perp * (eo * s), b + perp * (eo * s), perp, 0.12, COL_LINE)
+
+
+# Solid double-yellow centreline for an undivided arterial.
+func _emit_center_double(st: SurfaceTool, pts: Array) -> void :
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for off: float in [0.18, -0.18]:
+            _strip(st, a + perp * off, b + perp * off, perp, 0.08, COL_YELLOW)
 
 
 # Dashed white lane divider down the centreline, with the dash phase carried
