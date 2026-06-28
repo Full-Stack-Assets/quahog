@@ -59,27 +59,6 @@ func _ready() -> void :
         ModelUtils.ground_model(model, 0.0)
 
 
-    engine_sound = AudioStreamPlayer3D.new()
-    engine_sound.name = "EngineSound"
-    engine_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3")
-    engine_sound.unit_size = 8.0
-    engine_sound.max_db = 0.0
-    engine_sound.volume_db = -40.0
-    engine_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
-    if engine_sound.stream is AudioStreamMP3:
-        (engine_sound.stream as AudioStreamMP3).loop = true
-    vehicle_model.add_child(engine_sound)
-
-    screech_sound = AudioStreamPlayer3D.new()
-    screech_sound.name = "ScreechSound"
-    screech_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_tire_screech.mp3")
-    screech_sound.volume_db = -60.0
-    screech_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
-    if screech_sound.stream is AudioStreamMP3:
-        (screech_sound.stream as AudioStreamMP3).loop = true
-    vehicle_model.add_child(screech_sound)
-
-
     sphere = RigidBody3D.new()
     sphere.name = "Sphere"
     sphere.mass = 1000.0
@@ -106,18 +85,41 @@ func _ready() -> void :
 
     prev_position = vehicle_model.position
 
-
-    camera = Camera3D.new()
-    camera.name = "CarCamera"
-    camera.fov = 64.0
-    camera.far = 400.0
-    add_child(camera)
-    camera.top_level = true
-    _snap_camera()
-
     set_physics_process(true)
     _set_dormant(true)   # parked cars are frozen + skip _drive until entered, so
                          # the map can be full of takeable cars at near-zero cost
+
+
+# The camera + engine/screech audio are created lazily on first entry, so the
+# hundreds of parked cars on the map don't each carry a Camera3D + 2 audio players.
+func _ensure_cabin() -> void :
+    if camera == null:
+        camera = Camera3D.new()
+        camera.name = "CarCamera"
+        camera.fov = 64.0
+        camera.far = 400.0
+        add_child(camera)
+        camera.top_level = true
+    if engine_sound == null:
+        engine_sound = AudioStreamPlayer3D.new()
+        engine_sound.name = "EngineSound"
+        engine_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3")
+        engine_sound.unit_size = 8.0
+        engine_sound.max_db = 0.0
+        engine_sound.volume_db = -40.0
+        engine_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+        if engine_sound.stream is AudioStreamMP3:
+            (engine_sound.stream as AudioStreamMP3).loop = true
+        vehicle_model.add_child(engine_sound)
+    if screech_sound == null:
+        screech_sound = AudioStreamPlayer3D.new()
+        screech_sound.name = "ScreechSound"
+        screech_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_tire_screech.mp3")
+        screech_sound.volume_db = -60.0
+        screech_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+        if screech_sound.stream is AudioStreamMP3:
+            (screech_sound.stream as AudioStreamMP3).loop = true
+        vehicle_model.add_child(screech_sound)
 
 
 # A parked car freezes its physics body and stops per-frame driving; entering
@@ -153,7 +155,9 @@ func place_at(pos: Vector3, yaw_deg: float) -> void :
 
 func enter(_driver: Node) -> void :
     active = true
+    _ensure_cabin()       # build camera + audio on first entry
     _set_dormant(false)   # wake the physics body
+    _snap_camera()
     if camera:
         camera.make_current()
     if engine_sound and not engine_sound.playing:
@@ -269,13 +273,28 @@ func _effect_skid(delta: float) -> void :
     screech_sound.volume_db = lerpf(screech_sound.volume_db, target_volume, delta * 8.0)
 
 
+# Camera orbit offset (driver can pan the chase cam around the car).
+var cam_yaw: float = 0.0
+var cam_pitch: float = 0.0
+
+
+func set_cam_orbit(yaw: float, pitch: float) -> void :
+    cam_yaw = yaw
+    cam_pitch = clampf(pitch, -0.35, 0.9)
+
+
+func _chase_pos(car_pos: Vector3) -> Vector3:
+    var forward: Vector3 = vehicle_model.global_basis.z.normalized().rotated(Vector3.UP, cam_yaw)
+    var dist: float = 9.0
+    var height: float = 4.6 + cam_pitch * 5.0
+    return car_pos - forward * dist + Vector3(0, height, 0)
+
+
 func _update_camera(delta: float) -> void :
     if camera == null:
         return
     var car_pos: Vector3 = vehicle_model.global_position
-    var forward: Vector3 = vehicle_model.global_basis.z.normalized()
-    var desired: Vector3 = car_pos - forward * 9.0 + Vector3(0, 4.6, 0)
-    camera.global_position = camera.global_position.lerp(desired, clampf(delta * 6.0, 0.0, 1.0))
+    camera.global_position = camera.global_position.lerp(_chase_pos(car_pos), clampf(delta * 6.0, 0.0, 1.0))
     camera.look_at(car_pos + Vector3(0, 1.2, 0), Vector3.UP)
 
 
@@ -283,8 +302,7 @@ func _snap_camera() -> void :
     if camera == null or vehicle_model == null:
         return
     var car_pos: Vector3 = vehicle_model.global_position
-    var forward: Vector3 = vehicle_model.global_basis.z.normalized()
-    camera.global_position = car_pos - forward * 9.0 + Vector3(0, 4.6, 0)
+    camera.global_position = _chase_pos(car_pos)
     camera.look_at(car_pos + Vector3(0, 1.2, 0), Vector3.UP)
 
 

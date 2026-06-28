@@ -35,10 +35,14 @@ const REGIONS: Array = [
     {"name": "Braga Bridge", "pos": Vector2(-20372, -7829)},
     {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
     {"name": "Freetown", "pos": Vector2(-6606, -14917)},
+    {"name": "Middleborough", "pos": Vector2(791, -28609)},
     {"name": "Taunton", "pos": Vector2(-14085, -29389)},
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
     {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
+    {"name": "Braintree", "pos": Vector2(-6951, -63664)},
+    {"name": "Weymouth", "pos": Vector2(-1607, -64800)},
+    {"name": "Quincy", "pos": Vector2(-6809, -68672)},
 ]
 const SNAP_PX: = 34.0  # tap within this many pixels of a label snaps to it
 
@@ -195,12 +199,7 @@ func _region_screen(rp: Vector2, center: Vector3, scale: float, cpx: Vector2) ->
 
 func _load_roads() -> void :
     _loaded = true
-    if not FileAccess.file_exists(SLICE):
-        return
-    var f: = FileAccess.open(SLICE, FileAccess.READ)
-    if f == null:
-        return
-    var data: Variant = JSON.parse_string(f.get_as_text())
+    var data: Variant = MapLoader.read_json_any(SLICE)
     if not (data is Dictionary):
         return
     var roads: Variant = data.get("roads", [])

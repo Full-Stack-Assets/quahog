@@ -9,7 +9,7 @@ the footprint AREA, and proximity to the city's downtown anchor, with a little
 deterministic per-footprint jitter so rows of houses vary. Projection is locked
 to the New Bedford origin so it lines up with the existing world.
 """
-import argparse, json, math, os, time, urllib.parse, urllib.request
+import argparse, gzip, json, math, os, time, urllib.parse, urllib.request
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -91,11 +91,18 @@ def main():
     tx0, tx1 = int(math.floor(cs[0] / TILE)), int(math.floor(cn[0] / TILE))
     ty0, ty1 = int(math.floor(cs[1] / TILE)), int(math.floor(cn[1] / TILE))
     cleared = 0
+    # Tiles ship gzip-compressed (b_X_Y.json.gz); also sweep any stale plain .json.
     for f in os.listdir(TILES):
-        if not (f.startswith("b_") and f.endswith(".json")):
+        if not f.startswith("b_"):
+            continue
+        if f.endswith(".json.gz"):
+            stem = f[2:-8]
+        elif f.endswith(".json"):
+            stem = f[2:-5]
+        else:
             continue
         try:
-            kx, ky = f[2:-5].split("_"); kx = int(kx); ky = int(ky)
+            kx, ky = stem.split("_"); kx = int(kx); ky = int(ky)
         except ValueError:
             continue
         if tx0 <= kx <= tx1 and ty0 <= ky <= ty1:
@@ -142,8 +149,9 @@ def main():
         time.sleep(2)
 
     for key, blds in buckets.items():
-        json.dump(blds, open(os.path.join(TILES, f"b_{key}.json"), "w"))
-    print(f"wrote {total} buildings across {len(buckets)} tiles")
+        with gzip.open(os.path.join(TILES, f"b_{key}.json.gz"), "wt", compresslevel=9) as fo:
+            json.dump(blds, fo)
+    print(f"wrote {total} buildings across {len(buckets)} tiles (gzip)")
 
 
 if __name__ == "__main__":

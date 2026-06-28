@@ -88,30 +88,42 @@ func _build_order() -> void :
     _order_i = 0
 
 
+# Pick and play the next loadable track. Loop-based (NOT recursive): a station
+# whose tracks all fail to load must not recurse _play_current -> _advance ->
+# _play_current forever and crash the web export — we try each track at most once.
 func _play_current() -> void :
+    if current < 0 or current >= stations.size():
+        return
     var tracks: Array = stations[current]["tracks"]
     if tracks.is_empty() or _order.is_empty():
         return
-    var path: String = str(tracks[_order[_order_i]])
-    if not ResourceLoader.exists(path):
-        _advance()
-        return
-    var st: Variant = load(path)
-    if st == null:
-        _advance()
-        return
-    _player.stream = st
-    _player.volume_db = -80.0 if muted else 0.0
-    _player.play()
-    now_playing.emit(_title(path))
+    var tried: int = 0
+    while tried < _order.size():
+        var path: String = str(tracks[_order[_order_i]])
+        var st: Variant = load(path) if ResourceLoader.exists(path) else null
+        if st != null:
+            _player.stream = st
+            _player.volume_db = -80.0 if muted else 0.0
+            _player.play()
+            now_playing.emit(_title(path))
+            return
+        # this track is unloadable — step to the next and try again
+        _step_order()
+        tried += 1
+    # nothing on this station loaded; go quiet rather than spin
+    now_playing.emit("")
+
+
+func _step_order() -> void :
+    _order_i += 1
+    if _order_i >= _order.size():
+        _build_order()
 
 
 func _advance() -> void :
     if current < 0 or _order.is_empty():
         return
-    _order_i += 1
-    if _order_i >= _order.size():
-        _build_order()
+    _step_order()
     _play_current()
 
 

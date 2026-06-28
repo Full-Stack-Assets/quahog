@@ -380,15 +380,15 @@ func _build_touch_controls() -> void :
 
     var amber: = Color(0.79, 0.52, 0.16)
     var specs: = [
-        {"id": "jump", "label": "JUMP", "accent": amber, "hold": false, "action": "jump", "pos": Vector2(1786, 912)}, 
-        {"id": "sprint", "label": "RUN", "accent": Color(0.6, 0.4, 0.18), "hold": true, "action": "sprint", "pos": Vector2(1786, 800)}, 
-        {"id": "interact", "label": "USE", "accent": Color(0.36, 0.55, 0.5), "hold": false, "action": "interact", "pos": Vector2(1674, 912)}, 
-        {"id": "fire", "label": "FIRE", "accent": Color(0.72, 0.27, 0.22), "hold": false, "action": "fire", "pos": Vector2(1674, 800)}, 
-        {"id": "vehicle", "label": "CAR", "accent": Color(0.3, 0.46, 0.6), "hold": false, "action": "enter_vehicle", "pos": Vector2(1562, 912)}, 
-        {"id": "aim", "label": "AIM", "accent": Color(0.42, 0.46, 0.5), "hold": true, "action": "aim", "pos": Vector2(1562, 800)}, 
-        {"id": "reload", "label": "RLD", "accent": Color(0.46, 0.46, 0.48), "hold": false, "action": "reload", "pos": Vector2(1450, 912)}, 
-        {"id": "crouch", "label": "DUCK", "accent": Color(0.35, 0.5, 0.32), "hold": true, "action": "crouch", "pos": Vector2(1450, 800)}, 
-        {"id": "swap", "label": "SWAP", "accent": Color(0.55, 0.4, 0.6), "hold": false, "action": "swap", "pos": Vector2(1338, 912)}, 
+        {"id": "jump", "label": "JUMP", "accent": amber, "hold": false, "action": "jump", "pos": Vector2(1772, 904)},
+        {"id": "sprint", "label": "RUN", "accent": Color(0.6, 0.4, 0.18), "hold": true, "action": "sprint", "pos": Vector2(1772, 764)},
+        {"id": "interact", "label": "USE", "accent": Color(0.36, 0.55, 0.5), "hold": false, "action": "interact", "pos": Vector2(1632, 904)},
+        {"id": "fire", "label": "FIRE", "accent": Color(0.72, 0.27, 0.22), "hold": false, "action": "fire", "pos": Vector2(1632, 764)},
+        {"id": "vehicle", "label": "CAR", "accent": Color(0.3, 0.46, 0.6), "hold": false, "action": "enter_vehicle", "pos": Vector2(1492, 904)},
+        {"id": "aim", "label": "AIM", "accent": Color(0.42, 0.46, 0.5), "hold": true, "action": "aim", "pos": Vector2(1492, 764)},
+        {"id": "reload", "label": "RLD", "accent": Color(0.46, 0.46, 0.48), "hold": false, "action": "reload", "pos": Vector2(1352, 904)},
+        {"id": "crouch", "label": "DUCK", "accent": Color(0.35, 0.5, 0.32), "hold": true, "action": "crouch", "pos": Vector2(1352, 764)},
+        {"id": "swap", "label": "SWAP", "accent": Color(0.55, 0.4, 0.6), "hold": false, "action": "swap", "pos": Vector2(1212, 904)},
     ]
     for s in specs:
         var b: = TouchButton.new()
@@ -413,7 +413,7 @@ func _build_pause() -> void :
 
     var pause_btn: = TouchButton.new()
     pause_btn.label_text = "II"
-    pause_btn.custom_minimum_size = Vector2(72, 72)
+    pause_btn.custom_minimum_size = Vector2(96, 96)
     pause_btn.size = pause_btn.custom_minimum_size
     pause_btn.accent = Color(0.3, 0.37, 0.42)
     _root.add_child(pause_btn)
@@ -424,12 +424,12 @@ func _build_pause() -> void :
 
     var edit_btn: = TouchButton.new()
     edit_btn.label_text = "EDIT"
-    edit_btn.custom_minimum_size = Vector2(80, 72)
+    edit_btn.custom_minimum_size = Vector2(108, 96)
     edit_btn.size = edit_btn.custom_minimum_size
     edit_btn.accent = Color(0.5, 0.42, 0.2)
     _root.add_child(edit_btn)
     edit_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    edit_btn.position = Vector2(116, 28)
+    edit_btn.position = Vector2(140, 28)
     edit_btn.pressed.connect(_toggle_edit)
 
     _pause_panel = Control.new()
@@ -557,23 +557,23 @@ func _build_radio() -> void :
     var radio_btn: = TouchButton.new()
     radio_btn.control_id = "radio"
     radio_btn.label_text = "RADIO"
-    radio_btn.custom_minimum_size = Vector2(104, 64)
+    radio_btn.custom_minimum_size = Vector2(140, 96)
     radio_btn.size = radio_btn.custom_minimum_size
     radio_btn.accent = Color(0.42, 0.3, 0.5)
     _root.add_child(radio_btn)
     radio_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    radio_btn.position = Vector2(208, 28)
+    radio_btn.position = Vector2(264, 28)
     radio_btn.pressed.connect(_on_radio_pressed)
 
     var map_btn: = TouchButton.new()
     map_btn.control_id = "map"
     map_btn.label_text = "MAP"
-    map_btn.custom_minimum_size = Vector2(96, 64)
+    map_btn.custom_minimum_size = Vector2(124, 96)
     map_btn.size = map_btn.custom_minimum_size
     map_btn.accent = Color(0.3, 0.46, 0.5)
     _root.add_child(map_btn)
     map_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    map_btn.position = Vector2(320, 28)
+    map_btn.position = Vector2(416, 28)
     map_btn.pressed.connect(_on_map_pressed)
 
     _clock_label = Label.new()
@@ -607,8 +607,8 @@ func _build_radio() -> void :
     _radio_label.add_theme_constant_override("outline_size", 5)
     _root.add_child(_radio_label)
     _radio_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-    _radio_label.position = Vector2(208, 98)
-    _radio_label.custom_minimum_size = Vector2(420, 30)
+    _radio_label.position = Vector2(28, 136)
+    _radio_label.custom_minimum_size = Vector2(520, 30)
     _radio_label.text = "RADIO: OFF"
 
     var radio: = get_node_or_null("/root/Radio")

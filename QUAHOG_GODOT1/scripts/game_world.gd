@@ -21,7 +21,15 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 # Cars everywhere: every parked car is a real, takeable drivable car (parked
 # cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
 # get in one). TRAFFIC_CARS are the moving ambient cars.
-const DRIVABLE_CARS: = 80
+# Parked cars stream around the player: a pool of CAR_POOL takeable cars is kept
+# within CAR_NEAR of you, and any that drift past CAR_FAR are relocated to a fresh
+# road point nearby — so there are always cars wherever you are on the big map.
+# ~200 cars/km^2: CAR_NEAR is a 560 m radius (~0.98 km^2), so a 200-car pool
+# fills it at roughly that density. Parked cars are dormant (see car.gd), so the
+# cost of a couple hundred of them is near-zero until one is entered.
+const CAR_POOL: = 200
+const CAR_NEAR: = 560.0
+const CAR_FAR: = 900.0
 const TRAFFIC_CARS: = 16
 # How many 500 m tiles out from the New Bedford core to build at once. The web
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
@@ -46,10 +54,13 @@ const HERO_LANDMARKS: Array = [
     {"name": "Notre Dame Cathedral", "pos": Vector2(-17596, -6054)},
     {"name": "Narrows Center", "pos": Vector2(-20164, -7470)},
     {"name": "Green Monstah Mural", "pos": Vector2(-19570, -9192)},
+    {"name": "Middleborough", "pos": Vector2(791, -28609)},
     {"name": "Taunton Green", "pos": Vector2(-14085, -29389)},
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
     {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
+    {"name": "Braintree", "pos": Vector2(-6951, -63664)},
+    {"name": "Quincy", "pos": Vector2(-6809, -68672)},
 ]
 
 var _tex_asphalt: Texture2D
@@ -258,6 +269,7 @@ func _update_streaming() -> void :
     _last_stream_tile = tile
     if _city.has_method("stream_buildings"):
         _city.stream_buildings(p)
+    _restream_cars(p)
 
 
 func _update_weather(delta: float) -> void :
@@ -358,14 +370,44 @@ func _place_cars() -> void :
         {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0}, 
         {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0}, 
     ]
+    # Spawn the pool on road points near where the player starts (dense), not
+    # smeared across the whole 80 km region. _restream_cars keeps them near you.
     var slots: Array = _city.car_slots
-
-    # Every slot becomes a takeable drivable car (dormant until entered).
-    var drivable: int = mini(DRIVABLE_CARS, slots.size())
-    for i in drivable:
+    if _city.has_method("road_points_near"):
+        slots = _city.road_points_near(_city.player_spawn, CAR_NEAR, 800)
+    slots.shuffle()
+    var count: int = mini(CAR_POOL, slots.size())
+    for i in count:
         var slot = slots[i]
         var m: Dictionary = models[i % models.size()]
         _spawn_drivable_car(m, slot[0], slot[1])
+
+
+# Relocate parked cars that have drifted far from the player onto road points
+# nearby, so the streamed world always has ~CAR_POOL takeable cars around you.
+func _restream_cars(center: Vector3) -> void :
+    if _city == null or not _city.has_method("road_points_near"):
+        return
+    var cand: Array = _city.road_points_near(center, CAR_NEAR, 800)
+    if cand.is_empty():
+        return
+    cand.shuffle()
+    var ci: int = 0
+    for car in _drivable_cars:
+        if not is_instance_valid(car):
+            continue
+        if _player != null and _player.current_car == car:
+            continue
+        var cp: Vector3 = car.global_position
+        if Vector2(cp.x - center.x, cp.z - center.z).length() <= CAR_FAR:
+            continue
+        while ci < cand.size():
+            var slot = cand[ci]
+            ci += 1
+            var sp: Vector3 = slot[0]
+            if Vector2(sp.x - center.x, sp.z - center.z).length() > 40.0:
+                car.place_at(sp, slot[1])
+                break
 
 
 func _spawn_drivable_car(m: Dictionary, pos: Vector3, rot_y: float) -> void :

@@ -63,6 +63,9 @@ var _autosave_t: float = 0.0
 
 var _driving: bool = false
 var current_car: Node = null
+# Free-look orbit while driving — accumulates look input, eases back to centre.
+var _car_cam_yaw: float = 0.0
+var _car_cam_pitch: float = 0.0
 var _cars: Array = []
 
 
@@ -633,7 +636,18 @@ func _physics_process(delta: float) -> void :
                 current_car.set_drive_input(steer, throttle)
             if "vehicle_model" in current_car and current_car.vehicle_model:
                 global_position = current_car.vehicle_model.global_position
-            _look_delta = Vector2.ZERO
+            # Pan the chase cam with look input; when released, ease back so the
+            # camera settles behind the car again.
+            if _look_delta.length_squared() > 0.0:
+                _car_cam_yaw += _look_delta.x * look_sensitivity
+                _car_cam_pitch += _look_delta.y * look_sensitivity
+                _look_delta = Vector2.ZERO
+            else:
+                _car_cam_yaw = lerpf(_car_cam_yaw, 0.0, clampf(delta * 3.0, 0.0, 1.0))
+                _car_cam_pitch = lerpf(_car_cam_pitch, 0.0, clampf(delta * 3.0, 0.0, 1.0))
+            _car_cam_pitch = clampf(_car_cam_pitch, -0.35, 0.9)
+            if current_car.has_method("set_cam_orbit"):
+                current_car.set_cam_orbit(_car_cam_yaw, _car_cam_pitch)
             return
 
 

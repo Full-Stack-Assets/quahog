@@ -125,14 +125,31 @@ static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector
     return Vector3(x_east, y_up, -y_north)
 
 
+# Map data (tiles + the road slice) is stored gzip-compressed (e.g.
+# b_X_Y.json.gz) to keep the web download small — JSON of footprint coords
+# compresses ~85%. Reads the plain file if present, else falls back to the .gz
+# beside it and inflates. Static so big_map/minimap can share it for the slice.
+static func read_json_any(path: String) -> Variant:
+    if FileAccess.file_exists(path):
+        var f: = FileAccess.open(path, FileAccess.READ)
+        if f == null:
+            return null
+        return JSON.parse_string(f.get_as_text())
+    var gz: = path + ".gz"
+    if not FileAccess.file_exists(gz):
+        return null
+    var gf: = FileAccess.open(gz, FileAccess.READ)
+    if gf == null:
+        return null
+    var raw: PackedByteArray = gf.get_buffer(gf.get_length())
+    var out: PackedByteArray = raw.decompress_dynamic(-1, FileAccess.COMPRESSION_GZIP)
+    if out.is_empty():
+        return null
+    return JSON.parse_string(out.get_string_from_utf8())
+
+
 func _read_json(path: String) -> Variant:
-    if not FileAccess.file_exists(path):
-        return null
-    var f: = FileAccess.open(path, FileAccess.READ)
-    if f == null:
-        return null
-    var parsed: Variant = JSON.parse_string(f.get_as_text())
-    return parsed
+    return read_json_any(path)
 
 
 # Build the map for a square block of tiles around center_tile (in tile indices).
@@ -197,6 +214,22 @@ func stream_buildings(center: Vector3) -> void :
             if is_instance_valid(rnode):
                 rnode.queue_free()
             _road_tiles.erase(rkey)
+
+
+# Road sample points ([Vector3 pos, float yaw_deg]) within `radius` of center —
+# used to spawn / re-stream parked cars near the player on the big map.
+func road_points_near(center: Vector3, radius: float, cap: int = 800) -> Array:
+    var out: Array = []
+    var r2: float = radius * radius
+    for s in _road_samples:
+        var p: Vector3 = s[0]
+        var dx: float = p.x - center.x
+        var dz: float = p.z - center.z
+        if dx * dx + dz * dz <= r2:
+            out.append(s)
+            if out.size() >= cap:
+                break
+    return out
 
 
 func _build_streamed_tile(key: Vector2i) -> void :

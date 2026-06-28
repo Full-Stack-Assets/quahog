@@ -7,7 +7,7 @@ through it (original road endpoints are preserved, which the stop-bar / crosswal
 junction logic relies on). Roads stay in the slice too (the minimap / big map
 read them); this only adds the tiled copy for 3D streaming.
 """
-import json, math, os
+import gzip, json, math, os
 from collections import defaultdict
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -16,12 +16,16 @@ SLICE = os.path.join(MAP, "slice-newbedford.json")
 TILES = os.path.join(MAP, "tiles")
 TILE = 500.0
 
-s = json.load(open(SLICE))
+# Map data ships gzip-compressed; read the .gz slice if the plain one is gone.
+if os.path.exists(SLICE):
+    s = json.load(open(SLICE))
+else:
+    s = json.load(gzip.open(SLICE + ".gz", "rt"))
 roads = s["roads"]
 
-# clear old road tiles
+# clear old road tiles (gz + any stale plain)
 for f in os.listdir(TILES):
-    if f.startswith("r_") and f.endswith(".json"):
+    if f.startswith("r_") and (f.endswith(".json") or f.endswith(".json.gz")):
         os.remove(os.path.join(TILES, f))
 
 buckets = defaultdict(list)
@@ -51,6 +55,7 @@ for r in roads:
         pieces += 1
 
 for (kx, ky), arr in buckets.items():
-    json.dump(arr, open(os.path.join(TILES, f"r_{kx}_{ky}.json"), "w"))
+    with gzip.open(os.path.join(TILES, f"r_{kx}_{ky}.json.gz"), "wt", compresslevel=9) as fo:
+        json.dump(arr, fo)
 
 print(f"road tiles={len(buckets)} pieces={pieces} from {len(roads)} roads")
