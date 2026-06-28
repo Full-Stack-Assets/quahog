@@ -70,6 +70,7 @@ const ROAD_COLORS: = {
     "service": Color(0.28, 0.28, 0.30), "footway": Color(0.40, 0.37, 0.33),
 }
 const OVERLAY_COLORS: = {
+    "water": Color(0.12, 0.28, 0.42),     # harbor / rivers / bays — drawn glossy blue
     "parks": Color(0.22, 0.40, 0.20), "wood": Color(0.18, 0.34, 0.18),
     "cemetery": Color(0.26, 0.40, 0.26), "parking": Color(0.30, 0.30, 0.32),
     "beach": Color(0.78, 0.72, 0.52), "pier": Color(0.45, 0.36, 0.27),
@@ -458,7 +459,7 @@ func _scan_slice(parent: Node3D) -> void :
         var roty: = 0.0
         if wdir.length_squared() > 0.0001:
             roty = rad_to_deg(atan2(wdir.x, wdir.z))
-        _road_samples.append([to_world(mid.x, mid.y, 0.0), roty])
+        _road_samples.append([to_world(mid.x, mid.y, 0.0), roty, width])
         if hw in HIGHWAY_CLASSES and _emit_gantry(hf, pts, width * 0.5, hw):
             hf_any = true
     if hf_any:
@@ -1017,7 +1018,12 @@ func _build_overlays(parent: Node3D, bbox: Rect2) -> void :
         st.generate_normals()
         var mat: = StandardMaterial3D.new()
         mat.vertex_color_use_as_albedo = true
-        mat.roughness = 1.0
+        if key == "water":
+            mat.roughness = 0.12          # glossy so the sky/sun reflect off it
+            mat.metallic = 0.25
+            mat.albedo_color = Color(0.55, 0.7, 0.85)   # multiplies the blue vertex tint
+        else:
+            mat.roughness = 1.0
         st.set_material(mat)
         var mi: = MeshInstance3D.new()
         mi.name = "Overlay_%s" % key

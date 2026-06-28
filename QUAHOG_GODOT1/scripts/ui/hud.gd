@@ -389,6 +389,7 @@ func _build_touch_controls() -> void :
         {"id": "reload", "label": "RLD", "accent": Color(0.46, 0.46, 0.48), "hold": false, "action": "reload", "pos": Vector2(1352, 904)},
         {"id": "crouch", "label": "DUCK", "accent": Color(0.35, 0.5, 0.32), "hold": true, "action": "crouch", "pos": Vector2(1352, 764)},
         {"id": "swap", "label": "SWAP", "accent": Color(0.55, 0.4, 0.6), "hold": false, "action": "swap", "pos": Vector2(1212, 904)},
+        {"id": "handbrake", "label": "BRAKE", "accent": Color(0.7, 0.5, 0.2), "hold": true, "action": "handbrake", "pos": Vector2(1212, 764)},
     ]
     for s in specs:
         var b: = TouchButton.new()

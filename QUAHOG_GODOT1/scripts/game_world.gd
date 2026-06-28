@@ -213,6 +213,13 @@ func _setup_environment() -> void :
     env.glow_intensity = 0.4
     env.glow_bloom = 0.1
 
+    # Cheap colour grade (works in the GL Compatibility web renderer, unlike
+    # SSAO/SDFGI): a little more contrast + saturation lifts the flat dusk look.
+    env.adjustment_enabled = true
+    env.adjustment_brightness = 1.03
+    env.adjustment_contrast = 1.08
+    env.adjustment_saturation = 1.14
+
     # Lighter depth haze: the previous density (0.011) washed the whole city to
     # flat grey. Pull it well back so streets/buildings read with contrast, keep
     # just enough aerial perspective for distance.
@@ -316,6 +323,9 @@ func _apply_day_night() -> void :
     _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
     _env.fog_density = lerp(0.0065, 0.0030, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
+    # Time-of-day colour grade: richer, moodier at dusk/night; flatter by day.
+    _env.adjustment_saturation = lerp(1.22, 1.10, daylight)
+    _env.adjustment_contrast = lerp(1.12, 1.05, daylight)
     # Streetlights warm up at dusk and glow through the night.
     var lamp_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 3.0
     for lamp in _street_lights:
@@ -366,9 +376,9 @@ func _place_cars() -> void :
         return
 
     var models: = [
-        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0}, 
-        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0}, 
-        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0}, 
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0, "mass": 1000.0},
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0, "mass": 1100.0},
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0, "mass": 1500.0},
     ]
     # Spawn the pool on road points near where the player starts (dense), not
     # smeared across the whole 80 km region. _restream_cars keeps them near you.
@@ -380,7 +390,23 @@ func _place_cars() -> void :
     for i in count:
         var slot = slots[i]
         var m: Dictionary = models[i % models.size()]
-        _spawn_drivable_car(m, slot[0], slot[1])
+        var park: Array = _parked_xform(slot)
+        _spawn_drivable_car(m, park[0], park[1])
+
+
+# Park a car at the curb: offset the road-centerline sample sideways by half the
+# road width + a margin, aligned to the road heading, so cars line the streets
+# instead of sitting in the travel lanes. Side is deterministic per location so a
+# car re-streamed to the same spot lands on the same curb.
+func _parked_xform(slot: Array) -> Array:
+    var pos: Vector3 = slot[0]
+    var yaw: float = slot[1]
+    var width: float = (float(slot[2]) if slot.size() > 2 else 6.0)
+    var rad: float = deg_to_rad(yaw)
+    var right: Vector3 = Vector3(cos(rad), 0.0, - sin(rad))
+    var side: float = 1.0 if (int(absf(pos.x) + absf(pos.z)) % 2 == 0) else -1.0
+    var offset: Vector3 = right * side * (width * 0.5 + 1.5)
+    return [pos + offset, yaw]
 
 
 # Relocate parked cars that have drifted far from the player onto road points
@@ -406,7 +432,8 @@ func _restream_cars(center: Vector3) -> void :
             ci += 1
             var sp: Vector3 = slot[0]
             if Vector2(sp.x - center.x, sp.z - center.z).length() > 40.0:
-                car.place_at(sp, slot[1])
+                var park: Array = _parked_xform(slot)
+                car.place_at(park[0], park[1])
                 break
 
 
@@ -418,6 +445,7 @@ func _spawn_drivable_car(m: Dictionary, pos: Vector3, rot_y: float) -> void :
     car.display_name = m["name"]
     car.max_throttle = m["spd"]
     car.torque = m["trq"]
+    car.mass = m.get("mass", 1000.0)
     add_child(car)
     car.place_at(pos, rot_y)
     _drivable_cars.append(car)
