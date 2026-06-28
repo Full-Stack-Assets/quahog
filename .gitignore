@@ -6,3 +6,4 @@
 # large raw OSM source (re-pullable; baked outputs are committed)
 quahog-project-files/mapdata/nb_slice.osm.json
 *.osm.json.bak
+QUAHOG_GODOT1/.vrf/

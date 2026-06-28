@@ -19,14 +19,23 @@ var _root: Control
 var _cash_label: Label
 var _prompt_label: Label
 var _toast_label: Label
+var _radio_label: Label = null
+var _clock_label: Label = null
+var _speed_label: Label = null
+var _driving_now: bool = false
 var _pause_panel: Control
+var _settings_panel: Control
 var _edit_banner: Control
 var _font: Font
 
 
 var _minimap: Control = null
+var _big_map: Control = null
 var _objective_label: Label = null
 var _objective_panel: Control = null
+var _obj_active: bool = false
+var _obj_text: String = ""
+var _obj_target: Vector3 = Vector3.ZERO
 var _wanted_label: Label = null
 var _ammo_label: Label = null
 var _health_bar: ProgressBar = null
@@ -69,6 +78,7 @@ func _ready() -> void :
     _build_touch_controls()
     _build_gameplay_panels()
     _build_pause()
+    _build_radio()
     _build_edit_banner()
 
     _load_layout()
@@ -108,6 +118,8 @@ func bind_player(player: CharacterBody3D) -> void :
         _player.health_changed.connect(_on_health_changed)
     if _minimap and _minimap.has_method("bind"):
         _minimap.bind(_player, _job_manager, _wanted_system)
+    if _big_map and _big_map.has_method("bind"):
+        _big_map.bind(_player, _job_manager)
 
 
 func bind_systems(job_manager: Node, wanted_system: Node) -> void :
@@ -117,6 +129,8 @@ func bind_systems(job_manager: Node, wanted_system: Node) -> void :
         _job_manager.job_changed.connect(_on_job_changed)
     if _minimap and _minimap.has_method("bind"):
         _minimap.bind(_player, _job_manager, _wanted_system)
+    if _big_map and _big_map.has_method("bind"):
+        _big_map.bind(_player, _job_manager)
 
 
 func _wire_tap(id: String, cb: Callable) -> void :
@@ -131,6 +145,11 @@ func _wire_hold(id: String, setter: Callable) -> void :
 
 
 func _build_gameplay_panels() -> void :
+
+    var big_map_script: Variant = load("res://scripts/ui/big_map.gd")
+    if big_map_script:
+        _big_map = big_map_script.new()
+        _root.add_child(_big_map)
 
     _minimap = MinimapScript.new()
     _root.add_child(_minimap)
@@ -248,14 +267,48 @@ func _on_driving_changed(driving: bool) -> void :
     if _buttons.has("vehicle"):
         _buttons["vehicle"].label_text = "EXIT" if driving else "CAR"
         _buttons["vehicle"].queue_redraw()
+    _driving_now = driving
+    if _speed_label:
+        _speed_label.visible = driving
 
 
-func _on_job_changed(active: bool, text: String, _target: Vector3) -> void :
+func _on_job_changed(active: bool, text: String, target: Vector3) -> void :
+    _obj_active = active
+    _obj_text = text
+    _obj_target = target
     if _objective_panel == null:
         return
     _objective_panel.visible = active
     if active and _objective_label:
         _objective_label.text = "● " + text
+
+
+func _process(_delta: float) -> void :
+    # World clock + weather readout.
+    if _clock_label:
+        var gm: = get_node_or_null("/root/GameManager")
+        if gm and gm.has_method("time_string"):
+            _clock_label.text = ("%s  ☔" % gm.time_string()) if gm.raining else gm.time_string()
+
+    # Speedometer while driving.
+    if _driving_now and _speed_label and _player != null and is_instance_valid(_player):
+        var car: Variant = _player.current_car
+        if car != null and is_instance_valid(car) and car.has_method("get_speed_kmh"):
+            var mph: int = int(round(float(car.get_speed_kmh()) * 0.621371))
+            _speed_label.text = "%d MPH" % mph
+
+    # Live distance to the objective, like the web HUD ("… — 636 m").
+    if not _obj_active or _objective_label == null:
+        return
+    if _player == null or not is_instance_valid(_player):
+        return
+    var d: float = _player.global_position.distance_to(_obj_target)
+    var dist_str: String = ""
+    if d < 1000.0:
+        dist_str = "%d m" % int(d)
+    else:
+        dist_str = "%.1f km" % (d / 1000.0)
+    _objective_label.text = "● %s — %s" % [_obj_text, dist_str]
 
 
 
@@ -379,7 +432,6 @@ func _build_pause() -> void :
     edit_btn.position = Vector2(116, 28)
     edit_btn.pressed.connect(_toggle_edit)
 
-
     _pause_panel = Control.new()
     _pause_panel.mouse_filter = Control.MOUSE_FILTER_STOP
     _pause_panel.visible = false
@@ -406,8 +458,184 @@ func _build_pause() -> void :
     vbox.add_child(title)
 
     vbox.add_child(_menu_button("Resume", _toggle_pause))
+    vbox.add_child(_menu_button("Settings", _open_settings))
     vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
     vbox.add_child(_menu_button("Main Menu", _go_to_menu))
+
+    _build_settings()
+
+
+# Audio settings overlay (web parity): Master / Music / SFX volume sliders,
+# persisted to user://settings.cfg and re-applied on launch.
+func _build_settings() -> void :
+    _settings_panel = Control.new()
+    _settings_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _settings_panel.visible = false
+    _root.add_child(_settings_panel)
+    _settings_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.88)
+    _settings_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _settings_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var vbox: = VBoxContainer.new()
+    vbox.add_theme_constant_override("separation", 18)
+    vbox.custom_minimum_size = Vector2(540, 0)
+    center.add_child(vbox)
+
+    var title: = Label.new()
+    title.text = "SETTINGS"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 56, Color(0.96, 0.81, 0.45))
+    vbox.add_child(title)
+
+    vbox.add_child(_volume_row("Master", "Master"))
+    vbox.add_child(_volume_row("Music", "Music"))
+    vbox.add_child(_volume_row("Sound FX", "SFX"))
+
+    var back: = _menu_button("Back", _close_settings)
+    vbox.add_child(back)
+
+
+func _volume_row(label_text: String, bus_name: String) -> Control:
+    var row: = VBoxContainer.new()
+    row.add_theme_constant_override("separation", 4)
+    var lbl: = Label.new()
+    lbl.text = label_text
+    _apply_font(lbl, 26, Color(0.92, 0.9, 0.86))
+    row.add_child(lbl)
+    var slider: = HSlider.new()
+    slider.min_value = 0.0
+    slider.max_value = 1.0
+    slider.step = 0.01
+    slider.custom_minimum_size = Vector2(500, 36)
+    var idx: int = AudioServer.get_bus_index(bus_name)
+    slider.value = db_to_linear(AudioServer.get_bus_volume_db(idx)) if idx >= 0 else 1.0
+    slider.value_changed.connect(_on_volume_changed.bind(bus_name))
+    row.add_child(slider)
+    return row
+
+
+func _on_volume_changed(value: float, bus_name: String) -> void :
+    var idx: int = AudioServer.get_bus_index(bus_name)
+    if idx >= 0:
+        AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(value, 0.0001)))
+    _save_settings()
+
+
+func _open_settings() -> void :
+    if _pause_panel:
+        _pause_panel.visible = false
+    if _settings_panel:
+        _settings_panel.visible = true
+        _settings_panel.move_to_front()
+
+
+func _close_settings() -> void :
+    if _settings_panel:
+        _settings_panel.visible = false
+    if _pause_panel:
+        _pause_panel.visible = true
+
+
+func _save_settings() -> void :
+    var cfg: = ConfigFile.new()
+    for bus_name in ["Master", "Music", "SFX"]:
+        var idx: int = AudioServer.get_bus_index(bus_name)
+        if idx >= 0:
+            cfg.set_value("audio", bus_name, AudioServer.get_bus_volume_db(idx))
+    cfg.save("user://settings.cfg")
+
+
+func _build_radio() -> void :
+    # Tap to cycle OFF -> WHALE -> The Rage -> The Anvil -> Maré Alta -> OFF.
+    var radio_btn: = TouchButton.new()
+    radio_btn.control_id = "radio"
+    radio_btn.label_text = "RADIO"
+    radio_btn.custom_minimum_size = Vector2(104, 64)
+    radio_btn.size = radio_btn.custom_minimum_size
+    radio_btn.accent = Color(0.42, 0.3, 0.5)
+    _root.add_child(radio_btn)
+    radio_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    radio_btn.position = Vector2(208, 28)
+    radio_btn.pressed.connect(_on_radio_pressed)
+
+    var map_btn: = TouchButton.new()
+    map_btn.control_id = "map"
+    map_btn.label_text = "MAP"
+    map_btn.custom_minimum_size = Vector2(96, 64)
+    map_btn.size = map_btn.custom_minimum_size
+    map_btn.accent = Color(0.3, 0.46, 0.5)
+    _root.add_child(map_btn)
+    map_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    map_btn.position = Vector2(320, 28)
+    map_btn.pressed.connect(_on_map_pressed)
+
+    _clock_label = Label.new()
+    _apply_font(_clock_label, 26, Color(0.96, 0.92, 0.78))
+    _clock_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _clock_label.add_theme_constant_override("outline_size", 5)
+    _clock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _root.add_child(_clock_label)
+    _clock_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    _clock_label.offset_left = -180
+    _clock_label.offset_right = -28
+    _clock_label.offset_top = 28
+    _clock_label.text = "18:00"
+
+    _speed_label = Label.new()
+    _apply_font(_speed_label, 40, Color(0.96, 0.92, 0.78))
+    _speed_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _speed_label.add_theme_constant_override("outline_size", 6)
+    _speed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _speed_label.visible = false
+    _root.add_child(_speed_label)
+    _speed_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
+    _speed_label.offset_left = -320
+    _speed_label.offset_right = -40
+    _speed_label.offset_top = -210
+    _speed_label.offset_bottom = -150
+
+    _radio_label = Label.new()
+    _apply_font(_radio_label, 24, Color(0.86, 0.80, 0.94))
+    _radio_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _radio_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_radio_label)
+    _radio_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _radio_label.position = Vector2(208, 98)
+    _radio_label.custom_minimum_size = Vector2(420, 30)
+    _radio_label.text = "RADIO: OFF"
+
+    var radio: = get_node_or_null("/root/Radio")
+    if radio:
+        radio.station_changed.connect(_on_radio_station)
+        radio.now_playing.connect(_on_radio_track)
+
+
+func _on_radio_pressed() -> void :
+    var radio: = get_node_or_null("/root/Radio")
+    if radio:
+        radio.cycle()
+
+
+func _on_map_pressed() -> void :
+    if _big_map and _big_map.has_method("toggle"):
+        _big_map.toggle()
+
+
+func _on_radio_station(_index: int, station_name: String) -> void :
+    if _radio_label:
+        _radio_label.text = "RADIO: " + station_name
+
+
+func _on_radio_track(title: String) -> void :
+    if _radio_label and title != "":
+        _radio_label.text = "♪ " + title
 
 
 func _menu_button(text: String, cb: Callable) -> Button:
@@ -488,6 +716,30 @@ func _exit_edit() -> void :
             e.set_edit_mode(false)
     _edit_banner.visible = false
     _save_layout()
+
+
+func _unhandled_key_input(event: InputEvent) -> void :
+    if _edit_mode or get_tree().paused:
+        return
+    var k: = event as InputEventKey
+    if k == null or not k.pressed or k.echo:
+        return
+    if k.keycode == KEY_M:
+        _on_map_pressed()
+        get_viewport().set_input_as_handled()
+        return
+    # Radio: number keys 1-9 pick a station, 0 turns it off (R stays reload).
+    var radio: = get_node_or_null("/root/Radio")
+    if radio == null:
+        return
+    if k.keycode == KEY_0:
+        radio.set_station(-1)
+        get_viewport().set_input_as_handled()
+    elif k.keycode >= KEY_1 and k.keycode <= KEY_9:
+        var idx: int = k.keycode - KEY_1
+        if idx < radio.station_count():
+            radio.set_station(idx)
+            get_viewport().set_input_as_handled()
 
 
 func _input(event: InputEvent) -> void :
@@ -612,6 +864,8 @@ func _toggle_pause() -> void :
     var paused: = not get_tree().paused
     get_tree().paused = paused
     _pause_panel.visible = paused
+    if not paused and _settings_panel:
+        _settings_panel.visible = false
 
 
 func _go_to_menu() -> void :

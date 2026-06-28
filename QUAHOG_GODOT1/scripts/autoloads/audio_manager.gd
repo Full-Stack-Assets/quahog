@@ -15,6 +15,18 @@ func _ready() -> void :
         _unlocked = true
     _setup_buses()
     _create_players()
+    _load_settings()
+
+
+# Re-apply volumes saved from the in-game Settings panel (user://settings.cfg).
+func _load_settings() -> void :
+    var cfg: = ConfigFile.new()
+    if cfg.load("user://settings.cfg") != OK:
+        return
+    for bus_name in ["Master", "Music", "SFX"]:
+        var idx: int = AudioServer.get_bus_index(bus_name)
+        if idx >= 0 and cfg.has_section_key("audio", bus_name):
+            AudioServer.set_bus_volume_db(idx, float(cfg.get_value("audio", bus_name)))
 
 func _input(event: InputEvent) -> void :
     if _unlocked:
@@ -44,6 +56,13 @@ func _create_players() -> void :
         p.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
         add_child(p)
         sfx_players.append(p)
+
+# The radio uses this to silence the background score while a station plays
+# (otherwise the explore theme and the radio overlap on the Music bus).
+func set_score_muted(muted: bool) -> void :
+    if music_player:
+        music_player.stream_paused = muted
+
 
 func play_music(stream: AudioStream, volume_db: float = -6.0, fade_in: float = 0.0) -> void :
     if stream == null:

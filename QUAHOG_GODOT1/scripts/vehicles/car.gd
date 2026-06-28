@@ -123,9 +123,22 @@ func place_at(pos: Vector3, yaw_deg: float) -> void :
     global_position = pos
     if sphere:
         sphere.global_position = pos + Vector3(0, 0.5, 0)
+        sphere.linear_velocity = Vector3.ZERO
+        sphere.angular_velocity = Vector3.ZERO
     if vehicle_model:
         vehicle_model.global_position = pos
         vehicle_model.rotation.y = deg_to_rad(yaw_deg)
+        prev_position = vehicle_model.position
+    linear_velocity = Vector3.ZERO
+    # Park it: clear the drive integrator too, or _drive() keeps applying the
+    # retained speed/turn and the car rolls away from where it was placed.
+    linear_speed = 0.0
+    angular_speed = 0.0
+    acceleration = 0.0
+    _throttle = 0.0
+    _steer = 0.0
+    if active:
+        _snap_camera()
 
 
 func enter(_driver: Node) -> void :

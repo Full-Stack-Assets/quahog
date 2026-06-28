@@ -72,16 +72,32 @@ on Godot 4.6. This is the floor we build the recreation on.
 Coarse phases; each expands into working-loop tasks. Order: world foundation → actors →
 systems → content → aesthetics/polish. Re-order freely as reality dictates.
 
-- [~] **P1 — World foundation: the real map.** Import the web map data (`slice-newbedford.json` roads, `public/tiles/*` building footprints, land-use overlays) into the Godot project and build it: extruded buildings + colliders, road network, water/parks/beaches. Replace the procedural grid. *(in progress this cycle)*
-- [ ] **P2 — Streaming & scale.** Distance-based tile streaming (mirror the web's 500 m tiles), LOD/culling, so the full region runs on mobile/web export.
-- [ ] **P3 — Player & camera parity.** Chase + first-person cameras, on-foot + driving feel matched to the web build; wall/ground collision on the real geometry.
-- [ ] **P4 — Vehicles & traffic.** Real car models/handling, enter/exit/carjack, ambient traffic on the road graph, parked cars.
-- [ ] **P5 — NPCs & police.** Pedestrians, flee/panic, traffic AI, police pursuit/heat parity.
-- [ ] **P6 — Gameplay systems.** Missions (Off the Boat opener + chain), dual-axis heat/wanted, safehouses, wallet/economy, businesses, save/load, day-night clock.
-- [ ] **P7 — Heroes & landmarks.** Seamen’s Bethel, Hurricane Barrier, Battleship Cove (USS Massachusetts), Lizzie Borden House, Braga Bridge, the mills — on real coords.
-- [ ] **P8 — Aesthetics & atmosphere.** Day/night, weather, water shading, post FX, façade/material variety, lighting — toward the web build’s look within GL Compatibility.
-- [ ] **P9 — Audio & radio.** SFX, engine/ambience, the 4 radio stations + VO pipeline.
-- [ ] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD/menus parity, touch/gamepad, settings, optimization, smoke tests.
+- [x] **P1 — World foundation: the real map.** `MapLoader` imports `slice-newbedford.json` (roads/buildings/land-use/landmarks/water) and builds extruded buildings + per-tile colliders, road ribbons (asphalt), ground plane + collider; derives all spawn fields. Procedural grid replaced.
+- [~] **P2 — Streaming & scale.** Fixed core radius built at load; ambient traffic/pedestrians stream player-relative (respawn when far). Tile streaming/LOD still open.
+- [x] **P3 — Player & camera parity.** Chase + look cameras, on-foot + driving, wall/ground collision on the real geometry; T-pose fixed (skeleton unique-name).
+- [x] **P4 — Vehicles & traffic.** Drivable physics car (enter/exit, speedometer, engine/screech audio) + parked cars + ambient kinematic traffic (sedan/taxi/SUV) cruising the road graph and following the player.
+- [x] **P5 — NPCs & police.** Pedestrians wander + follow the player + flee from gunfire; police pursue/shoot/arrest on heat; cop blips on the minimap.
+- [~] **P6 — Gameplay systems.** Delivery job loop (pickup→dropoff→payout), dual-axis heat/wanted (gunfire draws police), wallet/economy, save/Continue (position+heading+cash+wanted), day/night clock. Mission chain + safehouses/businesses still open.
+- [~] **P7 — Heroes & landmarks.** Real landmark dataset surfaced on the Big Map + minimap (Seamen’s Bethel, Whaling Museum, etc.). 3D hero models (Battleship Cove, Braga, Lizzie Borden) still open (need corridor slice).
+- [x] **P8 — Aesthetics & atmosphere.** Dusk look + day/night cycle, rain weather, day/night streetlights, fog/glow tuning, façade/asphalt textures — within GL Compatibility.
+- [~] **P9 — Audio & radio.** SFX (weapons/footsteps/pickups/vehicle), exploration score + coastal ambience, 4 radio stations (manifest, shuffle, HUD + number keys, score-ducking). VO pipeline still open.
+- [~] **P10 — UI/UX, accessibility, polish, perf, QA.** HUD parity (cash/wanted/clock/speedometer/objective/radio), main menu + Settings (volume) + pause, touch controls, M-map/number-radio keys, headless smoke tests green. Gamepad/perf pass still open.
+
+### §GR-FT. Maps, fast travel & the New Bedford ↔ Fall River corridor
+
+Reference-heavy navigation (web parity): minimap + full-screen Big Map + fast travel,
+expanding outward from the New Bedford core along the real highway spine.
+
+- [x] **Minimap** — real OSM streets binned into cells, player heading, objective/cop blips, district label.
+- [x] **Big Map** (HUD `MAP`) — full street network zoomed out, player + objective markers.
+- [x] **Fast travel** — `player.fast_travel_to()` raycasts to ground; Big Map shows named destinations (Downtown, Whaling Museum, State Pier, North/South End, Fort Taber, Fairhaven, Clark's Cove), tap a name to jump.
+- [ ] **Big Map polish** — set-waypoint, street-name labels, water/parks fill, legend. (Pan/zoom intentionally omitted per user.)
+- [x] **Corridor unlocked (2026-06-27).** The full South Coast was already in the Godot data (16,167 roads spanning NB→Westport→Fall River; 955 building tiles to X=−44 ≈ 22 km west). Rather than re-pull, the loader now builds ground + land-use + the **entire road network** once over the full extent, and **streams building tiles** within `_stream_radius` of the player (re-streamed on tile-cross / after fast travel). So NB ↔ Dartmouth ↔ Westport ↔ Fall River are all explorable at constant per-frame cost.
+- [x] **Corridor fast-travel** — Big Map **TRAVEL** button column: New Bedford / Fort Taber / Fairhaven / Dartmouth / Westport / Fall River (real coords); lands on the ground, tiles stream in.
+- [~] **Drivable highways detailing (2026-06-27/28)** — motorway/trunk (+links) read as highways: **steel guardrails**, **green MUTCD guide-sign gantries**, **lane paint** (solid white edge lines + dashed white lane dividers), and no city sidewalks. City arterials (primary/secondary/tertiary) get a **double-yellow centreline** and **white stop bars** at major intersections (junctions where 3+ arterial ways meet — 283 detected). Fast travel brings your car (parks it via the drive-integrator reset). All visual (driving still uses the ground plane). Still want: on/off ramps as distinct surfaces, zebra crosswalks.
+- [x] **Fall River heroes (2026-06-27)** — **Braga (“Verde”) Bridge** as a green through-truss over the real 823 m I-195 deck (chords + verticals + diagonals + portal bracing; asphalt stays drivable). **USS Massachusetts** silhouette (hull, superstructure, conning tower, funnel, mast, 4 twin-barrel turrets) moored at Battleship Cove on its real coords, aligned to the bridge. **Hero beacons**: 15 curated South Coast landmarks carry an emissive dusk beacon + billboard name. **Mill-belt tint**: FR/Westport buildings (x < −16 km) bias to deep mill brick + granite. Both bridge + cove are in the Big Map travel column. Still want: Lizzie Borden House (not in OSM slice — needs a manual coord).
+- [x] **Fast travel brings your car (2026-06-27)** — teleporting while driving moves the car with you and keeps you at the wheel (place_at zeroes physics + snaps the chase cam).
+- [x] **More real map layers (2026-06-27)** — render the previously-unused OSM overlays: harbour **islands**, **railbeds**, and the granite **Hurricane Barrier** across the harbour mouth.
 
 ---
 
@@ -739,4 +755,31 @@ Per the user: **stop all city/region expansion. Make the New Bedford core genuin
   geometry max-Y rises above walls, roof normals face up) and visually in photo
   mode (incl. a magenta debug pass to confirm the peak shape). Added an inline
   SVG favicon (kills the `favicon.ico` 404). Shipped (`b64ddac`).
+
+### 2026-06-27 — GODOT PORT: world load fix + systems sprint (deployed)
+The Godot build (`QUAHOG_GODOT1`, deployed at quahog.vercel.app) went from a
+broken deploy to a feature-complete vertical slice. Every commit verified with a
+full `--export-release "Web"` (release export = warnings-as-errors) **and** a
+headless game-world boot scan (0 script errors / leaks).
+- **Critical fix:** the pause-panel construction had been orphaned into
+  `_on_radio_track()` (local `title` collided with the param), a hard release-export
+  parse error that cascaded to "Could not resolve hud.gd" → `game_world.gd` failed
+  to load → the **entire world failed to boot in the deployed build**. Moved back
+  into `_build_pause()`.
+- **Navigation:** minimap (real streets + nearest-landmark label) · full-screen Big
+  Map (streets, landmarks, named destinations, ✕/M close) · fast travel
+  (`player.fast_travel_to`, ground-raycast, refuses open water; tap a named place).
+  Fixed two playtest bugs: map flinging the player over the harbour + closing on any
+  tap.
+- **Atmosphere:** dusk-anchored day/night cycle (sun/ambient/fog/glow), rain weather,
+  day/night-driven streetlights, HUD clock + ☔.
+- **Living city:** ambient traffic (`traffic_car.gd`) + pedestrians both follow the
+  player (respawn when far); pedestrians flee gunfire; police pursue/shoot/arrest;
+  firing in public draws a star.
+- **Systems/UI:** Save/Continue (pos+heading+cash+wanted; menu Continue vs New Game)
+  · Settings volume sliders (persisted) · main-menu web-parity text · radio (4
+  stations, HUD button + number keys, ducks the score) · speedometer.
+- **Open (need a decision):** corridor slice port (RT18/I-195/Fall River — port the
+  web build's pulled OSM region) · web first-load size (~200 MB, 58 MB radio MP3s;
+  needs ffmpeg re-encode or asset trim) · gamepad/perf pass · mission chain.
 

@@ -17,6 +17,43 @@ const Y_OVERLAY: = 0.02
 const FACADE_PATH: = "res://assets/textures/walls/facade_windows_dusk.png"
 const WALL_TILE_U: = 4.0
 const WALL_TILE_V: = 3.2
+const ASPHALT_PATH: = "res://assets/textures/floors/wet_asphalt.png"
+const ROAD_TILE: = 8.0  # metres per asphalt texture repeat (planar UV)
+const CURB_WIDTH: = 1.7  # concrete sidewalk apron width (m) flanking each road
+const Y_SIDEWALK: = 0.12  # raised slightly above the asphalt
+
+# Highway furniture (I-195 / RT18 corridor): steel guardrails flank limited-access
+# roads and green guide-sign gantries span them at intervals, so motorways read as
+# highways instead of plain asphalt. All visual only — driving uses the ground plane.
+const HIGHWAY_CLASSES: = ["motorway", "trunk", "motorway_link", "trunk_link"]
+const GUARDRAIL_OFFSET: = 0.6   # metres beyond the carriageway edge
+const GUARDRAIL_Y0: = 0.45      # rail band bottom / top (m)
+const GUARDRAIL_Y1: = 0.85
+const GANTRY_MIN_LEN: = 140.0   # only long mainline runs get an overhead sign
+const GANTRY_HEIGHT: = 6.2
+const COL_GUARDRAIL: = Color(0.55, 0.56, 0.58)
+const COL_GANTRY: = Color(0.30, 0.31, 0.33)
+const COL_SIGN: = Color(0.04, 0.30, 0.16)  # MUTCD highway-guide green
+# Lane markings on limited-access roads: solid white edge lines + a dashed white
+# lane divider down each carriageway. Painted just above the asphalt.
+const Y_LINE: = 0.06
+const COL_LINE: = Color(0.82, 0.82, 0.78)
+const DASH_ON: = 3.0    # metres of paint per dash
+const DASH_GAP: = 6.0   # metres of gap between dashes
+# Undivided city arterials get a double-yellow centreline (no-passing) instead.
+const ARTERIAL_CLASSES: = ["primary", "secondary", "tertiary", "primary_link", "secondary_link"]
+const COL_YELLOW: = Color(0.80, 0.66, 0.16)
+
+# The Braga ("Verde") Bridge — Fall River's icon — carries I-195 over the Taunton
+# beside Battleship Cove. In the OSM data it's just flat asphalt, so we frame the
+# real deck span with a green through-truss anchored to the exact crossing. The
+# asphalt underneath stays drivable; the truss is visual only.
+const BRAGA_A: = Vector2(-20701.0, 8078.0)   # span ends in slice space (x_east, y_north)
+const BRAGA_B: = Vector2(-20044.0, 7582.0)
+const BRAGA_HALF: = 15.0      # half deck width framed by the trusses
+const BRAGA_RISE: = 15.0      # arch peak above the deck at mid-span
+const BRAGA_DECK_Y: = 0.6
+const COL_BRAGA: = Color(0.13, 0.42, 0.24)   # Braga Bridge green
 
 # Road half-widths and colors are derived from the OSM class.
 const ROAD_COLORS: = {
@@ -29,6 +66,9 @@ const OVERLAY_COLORS: = {
     "parks": Color(0.22, 0.40, 0.20), "wood": Color(0.18, 0.34, 0.18),
     "cemetery": Color(0.26, 0.40, 0.26), "parking": Color(0.30, 0.30, 0.32),
     "beach": Color(0.78, 0.72, 0.52), "pier": Color(0.45, 0.36, 0.27),
+    "islands": Color(0.20, 0.36, 0.18),   # land in the harbour
+    "rail": Color(0.20, 0.18, 0.16),      # railbed gravel/ties
+    "barrier": Color(0.42, 0.42, 0.44),   # NB Hurricane Barrier (granite/concrete)
 }
 
 # Stats for verification/logging.
@@ -49,6 +89,19 @@ var npc_spawns: Array[Vector3] = []
 var job_points: Array[Vector3] = []
 var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ...]
 var _facade_tex: Texture2D = null
+var _asphalt_tex: Texture2D = null
+
+# Building-tile streaming: the whole South Coast lives in tiles/, but only the
+# tiles within _stream_radius of the player are built at any time (built/freed as
+# the player moves or fast-travels), so the full region is explorable at constant
+# cost instead of loading ~67k buildings at once.
+var _buildings_root: Node3D = null
+var _tiles: Dictionary = {}                # Vector2i tile -> MeshInstance3D
+var _stream_radius: int = 2
+
+# Full data extent (slice x = east, y = north) with margin, for the ground plane,
+# road network, and land-use overlays (all built once up front).
+const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 23000.0)
 
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
@@ -67,19 +120,59 @@ func _read_json(path: String) -> Variant:
 
 # Build the map for a square block of tiles around center_tile (in tile indices).
 # radius_tiles = 3 → a 7x7 = up to 49-tile core around New Bedford's center.
-func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_tiles: int = 4) -> void :
-    var bbox: = Rect2(
-        (center_tile.x - radius_tiles) * TILE_M,
-        (center_tile.y - radius_tiles) * TILE_M,
-        (radius_tiles * 2 + 1) * TILE_M,
-        (radius_tiles * 2 + 1) * TILE_M)
+func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_tiles: int = 2) -> void :
+    _stream_radius = max(radius_tiles, 2)
     if _facade_tex == null and ResourceLoader.exists(FACADE_PATH):
         _facade_tex = load(FACADE_PATH)
-    _build_ground(parent, bbox)
-    _build_overlays(parent, bbox)
-    _build_roads(parent, bbox)
-    _build_buildings(parent, center_tile, radius_tiles)
+    if _asphalt_tex == null and ResourceLoader.exists(ASPHALT_PATH):
+        _asphalt_tex = load(ASPHALT_PATH)
+    # Ground, land-use and the full road network span the whole South Coast and
+    # are built once. Buildings stream around the player (see stream_buildings).
+    _build_ground(parent, FULL_BBOX)
+    _build_overlays(parent, FULL_BBOX)
+    _build_roads(parent, FULL_BBOX)
+    _build_braga_bridge(parent)
+    _build_battleship(parent)
+    _buildings_root = Node3D.new()
+    _buildings_root.name = "Buildings"
+    parent.add_child(_buildings_root)
     _derive_spawns()
+    # Seed the tiles around the initial spawn (NB core) so the player loads into
+    # a built city immediately.
+    stream_buildings(player_spawn)
+
+
+# Build the building tiles within _stream_radius of center and free those that
+# have moved out of range. Call as the player moves / after fast travel.
+func stream_buildings(center: Vector3) -> void :
+    if _buildings_root == null:
+        return
+    var ctx: int = int(floor(center.x / TILE_M))
+    var cty: int = int(floor(-center.z / TILE_M))   # world z = -north
+    var r: int = _stream_radius
+    for dx in range(-r, r + 1):
+        for dy in range(-r, r + 1):
+            var key: = Vector2i(ctx + dx, cty + dy)
+            if not _tiles.has(key):
+                _build_streamed_tile(key)
+    # Free tiles beyond the radius (with one tile of hysteresis).
+    for key in _tiles.keys():
+        if absi(key.x - ctx) > r + 1 or absi(key.y - cty) > r + 1:
+            var node: Node = _tiles[key]
+            if is_instance_valid(node):
+                node.queue_free()
+            _tiles.erase(key)
+
+
+func _build_streamed_tile(key: Vector2i) -> void :
+    _tiles[key] = null   # reserve so we don't re-attempt a missing tile every pass
+    var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, key.x, key.y]
+    var data: Variant = _read_json(path)
+    if data == null or not (data is Array):
+        return
+    var mi: = _build_tile(_buildings_root, data, key.x, key.y)
+    if mi != null:
+        _tiles[key] = mi
 
 
 func _build_ground(parent: Node3D, bbox: Rect2) -> void :
@@ -106,20 +199,7 @@ func _build_ground(parent: Node3D, bbox: Rect2) -> void :
     parent.add_child(body)
 
 
-func _build_buildings(parent: Node3D, center_tile: Vector2i, radius_tiles: int) -> void :
-    var root: = Node3D.new()
-    root.name = "Buildings"
-    parent.add_child(root)
-    for tx in range(center_tile.x - radius_tiles, center_tile.x + radius_tiles + 1):
-        for ty in range(center_tile.y - radius_tiles, center_tile.y + radius_tiles + 1):
-            var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, tx, ty]
-            var data: Variant = _read_json(path)
-            if data == null or not (data is Array):
-                continue
-            _build_tile(root, data, tx, ty)
-
-
-func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
+func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> MeshInstance3D:
     var st: = SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var faces: = PackedVector3Array()
@@ -138,7 +218,7 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
             var c: = _centroid(fp)
             named_places.append({"name": b["name"], "pos": to_world(c.x, c.y, h)})
     if not any:
-        return
+        return null
     st.generate_normals()
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
@@ -160,35 +240,70 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> void :
     col.shape = shape
     body.add_child(col)
     mi.add_child(body)
+    return mi
 
 
 func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float) -> void :
-    # Per-building tint by height: low = clapboard tan, mid = brick, tall = granite.
-    var col: Color
-    if h >= 24.0:
-        col = Color(0.52, 0.53, 0.55)
+    # Per-building tint by height tier, with deterministic variety inside each tier
+    # so the streetscape reads as mixed eras (granite civic / brick mills / painted
+    # triple-deckers) instead of three flat tones. Seed from the footprint so a
+    # given building always paints the same colour (no flicker).
+    var seed_i: int = int(absf(float(fp[0][0]) * 73856.0 + float(fp[0][1]) * 19349.0))
+    var palette: Array
+    # Fall River / Westport mill belt (west of x ≈ −16 km): bias the larger
+    # buildings to deep mill brick + granite so the old textile-mill city reads
+    # differently from New Bedford's painted waterfront.
+    var mill_belt: bool = float(fp[0][0]) < -16000.0
+    if mill_belt and h >= 11.0:
+        palette = [Color(0.46, 0.23, 0.18), Color(0.41, 0.21, 0.17), Color(0.52, 0.29, 0.21), Color(0.44, 0.42, 0.40), Color(0.37, 0.36, 0.35), Color(0.49, 0.27, 0.22)]
+    elif h >= 24.0:
+        palette = [Color(0.52, 0.53, 0.55), Color(0.49, 0.50, 0.52), Color(0.56, 0.56, 0.55), Color(0.47, 0.48, 0.50)]
     elif h >= 13.0:
-        col = Color(0.45, 0.27, 0.22)
+        palette = [Color(0.45, 0.27, 0.22), Color(0.50, 0.26, 0.20), Color(0.39, 0.28, 0.25), Color(0.55, 0.43, 0.33), Color(0.44, 0.40, 0.40)]
     else:
-        col = Color(0.58, 0.50, 0.42)
+        palette = [Color(0.58, 0.50, 0.42), Color(0.80, 0.78, 0.72), Color(0.55, 0.60, 0.62), Color(0.46, 0.53, 0.44), Color(0.74, 0.68, 0.47), Color(0.57, 0.34, 0.30), Color(0.60, 0.60, 0.58)]
+    var col: Color = palette[seed_i % palette.size()]
 
     var n: = fp.size()
     var poly2: = PackedVector2Array()
     for p in fp:
         poly2.append(Vector2(float(p[0]), float(p[1])))
 
-    # Roof cap (triangulated footprint at y = h). UV pinned to a single texel so
-    # the roof reads as a flat tone (no window grid up top).
-    var tri: = Geometry2D.triangulate_polygon(poly2)
+    # Roof. UV pinned to a single texel so the roof reads as a flat tone (no
+    # window grid up top). Short footprints (houses / triple-deckers) get a
+    # peaked hip roof — a fan from each footprint edge up to an apex over the
+    # centroid — so they aren't flat-topped boxes. Tall granite/mills stay flat.
     var roof_col: = col.lightened(0.08)
-    for i in range(0, tri.size(), 3):
-        for k in range(3):
-            var v2: = poly2[tri[i + k]]
-            var v: = to_world(v2.x, v2.y, h)
-            st.set_color(roof_col)
-            st.set_uv(Vector2(0.05, 0.05))
-            st.add_vertex(v)
-            faces.append(v)
+    if h < 14.0:
+        var cx: = 0.0
+        var cy: = 0.0
+        for p2 in poly2:
+            cx += p2.x
+            cy += p2.y
+        cx /= float(poly2.size())
+        cy /= float(poly2.size())
+        var peak: = clampf(h * 0.45, 1.8, 4.5)
+        var apex: = to_world(cx, cy, h + peak)
+        for i in range(poly2.size()):
+            var ea: = poly2[i]
+            var eb: = poly2[(i + 1) % poly2.size()]
+            var va: = to_world(ea.x, ea.y, h)
+            var vb: = to_world(eb.x, eb.y, h)
+            for v in [va, vb, apex]:
+                st.set_color(roof_col)
+                st.set_uv(Vector2(0.05, 0.05))
+                st.add_vertex(v)
+                faces.append(v)
+    else:
+        var tri: = Geometry2D.triangulate_polygon(poly2)
+        for i in range(0, tri.size(), 3):
+            for k in range(3):
+                var v2: = poly2[tri[i + k]]
+                var v: = to_world(v2.x, v2.y, h)
+                st.set_color(roof_col)
+                st.set_uv(Vector2(0.05, 0.05))
+                st.add_vertex(v)
+                faces.append(v)
 
     # Walls (extrude each edge from ground to roof) with window-grid UVs that
     # tile by wall length and floor height.
@@ -221,8 +336,17 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     var roads: Variant = slice.get("roads", [])
     if not (roads is Array):
         return
+    var junctions: Dictionary = _collect_arterial_junctions(roads)
     var st: = SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var sw: = SurfaceTool.new()      # concrete sidewalk aprons
+    sw.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var hf: = SurfaceTool.new()      # highway furniture (guardrails + sign gantries)
+    hf.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var hf_any: = false
+    var ln: = SurfaceTool.new()      # lane markings (edge lines + dashed dividers)
+    ln.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var ln_any: = false
     for r in roads:
         if not (r is Dictionary):
             continue
@@ -237,6 +361,22 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         var width: float = float(r.get("width", 6.0))
         var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
         _emit_road(st, pts, width * 0.5, rcol)
+        if hw in HIGHWAY_CLASSES:
+            # Limited-access roads: steel guardrails, lane paint, no sidewalk.
+            _emit_guardrail(hf, pts, width * 0.5)
+            hf_any = true
+            if _emit_gantry(hf, pts, width * 0.5, hw):
+                hf_any = true
+            _emit_lane_lines(ln, pts, width * 0.5)
+            _emit_dashes(ln, pts)
+            ln_any = true
+        elif hw != "footway" and hw != "service":
+            # Footways/service alleys don't get curbed sidewalks either.
+            _emit_sidewalk(sw, pts, width * 0.5)
+        if hw in ARTERIAL_CLASSES:
+            _emit_center_double(ln, pts)
+            _emit_stop_bars(ln, pts, width * 0.5, junctions)
+            ln_any = true
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
         var a0: = Vector2(float(pts[0][0]), float(pts[0][1]))
@@ -247,12 +387,440 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         if wdir.length_squared() > 0.0001:
             roty = rad_to_deg(atan2(wdir.x, wdir.z))
         _road_samples.append([to_world(mid.x, mid.y, 0.0), roty])
+    st.generate_normals()
     var mat: = StandardMaterial3D.new()
     mat.vertex_color_use_as_albedo = true
     mat.roughness = 0.95
+    if _asphalt_tex:
+        mat.albedo_texture = _asphalt_tex
+        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
     st.set_material(mat)
     var mi: = MeshInstance3D.new()
     mi.name = "Roads"
+    mi.mesh = st.commit()
+    parent.add_child(mi)
+
+    sw.generate_normals()
+    var smat: = StandardMaterial3D.new()
+    smat.vertex_color_use_as_albedo = true
+    smat.roughness = 0.96
+    smat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    sw.set_material(smat)
+    var smi: = MeshInstance3D.new()
+    smi.name = "Sidewalks"
+    smi.mesh = sw.commit()
+    parent.add_child(smi)
+
+    if hf_any:
+        hf.generate_normals()
+        var hmat: = StandardMaterial3D.new()
+        hmat.vertex_color_use_as_albedo = true
+        hmat.roughness = 0.6
+        hmat.metallic = 0.2
+        hmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+        hf.set_material(hmat)
+        var hmi: = MeshInstance3D.new()
+        hmi.name = "HighwayFurniture"
+        hmi.mesh = hf.commit()
+        parent.add_child(hmi)
+
+    if ln_any:
+        ln.generate_normals()
+        var lmat: = StandardMaterial3D.new()
+        lmat.vertex_color_use_as_albedo = true
+        lmat.roughness = 0.9
+        lmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+        ln.set_material(lmat)
+        var lmi: = MeshInstance3D.new()
+        lmi.name = "LaneMarkings"
+        lmi.mesh = ln.commit()
+        parent.add_child(lmi)
+
+
+# Concrete apron strips flanking a road (visual only; the ground plane carries
+# collision). Two quads per segment — one each side, inner edge at the kerb.
+func _emit_sidewalk(st: SurfaceTool, pts: Array, half: float) -> void :
+    var col: = Color(0.62, 0.62, 0.60)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s: float in [1.0, -1.0]:
+            var ai: = a + perp * (half * s)
+            var ao: = a + perp * ((half + CURB_WIDTH) * s)
+            var bi: = b + perp * (half * s)
+            var bo: = b + perp * ((half + CURB_WIDTH) * s)
+            var vai: = to_world(ai.x, ai.y, Y_SIDEWALK)
+            var vao: = to_world(ao.x, ao.y, Y_SIDEWALK)
+            var vbi: = to_world(bi.x, bi.y, Y_SIDEWALK)
+            var vbo: = to_world(bo.x, bo.y, Y_SIDEWALK)
+            for v in [vai, vao, vbo, vai, vbo, vbi]:
+                st.set_color(col)
+                st.set_uv(Vector2(v.x * 0.25, v.z * 0.25))
+                st.add_vertex(v)
+
+
+# Steel guardrail band flanking a limited-access road (visual only). One vertical
+# strip each side, just outside the carriageway, between GUARDRAIL_Y0 and _Y1.
+func _emit_guardrail(st: SurfaceTool, pts: Array, half: float) -> void :
+    var off: float = half + GUARDRAIL_OFFSET
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s: float in [1.0, -1.0]:
+            var ea: = a + perp * (off * s)
+            var eb: = b + perp * (off * s)
+            var a0: = to_world(ea.x, ea.y, GUARDRAIL_Y0)
+            var b0: = to_world(eb.x, eb.y, GUARDRAIL_Y0)
+            var a1: = to_world(ea.x, ea.y, GUARDRAIL_Y1)
+            var b1: = to_world(eb.x, eb.y, GUARDRAIL_Y1)
+            for v in [a0, b0, b1, a0, b1, a1]:
+                st.set_color(COL_GUARDRAIL)
+                st.set_uv(Vector2.ZERO)
+                st.add_vertex(v)
+
+
+# A flat paint strip (one quad in the XZ plane at Y_LINE) running from ca to cb,
+# `hw` metres to each side of that centreline. Used for lane paint.
+func _strip(st: SurfaceTool, ca: Vector2, cb: Vector2, perp: Vector2, hw: float, col: Color) -> void :
+    var a0: = to_world(ca.x + perp.x * hw, ca.y + perp.y * hw, Y_LINE)
+    var a1: = to_world(ca.x - perp.x * hw, ca.y - perp.y * hw, Y_LINE)
+    var b0: = to_world(cb.x + perp.x * hw, cb.y + perp.y * hw, Y_LINE)
+    var b1: = to_world(cb.x - perp.x * hw, cb.y - perp.y * hw, Y_LINE)
+    for v in [a0, b0, b1, a0, b1, a1]:
+        st.set_color(col)
+        st.set_uv(Vector2.ZERO)
+        st.add_vertex(v)
+
+
+# Solid white edge lines just inside both carriageway edges.
+func _emit_lane_lines(st: SurfaceTool, pts: Array, half: float) -> void :
+    var eo: float = maxf(half - 0.4, 0.4)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for s: float in [1.0, -1.0]:
+            _strip(st, a + perp * (eo * s), b + perp * (eo * s), perp, 0.12, COL_LINE)
+
+
+# Solid double-yellow centreline for an undivided arterial.
+# Count how many arterial ways share each endpoint. OSM splits ways at
+# intersections, so a node shared by 3+ arterial endpoints is a real junction.
+func _collect_arterial_junctions(roads: Array) -> Dictionary:
+    var counts: Dictionary = {}
+    for r in roads:
+        if not (r is Dictionary):
+            continue
+        var hw: String = str(r.get("highway", "residential"))
+        if not (hw in ARTERIAL_CLASSES):
+            continue
+        var pts: Variant = r.get("points")
+        if not (pts is Array) or pts.size() < 2:
+            continue
+        for idx: int in [0, pts.size() - 1]:
+            var p: Variant = pts[idx]
+            var key: = Vector2i(roundi(float(p[0])), roundi(float(p[1])))
+            counts[key] = int(counts.get(key, 0)) + 1
+    return counts
+
+
+# White stop bar across each arterial approach to a multi-arterial junction,
+# set back a little from the node along the road's end segment.
+func _emit_stop_bars(st: SurfaceTool, pts: Array, half: float, junctions: Dictionary) -> void :
+    var ends: Array = [PackedInt32Array([0, 1]), PackedInt32Array([pts.size() - 1, pts.size() - 2])]
+    for ei: int in range(ends.size()):
+        var e: PackedInt32Array = ends[ei]
+        var node: = Vector2(float(pts[e[0]][0]), float(pts[e[0]][1]))
+        var key: = Vector2i(roundi(node.x), roundi(node.y))
+        if int(junctions.get(key, 0)) < 3:
+            continue
+        var nxt: = Vector2(float(pts[e[1]][0]), float(pts[e[1]][1]))
+        var d: = (nxt - node)
+        if d.length_squared() < 0.0001:
+            continue
+        d = d.normalized()
+        var perp: = Vector2(-d.y, d.x)
+        var center: = node + d * 2.5
+        var bw: float = half * 0.9
+        _strip(st, center - perp * bw, center + perp * bw, d, 0.3, COL_LINE)
+
+
+func _emit_center_double(st: SurfaceTool, pts: Array) -> void :
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var dir: = (b - a)
+        if dir.length_squared() < 0.0001:
+            continue
+        dir = dir.normalized()
+        var perp: = Vector2(-dir.y, dir.x)
+        for off: float in [0.18, -0.18]:
+            _strip(st, a + perp * off, b + perp * off, perp, 0.08, COL_YELLOW)
+
+
+# Dashed white lane divider down the centreline, with the dash phase carried
+# across segments so the pattern stays continuous along the whole road.
+func _emit_dashes(st: SurfaceTool, pts: Array) -> void :
+    var cycle: float = DASH_ON + DASH_GAP
+    var traveled: float = 0.0
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var seg: = (b - a)
+        var seg_len: float = seg.length()
+        if seg_len < 0.0001:
+            continue
+        var dir: = seg / seg_len
+        var perp: = Vector2(-dir.y, dir.x)
+        var s: float = 0.0
+        while s < seg_len:
+            var ph: float = fmod(traveled + s, cycle)
+            if ph < DASH_ON:
+                var dash_end: float = minf(s + (DASH_ON - ph), seg_len)
+                _strip(st, a + dir * s, a + dir * dash_end, perp, 0.1, COL_LINE)
+                s = dash_end
+            else:
+                s += (cycle - ph)
+        traveled += seg_len
+
+
+# Overhead green guide-sign gantry at the midpoint of a long mainline run. Two
+# posts straddling the carriageway, a cross beam, and a green sign panel. Returns
+# true when one was placed. Links never get a gantry (handled by the caller).
+func _emit_gantry(st: SurfaceTool, pts: Array, half: float, hw: String) -> bool:
+    if hw.ends_with("_link"):
+        return false
+    var total: float = 0.0
+    for i in range(pts.size() - 1):
+        total += Vector2(float(pts[i][0]), float(pts[i][1])).distance_to(Vector2(float(pts[i + 1][0]), float(pts[i + 1][1])))
+    if total < GANTRY_MIN_LEN:
+        return false
+    # Walk to the halfway point along the polyline for the gantry centre + heading.
+    var target: float = total * 0.5
+    var run: float = 0.0
+    var mid: = Vector2.ZERO
+    var dir: = Vector2(1, 0)
+    for i in range(pts.size() - 1):
+        var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
+        var b: = Vector2(float(pts[i + 1][0]), float(pts[i + 1][1]))
+        var seg: float = a.distance_to(b)
+        if seg < 0.0001:
+            continue
+        if run + seg >= target:
+            var t: float = (target - run) / seg
+            mid = a.lerp(b, t)
+            dir = (b - a).normalized()
+            break
+        run += seg
+    var perp: = Vector2(-dir.y, dir.x)
+    var span: float = half + GUARDRAIL_OFFSET + 0.6
+    var left: = mid + perp * span
+    var right: = mid - perp * span
+    # Posts (square columns) at each edge.
+    _emit_box(st, to_world(left.x, left.y, GANTRY_HEIGHT * 0.5), Vector3(0.5, GANTRY_HEIGHT, 0.5), COL_GANTRY)
+    _emit_box(st, to_world(right.x, right.y, GANTRY_HEIGHT * 0.5), Vector3(0.5, GANTRY_HEIGHT, 0.5), COL_GANTRY)
+    # Cross beam spanning the carriageway near the top.
+    var beam_c: = (left + right) * 0.5
+    var beam_len: float = left.distance_to(right) + 0.5
+    var ang: float = atan2(perp.y, perp.x)
+    _emit_box_rot(st, to_world(beam_c.x, beam_c.y, GANTRY_HEIGHT - 0.4), Vector3(beam_len, 0.4, 0.4), -ang, COL_GANTRY)
+    # Green sign panel hung under the beam.
+    _emit_box_rot(st, to_world(beam_c.x, beam_c.y, GANTRY_HEIGHT - 1.6), Vector3(beam_len * 0.8, 1.7, 0.18), -ang, COL_SIGN)
+    return true
+
+
+# Axis-aligned box (12 tris) centred at c with the given full-extent size.
+func _emit_box(st: SurfaceTool, c: Vector3, sz: Vector3, col: Color) -> void :
+    _emit_box_rot(st, c, sz, 0.0, col)
+
+
+# Box centred at c, sized sz (x=length, y=height, z=depth), yawed by yaw radians
+# about the world Y axis. Visual only — appended to the furniture surface.
+func _emit_box_rot(st: SurfaceTool, c: Vector3, sz: Vector3, yaw: float, col: Color) -> void :
+    var hx: float = sz.x * 0.5
+    var hy: float = sz.y * 0.5
+    var hz: float = sz.z * 0.5
+    var cs: float = cos(yaw)
+    var sn: float = sin(yaw)
+    var corners: Array = []
+    for sxp: float in [-1.0, 1.0]:
+        for syp: float in [-1.0, 1.0]:
+            for szp: float in [-1.0, 1.0]:
+                var lx: float = sxp * hx
+                var lz: float = szp * hz
+                var wx: float = lx * cs - lz * sn
+                var wz: float = lx * sn + lz * cs
+                corners.append(c + Vector3(wx, syp * hy, wz))
+    # corner index = (sx?4)+(sy?2)+(sz?1) with -1->0,+1->1
+    var idx: Array = [
+        PackedInt32Array([0, 1, 3, 0, 3, 2]),  # x-
+        PackedInt32Array([4, 6, 7, 4, 7, 5]),  # x+
+        PackedInt32Array([0, 4, 5, 0, 5, 1]),  # y-
+        PackedInt32Array([2, 3, 7, 2, 7, 6]),  # y+
+        PackedInt32Array([0, 2, 6, 0, 6, 4]),  # z-
+        PackedInt32Array([1, 5, 7, 1, 7, 3]),  # z+
+    ]
+    for fi: int in range(idx.size()):
+        var face: PackedInt32Array = idx[fi]
+        for k: int in face:
+            var v: Vector3 = corners[k]
+            st.set_color(col)
+            st.set_uv(Vector2.ZERO)
+            st.add_vertex(v)
+
+
+# A box-section beam between two arbitrary 3D points (square cross-section of side
+# `thick`), oriented along the segment. Used to weld the Braga truss from chords,
+# verticals, and diagonals.
+func _emit_beam(st: SurfaceTool, p0: Vector3, p1: Vector3, thick: float, col: Color) -> void :
+    var axis: = p1 - p0
+    var length: float = axis.length()
+    if length < 0.001:
+        return
+    axis = axis / length
+    var up: = Vector3.UP
+    if absf(axis.dot(up)) > 0.99:
+        up = Vector3.RIGHT
+    var right: = axis.cross(up).normalized()
+    var up2: = right.cross(axis).normalized()
+    var hr: = right * (thick * 0.5)
+    var hu: = up2 * (thick * 0.5)
+    var center: = (p0 + p1) * 0.5
+    var corners: = PackedVector3Array()
+    for sl: float in [-1.0, 1.0]:
+        for sr: float in [-1.0, 1.0]:
+            for su: float in [-1.0, 1.0]:
+                corners.append(center + axis * (length * 0.5 * sl) + hr * sr + hu * su)
+    var idx: Array = [
+        PackedInt32Array([0, 1, 3, 0, 3, 2]),
+        PackedInt32Array([4, 6, 7, 4, 7, 5]),
+        PackedInt32Array([0, 4, 5, 0, 5, 1]),
+        PackedInt32Array([2, 3, 7, 2, 7, 6]),
+        PackedInt32Array([0, 2, 6, 0, 6, 4]),
+        PackedInt32Array([1, 5, 7, 1, 7, 3]),
+    ]
+    for fi: int in range(idx.size()):
+        var face: PackedInt32Array = idx[fi]
+        for k: int in face:
+            var v: Vector3 = corners[k]
+            st.set_color(col)
+            st.set_uv(Vector2.ZERO)
+            st.add_vertex(v)
+
+
+# Green through-truss framing the I-195 deck over the Taunton (the Braga Bridge).
+# Built once over the real crossing; the asphalt deck below stays drivable.
+func _build_braga_bridge(parent: Node3D) -> void :
+    var a: = BRAGA_A
+    var b: = BRAGA_B
+    var total: float = a.distance_to(b)
+    if total < 1.0:
+        return
+    var dir2: = (b - a) / total
+    var perp2: = Vector2(-dir2.y, dir2.x)
+    var bays: int = maxi(10, int(total / 26.0))
+    var top_l: = PackedVector3Array()
+    var top_r: = PackedVector3Array()
+    var bot_l: = PackedVector3Array()
+    var bot_r: = PackedVector3Array()
+    for i in range(bays + 1):
+        var frac: float = float(i) / float(bays)
+        var t: float = total * frac
+        var arch: float = BRAGA_RISE * sin(PI * frac)
+        for s: float in [1.0, -1.0]:
+            var planar: = a + dir2 * t + perp2 * (BRAGA_HALF * s)
+            var bn: = to_world(planar.x, planar.y, BRAGA_DECK_Y + 0.8)
+            var tn: = to_world(planar.x, planar.y, BRAGA_DECK_Y + 5.0 + arch)
+            if s > 0.0:
+                bot_l.append(bn)
+                top_l.append(tn)
+            else:
+                bot_r.append(bn)
+                top_r.append(tn)
+    var st: = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for i in range(bays + 1):
+        _emit_beam(st, bot_l[i], top_l[i], 0.6, COL_BRAGA)   # verticals
+        _emit_beam(st, bot_r[i], top_r[i], 0.6, COL_BRAGA)
+        if i % 4 == 0:
+            _emit_beam(st, top_l[i], top_r[i], 0.6, COL_BRAGA)   # portal bracing across the top
+    for i in range(bays):
+        _emit_beam(st, top_l[i], top_l[i + 1], 0.7, COL_BRAGA)   # top chords
+        _emit_beam(st, top_r[i], top_r[i + 1], 0.7, COL_BRAGA)
+        _emit_beam(st, bot_l[i], bot_l[i + 1], 0.7, COL_BRAGA)   # bottom chords
+        _emit_beam(st, bot_r[i], bot_r[i + 1], 0.7, COL_BRAGA)
+        _emit_beam(st, bot_l[i], top_l[i + 1], 0.4, COL_BRAGA)   # web diagonals
+        _emit_beam(st, bot_r[i], top_r[i + 1], 0.4, COL_BRAGA)
+    st.generate_normals()
+    var mat: = StandardMaterial3D.new()
+    mat.vertex_color_use_as_albedo = true
+    mat.roughness = 0.7
+    mat.metallic = 0.25
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    st.set_material(mat)
+    var mi: = MeshInstance3D.new()
+    mi.name = "BragaBridge"
+    mi.mesh = st.commit()
+    parent.add_child(mi)
+
+
+# USS Massachusetts ("Big Mamie") moored at Battleship Cove beside the Braga
+# Bridge — a stylized grey battleship silhouette (hull, deck, superstructure,
+# conning tower, funnel, mast, fore/aft turrets with twin barrels). Visual only;
+# built once over the real cove coords and aligned to the bridge axis.
+func _build_battleship(parent: Node3D) -> void :
+    var base: = to_world(-20180.0, 7882.0, 0.0)
+    var aw: = to_world(BRAGA_A.x, BRAGA_A.y, 0.0)
+    var bw: = to_world(BRAGA_B.x, BRAGA_B.y, 0.0)
+    var d: = bw - aw
+    var yaw: float = atan2(d.z, d.x)
+    var lx: = Vector3(cos(yaw), 0.0, sin(yaw))           # length axis (bow↔stern)
+    var px: = Vector3(-lx.z, 0.0, lx.x)                   # beam axis (port↔starboard)
+    var hull: = Color(0.40, 0.43, 0.46)
+    var deck: = Color(0.34, 0.30, 0.24)
+    var ssup: = Color(0.47, 0.49, 0.51)
+    var dark: = Color(0.20, 0.21, 0.23)
+    var st: = SurfaceTool.new()
+    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+    _emit_box_rot(st, base + Vector3(0, 4.0, 0), Vector3(208, 8, 27), yaw, hull)        # hull
+    _emit_box_rot(st, base + Vector3(0, 8.3, 0), Vector3(198, 0.7, 23), yaw, deck)      # deck
+    _emit_box_rot(st, base + Vector3(0, 12.5, 0), Vector3(66, 8, 16), yaw, ssup)        # superstructure
+    _emit_box_rot(st, base + Vector3(0, 18.5, 0), Vector3(32, 6, 12), yaw, ssup)
+    _emit_box_rot(st, base - lx * 6.0 + Vector3(0, 23.0, 0), Vector3(13, 13, 11), yaw, ssup)  # conning tower
+    _emit_box_rot(st, base + lx * 10.0 + Vector3(0, 24.0, 0), Vector3(11, 9, 10), yaw, dark)  # funnel
+    _emit_beam(st, base - lx * 6.0 + Vector3(0, 29.0, 0), base - lx * 6.0 + Vector3(0, 46.0, 0), 1.0, dark)  # mast
+    # Main-battery turrets: two forward, two aft (superfiring pairs), twin barrels.
+    for slot: float in [58.0, 40.0, -40.0, -58.0]:
+        var sgn: float = 1.0 if slot > 0.0 else -1.0
+        var tc: = base + lx * slot
+        _emit_box_rot(st, tc + Vector3(0, 10.0, 0), Vector3(16, 5, 18), yaw, ssup)
+        for off: float in [-3.2, 3.2]:
+            var b0: = tc + px * off + Vector3(0, 11.0, 0) + lx * (sgn * 8.0)
+            var b1: = b0 + lx * (sgn * 15.0)
+            _emit_beam(st, b0, b1, 1.2, dark)
+    st.generate_normals()
+    var mat: = StandardMaterial3D.new()
+    mat.vertex_color_use_as_albedo = true
+    mat.roughness = 0.8
+    mat.metallic = 0.3
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    st.set_material(mat)
+    var mi: = MeshInstance3D.new()
+    mi.name = "Battleship"
     mi.mesh = st.commit()
     parent.add_child(mi)
 
@@ -276,6 +844,7 @@ func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :
         var vb_r: = to_world(b_r.x, b_r.y, Y_ROAD)
         for v in [va_l, va_r, vb_r, va_l, vb_r, vb_l]:
             st.set_color(col)
+            st.set_uv(Vector2(v.x / ROAD_TILE, v.z / ROAD_TILE))
             st.add_vertex(v)
 
 

@@ -11,6 +11,7 @@ const HUD_SCRIPT: = preload("res://scripts/ui/hud.gd")
 const CityBuilderScript: = preload("res://scripts/world/city_builder.gd")
 const MapLoaderScript: = preload("res://scripts/world/map_loader.gd")
 const CarScript: = preload("res://scripts/vehicles/car.gd")
+const TrafficCarScript: = preload("res://scripts/vehicles/traffic_car.gd")
 const JobManagerScript: = preload("res://scripts/systems/job_manager.gd")
 const WantedSystemScript: = preload("res://scripts/systems/wanted_system.gd")
 const WeaponPickupScript: = preload("res://scripts/weapons/weapon_pickup.gd")
@@ -19,12 +20,48 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 
 const MAX_STATIC_CARS: = 12
 const DRIVABLE_CARS: = 8
+const TRAFFIC_CARS: = 10
 # How many 500 m tiles out from the New Bedford core to build at once. The web
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
 const MAP_RADIUS: = 2
 
+# Curated South Coast hero landmarks (real OSM coords, world XZ where z = -north).
+# Each gets an emissive dusk beacon + a billboard name so the corridor towns are
+# recognizable the moment you fast-travel in — not anonymous streamed blocks.
+const HERO_LANDMARKS: Array = [
+    {"name": "Whaling Museum", "pos": Vector2(-219, 107)},
+    {"name": "Seamen's Bethel", "pos": Vector2(-272, 106)},
+    {"name": "New Bedford City Hall", "pos": Vector2(-582, 60)},
+    {"name": "Fort Taber", "pos": Vector2(1495, 4560)},
+    {"name": "Clark's Point Light", "pos": Vector2(1598, 4764)},
+    {"name": "Fairhaven", "pos": Vector2(1539, 32)},
+    {"name": "Dartmouth Town Hall", "pos": Vector2(-3744, 806)},
+    {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
+    {"name": "Westport", "pos": Vector2(-11897, 1521)},
+    {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
+    {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
+    {"name": "St. Mary's Cathedral", "pos": Vector2(-19696, -6969)},
+    {"name": "Notre Dame Cathedral", "pos": Vector2(-17596, -6054)},
+    {"name": "Narrows Center", "pos": Vector2(-20164, -7470)},
+    {"name": "Green Monstah Mural", "pos": Vector2(-19570, -9192)},
+]
+
 var _tex_asphalt: Texture2D
 var _tex_concrete: Texture2D
+
+# Day/night: a slow clock (phase 0..1 over DAY_LENGTH seconds) drives the sun
+# angle + ambient/fog. Anchored so dusk — the game's signature look — sits at
+# the start and recurs each cycle.
+const DAY_LENGTH: float = 600.0     # seconds for a full day→night→day loop
+var _sun: DirectionalLight3D = null
+var _env: Environment = null
+var _day_phase: float = 0.0
+
+# Weather: rain drifts in and out. The emitter rides above the player; when it's
+# raining the fog thickens a touch on top of the day/night base.
+var _rain: CPUParticles3D = null
+var _weather_t: float = 25.0
+var _raining: bool = false
 # Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
 # but exposes the same spawn fields (player_spawn, car_slots, light_slots,
 # npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
@@ -32,6 +69,10 @@ var _city
 var _player: CharacterBody3D
 var _hud: CanvasLayer
 var _drivable_cars: Array = []
+var _traffic: Array = []
+var _npcs: Array = []
+var _street_lights: Array = []
+var _last_stream_tile: Vector2i = Vector2i(999999, 999999)
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -44,16 +85,92 @@ func _ready() -> void :
     _setup_environment()
     _build_city()
     _place_cars()
+    _spawn_traffic()
     _place_streetlights()
+    _place_landmark_beacons()
     _spawn_contacts()
     _spawn_npcs()
     _spawn_player()
+    for tc in _traffic:
+        if is_instance_valid(tc):
+            tc.player = _player
+    for npc in _npcs:
+        if is_instance_valid(npc):
+            npc.player = _player
+    if _player.has_signal("shots_fired"):
+        _player.shots_fired.connect(_on_shots_fired)
     _build_hud()
     _build_systems()
     _spawn_pickups()
     _spawn_shops()
     _build_shop_menu()
     _start_audio()
+    _setup_weather()
+
+
+# Emissive dusk beacon + billboard name at each curated hero landmark, so the
+# corridor towns read as recognizable places from a distance. Cheap (one mesh +
+# one Label3D each); placed once at load over the whole region.
+func _place_landmark_beacons() -> void :
+    var root: = Node3D.new()
+    root.name = "Landmarks"
+    add_child(root)
+    var font: Font = load("res://assets/fonts/noto_serif.ttf")
+    for lm in HERO_LANDMARKS:
+        var p: Vector2 = lm["pos"]
+        var nm: String = str(lm["name"])
+        var beacon: = MeshInstance3D.new()
+        var cyl: = CylinderMesh.new()
+        cyl.top_radius = 0.25
+        cyl.bottom_radius = 0.7
+        cyl.height = 12.0
+        beacon.mesh = cyl
+        var m: = StandardMaterial3D.new()
+        m.albedo_color = Color(0.95, 0.72, 0.36)
+        m.emission_enabled = true
+        m.emission = Color(1.0, 0.74, 0.34)
+        m.emission_energy_multiplier = 2.4
+        beacon.material_override = m
+        beacon.position = Vector3(p.x, 11.0, p.y)
+        root.add_child(beacon)
+        var lbl: = Label3D.new()
+        lbl.text = nm
+        lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+        lbl.modulate = Color(1.0, 0.91, 0.68)
+        lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.85)
+        lbl.font_size = 64
+        lbl.outline_size = 14
+        lbl.pixel_size = 0.03
+        lbl.position = Vector3(p.x, 19.0, p.y)
+        if font:
+            lbl.font = font
+        root.add_child(lbl)
+
+
+func _setup_weather() -> void :
+    var rain: = CPUParticles3D.new()
+    rain.name = "Rain"
+    rain.amount = 700
+    rain.lifetime = 1.1
+    rain.local_coords = false
+    rain.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+    rain.emission_box_extents = Vector3(26.0, 0.5, 26.0)
+    rain.direction = Vector3(0.05, -1.0, 0.0)
+    rain.spread = 2.0
+    rain.gravity = Vector3(0.0, -32.0, 0.0)
+    rain.initial_velocity_min = 16.0
+    rain.initial_velocity_max = 22.0
+    var streak: = BoxMesh.new()
+    streak.size = Vector3(0.015, 0.5, 0.015)
+    rain.mesh = streak
+    var mat: = StandardMaterial3D.new()
+    mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.albedo_color = Color(0.7, 0.78, 0.9, 0.5)
+    rain.material_override = mat
+    rain.emitting = false
+    add_child(rain)
+    _rain = rain
 
 
 
@@ -65,27 +182,30 @@ func _setup_environment() -> void :
         env.sky = sky
     env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
     env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
-    env.ambient_light_energy = 0.7
-    env.background_energy_multiplier = 0.95
+    env.ambient_light_energy = 0.55
+    env.background_energy_multiplier = 0.9
 
     env.tonemap_mode = Environment.TONE_MAPPER_ACES
     env.tonemap_exposure = 1.0
 
     env.glow_enabled = true
-    env.glow_intensity = 0.5
-    env.glow_bloom = 0.15
+    env.glow_intensity = 0.4
+    env.glow_bloom = 0.1
 
-
+    # Lighter depth haze: the previous density (0.011) washed the whole city to
+    # flat grey. Pull it well back so streets/buildings read with contrast, keep
+    # just enough aerial perspective for distance.
     env.fog_enabled = true
-    env.fog_light_color = Color(0.52, 0.57, 0.6)
-    env.fog_density = 0.011
-    env.fog_sky_affect = 0.5
-    env.fog_aerial_perspective = 0.4
+    env.fog_light_color = Color(0.55, 0.60, 0.64)
+    env.fog_density = 0.0035
+    env.fog_sky_affect = 0.25
+    env.fog_aerial_perspective = 0.25
 
     var we: = WorldEnvironment.new()
     we.name = "WorldEnvironment"
     we.environment = env
     add_child(we)
+    _env = env
 
     var sun: = DirectionalLight3D.new()
     sun.name = "Sun"
@@ -95,7 +215,79 @@ func _setup_environment() -> void :
     sun.shadow_bias = 0.05
     sun.rotation_degrees = Vector3(-26.0, 52.0, 0.0)
     add_child(sun)
+    _sun = sun
+    _apply_day_night()
 
+
+# Drive the sun + ambient/fog from _day_phase (0=dusk → night → dawn → day →
+# back to dusk). Kept warm and gentle so the city keeps its dusk character.
+func _process(delta: float) -> void :
+    _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
+    _apply_day_night()
+    _update_weather(delta)
+    _update_streaming()
+    if GameManager:
+        GameManager.day_phase = _day_phase
+        GameManager.raining = _raining
+
+
+# Stream building tiles around the player as they cross the 500 m tile grid, so
+# the whole South Coast (NB → Westport → Fall River) is explorable without
+# loading every tile at once.
+func _update_streaming() -> void :
+    if _city == null or _player == null or not is_instance_valid(_player):
+        return
+    var p: Vector3 = _player.global_position
+    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
+    if tile == _last_stream_tile:
+        return
+    _last_stream_tile = tile
+    if _city.has_method("stream_buildings"):
+        _city.stream_buildings(p)
+
+
+func _update_weather(delta: float) -> void :
+    if _rain == null:
+        return
+    # Keep the emitter riding above the player.
+    if _player != null and is_instance_valid(_player):
+        _rain.global_position = _player.global_position + Vector3(0.0, 22.0, 0.0)
+    # Flip weather on a long-ish timer (rain spells ~40s, dry ~90s).
+    _weather_t -= delta
+    if _weather_t <= 0.0:
+        _raining = not _raining
+        _rain.emitting = _raining
+        _weather_t = 40.0 if _raining else 90.0
+    # Rain thickens the haze on top of the day/night base.
+    if _raining and _env != null:
+        _env.fog_density += 0.004
+
+
+func _apply_day_night() -> void :
+    if _sun == null or _env == null:
+        return
+    # Sun elevation: high at midday, below horizon at night. phase 0 = dusk.
+    var ang: float = _day_phase * TAU
+    var elevation: float = sin(ang + PI)        # +1 midday, -1 midnight; 0 at dusk/dawn
+    _sun.rotation_degrees = Vector3(lerp(-2.0, -62.0, clampf((elevation + 1.0) * 0.5, 0.0, 1.0)), 52.0, 0.0)
+    var daylight: float = clampf(elevation, 0.0, 1.0)        # 0 at/below horizon, 1 midday
+    var night: float = clampf( - elevation, 0.0, 1.0)
+    # Warm low sun, cooler bright midday; sun fades out at night.
+    var warm: = Color(1.0, 0.66, 0.42)
+    var noon: = Color(1.0, 0.93, 0.82)
+    _sun.light_color = warm.lerp(noon, daylight)
+    _sun.light_energy = lerp(0.18, 1.05, daylight)
+    _env.ambient_light_energy = lerp(0.28, 0.7, daylight)
+    _env.background_energy_multiplier = lerp(0.45, 1.0, daylight)
+    # Heavier blue haze at night, light warm haze by day.
+    _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
+    _env.fog_density = lerp(0.0065, 0.0030, daylight)
+    _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
+    # Streetlights warm up at dusk and glow through the night.
+    var lamp_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 3.0
+    for lamp in _street_lights:
+        if is_instance_valid(lamp):
+            lamp.light_energy = lamp_e
 
 
 func _make_ground() -> void :
@@ -189,6 +381,29 @@ func _place_car(path: String, pos: Vector3, rot_y: float, height: float) -> void
     ModelUtils.add_per_part_convex_collision(inst, 1)
 
 
+# Ambient moving traffic — kinematic cars cruising the road-derived waypoints.
+func _spawn_traffic() -> void :
+    if _city == null:
+        return
+    var waypoints: PackedVector3Array = _city.npc_waypoints
+    if waypoints.size() < 2:
+        return
+    var models: = [
+        ["res://assets/props/vehicles/sedan.glb", 1.5, 8.5],
+        ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
+        ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
+    ]
+    var n: int = mini(TRAFFIC_CARS, waypoints.size())
+    for i in n:
+        var m: Array = models[i % models.size()]
+        var tc: = CharacterBody3D.new()
+        tc.set_script(TrafficCarScript)
+        tc.setup(m[0], m[1], m[2], waypoints)
+        add_child(tc)
+        var wp: Vector3 = waypoints[(i * 7) % waypoints.size()]
+        tc.global_position = Vector3(wp.x, 0.6, wp.z)
+        _traffic.append(tc)
+
 
 func _place_streetlights() -> void :
     if _city == null:
@@ -205,11 +420,12 @@ func _place_streetlights() -> void :
             ModelUtils.add_per_part_convex_collision(inst, 1)
         var light: = OmniLight3D.new()
         light.light_color = Color(1.0, 0.74, 0.42)
-        light.light_energy = 3.0
+        light.light_energy = 0.0      # day/night drives this (on at night)
         light.omni_range = 18.0
         light.shadow_enabled = false
         light.position = pos + Vector3(0, 5.4, 0)
         add_child(light)
+        _street_lights.append(light)
 
 
 
@@ -308,6 +524,16 @@ func _build_shop_menu() -> void :
         shop_menu.bind_player(_player)
 
 
+# Gunfire scatters nearby pedestrians and draws police attention.
+func _on_shots_fired(at: Vector3) -> void :
+    for npc in _npcs:
+        if is_instance_valid(npc) and npc.has_method("panic"):
+            npc.panic(at)
+    # Firing in public draws the law: first shot earns a star; cops escalate it.
+    if _wanted_system and _wanted_system.has_method("add_heat") and GameManager and GameManager.wanted_level < 1:
+        _wanted_system.add_heat(1)
+
+
 func _spawn_npcs() -> void :
     if _city == null:
         return
@@ -323,6 +549,7 @@ func _spawn_npcs() -> void :
         npc.setup(ped[0], ped[1], waypoints)
         add_child(npc)
         npc.global_position = _city.npc_spawns[i]
+        _npcs.append(npc)
 
 
 func _spawn_player() -> void :
@@ -331,6 +558,8 @@ func _spawn_player() -> void :
     _player.global_position = _city.player_spawn if _city else Vector3(8, 0.6, 8)
     if GameManager and GameManager.has_spawn_override:
         _player.global_position = GameManager.player_spawn_override
+        if GameManager.has_saved_pos and _player.has_method("set_heading"):
+            _player.set_heading(GameManager.saved_yaw)
 
 
 func _build_hud() -> void :

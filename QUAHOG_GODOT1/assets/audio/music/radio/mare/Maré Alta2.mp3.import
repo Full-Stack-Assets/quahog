@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://rdaeqxnhsua1"
+path="res://.godot/imported/Maré Alta2.mp3-dfc1c77d3c5af043382ce63ae2e07d8b.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/radio/mare/Maré Alta2.mp3"
+dest_files=["res://.godot/imported/Maré Alta2.mp3-dfc1c77d3c5af043382ce63ae2e07d8b.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

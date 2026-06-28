@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://dkeiewt06thk8"
+path="res://.godot/imported/Carta pra Mãe2.mp3-3325a75fb0b4fef604bd6509d8f91bd0.mp3str"
+
+[deps]
+
+source_file="res://assets/audio/music/radio/mare/Carta pra Mãe2.mp3"
+dest_files=["res://.godot/imported/Carta pra Mãe2.mp3-3325a75fb0b4fef604bd6509d8f91bd0.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

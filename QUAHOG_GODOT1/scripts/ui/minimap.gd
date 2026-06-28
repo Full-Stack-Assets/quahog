@@ -5,13 +5,20 @@ class_name Minimap
 
 
 
-const GRID: = [-116.0, -58.0, 0.0, 58.0, 116.0]
 const WORLD_VIEW: = 240.0
+const SLICE: = "res://data/map/slice-newbedford.json"
+const CELL: = 200.0  # spatial bin size so we only draw nearby road segments
 
 var player: Node3D = null
 var job_manager: Node = null
 var wanted_system: Node = null
 var _font: Font
+
+# Real road network binned into CELL-sized cells of [Vector2 a, Vector2 b]
+# segments in world XZ (x=east, z=-north), so _draw only iterates nearby roads.
+var _road_cells: Dictionary = {}
+var _landmarks: Array = []          # [{name:String, pos:Vector2(x,z)}]
+var _roads_loaded: bool = false
 
 var _scale: float = 1.0
 var _center_px: Vector2 = Vector2.ZERO
@@ -35,6 +42,62 @@ func _ready() -> void :
 func _process(delta: float) -> void :
     _pulse = fmod(_pulse + delta * 3.0, TAU)
     queue_redraw()
+
+
+func _load_roads() -> void :
+    _roads_loaded = true
+    if not FileAccess.file_exists(SLICE):
+        return
+    var f: = FileAccess.open(SLICE, FileAccess.READ)
+    if f == null:
+        return
+    var data: Variant = JSON.parse_string(f.get_as_text())
+    if not (data is Dictionary):
+        return
+    var roads: Variant = data.get("roads", [])
+    if not (roads is Array):
+        return
+    for r in roads:
+        if not (r is Dictionary):
+            continue
+        var pts: Variant = r.get("points")
+        if not (pts is Array) or pts.size() < 2:
+            continue
+        for i in range(pts.size() - 1):
+            # world XZ: x = east, z = -north. Stored flat (a, b, a, b, ...).
+            var a: = Vector2(float(pts[i][0]), - float(pts[i][1]))
+            var b: = Vector2(float(pts[i + 1][0]), - float(pts[i + 1][1]))
+            var key: = Vector2i(int(floor(((a.x + b.x) * 0.5) / CELL)), int(floor(((a.y + b.y) * 0.5) / CELL)))
+            if not _road_cells.has(key):
+                _road_cells[key] = []
+            var arr: Array = _road_cells[key]
+            arr.append(a)
+            arr.append(b)
+
+    var lms: Variant = data.get("landmarks", [])
+    if lms is Array:
+        for l in lms:
+            if not (l is Dictionary):
+                continue
+            var lp: Variant = l.get("pos")
+            if not (lp is Array) or lp.size() < 2:
+                continue
+            _landmarks.append({"name": str(l.get("name", "")), "pos": Vector2(float(lp[0]), - float(lp[1]))})
+
+
+# Nearest real landmark within range, else the synthetic district name.
+func _location_name(p: Vector3) -> String:
+    var here: = Vector2(p.x, p.z)
+    var best: String = ""
+    var best_d: float = 220.0
+    for lm in _landmarks:
+        var d: float = here.distance_to(lm["pos"])
+        if d < best_d:
+            best_d = d
+            best = str(lm["name"])
+    if best != "":
+        return best
+    return _district_name(p)
 
 
 func _world_to_map(w: Vector3, center: Vector3) -> Vector2:
@@ -65,16 +128,20 @@ func _draw() -> void :
     var center: Vector3 = player.global_position
 
 
-    var road_col: = Color(0.32, 0.34, 0.38, 0.9)
-    for g in GRID:
-        var gx: float = g
-        var a: = _world_to_map(Vector3(gx, 0, center.z - WORLD_VIEW), center)
-        var b: = _world_to_map(Vector3(gx, 0, center.z + WORLD_VIEW), center)
-        draw_line(a, b, road_col, 3.0)
-        var gz: float = g
-        var c: = _world_to_map(Vector3(center.x - WORLD_VIEW, 0, gz), center)
-        var d: = _world_to_map(Vector3(center.x + WORLD_VIEW, 0, gz), center)
-        draw_line(c, d, road_col, 3.0)
+    if not _roads_loaded:
+        _load_roads()
+    var road_col: = Color(0.62, 0.64, 0.55, 0.95)
+    var cx: = int(floor(center.x / CELL))
+    var cz: = int(floor(center.z / CELL))
+    for dx in range(-1, 2):
+        for dz in range(-1, 2):
+            var segs: Array = _road_cells.get(Vector2i(cx + dx, cz + dz), [])
+            var i: = 0
+            while i + 1 < segs.size():
+                var aw: Vector2 = segs[i]
+                var bw: Vector2 = segs[i + 1]
+                draw_line(_world_to_map(Vector3(aw.x, 0, aw.y), center), _world_to_map(Vector3(bw.x, 0, bw.y), center), road_col, 2.0)
+                i += 2
 
 
     if job_manager and job_manager.has_method("has_active_job") and job_manager.has_active_job():
@@ -97,7 +164,9 @@ func _draw() -> void :
 
     draw_rect(rect, Color(0.79, 0.52, 0.16, 0.85), false, 2.0)
     if _font:
-        var dn: = _district_name(center)
+        # North indicator (the minimap is north-up, so N sits at the top edge).
+        draw_string(_font, Vector2(size.x - 22, 20), "N", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.95, 0.86, 0.6))
+        var dn: = _location_name(center)
         draw_string(_font, Vector2(8, size.y - 10), dn, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(0.95, 0.86, 0.6))
 
 

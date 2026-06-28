@@ -27,6 +27,7 @@ LoadingScreen="*res://scripts/autoloads/loading_screen.gd"
 AudioManager="*res://scripts/autoloads/audio_manager.gd"
 GameManager="*res://scripts/autoloads/game_manager.gd"
 VFX="*res://scripts/autoloads/vfx_helper.gd"
+Radio="*res://scripts/autoloads/radio.gd"
 TesanaWorldEditor="*res://addons/tesana_world_editor/scene_export.gd"
 
 [display]

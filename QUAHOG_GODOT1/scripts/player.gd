@@ -6,6 +6,7 @@ extends CharacterBody3D
 signal interactable_changed(prompt: String)
 signal weapon_changed(weapon_name: String, clip: int, reserve: int, melee: bool)
 signal driving_changed(driving: bool)
+signal shots_fired(at: Vector3)
 signal health_changed(health: int, max_health: int, armor: int)
 
 @export var speed: float = 2.6
@@ -57,6 +58,7 @@ var dead: bool = false
 var _regen_delay: float = 0.0
 var _hurt_sfx_cd: float = 0.0
 var _invuln: float = 0.0
+var _autosave_t: float = 0.0
 
 
 var _driving: bool = false
@@ -325,6 +327,7 @@ func do_fire() -> void :
         return
     _weapons[_current_weapon]["clip"] -= 1
     _emit_weapon()
+    shots_fired.emit(global_position)
     _camera_rotation.y = clamp(_camera_rotation.y + 0.035, -1.1, 0.45)
 
     var origin: Vector3 = camera.global_position if camera else global_position + Vector3(0, 1.4, 0)
@@ -468,6 +471,37 @@ func _respawn() -> void :
     health_changed.emit(health, max_health, armor)
 
 
+func fast_travel_to(target: Vector3) -> void :
+    # Map-tap teleport. Raycast down from high above the target to land on the
+    # street/terrain instead of clipping into a building or floating. If you're
+    # driving, your car comes with you (it's your ride across the South Coast).
+    var space: = get_world_3d().direct_space_state
+    var from: = Vector3(target.x, 400.0, target.z)
+    var to: = Vector3(target.x, -200.0, target.z)
+    var q: = PhysicsRayQueryParameters3D.create(from, to)
+    q.exclude = [get_rid()]
+    var hit: Dictionary = space.intersect_ray(q)
+    # No ground below the target (open water / void) — refuse rather than fling
+    # the player into the sky over the harbor.
+    if not hit.has("position"):
+        if GameManager and GameManager.has_method("show_message"):
+            GameManager.show_message("Can't fast-travel there.")
+        return
+    var ground: float = (hit["position"] as Vector3).y
+    if _driving and current_car != null and is_instance_valid(current_car) and current_car.has_method("place_at"):
+        # The car-follow in _physics_process slaves the player to the car, so we
+        # only need to move the car; it parks stationary at the destination.
+        current_car.place_at(Vector3(target.x, ground + 0.5, target.z), rad_to_deg(get_map_heading()))
+        velocity = Vector3.ZERO
+        if GameManager and GameManager.has_method("show_message"):
+            GameManager.show_message("Fast travelled (with car).")
+        return
+    global_position = Vector3(target.x, ground + 1.2, target.z)
+    velocity = Vector3.ZERO
+    if GameManager and GameManager.has_method("show_message"):
+        GameManager.show_message("Fast travelled.")
+
+
 func try_enter_vehicle() -> void :
     if _driving:
         exit_car()
@@ -523,6 +557,11 @@ func on_busted() -> void :
     global_position = home_spawn if home_spawn != Vector3.ZERO else global_position
     velocity = Vector3.ZERO
 
+func set_heading(yaw: float) -> void :
+    if mesh_root:
+        mesh_root.rotation.y = yaw
+
+
 func get_map_heading() -> float:
     if _driving and current_car and is_instance_valid(current_car) and "vehicle_model" in current_car and current_car.vehicle_model:
         return current_car.vehicle_model.rotation.y
@@ -543,6 +582,13 @@ func _physics_process(delta: float) -> void :
     _fire_cooldown = max(0.0, _fire_cooldown - delta)
     _hurt_sfx_cd = max(0.0, _hurt_sfx_cd - delta)
     _invuln = max(0.0, _invuln - delta)
+
+    # Light autosave so the menu's Continue resumes where you left off.
+    _autosave_t += delta
+    if _autosave_t >= 5.0:
+        _autosave_t = 0.0
+        if not dead and GameManager and GameManager.has_method("save_position"):
+            GameManager.save_position(global_position, get_map_heading())
 
 
     if not dead and health < max_health:
