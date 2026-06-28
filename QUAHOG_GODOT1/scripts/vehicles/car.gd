@@ -63,9 +63,10 @@ func _ready() -> void :
         vehicle_model.add_child(model)
         ModelUtils.scale_to_height(model, model_height)
         ModelUtils.ground_model(model, 0.0)
-        # The car physically travels toward +Z (measured), but the GLB front is
-        # modelled facing -Z, so spin the visual 180° to face the way it drives.
-        model.rotate_y(PI)
+        # The GLB already faces +Z, which is the car's measured travel direction,
+        # so no extra rotation — the model faces the way it drives and the chase
+        # cam (on the -Z side) sees its rear. (An earlier 180° flip made the car
+        # face the camera, which read as "looking at the front / inverted".)
 
 
     sphere = RigidBody3D.new()
