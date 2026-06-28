@@ -18,7 +18,7 @@ var _touch_index: int = -1
 var _font: Font = null
 
 func _ready() -> void :
-    custom_minimum_size = Vector2(92, 92)
+    custom_minimum_size = Vector2(124, 124)
     size = custom_minimum_size
     pivot_offset = Vector2.ZERO
     mouse_filter = Control.MOUSE_FILTER_STOP
@@ -66,7 +66,7 @@ func _draw() -> void :
     draw_circle(c, r - 4.0, fill)
     draw_arc(c, r, 0.0, TAU, 40, Color(0.95, 0.78, 0.45, 0.9), 2.5, true)
     if _font:
-        var fs: = 24
+        var fs: = 30
         var ts: = _font.get_string_size(label_text, HORIZONTAL_ALIGNMENT_CENTER, -1, fs)
         draw_string(_font, c - ts / 2.0 + Vector2(0, ts.y * 0.32), label_text, 
             HORIZONTAL_ALIGNMENT_CENTER, -1, fs, Color(0.98, 0.96, 0.92))

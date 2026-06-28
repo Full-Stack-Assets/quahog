@@ -24,9 +24,12 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 # Parked cars stream around the player: a pool of CAR_POOL takeable cars is kept
 # within CAR_NEAR of you, and any that drift past CAR_FAR are relocated to a fresh
 # road point nearby — so there are always cars wherever you are on the big map.
-const CAR_POOL: = 50
-const CAR_NEAR: = 1000.0
-const CAR_FAR: = 1500.0
+# ~200 cars/km^2: CAR_NEAR is a 560 m radius (~0.98 km^2), so a 200-car pool
+# fills it at roughly that density. Parked cars are dormant (see car.gd), so the
+# cost of a couple hundred of them is near-zero until one is entered.
+const CAR_POOL: = 200
+const CAR_NEAR: = 560.0
+const CAR_FAR: = 900.0
 const TRAFFIC_CARS: = 16
 # How many 500 m tiles out from the New Bedford core to build at once. The web
 # build streams tiles; here we load a fixed core radius (P2 = streaming).
