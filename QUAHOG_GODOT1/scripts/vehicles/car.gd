@@ -63,6 +63,9 @@ func _ready() -> void :
         vehicle_model.add_child(model)
         ModelUtils.scale_to_height(model, model_height)
         ModelUtils.ground_model(model, 0.0)
+        # The car physically travels toward +Z (measured), but the GLB front is
+        # modelled facing -Z, so spin the visual 180° to face the way it drives.
+        model.rotate_y(PI)
 
 
     sphere = RigidBody3D.new()

@@ -323,6 +323,9 @@ func _apply_day_night() -> void :
     _env.fog_light_color = Color(0.30, 0.34, 0.42).lerp(Color(0.55, 0.60, 0.64), daylight)
     _env.fog_density = lerp(0.0065, 0.0030, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
+    # Time-of-day colour grade: richer, moodier at dusk/night; flatter by day.
+    _env.adjustment_saturation = lerp(1.22, 1.10, daylight)
+    _env.adjustment_contrast = lerp(1.12, 1.05, daylight)
     # Streetlights warm up at dusk and glow through the night.
     var lamp_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 3.0
     for lamp in _street_lights:

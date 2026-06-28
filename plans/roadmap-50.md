@@ -6,7 +6,7 @@ commit. Checkboxes flip as they land.
 
 ## A. Driving & vehicles
 1. [ ] Water is non-drivable — cars/player can't cross the harbor (collision or slow/stop zone).
-2. [ ] Car model faces its travel direction (no rear-first driving).
+2. [x] Car model faces its travel direction (no rear-first driving).
 3. [x] Camera collision — chase cam doesn't clip through buildings.
 4. [x] Brake vs reverse feel + handbrake.
 5. [x] Flip/stuck recovery (right the car if overturned or wedged).
@@ -14,12 +14,12 @@ commit. Checkboxes flip as they land.
 7. [ ] Headlights on at night.
 8. [x] Speedometer correctness (km/h) + needle.
 9. [x] Per-model handling spread (mass/grip/top speed).
-10. [ ] Minimap shows player heading + nearby cars.
+10. [x] Minimap shows player heading + nearby cars.
 
 ## B. World realism
 11. [ ] Open-ocean water beyond the rivers (coastline → Buzzards/Mount Hope Bay).
 12. [ ] Stop signs / traffic signals at major intersections (visual).
-13. [ ] Street lights along roads (geometry + night emission).
+13. [x] Street lights along roads (geometry + night emission).
 14. [ ] Trees / greenery instanced in parks & wooded overlays.
 15. [ ] Sidewalk coverage refinement (curbs, crosswalks).
 16. [ ] Bridges over water (Braga, Coggeshall) drive correctly.
@@ -38,7 +38,7 @@ commit. Checkboxes flip as they land.
 27. [ ] Baked-ish vertex AO on buildings (compat-safe).
 28. [ ] Rain: puddle sheen + wet roads.
 29. [ ] Car headlights/taillights geometry.
-30. [ ] Per-time-of-day colour grade.
+30. [x] Per-time-of-day colour grade.
 
 ## D. Audio
 31. [ ] Ambient city soundscape (gulls near water, traffic hum).
