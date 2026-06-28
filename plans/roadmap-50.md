@@ -23,8 +23,8 @@ commit. Checkboxes flip as they land.
 14. [x] Trees / greenery instanced in parks & wooded overlays.
 15. [ ] Sidewalk coverage refinement (curbs, crosswalks).
 16. [ ] Bridges over water (Braga, Coggeshall) drive correctly.
-17. [ ] Rooftop variation (AC units, parapets) on big buildings.
-18. [ ] In-world landmark signage / labels.
+17. [x] Rooftop variation (AC units, parapets) on big buildings.
+18. [x] In-world landmark signage / labels.
 19. [ ] Beaches: sand + waterline blend.
 20. [ ] Rail lines visual + level crossings.
 

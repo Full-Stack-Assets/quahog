@@ -346,6 +346,8 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int, lod: int = 2)
             st = st_w
             any_w = true
         _emit_building(st, faces, fp, h, lod)
+        if h >= 24.0:
+            _emit_roof_detail(st, fp, h)   # rooftop AC unit on flat-topped towers
         buildings_built += 1
         any = true
         if b.has("name"):
@@ -392,6 +394,40 @@ func _commit_facade(parent: Node3D, st: SurfaceTool, tex: Texture2D) -> void :
     mi.material_override = glow
     mi.add_to_group("facade_emissive")
     parent.add_child(mi)
+
+
+# A small rooftop box (HVAC unit) on a flat-topped tower so the skyline isn't a
+# field of clean prisms. Visual only (no collision); winding is irrelevant since
+# the facade material is double-sided. Seeded from the footprint for stable variety.
+func _emit_roof_detail(st: SurfaceTool, fp: Array, h: float) -> void :
+    var cx: = 0.0
+    var cy: = 0.0
+    for p in fp:
+        cx += float(p[0])
+        cy += float(p[1])
+    cx /= float(fp.size())
+    cy /= float(fp.size())
+    var seed_i: int = int(absf(float(fp[0][0]) * 73856.0 + float(fp[0][1]) * 19349.0))
+    var s: float = 1.6 + float(seed_i % 4) * 0.5
+    var bh: float = 1.6 + float(seed_i % 3) * 0.7
+    cx += float((seed_i % 7) - 3)
+    cy += float((int(seed_i / 7.0) % 7) - 3)
+    var col: = Color(0.38, 0.39, 0.41)
+    var base: = h
+    var top: = h + bh
+    var a0: = to_world(cx - s, cy - s, base)
+    var b0: = to_world(cx + s, cy - s, base)
+    var c0: = to_world(cx + s, cy + s, base)
+    var d0: = to_world(cx - s, cy + s, base)
+    var a1: = to_world(cx - s, cy - s, top)
+    var b1: = to_world(cx + s, cy - s, top)
+    var c1: = to_world(cx + s, cy + s, top)
+    var d1: = to_world(cx - s, cy + s, top)
+    for quad in [[a1, b1, c1, d1], [a0, b0, b1, a1], [b0, c0, c1, b1], [c0, d0, d1, c1], [d0, a0, a1, d1]]:
+        for idx in [0, 1, 2, 0, 2, 3]:
+            st.set_color(col)
+            st.set_uv(Vector2(0.05, 0.05))
+            st.add_vertex(quad[idx])
 
 
 func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float, lod: int = 2) -> void :
