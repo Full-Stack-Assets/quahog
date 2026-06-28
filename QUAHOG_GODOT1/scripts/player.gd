@@ -634,6 +634,8 @@ func _physics_process(delta: float) -> void :
             var throttle: float = clampf( - _move_input.y + kb_drive.y, -1.0, 1.0)
             if current_car.has_method("set_drive_input"):
                 current_car.set_drive_input(steer, throttle)
+            if current_car.has_method("set_handbrake"):
+                current_car.set_handbrake(Input.is_action_pressed("handbrake"))
             if "vehicle_model" in current_car and current_car.vehicle_model:
                 global_position = current_car.vehicle_model.global_position
             # Pan the chase cam with look input; when released, ease back so the

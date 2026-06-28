@@ -22,6 +22,11 @@ var screech_sound: AudioStreamPlayer3D
 var active: bool = false
 var _steer: float = 0.0
 var _throttle: float = 0.0
+var handbrake_on: bool = false
+
+
+func set_handbrake(on: bool) -> void :
+    handbrake_on = on
 
 var input: Vector3 = Vector3.ZERO
 var normal: Vector3 = Vector3.UP
@@ -35,6 +40,7 @@ var prev_position: Vector3 = Vector3.ZERO
 
 var max_throttle: float = 11.0
 var torque: float = 95.0
+var mass: float = 1000.0
 
 
 func _ready() -> void :
@@ -61,7 +67,7 @@ func _ready() -> void :
 
     sphere = RigidBody3D.new()
     sphere.name = "Sphere"
-    sphere.mass = 1000.0
+    sphere.mass = mass
     sphere.gravity_scale = 1.5
     sphere.linear_damp = 0.2
     sphere.angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
@@ -241,7 +247,9 @@ func _drive(delta: float) -> void :
         direction = sign(input.z) if absf(input.z) > 0.1 else 1.0
 
     var steering_grip: float = clampf(absf(linear_speed) / max_throttle, 0.18, 1.0)
-    var target_angular: float = - input.x * steering_grip * 3.4 * direction
+    # Handbrake: break rear grip so the car slides, and turn harder into the slide.
+    var turn_gain: float = 4.6 if (handbrake_on and active) else 3.4
+    var target_angular: float = - input.x * steering_grip * turn_gain * direction
     angular_speed = lerpf(angular_speed, target_angular, delta * 5.0)
     vehicle_model.rotate_y(angular_speed * delta)
 
@@ -253,10 +261,12 @@ func _drive(delta: float) -> void :
     colliding = grounded
 
     var target_speed: float = input.z
-    if target_speed < 0.0 and linear_speed > 0.01:
-        linear_speed = lerpf(linear_speed, 0.0, delta * 8.0)
+    if handbrake_on and active:
+        linear_speed = lerpf(linear_speed, 0.0, delta * 6.0)   # hard stop
+    elif target_speed < 0.0 and linear_speed > 0.01:
+        linear_speed = lerpf(linear_speed, 0.0, delta * 8.0)   # brake before reversing
     elif target_speed < 0.0:
-        linear_speed = lerpf(linear_speed, target_speed * 0.5, delta * 3.0)
+        linear_speed = lerpf(linear_speed, target_speed * 0.5, delta * 3.0)  # reverse, slower
     else:
         linear_speed = lerpf(linear_speed, target_speed, delta * 5.0)
 

@@ -373,9 +373,9 @@ func _place_cars() -> void :
         return
 
     var models: = [
-        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0}, 
-        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0}, 
-        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0}, 
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0, "mass": 1000.0},
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0, "mass": 1100.0},
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0, "mass": 1500.0},
     ]
     # Spawn the pool on road points near where the player starts (dense), not
     # smeared across the whole 80 km region. _restream_cars keeps them near you.
@@ -442,6 +442,7 @@ func _spawn_drivable_car(m: Dictionary, pos: Vector3, rot_y: float) -> void :
     car.display_name = m["name"]
     car.max_throttle = m["spd"]
     car.torque = m["trq"]
+    car.mass = m.get("mass", 1000.0)
     add_child(car)
     car.place_at(pos, rot_y)
     _drivable_cars.append(car)
