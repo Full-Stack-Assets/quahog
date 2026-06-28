@@ -46,6 +46,10 @@ const HERO_LANDMARKS: Array = [
     {"name": "Notre Dame Cathedral", "pos": Vector2(-17596, -6054)},
     {"name": "Narrows Center", "pos": Vector2(-20164, -7470)},
     {"name": "Green Monstah Mural", "pos": Vector2(-19570, -9192)},
+    {"name": "Taunton Green", "pos": Vector2(-14085, -29389)},
+    {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
+    {"name": "Brockton", "pos": Vector2(-8100, -49768)},
+    {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
 ]
 
 var _tex_asphalt: Texture2D

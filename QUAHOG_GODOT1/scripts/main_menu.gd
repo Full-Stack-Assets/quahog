@@ -71,6 +71,8 @@ const SPAWN_PRESETS: Array = [
     {"name": "Fort Taber", "pos": Vector3(1495, 1.5, 4560)},
     {"name": "Fall River (City Hall)", "pos": Vector3(-19475, 1.5, -7216)},
     {"name": "Battleship Cove", "pos": Vector3(-20180, 1.5, -7790)},
+    {"name": "Brockton", "pos": Vector3(-8100, 1.5, -49768)},
+    {"name": "Stoughton", "pos": Vector3(-14916, 1.5, -54435)},
 ]
 
 
