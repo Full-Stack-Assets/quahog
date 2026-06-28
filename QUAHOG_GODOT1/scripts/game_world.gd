@@ -240,7 +240,16 @@ func _setup_environment() -> void :
     sun.light_color = Color(1.0, 0.86, 0.72)
     sun.light_energy = 0.8
     sun.shadow_enabled = true
-    sun.shadow_bias = 0.05
+    sun.shadow_bias = 0.03
+    sun.shadow_normal_bias = 1.2
+    # Cascaded shadows with a bounded distance so near buildings/cars cast crisp
+    # shadows without trying to shadow the whole 80 km map.
+    sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS
+    sun.directional_shadow_max_distance = 220.0
+    sun.directional_shadow_split_1 = 0.06
+    sun.directional_shadow_split_2 = 0.16
+    sun.directional_shadow_split_3 = 0.45
+    sun.directional_shadow_blend_splits = true
     sun.rotation_degrees = Vector3(-26.0, 52.0, 0.0)
     add_child(sun)
     _sun = sun
