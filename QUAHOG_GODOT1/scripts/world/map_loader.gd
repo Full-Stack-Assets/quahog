@@ -14,7 +14,14 @@ const Y_ROAD: = 0.04
 const Y_OVERLAY: = 0.02
 # Façade window texture tiled onto building walls (one repeat per ~4 m wide /
 # ~3.2 m floor) so the real map reads as a windowed city, not flat boxes.
-const FACADE_PATH: = "res://assets/textures/walls/facade_windows_dusk.png"
+# Per-material facades by height tier so the city reads with real materials,
+# authored to NB/Fall River architecture (tools/mapgen/gen_facades.py): painted
+# clapboard triple-deckers (short), red-brick mills & rowhouses (mid), downtown
+# granite/glass (tall). Luminance-based so the per-building vertex tint still
+# drives the hue.
+const FACADE_PATH: = "res://assets/textures/walls/nb_clapboard.png"
+const BRICK_PATH: = "res://assets/textures/walls/nb_brick.png"
+const OFFICE_PATH: = "res://assets/textures/walls/nb_downtown.png"
 const WALL_TILE_U: = 4.0
 const WALL_TILE_V: = 3.2
 const ASPHALT_PATH: = "res://assets/textures/floors/wet_asphalt.png"
@@ -89,6 +96,8 @@ var npc_spawns: Array[Vector3] = []
 var job_points: Array[Vector3] = []
 var _road_samples: Array = []              # [[Vector3 pos, float rot_y_deg], ...]
 var _facade_tex: Texture2D = null
+var _brick_tex: Texture2D = null
+var _office_tex: Texture2D = null
 var _asphalt_tex: Texture2D = null
 
 # Building-tile streaming: the whole South Coast lives in tiles/, but only the
@@ -132,6 +141,10 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     _stream_radius = max(radius_tiles, 2)
     if _facade_tex == null and ResourceLoader.exists(FACADE_PATH):
         _facade_tex = load(FACADE_PATH)
+    if _brick_tex == null and ResourceLoader.exists(BRICK_PATH):
+        _brick_tex = load(BRICK_PATH)
+    if _office_tex == null and ResourceLoader.exists(OFFICE_PATH):
+        _office_tex = load(OFFICE_PATH)
     if _asphalt_tex == null and ResourceLoader.exists(ASPHALT_PATH):
         _asphalt_tex = load(ASPHALT_PATH)
     # Ground, land-use and the full road network span the whole South Coast and
@@ -221,9 +234,17 @@ func _build_ground(parent: Node3D, bbox: Rect2) -> void :
     parent.add_child(body)
 
 
-func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> MeshInstance3D:
-    var st: = SurfaceTool.new()
-    st.begin(Mesh.PRIMITIVE_TRIANGLES)
+func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> Node3D:
+    # Three façade materials by height tier (clapboard/windows · brick · concrete).
+    var st_w: = SurfaceTool.new()
+    st_w.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var st_b: = SurfaceTool.new()
+    st_b.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var st_o: = SurfaceTool.new()
+    st_o.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var any_w: = false
+    var any_b: = false
+    var any_o: = false
     var faces: = PackedVector3Array()
     var any: = false
     for b in buildings:
@@ -233,6 +254,17 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> MeshInstan
         if not (fp is Array) or fp.size() < 3:
             continue
         var h: float = float(b.get("height", 8.0))
+        var mill: bool = float(fp[0][0]) < -16000.0   # Fall River / Westport belt
+        var st: SurfaceTool
+        if h >= 24.0:
+            st = st_o
+            any_o = true
+        elif h >= 13.0 or (mill and h >= 11.0):
+            st = st_b
+            any_b = true
+        else:
+            st = st_w
+            any_w = true
         _emit_building(st, faces, fp, h)
         buildings_built += 1
         any = true
@@ -241,28 +273,39 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> MeshInstan
             named_places.append({"name": b["name"], "pos": to_world(c.x, c.y, h)})
     if not any:
         return null
-    st.generate_normals()
-    var mat: = StandardMaterial3D.new()
-    mat.vertex_color_use_as_albedo = true
-    mat.roughness = 0.92
-    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-    if _facade_tex:
-        mat.albedo_texture = _facade_tex
-        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-    st.set_material(mat)
-    var mi: = MeshInstance3D.new()
-    mi.name = "Tile_%d_%d" % [tx, ty]
-    mi.mesh = st.commit()
-    root.add_child(mi)
-    # Trimesh collider for the whole tile's walls/roofs.
+    var tile_root: = Node3D.new()
+    tile_root.name = "Tile_%d_%d" % [tx, ty]
+    if any_w:
+        _commit_facade(tile_root, st_w, _facade_tex)
+    if any_b:
+        _commit_facade(tile_root, st_b, _brick_tex)
+    if any_o:
+        _commit_facade(tile_root, st_o, _office_tex)
+    # One trimesh collider for the whole tile's walls/roofs.
     var body: = StaticBody3D.new()
     var col: = CollisionShape3D.new()
     var shape: = ConcavePolygonShape3D.new()
     shape.set_faces(faces)
     col.shape = shape
     body.add_child(col)
-    mi.add_child(body)
-    return mi
+    tile_root.add_child(body)
+    root.add_child(tile_root)
+    return tile_root
+
+
+func _commit_facade(parent: Node3D, st: SurfaceTool, tex: Texture2D) -> void :
+    st.generate_normals()
+    var mat: = StandardMaterial3D.new()
+    mat.vertex_color_use_as_albedo = true
+    mat.roughness = 0.92
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    if tex:
+        mat.albedo_texture = tex
+        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+    st.set_material(mat)
+    var mi: = MeshInstance3D.new()
+    mi.mesh = st.commit()
+    parent.add_child(mi)
 
 
 func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float) -> void :
