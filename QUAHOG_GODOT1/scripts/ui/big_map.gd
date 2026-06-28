@@ -77,6 +77,22 @@ func _ready() -> void :
     close_btn.pressed.connect(func(): visible = false)
     add_child(close_btn)
 
+    # In-game CHEATS / test-tools, left of CLOSE.
+    var cheats_btn: = Button.new()
+    cheats_btn.text = "⚙ CHEATS"
+    cheats_btn.focus_mode = Control.FOCUS_NONE
+    cheats_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    cheats_btn.offset_left = -340
+    cheats_btn.offset_right = -184
+    cheats_btn.offset_top = 40
+    cheats_btn.offset_bottom = 96
+    cheats_btn.custom_minimum_size = Vector2(156, 56)
+    if _font:
+        cheats_btn.add_theme_font_override("font", _font)
+    cheats_btn.add_theme_font_size_override("font_size", 24)
+    cheats_btn.pressed.connect(_open_cheats)
+    add_child(cheats_btn)
+
     # Region fast-travel column (top-left): jump anywhere on the South Coast.
     var col: = VBoxContainer.new()
     col.add_theme_constant_override("separation", 8)
@@ -96,12 +112,18 @@ func _ready() -> void :
         var btn: = Button.new()
         btn.text = str(d["name"])
         btn.focus_mode = Control.FOCUS_NONE
-        btn.custom_minimum_size = Vector2(220, 48)
+        btn.custom_minimum_size = Vector2(300, 60)
         if _font:
             btn.add_theme_font_override("font", _font)
         btn.add_theme_font_size_override("font_size", 22)
         btn.pressed.connect(_travel_to.bind(dp))
         col.add_child(btn)
+
+
+func _open_cheats() -> void :
+    var panel: = CheatsPanel.new()
+    panel.menu_mode = false   # in-game: toggles apply live, no fresh-game spawns
+    add_child(panel)
 
 
 func _travel_to(dp: Vector2) -> void :
