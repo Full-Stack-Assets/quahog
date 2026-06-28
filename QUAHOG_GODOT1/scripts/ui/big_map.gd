@@ -35,6 +35,7 @@ const REGIONS: Array = [
     {"name": "Braga Bridge", "pos": Vector2(-20372, -7829)},
     {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
     {"name": "Freetown", "pos": Vector2(-6606, -14917)},
+    {"name": "Middleborough", "pos": Vector2(791, -28609)},
     {"name": "Taunton", "pos": Vector2(-14085, -29389)},
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
