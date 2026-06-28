@@ -336,6 +336,7 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
     var roads: Variant = slice.get("roads", [])
     if not (roads is Array):
         return
+    var junctions: Dictionary = _collect_arterial_junctions(roads)
     var st: = SurfaceTool.new()
     st.begin(Mesh.PRIMITIVE_TRIANGLES)
     var sw: = SurfaceTool.new()      # concrete sidewalk aprons
@@ -374,6 +375,7 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
             _emit_sidewalk(sw, pts, width * 0.5)
         if hw in ARTERIAL_CLASSES:
             _emit_center_double(ln, pts)
+            _emit_stop_bars(ln, pts, width * 0.5, junctions)
             ln_any = true
         roads_built += 1
         # Sample the first segment for spawn scaffolding (pos + heading).
@@ -516,6 +518,47 @@ func _emit_lane_lines(st: SurfaceTool, pts: Array, half: float) -> void :
 
 
 # Solid double-yellow centreline for an undivided arterial.
+# Count how many arterial ways share each endpoint. OSM splits ways at
+# intersections, so a node shared by 3+ arterial endpoints is a real junction.
+func _collect_arterial_junctions(roads: Array) -> Dictionary:
+    var counts: Dictionary = {}
+    for r in roads:
+        if not (r is Dictionary):
+            continue
+        var hw: String = str(r.get("highway", "residential"))
+        if not (hw in ARTERIAL_CLASSES):
+            continue
+        var pts: Variant = r.get("points")
+        if not (pts is Array) or pts.size() < 2:
+            continue
+        for idx: int in [0, pts.size() - 1]:
+            var p: Variant = pts[idx]
+            var key: = Vector2i(roundi(float(p[0])), roundi(float(p[1])))
+            counts[key] = int(counts.get(key, 0)) + 1
+    return counts
+
+
+# White stop bar across each arterial approach to a multi-arterial junction,
+# set back a little from the node along the road's end segment.
+func _emit_stop_bars(st: SurfaceTool, pts: Array, half: float, junctions: Dictionary) -> void :
+    var ends: Array = [PackedInt32Array([0, 1]), PackedInt32Array([pts.size() - 1, pts.size() - 2])]
+    for ei: int in range(ends.size()):
+        var e: PackedInt32Array = ends[ei]
+        var node: = Vector2(float(pts[e[0]][0]), float(pts[e[0]][1]))
+        var key: = Vector2i(roundi(node.x), roundi(node.y))
+        if int(junctions.get(key, 0)) < 3:
+            continue
+        var nxt: = Vector2(float(pts[e[1]][0]), float(pts[e[1]][1]))
+        var d: = (nxt - node)
+        if d.length_squared() < 0.0001:
+            continue
+        d = d.normalized()
+        var perp: = Vector2(-d.y, d.x)
+        var center: = node + d * 2.5
+        var bw: float = half * 0.9
+        _strip(st, center - perp * bw, center + perp * bw, d, 0.3, COL_LINE)
+
+
 func _emit_center_double(st: SurfaceTool, pts: Array) -> void :
     for i in range(pts.size() - 1):
         var a: = Vector2(float(pts[i][0]), float(pts[i][1]))
