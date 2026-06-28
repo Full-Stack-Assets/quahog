@@ -37,6 +37,14 @@ var cheat_force_rain: int = -1     # -1 auto · 0 forced dry · 1 forced rain
 var cheat_traffic_mult: float = 1.0
 var cheat_time_scale: float = 1.0  # global slow-mo / fast-forward
 var cheat_teleport_anywhere: bool = false
+# Chase-cam side preference (player-facing, not a cheat): false = default side,
+# true = flipped to the other side. Persisted with the rest of the settings.
+var cam_flip: bool = false
+
+
+func toggle_cam_flip() -> void :
+    cam_flip = not cam_flip
+    save_game()
 
 
 # All cheat flags, keyed for compact save/load (avoids a giant literal twice).
@@ -49,7 +57,7 @@ func _cheat_dict() -> Dictionary:
         "super_jump": cheat_super_jump, "inf_cash": cheat_infinite_cash,
         "car_turbo": cheat_car_turbo, "force_rain": cheat_force_rain,
         "traffic_mult": cheat_traffic_mult, "time_scale": cheat_time_scale,
-        "tp_anywhere": cheat_teleport_anywhere,
+        "tp_anywhere": cheat_teleport_anywhere, "cam_flip": cam_flip,
     }
 
 
@@ -69,6 +77,7 @@ func _load_cheats(d: Dictionary) -> void :
     cheat_traffic_mult = float(d.get("traffic_mult", 1.0))
     cheat_time_scale = float(d.get("time_scale", 1.0))
     cheat_teleport_anywhere = bool(d.get("tp_anywhere", false))
+    cam_flip = bool(d.get("cam_flip", false))
 
 # Last known player position/heading, persisted so the menu can offer Continue.
 var saved_pos: = Vector3.ZERO

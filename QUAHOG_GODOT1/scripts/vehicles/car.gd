@@ -330,7 +330,9 @@ func _chase_pos(car_pos: Vector3) -> Vector3:
     var forward: Vector3 = vehicle_model.global_basis.z.normalized().rotated(Vector3.UP, cam_yaw)
     var dist: float = 9.0
     var height: float = 4.6 + cam_pitch * 5.0
-    return car_pos + forward * dist + Vector3(0, height, 0)
+    # Player can flip the chase side live via the CAM button (GameManager.cam_flip).
+    var side: float = -1.0 if (GameManager and GameManager.cam_flip) else 1.0
+    return car_pos + forward * dist * side + Vector3(0, height, 0)
 
 
 # Pull the chase cam in if a building/ground is between it and the car, so it
