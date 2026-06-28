@@ -14,12 +14,14 @@ const Y_ROAD: = 0.04
 const Y_OVERLAY: = 0.02
 # Façade window texture tiled onto building walls (one repeat per ~4 m wide /
 # ~3.2 m floor) so the real map reads as a windowed city, not flat boxes.
-const FACADE_PATH: = "res://assets/textures/walls/facade_windows_dusk.png"
-# Per-material facades by height tier so the city reads with real materials:
-# windowed clapboard/triple-deckers (short), weathered brick mills & rowhouses
-# (mid), concrete-and-glass downtown (tall).
-const BRICK_PATH: = "res://assets/textures/walls/weathered_brick.png"
-const OFFICE_PATH: = "res://assets/textures/walls/facade_concrete_office.png"
+# Per-material facades by height tier so the city reads with real materials,
+# authored to NB/Fall River architecture (tools/mapgen/gen_facades.py): painted
+# clapboard triple-deckers (short), red-brick mills & rowhouses (mid), downtown
+# granite/glass (tall). Luminance-based so the per-building vertex tint still
+# drives the hue.
+const FACADE_PATH: = "res://assets/textures/walls/nb_clapboard.png"
+const BRICK_PATH: = "res://assets/textures/walls/nb_brick.png"
+const OFFICE_PATH: = "res://assets/textures/walls/nb_downtown.png"
 const WALL_TILE_U: = 4.0
 const WALL_TILE_V: = 3.2
 const ASPHALT_PATH: = "res://assets/textures/floors/wet_asphalt.png"
