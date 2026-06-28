@@ -81,6 +81,10 @@ var _wanted_system: Node = null
 
 
 func _ready() -> void :
+    # Cheat: global slow-mo / fast-forward (clamped to a sane range).
+    if GameManager:
+        Engine.time_scale = clampf(GameManager.cheat_time_scale, 0.1, 4.0)
+
     _tex_asphalt = load("res://assets/textures/floors/wet_asphalt.png")
     _tex_concrete = load("res://assets/textures/floors/concrete_sidewalk.png")
 
@@ -258,12 +262,19 @@ func _update_weather(delta: float) -> void :
     # Keep the emitter riding above the player.
     if _player != null and is_instance_valid(_player):
         _rain.global_position = _player.global_position + Vector3(0.0, 22.0, 0.0)
-    # Flip weather on a long-ish timer (rain spells ~40s, dry ~90s).
-    _weather_t -= delta
-    if _weather_t <= 0.0:
-        _raining = not _raining
-        _rain.emitting = _raining
-        _weather_t = 40.0 if _raining else 90.0
+    # Cheat: a forced weather state overrides the timer.
+    if GameManager and GameManager.cheat_force_rain >= 0:
+        var want: bool = GameManager.cheat_force_rain == 1
+        if _raining != want:
+            _raining = want
+            _rain.emitting = want
+    else:
+        # Flip weather on a long-ish timer (rain spells ~40s, dry ~90s).
+        _weather_t -= delta
+        if _weather_t <= 0.0:
+            _raining = not _raining
+            _rain.emitting = _raining
+            _weather_t = 40.0 if _raining else 90.0
     # Rain thickens the haze on top of the day/night base.
     if _raining and _env != null:
         _env.fog_density += 0.004
@@ -391,7 +402,10 @@ func _spawn_traffic() -> void :
         ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
         ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
     ]
-    var n: int = mini(TRAFFIC_CARS, waypoints.size())
+    var want_traffic: int = TRAFFIC_CARS
+    if GameManager:
+        want_traffic = int(round(float(TRAFFIC_CARS) * GameManager.cheat_traffic_mult))
+    var n: int = mini(want_traffic, waypoints.size())
     for i in n:
         var m: Array = models[i % models.size()]
         var tc: = CharacterBody3D.new()

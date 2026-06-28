@@ -73,19 +73,10 @@ const SPAWN_PRESETS: Array = [
     {"name": "Battleship Cove", "pos": Vector3(-20180, 1.5, -7790)},
 ]
 
-# Forced time-of-day cycle for the cheats panel (day_phase: 0=dusk, 0.25=night,
-# 0.5=dawn, 0.75=midday; -1 = normal clock).
-const TIME_CYCLE: Array = [
-    {"name": "Normal", "ph": -1.0},
-    {"name": "Dusk", "ph": 0.0},
-    {"name": "Day", "ph": 0.75},
-    {"name": "Night", "ph": 0.25},
-    {"name": "Dawn", "ph": 0.5},
-]
-
 
 func _ready() -> void :
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+    Engine.time_scale = 1.0   # menus always run at normal speed (slow-mo is in-game)
     set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
     if ResourceLoader.exists("res://assets/ui/theme.tres"):
@@ -333,7 +324,6 @@ func _open_cheats() -> void :
     _play_click_sfx()
     if _cheats_overlay != null and is_instance_valid(_cheats_overlay):
         return
-    var gm: = get_node_or_null("/root/GameManager")
 
     var overlay: = Control.new()
     overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -342,47 +332,54 @@ func _open_cheats() -> void :
     _cheats_overlay = overlay
 
     var dim: = ColorRect.new()
-    dim.color = Color(0, 0, 0, 0.7)
+    dim.color = Color(0, 0, 0, 0.78)
     dim.mouse_filter = Control.MOUSE_FILTER_STOP
     overlay.add_child(dim)
     dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-    var center: = CenterContainer.new()
-    overlay.add_child(center)
-    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    # Scrollable so the full cheat list fits any screen.
+    var scroll: = ScrollContainer.new()
+    scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    scroll.offset_left = 140
+    scroll.offset_right = -140
+    scroll.offset_top = 64
+    scroll.offset_bottom = -56
+    overlay.add_child(scroll)
 
     var box: = VBoxContainer.new()
-    box.add_theme_constant_override("separation", 12)
-    center.add_child(box)
+    box.add_theme_constant_override("separation", 9)
+    box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    scroll.add_child(box)
 
     var title: = _make_label("CHEATS · TEST TOOLS", 34, Color(1.0, 0.81, 0.28))
-    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     box.add_child(title)
 
-    # Police toggle (cheat_no_police true => police OFF).
-    var police_btn: = _make_text_button("", _noop)
-    _refresh_police_btn(police_btn, gm)
-    police_btn.pressed.connect(_toggle_police.bind(police_btn))
-    box.add_child(police_btn)
+    box.add_child(_make_label("Toggles (saved):", 19, Color(0.8, 0.8, 0.84)))
+    _add_bool_cheat(box, "No Police (no heat)", "cheat_no_police")
+    _add_bool_cheat(box, "God Mode", "cheat_godmode")
+    _add_bool_cheat(box, "Infinite Ammo", "cheat_infinite_ammo")
+    _add_bool_cheat(box, "All Weapons (next start)", "cheat_all_weapons")
+    _add_bool_cheat(box, "One-Shot Kills", "cheat_oneshot")
+    _add_bool_cheat(box, "Rapid Fire", "cheat_rapidfire")
+    _add_bool_cheat(box, "Super Speed", "cheat_super_speed")
+    _add_bool_cheat(box, "Super Jump", "cheat_super_jump")
+    _add_bool_cheat(box, "Infinite Cash", "cheat_infinite_cash")
+    _add_bool_cheat(box, "Car Turbo", "cheat_car_turbo")
+    _add_bool_cheat(box, "Teleport Anywhere (map)", "cheat_teleport_anywhere")
 
-    var god_btn: = _make_text_button("", _noop)
-    _refresh_god_btn(god_btn, gm)
-    god_btn.pressed.connect(_toggle_god.bind(god_btn))
-    box.add_child(god_btn)
-
-    var time_btn: = _make_text_button("", _noop)
-    _refresh_time_btn(time_btn, gm)
-    time_btn.pressed.connect(_cycle_time.bind(time_btn))
-    box.add_child(time_btn)
+    box.add_child(_make_label("Settings (next start for traffic/speed):", 19, Color(0.8, 0.8, 0.84)))
+    _add_cycle_cheat(box, "Time", "cheat_time_phase", [["Normal", -1.0], ["Dusk", 0.0], ["Day", 0.75], ["Night", 0.25], ["Dawn", 0.5]])
+    _add_cycle_cheat(box, "Weather", "cheat_force_rain", [["Auto", -1], ["Rain", 1], ["Dry", 0]])
+    _add_cycle_cheat(box, "Traffic", "cheat_traffic_mult", [["Light", 0.5], ["Normal", 1.0], ["Heavy", 2.0], ["Insane", 4.0]])
+    _add_cycle_cheat(box, "Game Speed", "cheat_time_scale", [["0.5x", 0.5], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]])
 
     box.add_child(_make_text_button("+ ADD $10,000", _add_cash))
 
-    box.add_child(_make_label("Quick start (fresh game):", 20, Color(0.85, 0.85, 0.88)))
+    box.add_child(_make_label("Quick start (fresh game):", 19, Color(0.8, 0.8, 0.84)))
     for preset in SPAWN_PRESETS:
         var p: Dictionary = preset
         var pos: Vector3 = p["pos"]
-        var b: = _make_text_button("▶ " + str(p["name"]), _cheat_spawn.bind(pos))
-        box.add_child(b)
+        box.add_child(_make_text_button("▶ " + str(p["name"]), _cheat_spawn.bind(pos)))
 
     box.add_child(_make_text_button("✕ CLOSE", _close_cheats))
 
@@ -391,63 +388,65 @@ func _noop() -> void :
     pass
 
 
-func _refresh_police_btn(btn: Button, gm: Node) -> void :
-    var off: bool = gm != null and bool(gm.cheat_no_police)
-    btn.text = "POLICE: OFF (no heat)" if off else "POLICE: ON"
-    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if off else Color(1.0, 0.6, 0.5))
+# Generic ON/OFF cheat bound to a GameManager bool property.
+func _add_bool_cheat(box: VBoxContainer, label: String, flag: String) -> void :
+    var b: = _make_text_button("", _noop)
+    _refresh_flag_btn(b, label, flag)
+    b.pressed.connect(_toggle_flag.bind(b, label, flag))
+    box.add_child(b)
 
 
-func _toggle_police(btn: Button) -> void :
+func _refresh_flag_btn(btn: Button, label: String, flag: String) -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    var on: bool = gm != null and bool(gm.get(flag))
+    btn.text = label + ":  " + ("ON" if on else "OFF")
+    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if on else Color(0.85, 0.72, 0.42))
+
+
+func _toggle_flag(btn: Button, label: String, flag: String) -> void :
     _play_click_sfx()
     var gm: = get_node_or_null("/root/GameManager")
     if gm:
-        gm.cheat_no_police = not bool(gm.cheat_no_police)
+        gm.set(flag, not bool(gm.get(flag)))
         if gm.has_method("save_game"):
             gm.save_game()
-        _refresh_police_btn(btn, gm)
+    _refresh_flag_btn(btn, label, flag)
 
 
-func _refresh_god_btn(btn: Button, gm: Node) -> void :
-    var on: bool = gm != null and bool(gm.cheat_godmode)
-    btn.text = "GOD MODE: ON" if on else "GOD MODE: OFF"
-    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if on else Color(1.0, 0.81, 0.28))
+# Generic multi-state cheat: options is [[display, value], ...].
+func _add_cycle_cheat(box: VBoxContainer, label: String, flag: String, options: Array) -> void :
+    var b: = _make_text_button("", _noop)
+    _refresh_cycle_btn(b, label, flag, options)
+    b.pressed.connect(_cycle_flag.bind(b, label, flag, options))
+    box.add_child(b)
 
 
-func _toggle_god(btn: Button) -> void :
-    _play_click_sfx()
+func _refresh_cycle_btn(btn: Button, label: String, flag: String, options: Array) -> void :
     var gm: = get_node_or_null("/root/GameManager")
-    if gm:
-        gm.cheat_godmode = not bool(gm.cheat_godmode)
-        if gm.has_method("save_game"):
-            gm.save_game()
-        _refresh_god_btn(btn, gm)
-
-
-func _refresh_time_btn(btn: Button, gm: Node) -> void :
-    var ph: float = gm.cheat_time_phase if gm != null else -1.0
-    var label: = "Normal"
-    for t in TIME_CYCLE:
-        if absf(float(t["ph"]) - ph) < 0.001:
-            label = str(t["name"])
+    var v: float = float(gm.get(flag)) if gm != null else 0.0
+    var disp: String = str(options[0][0])
+    for opt in options:
+        if absf(float(opt[1]) - v) < 0.001:
+            disp = str(opt[0])
             break
-    btn.text = "TIME: " + label
+    btn.text = label + ":  " + disp
 
 
-func _cycle_time(btn: Button) -> void :
+func _cycle_flag(btn: Button, label: String, flag: String, options: Array) -> void :
     _play_click_sfx()
     var gm: = get_node_or_null("/root/GameManager")
     if gm == null:
         return
+    var v: float = float(gm.get(flag))
     var cur: int = 0
-    for i in TIME_CYCLE.size():
-        if absf(float(TIME_CYCLE[i]["ph"]) - gm.cheat_time_phase) < 0.001:
+    for i in options.size():
+        if absf(float(options[i][1]) - v) < 0.001:
             cur = i
             break
-    var nxt: Dictionary = TIME_CYCLE[(cur + 1) % TIME_CYCLE.size()]
-    gm.cheat_time_phase = float(nxt["ph"])
+    gm.set(flag, options[(cur + 1) % options.size()][1])
     if gm.has_method("save_game"):
         gm.save_game()
-    _refresh_time_btn(btn, gm)
+    _refresh_cycle_btn(btn, label, flag, options)
 
 
 func _add_cash() -> void :

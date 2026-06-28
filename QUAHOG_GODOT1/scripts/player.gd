@@ -124,6 +124,12 @@ func _ready() -> void :
 
     _weapons["fists"] = {"clip": 0, "reserve": 0}
     _weapon_order.append("fists")
+    # Cheat: start with the whole arsenal loaded.
+    if GameManager and GameManager.cheat_all_weapons:
+        for wid: String in WeaponDB.ORDER:
+            if wid != "fists":
+                give_weapon(wid, 999)
+        _current_weapon = "fists"
     call_deferred("_emit_weapon")
     call_deferred("_emit_health")
 
@@ -201,6 +207,8 @@ func set_sprint(active: bool) -> void :
 func do_jump() -> void :
     if is_on_floor():
         velocity.y = jump_velocity
+        if GameManager and GameManager.cheat_super_jump:
+            velocity.y = jump_velocity * 2.2
 
 func do_interact() -> void :
     if _current_interactable and is_instance_valid(_current_interactable) and _current_interactable.has_method("interact"):
@@ -315,17 +323,20 @@ func do_fire() -> void :
         return
     var def: = WeaponDB.get_def(_current_weapon)
     _fire_cooldown = float(def.get("rate", 0.3))
+    if GameManager and GameManager.cheat_rapidfire:
+        _fire_cooldown = 0.05
 
     if def.get("melee", false):
         _melee_attack(def)
         return
 
-
-    if not _weapons.has(_current_weapon) or _weapons[_current_weapon]["clip"] <= 0:
-        if GameManager:
-            GameManager.show_message("Empty — tap RLD to reload, or SWAP weapon.")
-        return
-    _weapons[_current_weapon]["clip"] -= 1
+    var inf_ammo: bool = GameManager != null and GameManager.cheat_infinite_ammo
+    if not inf_ammo:
+        if not _weapons.has(_current_weapon) or _weapons[_current_weapon]["clip"] <= 0:
+            if GameManager:
+                GameManager.show_message("Empty — tap RLD to reload, or SWAP weapon.")
+            return
+        _weapons[_current_weapon]["clip"] -= 1
     _emit_weapon()
     shots_fired.emit(global_position)
     _camera_rotation.y = clamp(_camera_rotation.y + 0.035, -1.1, 0.45)
@@ -345,6 +356,8 @@ func do_fire() -> void :
     var spread: float = float(def.get("spread", 0.01))
     var rng: float = float(def.get("range", 80.0))
     var dmg: int = int(def.get("damage", 1))
+    if GameManager and GameManager.cheat_oneshot:
+        dmg = 999
     for i in pellets:
         var dir: = base_dir
         if spread > 0.0:
@@ -665,6 +678,8 @@ func _physics_process(delta: float) -> void :
     var target_speed: float = sprint_speed if sprinting else speed
     if _crouching:
         target_speed = speed * 0.55
+    if GameManager and GameManager.cheat_super_speed:
+        target_speed *= 2.4
     var desired: Vector3 = direction * target_speed * clamp(input_strength, 0.0, 1.0)
 
     if input_strength > 0.05:

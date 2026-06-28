@@ -203,6 +203,8 @@ func _drive(delta: float) -> void :
 
     input.x = _steer if (active and grounded) else 0.0
     input.z = (_throttle * max_throttle) if (active and grounded) else 0.0
+    if GameManager and GameManager.cheat_car_turbo:
+        input.z *= 2.0   # turbo: double top speed / acceleration
 
     var direction: float = sign(linear_speed)
     if direction == 0.0:

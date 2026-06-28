@@ -151,6 +151,11 @@ func _gui_input(event: InputEvent) -> void :
         if mb.position.distance_to(_region_screen(rp, center, scale, cpx)) <= SNAP_PX + 8.0:
             _travel_to(rp)
             return
+    # Cheat: teleport to wherever you tap (not just named areas).
+    if GameManager and GameManager.cheat_teleport_anywhere:
+        var wx: float = center.x + (mb.position.x - cpx.x) / scale
+        var wz: float = center.z + (mb.position.y - cpx.y) / scale
+        _travel_to(Vector2(wx, wz))
 
 
 # Screen position of a region area marker, clamped to the map edges so far towns
