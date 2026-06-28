@@ -1,0 +1,11 @@
+[gd_resource type="StandardMaterial3D" load_steps=2 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/surfaces/facade_downtown.png" id="1"]
+
+[resource]
+resource_name = "facade_downtown"
+albedo_texture = ExtResource("1")
+roughness = 0.6
+metallic = 0.0
+uv1_triplanar = false
+vertex_color_use_as_albedo = true
