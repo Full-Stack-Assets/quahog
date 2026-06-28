@@ -40,6 +40,9 @@ const REGIONS: Array = [
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
     {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
+    {"name": "Braintree", "pos": Vector2(-6951, -63664)},
+    {"name": "Weymouth", "pos": Vector2(-1607, -64800)},
+    {"name": "Quincy", "pos": Vector2(-6809, -68672)},
 ]
 const SNAP_PX: = 34.0  # tap within this many pixels of a label snaps to it
 

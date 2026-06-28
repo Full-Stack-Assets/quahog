@@ -59,6 +59,8 @@ const HERO_LANDMARKS: Array = [
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
     {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
+    {"name": "Braintree", "pos": Vector2(-6951, -63664)},
+    {"name": "Quincy", "pos": Vector2(-6809, -68672)},
 ]
 
 var _tex_asphalt: Texture2D
