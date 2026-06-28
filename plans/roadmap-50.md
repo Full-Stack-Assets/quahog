@@ -20,7 +20,7 @@ commit. Checkboxes flip as they land.
 11. [ ] Open-ocean water beyond the rivers (coastline → Buzzards/Mount Hope Bay).
 12. [ ] Stop signs / traffic signals at major intersections (visual).
 13. [x] Street lights along roads (geometry + night emission).
-14. [ ] Trees / greenery instanced in parks & wooded overlays.
+14. [x] Trees / greenery instanced in parks & wooded overlays.
 15. [ ] Sidewalk coverage refinement (curbs, crosswalks).
 16. [ ] Bridges over water (Braga, Coggeshall) drive correctly.
 17. [ ] Rooftop variation (AC units, parapets) on big buildings.

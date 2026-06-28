@@ -169,6 +169,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     # are built once. Buildings stream around the player (see stream_buildings).
     _build_ground(parent, FULL_BBOX)
     _build_overlays(parent, FULL_BBOX)
+    _build_trees(parent)
     _build_braga_bridge(parent)
     _build_battleship(parent)
     _buildings_root = Node3D.new()
@@ -1029,6 +1030,58 @@ func _build_overlays(parent: Node3D, bbox: Rect2) -> void :
         mi.name = "Overlay_%s" % key
         mi.mesh = st.commit()
         root.add_child(mi)
+
+
+# Scatter low-poly conifers across the green overlays (parks / woods / cemeteries)
+# with one cheap MultiMesh, so those areas read as planted instead of flat green.
+func _build_trees(parent: Node3D) -> void :
+    var positions: Array = []
+    for key in ["parks", "wood", "cemetery"]:
+        var data: Variant = _read_json("%s/overlays/%s.json" % [MAP_DIR, key])
+        if data == null or not (data is Array):
+            continue
+        for ring in data:
+            if not (ring is Array) or ring.size() < 3:
+                continue
+            var poly2: = PackedVector2Array()
+            for p in ring:
+                poly2.append(Vector2(float(p[0]), float(p[1])))
+            if not FULL_BBOX.has_point(poly2[0]):
+                continue
+            var tri: = Geometry2D.triangulate_polygon(poly2)
+            for i in range(0, tri.size() - 2, 3):
+                var a: = poly2[tri[i]]
+                var b: = poly2[tri[i + 1]]
+                var c: = poly2[tri[i + 2]]
+                positions.append((a + b + c) / 3.0)
+                if positions.size() >= 5000:
+                    break
+            if positions.size() >= 5000:
+                break
+        if positions.size() >= 5000:
+            break
+    if positions.is_empty():
+        return
+    var cone: = CylinderMesh.new()
+    cone.top_radius = 0.0
+    cone.bottom_radius = 1.7
+    cone.height = 4.8
+    cone.radial_segments = 6
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.17, 0.33, 0.16)
+    mat.roughness = 1.0
+    cone.material = mat
+    var mm: = MultiMesh.new()
+    mm.transform_format = MultiMesh.TRANSFORM_3D
+    mm.mesh = cone
+    mm.instance_count = positions.size()
+    for idx in positions.size():
+        var pos: Vector3 = to_world(positions[idx].x, positions[idx].y, Y_OVERLAY)
+        mm.set_instance_transform(idx, Transform3D(Basis(), pos + Vector3(0, 2.4, 0)))
+    var mmi: = MultiMeshInstance3D.new()
+    mmi.name = "Trees"
+    mmi.multimesh = mm
+    parent.add_child(mmi)
 
 
 # Derive player/NPC/car/light spawn points from the sampled road network so the
