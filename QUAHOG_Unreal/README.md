@@ -1,7 +1,15 @@
-# Mount Hope Unreal Foundation (UE5)
+# Mount Hope Unreal Foundation (UE 5.8)
 
 This directory is a UE5 C++ bootstrap for a console/PC version of Mount Hope,
 derived from the existing South Coast gameplay concept in this repo.
+
+> **Engine target:** Unreal Engine **5.8**. The project descriptor
+> (`MountHope.uproject` → `EngineAssociation`) and both target rules
+> (`Source/*.Target.cs`) are pinned to 5.8 via `BuildSettingsVersion.Latest` /
+> `EngineIncludeOrderVersion.Latest`, so the module builds against the engine you
+> have installed. If you prefer an explicit pin, swap `Latest` for
+> `EngineIncludeOrderVersion.Unreal5_8` once you have confirmed it in your
+> engine's UnrealBuildTool.
 
 ## What is included
 
@@ -25,7 +33,7 @@ derived from the existing South Coast gameplay concept in this repo.
 
 ## Open in Unreal
 
-1. Install Unreal Engine 5.4+ via Epic Games Launcher.
+1. Install Unreal Engine 5.8 via Epic Games Launcher.
 2. In Unreal Editor, open `QUAHOG_Unreal/MountHope.uproject`.
 3. Let Unreal generate project files and compile C++.
 4. Confirm startup logs show:
