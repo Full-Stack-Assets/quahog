@@ -199,6 +199,22 @@ func stream_buildings(center: Vector3) -> void :
             _road_tiles.erase(rkey)
 
 
+# Road sample points ([Vector3 pos, float yaw_deg]) within `radius` of center —
+# used to spawn / re-stream parked cars near the player on the big map.
+func road_points_near(center: Vector3, radius: float, cap: int = 800) -> Array:
+    var out: Array = []
+    var r2: float = radius * radius
+    for s in _road_samples:
+        var p: Vector3 = s[0]
+        var dx: float = p.x - center.x
+        var dz: float = p.z - center.z
+        if dx * dx + dz * dz <= r2:
+            out.append(s)
+            if out.size() >= cap:
+                break
+    return out
+
+
 func _build_streamed_tile(key: Vector2i) -> void :
     _tiles[key] = null   # reserve so we don't re-attempt a missing tile every pass
     var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, key.x, key.y]
