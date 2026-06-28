@@ -34,6 +34,11 @@ const REGIONS: Array = [
     {"name": "Fall River", "pos": Vector2(-19475, -7216)},
     {"name": "Braga Bridge", "pos": Vector2(-20372, -7829)},
     {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
+    {"name": "Freetown", "pos": Vector2(-6606, -14917)},
+    {"name": "Taunton", "pos": Vector2(-14085, -29389)},
+    {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
+    {"name": "Brockton", "pos": Vector2(-8100, -49768)},
+    {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
 ]
 const SNAP_PX: = 34.0  # tap within this many pixels of a label snaps to it
 
@@ -144,6 +149,26 @@ func _gui_input(event: InputEvent) -> void :
                 player.global_position = target
             visible = false
             return
+    # Region area pins (clamped to the map edges when far off-view) are tappable
+    # too, so you can fast-travel anywhere on the South Coast straight from the map.
+    for rd in REGIONS:
+        var rp: Vector2 = rd["pos"]
+        if mb.position.distance_to(_region_screen(rp, center, scale, cpx)) <= SNAP_PX + 8.0:
+            _travel_to(rp)
+            return
+    # Cheat: teleport to wherever you tap (not just named areas).
+    if GameManager and GameManager.cheat_teleport_anywhere:
+        var wx: float = center.x + (mb.position.x - cpx.x) / scale
+        var wz: float = center.z + (mb.position.y - cpx.y) / scale
+        _travel_to(Vector2(wx, wz))
+
+
+# Screen position of a region area marker, clamped to the map edges so far towns
+# still show (spread along the edge by their real direction from the player).
+func _region_screen(rp: Vector2, center: Vector3, scale: float, cpx: Vector2) -> Vector2:
+    var raw: = cpx + (rp - Vector2(center.x, center.z)) * scale
+    var m: = 30.0
+    return Vector2(clampf(raw.x, m, size.x - m), clampf(raw.y, m, size.y - m))
 
 
 func _load_roads() -> void :
@@ -244,9 +269,20 @@ func _draw() -> void :
         if _font:
             draw_string(_font, sp + Vector2(8, 5), str(d["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(0.92, 0.88, 0.78))
 
+    # Region areas — always shown (clamped to the map edge if off-view) and
+    # tappable to fast-travel across the whole South Coast.
+    var region_col: = Color(0.45, 0.85, 0.98)
+    for rd in REGIONS:
+        var rp: Vector2 = rd["pos"]
+        var rs: = _region_screen(rp, center, scale, cpx)
+        draw_circle(rs, 6.0, region_col)
+        draw_circle(rs, 6.0, Color(0, 0, 0, 0.6), false, 1.5)
+        if _font:
+            draw_string(_font, rs + Vector2(9, 5), str(rd["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, region_col)
+
     draw_circle(cpx, 7.0, Color(0.45, 0.8, 1.0))
     draw_circle(cpx, 7.0, Color(1, 1, 1), false, 2.0)
 
     if _font:
         draw_string(_font, Vector2(40, 64), "MOUNT HOPE — MAP", HORIZONTAL_ALIGNMENT_LEFT, -1, 40, Color(0.96, 0.86, 0.6))
-        draw_string(_font, Vector2(40, size.y - 36), "Tap a gold place name to fast-travel there · ✕ or M to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(0.82, 0.82, 0.82))
+        draw_string(_font, Vector2(40, size.y - 36), "Tap a place name (gold = nearby · blue = area) to fast-travel · ✕ or M to close", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(0.82, 0.82, 0.82))

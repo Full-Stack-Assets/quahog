@@ -62,10 +62,23 @@ const FONT_PATH: = "res://assets/fonts/noto_serif.ttf"
 var _click_sfx_stream: AudioStream = null
 var _wordmark: TextureRect = null
 var _font: Font = null
+var _cheats_overlay: Control = null
+
+# Quick-start spawn presets for testing (world XZ; y lifted so you drop onto the
+# street). Lets you jump straight into any corner of the South Coast.
+const SPAWN_PRESETS: Array = [
+    {"name": "Downtown New Bedford", "pos": Vector3(-219, 1.5, 107)},
+    {"name": "Fort Taber", "pos": Vector3(1495, 1.5, 4560)},
+    {"name": "Fall River (City Hall)", "pos": Vector3(-19475, 1.5, -7216)},
+    {"name": "Battleship Cove", "pos": Vector3(-20180, 1.5, -7790)},
+    {"name": "Brockton", "pos": Vector3(-8100, 1.5, -49768)},
+    {"name": "Stoughton", "pos": Vector3(-14916, 1.5, -54435)},
+]
 
 
 func _ready() -> void :
     Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+    Engine.time_scale = 1.0   # menus always run at normal speed (slow-mo is in-game)
     set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
     if ResourceLoader.exists("res://assets/ui/theme.tres"):
@@ -226,6 +239,8 @@ func _build_buttons() -> void :
         var btn: = _make_button(BUTTON_IDS[i], BUTTON_STYLEBOXES[i])
         vbox.add_child(btn)
 
+    vbox.add_child(_make_text_button("⚙ CHEATS", _open_cheats))
+
 
 func _make_text_button(text: String, cb: Callable) -> Button:
     var b: = Button.new()
@@ -303,6 +318,162 @@ func _on_new_game() -> void :
         if gm.has_method("reset_save"):
             gm.reset_save()
     _go_to_play()
+
+
+# --- Cheats / test panel ----------------------------------------------------
+
+func _open_cheats() -> void :
+    _play_click_sfx()
+    if _cheats_overlay != null and is_instance_valid(_cheats_overlay):
+        return
+
+    var overlay: = Control.new()
+    overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+    add_child(overlay)
+    _cheats_overlay = overlay
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0, 0, 0, 0.78)
+    dim.mouse_filter = Control.MOUSE_FILTER_STOP
+    overlay.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    # Scrollable so the full cheat list fits any screen.
+    var scroll: = ScrollContainer.new()
+    scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+    scroll.offset_left = 140
+    scroll.offset_right = -140
+    scroll.offset_top = 64
+    scroll.offset_bottom = -56
+    overlay.add_child(scroll)
+
+    var box: = VBoxContainer.new()
+    box.add_theme_constant_override("separation", 9)
+    box.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+    scroll.add_child(box)
+
+    var title: = _make_label("CHEATS · TEST TOOLS", 34, Color(1.0, 0.81, 0.28))
+    box.add_child(title)
+
+    box.add_child(_make_label("Toggles (saved):", 19, Color(0.8, 0.8, 0.84)))
+    _add_bool_cheat(box, "No Police (no heat)", "cheat_no_police")
+    _add_bool_cheat(box, "God Mode", "cheat_godmode")
+    _add_bool_cheat(box, "Infinite Ammo", "cheat_infinite_ammo")
+    _add_bool_cheat(box, "All Weapons (next start)", "cheat_all_weapons")
+    _add_bool_cheat(box, "One-Shot Kills", "cheat_oneshot")
+    _add_bool_cheat(box, "Rapid Fire", "cheat_rapidfire")
+    _add_bool_cheat(box, "Super Speed", "cheat_super_speed")
+    _add_bool_cheat(box, "Super Jump", "cheat_super_jump")
+    _add_bool_cheat(box, "Infinite Cash", "cheat_infinite_cash")
+    _add_bool_cheat(box, "Car Turbo", "cheat_car_turbo")
+    _add_bool_cheat(box, "Teleport Anywhere (map)", "cheat_teleport_anywhere")
+
+    box.add_child(_make_label("Settings (next start for traffic/speed):", 19, Color(0.8, 0.8, 0.84)))
+    _add_cycle_cheat(box, "Time", "cheat_time_phase", [["Normal", -1.0], ["Dusk", 0.0], ["Day", 0.75], ["Night", 0.25], ["Dawn", 0.5]])
+    _add_cycle_cheat(box, "Weather", "cheat_force_rain", [["Auto", -1], ["Rain", 1], ["Dry", 0]])
+    _add_cycle_cheat(box, "Traffic", "cheat_traffic_mult", [["Light", 0.5], ["Normal", 1.0], ["Heavy", 2.0], ["Insane", 4.0]])
+    _add_cycle_cheat(box, "Game Speed", "cheat_time_scale", [["0.5x", 0.5], ["1x", 1.0], ["2x", 2.0], ["4x", 4.0]])
+
+    box.add_child(_make_text_button("+ ADD $10,000", _add_cash))
+
+    box.add_child(_make_label("Quick start (fresh game):", 19, Color(0.8, 0.8, 0.84)))
+    for preset in SPAWN_PRESETS:
+        var p: Dictionary = preset
+        var pos: Vector3 = p["pos"]
+        box.add_child(_make_text_button("▶ " + str(p["name"]), _cheat_spawn.bind(pos)))
+
+    box.add_child(_make_text_button("✕ CLOSE", _close_cheats))
+
+
+func _noop() -> void :
+    pass
+
+
+# Generic ON/OFF cheat bound to a GameManager bool property.
+func _add_bool_cheat(box: VBoxContainer, label: String, flag: String) -> void :
+    var b: = _make_text_button("", _noop)
+    _refresh_flag_btn(b, label, flag)
+    b.pressed.connect(_toggle_flag.bind(b, label, flag))
+    box.add_child(b)
+
+
+func _refresh_flag_btn(btn: Button, label: String, flag: String) -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    var on: bool = gm != null and bool(gm.get(flag))
+    btn.text = label + ":  " + ("ON" if on else "OFF")
+    btn.add_theme_color_override("font_color", Color(0.5, 1.0, 0.55) if on else Color(0.85, 0.72, 0.42))
+
+
+func _toggle_flag(btn: Button, label: String, flag: String) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        gm.set(flag, not bool(gm.get(flag)))
+        if gm.has_method("save_game"):
+            gm.save_game()
+    _refresh_flag_btn(btn, label, flag)
+
+
+# Generic multi-state cheat: options is [[display, value], ...].
+func _add_cycle_cheat(box: VBoxContainer, label: String, flag: String, options: Array) -> void :
+    var b: = _make_text_button("", _noop)
+    _refresh_cycle_btn(b, label, flag, options)
+    b.pressed.connect(_cycle_flag.bind(b, label, flag, options))
+    box.add_child(b)
+
+
+func _refresh_cycle_btn(btn: Button, label: String, flag: String, options: Array) -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    var v: float = float(gm.get(flag)) if gm != null else 0.0
+    var disp: String = str(options[0][0])
+    for opt in options:
+        if absf(float(opt[1]) - v) < 0.001:
+            disp = str(opt[0])
+            break
+    btn.text = label + ":  " + disp
+
+
+func _cycle_flag(btn: Button, label: String, flag: String, options: Array) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm == null:
+        return
+    var v: float = float(gm.get(flag))
+    var cur: int = 0
+    for i in options.size():
+        if absf(float(options[i][1]) - v) < 0.001:
+            cur = i
+            break
+    gm.set(flag, options[(cur + 1) % options.size()][1])
+    if gm.has_method("save_game"):
+        gm.save_game()
+    _refresh_cycle_btn(btn, label, flag, options)
+
+
+func _add_cash() -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and gm.has_method("add_cash"):
+        gm.add_cash(10000)
+
+
+func _cheat_spawn(pos: Vector3) -> void :
+    _play_click_sfx()
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm:
+        if gm.has_method("reset_save"):
+            gm.reset_save()
+        gm.player_spawn_override = pos
+        gm.has_spawn_override = true
+    _go_to_play()
+
+
+func _close_cheats() -> void :
+    _play_click_sfx()
+    if _cheats_overlay != null and is_instance_valid(_cheats_overlay):
+        _cheats_overlay.queue_free()
+    _cheats_overlay = null
 
 
 func _go_to_play() -> void :

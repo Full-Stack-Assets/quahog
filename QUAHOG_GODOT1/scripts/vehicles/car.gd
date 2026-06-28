@@ -116,6 +116,16 @@ func _ready() -> void :
     _snap_camera()
 
     set_physics_process(true)
+    _set_dormant(true)   # parked cars are frozen + skip _drive until entered, so
+                         # the map can be full of takeable cars at near-zero cost
+
+
+# A parked car freezes its physics body and stops per-frame driving; entering
+# wakes it. Lets us scatter many drivable cars without paying for them all.
+func _set_dormant(d: bool) -> void :
+    if sphere:
+        sphere.freeze = d
+    set_physics_process(not d)
 
 
 func place_at(pos: Vector3, yaw_deg: float) -> void :
@@ -143,6 +153,7 @@ func place_at(pos: Vector3, yaw_deg: float) -> void :
 
 func enter(_driver: Node) -> void :
     active = true
+    _set_dormant(false)   # wake the physics body
     if camera:
         camera.make_current()
     if engine_sound and not engine_sound.playing:
@@ -165,7 +176,9 @@ func exit() -> Vector3:
         screech_sound.stop()
 
     var right: Vector3 = vehicle_model.global_basis.x.normalized()
-    return vehicle_model.global_position + right * 2.4 + Vector3(0, 0.6, 0)
+    var out_pos: = vehicle_model.global_position + right * 2.4 + Vector3(0, 0.6, 0)
+    _set_dormant(true)   # re-park: stop paying physics for the car we just left
+    return out_pos
 
 
 func set_drive_input(steer: float, throttle: float) -> void :
@@ -190,6 +203,8 @@ func _drive(delta: float) -> void :
 
     input.x = _steer if (active and grounded) else 0.0
     input.z = (_throttle * max_throttle) if (active and grounded) else 0.0
+    if GameManager and GameManager.cheat_car_turbo:
+        input.z *= 2.0   # turbo: double top speed / acceleration
 
     var direction: float = sign(linear_speed)
     if direction == 0.0:

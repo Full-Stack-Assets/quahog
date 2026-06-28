@@ -18,6 +18,58 @@ var wanted_level: int = 0
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
 
+# Cheats (toggled from the main-menu CHEATS panel; persisted with the save).
+# no_police suppresses all wanted-heat so you can test freely. Defaults ON.
+var cheat_no_police: bool = true
+var cheat_godmode: bool = false
+# Forced time of day: -1 = normal day/night clock; otherwise a fixed day_phase
+# (0=dusk, 0.25=night, 0.5=dawn, 0.75=midday).
+var cheat_time_phase: float = -1.0
+var cheat_infinite_ammo: bool = false
+var cheat_all_weapons: bool = false
+var cheat_oneshot: bool = false
+var cheat_rapidfire: bool = false
+var cheat_super_speed: bool = false
+var cheat_super_jump: bool = false
+var cheat_infinite_cash: bool = false
+var cheat_car_turbo: bool = false
+var cheat_force_rain: int = -1     # -1 auto · 0 forced dry · 1 forced rain
+var cheat_traffic_mult: float = 1.0
+var cheat_time_scale: float = 1.0  # global slow-mo / fast-forward
+var cheat_teleport_anywhere: bool = false
+
+
+# All cheat flags, keyed for compact save/load (avoids a giant literal twice).
+func _cheat_dict() -> Dictionary:
+    return {
+        "no_police": cheat_no_police, "godmode": cheat_godmode,
+        "time_phase": cheat_time_phase, "inf_ammo": cheat_infinite_ammo,
+        "all_weapons": cheat_all_weapons, "oneshot": cheat_oneshot,
+        "rapidfire": cheat_rapidfire, "super_speed": cheat_super_speed,
+        "super_jump": cheat_super_jump, "inf_cash": cheat_infinite_cash,
+        "car_turbo": cheat_car_turbo, "force_rain": cheat_force_rain,
+        "traffic_mult": cheat_traffic_mult, "time_scale": cheat_time_scale,
+        "tp_anywhere": cheat_teleport_anywhere,
+    }
+
+
+func _load_cheats(d: Dictionary) -> void :
+    cheat_no_police = bool(d.get("no_police", true))
+    cheat_godmode = bool(d.get("godmode", false))
+    cheat_time_phase = float(d.get("time_phase", -1.0))
+    cheat_infinite_ammo = bool(d.get("inf_ammo", false))
+    cheat_all_weapons = bool(d.get("all_weapons", false))
+    cheat_oneshot = bool(d.get("oneshot", false))
+    cheat_rapidfire = bool(d.get("rapidfire", false))
+    cheat_super_speed = bool(d.get("super_speed", false))
+    cheat_super_jump = bool(d.get("super_jump", false))
+    cheat_infinite_cash = bool(d.get("inf_cash", false))
+    cheat_car_turbo = bool(d.get("car_turbo", false))
+    cheat_force_rain = int(d.get("force_rain", -1))
+    cheat_traffic_mult = float(d.get("traffic_mult", 1.0))
+    cheat_time_scale = float(d.get("time_scale", 1.0))
+    cheat_teleport_anywhere = bool(d.get("tp_anywhere", false))
+
 # Last known player position/heading, persisted so the menu can offer Continue.
 var saved_pos: = Vector3.ZERO
 var saved_yaw: float = 0.0
@@ -52,6 +104,8 @@ func add_cash(amount: int) -> void :
     save_game()
 
 func spend_cash(amount: int) -> bool:
+    if cheat_infinite_cash:
+        return true
     if cash < amount:
         notify.emit("Not enough cash.")
         return false
@@ -88,6 +142,7 @@ func save_game() -> void :
         "has_pos": has_saved_pos,
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
+        "cheats": _cheat_dict(),
     }
     var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
     if f:
@@ -109,6 +164,9 @@ func load_game() -> void :
     cash = int(data.get("cash", STARTING_CASH))
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
+    var cd: Variant = data.get("cheats", {})
+    if cd is Dictionary:
+        _load_cheats(cd)
     has_saved_pos = bool(data.get("has_pos", false))
     if has_saved_pos:
         saved_pos = Vector3(float(data.get("px", 0.0)), float(data.get("py", 0.0)), float(data.get("pz", 0.0)))

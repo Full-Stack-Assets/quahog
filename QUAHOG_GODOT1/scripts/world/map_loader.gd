@@ -98,10 +98,18 @@ var _asphalt_tex: Texture2D = null
 var _buildings_root: Node3D = null
 var _tiles: Dictionary = {}                # Vector2i tile -> MeshInstance3D
 var _stream_radius: int = 2
+# Roads stream per-tile too (tiles/r_X_Y.json), so the ~38k-road network isn't
+# all built at load. _junctions (arterial intersections) is computed once up front
+# for stop-bar/crosswalk placement inside the streamed tiles.
+var _roads_root: Node3D = null
+var _road_tiles: Dictionary = {}           # Vector2i tile -> Node3D
+var _junctions: Dictionary = {}
 
 # Full data extent (slice x = east, y = north) with margin, for the ground plane,
-# road network, and land-use overlays (all built once up front).
-const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 23000.0)
+# road network, and land-use overlays (all built once up front). Extends ~82 km
+# north of New Bedford up the RT-140 / RT-24 / I-93 corridor through Brockton and
+# Stoughton to the Boston-area towns (Randolph / Canton / Braintree / Quincy).
+const FULL_BBOX: = Rect2(-23500.0, -8500.0, 36000.0, 92000.0)
 
 
 static func to_world(x_east: float, y_north: float, y_up: float = 0.0) -> Vector3:
@@ -130,12 +138,18 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     # are built once. Buildings stream around the player (see stream_buildings).
     _build_ground(parent, FULL_BBOX)
     _build_overlays(parent, FULL_BBOX)
-    _build_roads(parent, FULL_BBOX)
     _build_braga_bridge(parent)
     _build_battleship(parent)
     _buildings_root = Node3D.new()
     _buildings_root.name = "Buildings"
     parent.add_child(_buildings_root)
+    _roads_root = Node3D.new()
+    _roads_root.name = "Roads"
+    parent.add_child(_roads_root)
+    # Scan the slice once (no meshes) for spawn points + arterial junctions, and
+    # build the sparse overhead sign gantries up front. Road surfaces themselves
+    # stream per-tile in stream_buildings().
+    _scan_slice(parent)
     _derive_spawns()
     # Seed the tiles around the initial spawn (NB core) so the player loads into
     # a built city immediately.
@@ -155,6 +169,8 @@ func stream_buildings(center: Vector3) -> void :
             var key: = Vector2i(ctx + dx, cty + dy)
             if not _tiles.has(key):
                 _build_streamed_tile(key)
+            if not _road_tiles.has(key):
+                _build_road_tile(key)
     # Free tiles beyond the radius (with one tile of hysteresis).
     for key in _tiles.keys():
         if absi(key.x - ctx) > r + 1 or absi(key.y - cty) > r + 1:
@@ -162,6 +178,12 @@ func stream_buildings(center: Vector3) -> void :
             if is_instance_valid(node):
                 node.queue_free()
             _tiles.erase(key)
+    for rkey in _road_tiles.keys():
+        if absi(rkey.x - ctx) > r + 1 or absi(rkey.y - cty) > r + 1:
+            var rnode: Node = _road_tiles[rkey]
+            if is_instance_valid(rnode):
+                rnode.queue_free()
+            _road_tiles.erase(rkey)
 
 
 func _build_streamed_tile(key: Vector2i) -> void :
@@ -329,56 +351,30 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
             faces.append(verts[j])
 
 
-func _build_roads(parent: Node3D, bbox: Rect2) -> void :
+# Scan the slice once WITHOUT building road surfaces: derive spawn samples +
+# arterial junctions, and build the sparse overhead sign gantries (these need the
+# whole road length, so they can't come from the clipped per-tile pieces). The
+# asphalt / sidewalks / lane paint stream per-tile in _build_road_tile().
+func _scan_slice(parent: Node3D) -> void :
     var slice: Variant = _read_json("%s/slice-newbedford.json" % MAP_DIR)
     if slice == null or not (slice is Dictionary):
         return
     var roads: Variant = slice.get("roads", [])
     if not (roads is Array):
         return
-    var junctions: Dictionary = _collect_arterial_junctions(roads)
-    var st: = SurfaceTool.new()
-    st.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var sw: = SurfaceTool.new()      # concrete sidewalk aprons
-    sw.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var hf: = SurfaceTool.new()      # highway furniture (guardrails + sign gantries)
+    _junctions = _collect_arterial_junctions(roads)
+    var hf: = SurfaceTool.new()
     hf.begin(Mesh.PRIMITIVE_TRIANGLES)
     var hf_any: = false
-    var ln: = SurfaceTool.new()      # lane markings (edge lines + dashed dividers)
-    ln.begin(Mesh.PRIMITIVE_TRIANGLES)
-    var ln_any: = false
     for r in roads:
         if not (r is Dictionary):
             continue
         var pts: Variant = r.get("points")
         if not (pts is Array) or pts.size() < 2:
             continue
-        # Cull by bbox using the first point (roads are short relative to the region).
-        var p0: Vector2 = Vector2(float(pts[0][0]), float(pts[0][1]))
-        if not bbox.has_point(p0):
-            continue
         var hw: String = str(r.get("highway", "residential"))
         var width: float = float(r.get("width", 6.0))
-        var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
-        _emit_road(st, pts, width * 0.5, rcol)
-        if hw in HIGHWAY_CLASSES:
-            # Limited-access roads: steel guardrails, lane paint, no sidewalk.
-            _emit_guardrail(hf, pts, width * 0.5)
-            hf_any = true
-            if _emit_gantry(hf, pts, width * 0.5, hw):
-                hf_any = true
-            _emit_lane_lines(ln, pts, width * 0.5)
-            _emit_dashes(ln, pts)
-            ln_any = true
-        elif hw != "footway" and hw != "service":
-            # Footways/service alleys don't get curbed sidewalks either.
-            _emit_sidewalk(sw, pts, width * 0.5)
-        if hw in ARTERIAL_CLASSES:
-            _emit_center_double(ln, pts)
-            _emit_stop_bars(ln, pts, width * 0.5, junctions)
-            ln_any = true
         roads_built += 1
-        # Sample the first segment for spawn scaffolding (pos + heading).
         var a0: = Vector2(float(pts[0][0]), float(pts[0][1]))
         var b0: = Vector2(float(pts[1][0]), float(pts[1][1]))
         var mid: = (a0 + b0) * 0.5
@@ -387,30 +383,8 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         if wdir.length_squared() > 0.0001:
             roty = rad_to_deg(atan2(wdir.x, wdir.z))
         _road_samples.append([to_world(mid.x, mid.y, 0.0), roty])
-    st.generate_normals()
-    var mat: = StandardMaterial3D.new()
-    mat.vertex_color_use_as_albedo = true
-    mat.roughness = 0.95
-    if _asphalt_tex:
-        mat.albedo_texture = _asphalt_tex
-        mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
-    st.set_material(mat)
-    var mi: = MeshInstance3D.new()
-    mi.name = "Roads"
-    mi.mesh = st.commit()
-    parent.add_child(mi)
-
-    sw.generate_normals()
-    var smat: = StandardMaterial3D.new()
-    smat.vertex_color_use_as_albedo = true
-    smat.roughness = 0.96
-    smat.cull_mode = BaseMaterial3D.CULL_DISABLED
-    sw.set_material(smat)
-    var smi: = MeshInstance3D.new()
-    smi.name = "Sidewalks"
-    smi.mesh = sw.commit()
-    parent.add_child(smi)
-
+        if hw in HIGHWAY_CLASSES and _emit_gantry(hf, pts, width * 0.5, hw):
+            hf_any = true
     if hf_any:
         hf.generate_normals()
         var hmat: = StandardMaterial3D.new()
@@ -420,21 +394,80 @@ func _build_roads(parent: Node3D, bbox: Rect2) -> void :
         hmat.cull_mode = BaseMaterial3D.CULL_DISABLED
         hf.set_material(hmat)
         var hmi: = MeshInstance3D.new()
-        hmi.name = "HighwayFurniture"
+        hmi.name = "SignGantries"
         hmi.mesh = hf.commit()
         parent.add_child(hmi)
 
-    if ln_any:
-        ln.generate_normals()
-        var lmat: = StandardMaterial3D.new()
-        lmat.vertex_color_use_as_albedo = true
-        lmat.roughness = 0.9
-        lmat.cull_mode = BaseMaterial3D.CULL_DISABLED
-        ln.set_material(lmat)
-        var lmi: = MeshInstance3D.new()
-        lmi.name = "LaneMarkings"
-        lmi.mesh = ln.commit()
-        parent.add_child(lmi)
+
+# Build the road surfaces for one 500 m tile from tiles/r_X_Y.json: asphalt into
+# one (textured) mesh, and sidewalks / guardrails / lane paint / stop bars /
+# crosswalks into a second (vertex-coloured) mesh. Visual only — driving uses the
+# ground plane. Returns nothing; result is parented under _roads_root.
+func _build_road_tile(key: Vector2i) -> void :
+    _road_tiles[key] = null
+    var path: = "%s/tiles/r_%d_%d.json" % [MAP_DIR, key.x, key.y]
+    var data: Variant = _read_json(path)
+    if data == null or not (data is Array):
+        return
+    var asp: = SurfaceTool.new()
+    asp.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var dec: = SurfaceTool.new()
+    dec.begin(Mesh.PRIMITIVE_TRIANGLES)
+    var any: = false
+    var dec_any: = false
+    for piece in data:
+        if not (piece is Dictionary):
+            continue
+        var pts: Variant = piece.get("points")
+        if not (pts is Array) or pts.size() < 2:
+            continue
+        var hw: String = str(piece.get("highway", "residential"))
+        var width: float = float(piece.get("width", 6.0))
+        var rcol: Color = ROAD_COLORS.get(hw, Color(0.27, 0.27, 0.29))
+        _emit_road(asp, pts, width * 0.5, rcol)
+        any = true
+        if hw in HIGHWAY_CLASSES:
+            _emit_guardrail(dec, pts, width * 0.5)
+            _emit_lane_lines(dec, pts, width * 0.5)
+            _emit_dashes(dec, pts)
+            dec_any = true
+        elif hw != "footway" and hw != "service":
+            _emit_sidewalk(dec, pts, width * 0.5)
+            dec_any = true
+        if hw in ARTERIAL_CLASSES:
+            _emit_center_double(dec, pts)
+            _emit_stop_bars(dec, pts, width * 0.5, _junctions)
+            _emit_crosswalks(dec, pts, width * 0.5, _junctions)
+            dec_any = true
+    if not any:
+        return
+    var root: = Node3D.new()
+    root.name = "RoadTile_%d_%d" % [key.x, key.y]
+    asp.generate_normals()
+    var amat: = StandardMaterial3D.new()
+    amat.vertex_color_use_as_albedo = true
+    amat.roughness = 0.95
+    if _asphalt_tex:
+        amat.albedo_texture = _asphalt_tex
+        amat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+    asp.set_material(amat)
+    var ami: = MeshInstance3D.new()
+    ami.name = "Asphalt"
+    ami.mesh = asp.commit()
+    root.add_child(ami)
+    if dec_any:
+        dec.generate_normals()
+        var dmat: = StandardMaterial3D.new()
+        dmat.vertex_color_use_as_albedo = true
+        dmat.roughness = 0.9
+        dmat.cull_mode = BaseMaterial3D.CULL_DISABLED
+        dec.set_material(dmat)
+        var dmi: = MeshInstance3D.new()
+        dmi.name = "Detail"
+        dmi.mesh = dec.commit()
+        root.add_child(dmi)
+    _roads_root.add_child(root)
+    _road_tiles[key] = root
 
 
 # Concrete apron strips flanking a road (visual only; the ground plane carries
@@ -557,6 +590,32 @@ func _emit_stop_bars(st: SurfaceTool, pts: Array, half: float, junctions: Dictio
         var center: = node + d * 2.5
         var bw: float = half * 0.9
         _strip(st, center - perp * bw, center + perp * bw, d, 0.3, COL_LINE)
+
+
+# Continental ("zebra") crosswalk on each arterial approach to a junction:
+# stripes oriented along the travel direction, spaced across the carriageway,
+# sitting just inside the stop bar.
+func _emit_crosswalks(st: SurfaceTool, pts: Array, half: float, junctions: Dictionary) -> void :
+    var ends: Array = [PackedInt32Array([0, 1]), PackedInt32Array([pts.size() - 1, pts.size() - 2])]
+    for ei: int in range(ends.size()):
+        var e: PackedInt32Array = ends[ei]
+        var node: = Vector2(float(pts[e[0]][0]), float(pts[e[0]][1]))
+        var key: = Vector2i(roundi(node.x), roundi(node.y))
+        if int(junctions.get(key, 0)) < 3:
+            continue
+        var nxt: = Vector2(float(pts[e[1]][0]), float(pts[e[1]][1]))
+        var d: = (nxt - node)
+        if d.length_squared() < 0.0001:
+            continue
+        d = d.normalized()
+        var perp: = Vector2(-d.y, d.x)
+        var reach: float = half * 0.85
+        var a_near: = node + d * 0.6
+        var a_far: = node + d * 2.1
+        var off: float = -reach
+        while off <= reach + 0.001:
+            _strip(st, a_near + perp * off, a_far + perp * off, perp, 0.22, COL_LINE)
+            off += 0.9
 
 
 func _emit_center_double(st: SurfaceTool, pts: Array) -> void :
@@ -895,12 +954,17 @@ func _build_overlays(parent: Node3D, bbox: Rect2) -> void :
 func _derive_spawns() -> void :
     if _road_samples.is_empty():
         return
-    # Player spawns on the road nearest the map origin (the NB core).
+    # Player spawns on the street nearest downtown New Bedford (by the Whaling
+    # Museum / historic district) rather than the bare map origin, so a new game
+    # starts somewhere recognizable instead of an arbitrary waterfront edge.
+    var anchor: = Vector2(-219.0, 107.0)   # world (x, z) of the downtown core
     var best: = 0
     var best_d: = INF
     for i in _road_samples.size():
         var p: Vector3 = _road_samples[i][0]
-        var d: = p.x * p.x + p.z * p.z
+        var dx: float = p.x - anchor.x
+        var dz: float = p.z - anchor.y
+        var d: = dx * dx + dz * dz
         if d < best_d:
             best_d = d
             best = i
@@ -916,7 +980,7 @@ func _derive_spawns() -> void :
         var s: Array = _road_samples[i2]
         var pos: Vector3 = s[0]
         npc_waypoints.append(pos)
-        if car_slots.size() < 40:
+        if car_slots.size() < 120:
             car_slots.append([Vector3(pos.x, 0.0, pos.z), float(s[1])])
         if light_slots.size() < 60:
             light_slots.append(Vector3(pos.x, 0.0, pos.z))
