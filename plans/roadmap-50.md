@@ -63,5 +63,5 @@ commit. Checkboxes flip as they land.
 46. [ ] Streaming radius + per-frame build budget tuning.
 47. [ ] 200-car pool perf pass (dormancy/instancing).
 48. [ ] Web VRAM/texture-compression tuning.
-49. [ ] On-screen error/telemetry overlay for web debugging.
+49. [x] On-screen error/telemetry overlay for web debugging.
 50. [x] Loading-screen progress + faster first paint.

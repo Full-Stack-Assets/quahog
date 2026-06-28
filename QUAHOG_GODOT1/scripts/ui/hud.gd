@@ -24,6 +24,8 @@ var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
 var _clock_label: Label = null
+var _debug_label: Label = null
+var _debug_t: float = 0.0
 var _speed_label: Label = null
 var _driving_now: bool = false
 var _pause_panel: Control
@@ -88,6 +90,7 @@ func _ready() -> void :
     _build_pause()
     _build_radio()
     _build_edit_banner()
+    _build_debug()
 
     _load_layout()
 
@@ -337,6 +340,7 @@ func _set_objective(active: bool, text: String, target: Vector3) -> void :
 
 
 func _process(_delta: float) -> void :
+    _update_debug(_delta)
     # World clock + weather readout.
     if _clock_label:
         var gm: = get_node_or_null("/root/GameManager")
@@ -838,6 +842,45 @@ func _on_cam_pressed() -> void :
         gm.toggle_cam_flip()
     if _player and _player.has_method("snap_drive_camera"):
         _player.snap_drive_camera()
+
+
+# On-screen telemetry overlay (toggled via the Debug Overlay cheat). Pure
+# read-out of engine Performance monitors + player/world state for diagnosing
+# the web build without a console.
+func _build_debug() -> void :
+    _debug_label = Label.new()
+    _apply_font(_debug_label, 22, Color(0.6, 1.0, 0.7))
+    _debug_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+    _debug_label.add_theme_constant_override("outline_size", 5)
+    _debug_label.visible = false
+    _root.add_child(_debug_label)
+    _debug_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    _debug_label.position = Vector2(28, 280)
+
+
+func _update_debug(delta: float) -> void :
+    if _debug_label == null:
+        return
+    var on: bool = GameManager != null and GameManager.cheat_show_debug
+    if on != _debug_label.visible:
+        _debug_label.visible = on
+    if not on:
+        return
+    _debug_t += delta
+    if _debug_t < 0.25:        # refresh 4x/sec, not every frame
+        return
+    _debug_t = 0.0
+    var fps: float = Engine.get_frames_per_second()
+    var draw: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+    var prims: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+    var vmem: float = Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+    var objs: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+    var lines: = ["FPS %d   draw %d   prim %dk" % [int(fps), draw, int(prims / 1000.0)],
+                  "vram %.0f MB   nodes %d" % [vmem, objs]]
+    if _player != null and is_instance_valid(_player):
+        var p: Vector3 = _player.global_position
+        lines.append("pos %.0f, %.0f   tile %d_%d" % [p.x, -p.z, int(floor(p.x / 500.0)), int(floor(-p.z / 500.0))])
+    _debug_label.text = "\n".join(lines)
 
 
 func _on_radio_station(_index: int, station_name: String) -> void :

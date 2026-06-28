@@ -53,6 +53,7 @@ var cheat_force_rain: int = -1     # -1 auto · 0 forced dry · 1 forced rain
 var cheat_traffic_mult: float = 1.0
 var cheat_time_scale: float = 1.0  # global slow-mo / fast-forward
 var cheat_teleport_anywhere: bool = false
+var cheat_show_debug: bool = false   # on-screen FPS/mem/telemetry overlay
 # Chase-cam side: false = behind the car, true = flipped to the other side (CAM button).
 var cam_flip: bool = false
 # Graphics quality: 0=Low (mobile), 1=Medium, 2=High. Affects streaming radius,
@@ -126,6 +127,7 @@ func _cheat_dict() -> Dictionary:
         "car_turbo": cheat_car_turbo, "force_rain": cheat_force_rain,
         "traffic_mult": cheat_traffic_mult, "time_scale": cheat_time_scale,
         "tp_anywhere": cheat_teleport_anywhere, "cam_flip": cam_flip,
+        "show_debug": cheat_show_debug,
     }
 
 
@@ -146,6 +148,7 @@ func _load_cheats(d: Dictionary) -> void :
     cheat_time_scale = float(d.get("time_scale", 1.0))
     cheat_teleport_anywhere = bool(d.get("tp_anywhere", false))
     cam_flip = bool(d.get("cam_flip", false))
+    cheat_show_debug = bool(d.get("show_debug", false))
 
 # Last known player position/heading, persisted so the menu can offer Continue.
 var saved_pos: = Vector3.ZERO
