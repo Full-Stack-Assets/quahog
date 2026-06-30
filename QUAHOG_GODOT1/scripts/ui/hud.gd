@@ -28,7 +28,9 @@ var _speed_label: Label = null
 var _driving_now: bool = false
 var _pause_panel: Control
 var _settings_panel: Control
+var _controls_panel: Control
 var _quality_option: OptionButton
+var _pause_stats_label: Label
 var _edit_banner: Control
 var _font: Font
 
@@ -546,12 +548,21 @@ func _build_pause() -> void :
     _apply_font(title, 64, Color(0.96, 0.81, 0.45))
     vbox.add_child(title)
 
+    _pause_stats_label = Label.new()
+    _pause_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _pause_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _pause_stats_label.custom_minimum_size = Vector2(520, 120)
+    _apply_font(_pause_stats_label, 22, Color(0.9, 0.9, 0.84))
+    vbox.add_child(_pause_stats_label)
+
     vbox.add_child(_menu_button("Resume", _toggle_pause))
     vbox.add_child(_menu_button("Settings", _open_settings))
+    vbox.add_child(_menu_button("Controls", _open_controls))
     vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
     vbox.add_child(_menu_button("Main Menu", _go_to_menu))
 
     _build_settings()
+    _build_controls()
 
 
 # Audio settings overlay (web parity): Master / Music / SFX volume sliders,
@@ -607,6 +618,59 @@ func _build_settings() -> void :
     vbox.add_child(back)
 
 
+func _build_controls() -> void :
+    _controls_panel = Control.new()
+    _controls_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _controls_panel.visible = false
+    _root.add_child(_controls_panel)
+    _controls_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.9)
+    _controls_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _controls_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var panel: = VBoxContainer.new()
+    panel.add_theme_constant_override("separation", 14)
+    panel.custom_minimum_size = Vector2(760, 0)
+    center.add_child(panel)
+
+    var title: = Label.new()
+    title.text = "CONTROLS"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 56, Color(0.96, 0.81, 0.45))
+    panel.add_child(title)
+
+    var body: = Label.new()
+    body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    body.custom_minimum_size = Vector2(760, 0)
+    body.text = "\n".join([
+        "Move  WASD / left stick",
+        "Jump  SPACE",
+        "Sprint  SHIFT",
+        "Use  E",
+        "Enter / exit car  F",
+        "Buy business  B",
+        "Fire / aim  Mouse buttons",
+        "Reload  R",
+        "Swap weapon  Q",
+        "Crouch  C",
+        "Horn  H",
+        "Handbrake  SPACE while driving",
+        "Sleep at safehouse  T",
+        "Pause  ESC",
+    ])
+    _apply_font(body, 24, Color(0.92, 0.9, 0.86))
+    panel.add_child(body)
+
+    panel.add_child(_menu_button("Back", _close_controls))
+
+
 func _volume_row(label_text: String, bus_name: String) -> Control:
     var row: = VBoxContainer.new()
     row.add_theme_constant_override("separation", 4)
@@ -650,6 +714,21 @@ func _open_settings() -> void :
 func _close_settings() -> void :
     if _settings_panel:
         _settings_panel.visible = false
+    if _pause_panel:
+        _pause_panel.visible = true
+
+
+func _open_controls() -> void :
+    if _pause_panel:
+        _pause_panel.visible = false
+    if _controls_panel:
+        _controls_panel.visible = true
+        _controls_panel.move_to_front()
+
+
+func _close_controls() -> void :
+    if _controls_panel:
+        _controls_panel.visible = false
     if _pause_panel:
         _pause_panel.visible = true
 
@@ -1005,6 +1084,25 @@ func _on_near_buy_changed(index: int) -> void :
     _buy_prompt.visible = true
 
 
+func _refresh_pause_stats() -> void :
+    if _pause_stats_label == null:
+        return
+    var mission_name: String = "Free roam"
+    if _story_mission and _story_mission.has_method("current_title"):
+        mission_name = str(_story_mission.current_title())
+    var fronts: String = "0/0"
+    if BusinessManager:
+        fronts = "%d/%d" % [GameManager.businesses_owned(), BusinessManager.business_count()]
+    _pause_stats_label.text = "Cash  $%d\nMission  %s\nCompleted jobs  %d\nFronts  %s   •   Scrimshaw  %d/%d" % [
+        GameManager.cash,
+        mission_name,
+        GameManager.missions_completed,
+        fronts,
+        GameManager.scrimshaw_found(),
+        GameManager.SCRIMSHAW_TOTAL,
+    ]
+
+
 func _on_interactable_changed(prompt: String) -> void :
     if not _prompt_label:
         return
@@ -1034,8 +1132,12 @@ func _toggle_pause() -> void :
     var paused: = not get_tree().paused
     get_tree().paused = paused
     _pause_panel.visible = paused
+    if paused:
+        _refresh_pause_stats()
     if not paused and _settings_panel:
         _settings_panel.visible = false
+    if not paused and _controls_panel:
+        _controls_panel.visible = false
 
 
 func _go_to_menu() -> void :

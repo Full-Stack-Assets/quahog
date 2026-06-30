@@ -179,6 +179,13 @@ func _current_step() -> Dictionary:
     return steps[si]
 
 
+func current_title() -> String:
+    var mi: int = GameManager.campaign_mi if GameManager else 0
+    if mi < 0 or mi >= MISSIONS.size():
+        return "Free roam"
+    return str(MISSIONS[mi]["title"])
+
+
 func _process(_delta: float) -> void :
     if player == null or not is_instance_valid(player):
         return

@@ -110,6 +110,11 @@ These are the highest-leverage moves, in order:
 41. **Wet-road handling** — rain reduces tire grip and lengthens braking distances (`car.gd`). **DONE**
 42. **Tire skid marks** — drifting and handbrake skids stamp fading road decals (`car.gd`). **DONE**
 
+### Tier 12 — Pause-menu usability
+
+43. **Controls reference screen** — in-game controls overlay from pause (`hud.gd`). **DONE**
+44. **Pause progression summary** — pause menu now shows cash, mission, jobs, fronts, and scrimshaw (`hud.gd`). **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -316,7 +321,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | G8 | Pause menu + settings (volume, shadows, effects) |
 | G9 | Main menu: New / Continue / Load / Settings |
 | G10 | Multiple save slots |
-| G11 | Controls reference screen |
+| G11 | Controls reference screen | **[Godot]** done |
 | G12 | Coastal Neon UI theme (Courier, neon palette) |
 | G13 | Subtitles + dialogue UI |
 | G14 | Weapon wheel / inventory UI |
