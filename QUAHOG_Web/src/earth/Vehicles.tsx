@@ -59,9 +59,10 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
 
   return (
     <group ref={root} position={[0, s.ride - s.wheelR, 0]}>
-      {/* body — rounded shell, reflective automotive paint */}
+      {/* body — rounded shell, clear-coated automotive paint (metallic base +
+          a glossy clear layer over it, the way real car paint reads) */}
       <RoundedBox args={[s.W, s.H, s.L]} radius={Math.min(0.16, s.H * 0.35)} smoothness={3} position={[0, s.y, 0]} castShadow>
-        <meshStandardMaterial color={color} metalness={0.55} roughness={0.32} envMapIntensity={1.2} />
+        <meshPhysicalMaterial color={color} metalness={0.6} roughness={0.4} clearcoat={1} clearcoatRoughness={0.08} envMapIntensity={1.3} />
       </RoundedBox>
       {/* long hood accent for sports cars */}
       {s.hood && (
@@ -74,10 +75,10 @@ export function Vehicle({ type, color, brake }: { type: VehicleType; color: stri
       <RoundedBox args={[cabW, s.cabH, s.cabL]} radius={0.1} smoothness={3} position={[0, s.y + s.H / 2 + s.cabH / 2 - 0.02, s.cabZ]} castShadow>
         <meshStandardMaterial color={s.glass} metalness={0.35} roughness={0.12} envMapIntensity={1.6} />
       </RoundedBox>
-      {/* roof cap (body color) */}
+      {/* roof cap (body color, clear-coated to match the body) */}
       <mesh position={[0, s.y + s.H / 2 + s.cabH - 0.04, s.cabZ]}>
         <boxGeometry args={[cabW + 0.02, 0.08, s.cabL]} />
-        <meshStandardMaterial color={color} metalness={0.55} roughness={0.34} envMapIntensity={1.2} />
+        <meshPhysicalMaterial color={color} metalness={0.6} roughness={0.4} clearcoat={1} clearcoatRoughness={0.08} envMapIntensity={1.3} />
       </mesh>
       {/* belt line trim along each flank (subtle chrome) */}
       {[-1, 1].map((sx) => (
