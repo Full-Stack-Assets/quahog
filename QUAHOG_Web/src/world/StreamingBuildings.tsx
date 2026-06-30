@@ -94,6 +94,46 @@ function parapet(b: Building, h: number, col: THREE.Color): THREE.BufferGeometry
   return g;
 }
 
+// A plinth / base course: a short stone band hugging the foot of the building and
+// projecting slightly proud of the wall, so blocks read with a real granite base
+// at street level instead of meeting the pavement as a bare extruded box. Same
+// deterministic outward-winding approach as the parapet.
+function plinth(b: Building, h: number, col: THREE.Color): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3) return null;
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  const cz = -cn;
+  const PUSH = 0.07; // metres the base course projects beyond the wall face
+  const pos: number[] = [], colr: number[] = [], uv: number[] = [];
+  const push = (x: number, y: number, z: number) => { pos.push(x, y, z); colr.push(col.r, col.g, col.b); uv.push(0.04, 0.04); };
+  for (let i = 0; i < fp.length; i++) {
+    const [e0, n0] = fp[i], [e1, n1] = fp[(i + 1) % fp.length];
+    const ax = e0, az = -n0, bx = e1, bz = -n1;
+    const ex = bx - ax, ez = bz - az;
+    const el = Math.hypot(ex, ez);
+    if (el < 1e-4) continue;
+    // outward unit normal (perp to the edge, oriented away from the centroid)
+    let nx = -ez / el, nz = ex / el;
+    const mx = (ax + bx) / 2 - cx, mz = (az + bz) / 2 - cz;
+    if (nx * mx + nz * mz < 0) { nx = -nx; nz = -nz; }
+    const ox = nx * PUSH, oz = nz * PUSH;
+    const Ax = ax + ox, Az = az + oz, Bx = bx + ox, Bz = bz + oz;
+    const A0: [number, number, number] = [Ax, 0, Az], B0: [number, number, number] = [Bx, 0, Bz];
+    const B1: [number, number, number] = [Bx, h, Bz], A1: [number, number, number] = [Ax, h, Az];
+    if ((-ez) * nx + ex * nz >= 0) { push(...A0); push(...B0); push(...B1); push(...A0); push(...B1); push(...A1); }
+    else { push(...A0); push(...B1); push(...B0); push(...A0); push(...A1); push(...B1); }
+  }
+  if (!pos.length) return null;
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(colr, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+
 function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
   const geoms: THREE.BufferGeometry[] = [];
   buildings.forEach((b, i) => {
@@ -140,6 +180,12 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
       const coping = wall.clone().lerp(new THREE.Color("#cfc9bc"), 0.4);
       const p = parapet(b, 0.7 + ((i * 0.6180339887) % 1) * 0.7, coping);
       if (p) geoms.push(p);
+    }
+    // granite base course at street level (all real buildings tall enough to have one)
+    if (!isHero && b.height >= 3.5) {
+      const baseCol = wall.clone().lerp(new THREE.Color("#39362f"), 0.5);
+      const pl = plinth(b, Math.min(1.4, b.height * 0.16), baseCol);
+      if (pl) geoms.push(pl);
     }
   });
   return geoms.length ? mergeGeometries(geoms, false) : null;
