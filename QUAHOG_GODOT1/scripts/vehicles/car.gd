@@ -411,8 +411,25 @@ var cam_pitch: float = 0.0
 
 
 func set_cam_orbit(yaw: float, pitch: float) -> void :
-    cam_yaw = yaw
+    cam_yaw = clampf(yaw, -0.85, 0.85)
     cam_pitch = clampf(pitch, -0.35, 0.9)
+
+
+# +1 when the chase cam is behind the car, -1 when it has swung in front so
+# throttle/steer stay "push up = away from the lens".
+func drive_view_flip() -> float:
+    if camera == null or vehicle_model == null:
+        return 1.0
+    var car_fwd: = vehicle_model.global_basis.z
+    car_fwd.y = 0.0
+    if car_fwd.length_squared() < 1e-6:
+        return 1.0
+    car_fwd = car_fwd.normalized()
+    var to_cam: = camera.global_position - vehicle_model.global_position
+    to_cam.y = 0.0
+    if to_cam.length_squared() < 1e-6:
+        return 1.0
+    return -1.0 if to_cam.normalized().dot(car_fwd) > 0.25 else 1.0
 
 
 func _chase_pos(car_pos: Vector3) -> Vector3:

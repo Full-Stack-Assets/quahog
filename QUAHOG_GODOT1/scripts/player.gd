@@ -64,6 +64,9 @@ var _autosave_t: float = 0.0
 var _driving: bool = false
 var current_car: Node = null
 # Free-look orbit while driving — accumulates look input, eases back to centre.
+# Yaw is clamped so the chase cam never swings to the side/front (profile view
+# makes car-local throttle read as sideways on screen and feels inverted).
+const CAR_CAM_YAW_MAX: float = 0.85
 var _car_cam_yaw: float = 0.0
 var _car_cam_pitch: float = 0.0
 var _cars: Array = []
@@ -540,6 +543,10 @@ func try_enter_vehicle() -> void :
 func enter_car(car: Node) -> void :
     _driving = true
     current_car = car
+    _car_cam_yaw = 0.0
+    _car_cam_pitch = 0.0
+    if car.has_method("set_cam_orbit"):
+        car.set_cam_orbit(0.0, 0.0)
     set_collision_layer_value(2, false)
     _set_capsule(true)
     visible = false
@@ -638,8 +645,19 @@ func _physics_process(delta: float) -> void :
         else:
             var kb_drive: = Input.get_vector("move_left", "move_right", "move_back", "move_forward")
             # Stick up (negative y) = gas; stick down = reverse/brake. Keyboard unchanged.
-            var steer: float = clampf(_move_input.x + kb_drive.x, -1.0, 1.0)
-            var throttle: float = clampf(-_move_input.y + kb_drive.y, -1.0, 1.0)
+            var raw: = Vector2(_move_input.x + kb_drive.x, -_move_input.y + kb_drive.y)
+            if raw.length() > 1.0:
+                raw = raw.normalized()
+            var steer: float = raw.x
+            var throttle: float = raw.y
+            # If the chase cam slipped in front of the car, gas would drive toward
+            # the lens — flip so push-up always means "away from camera".
+            if current_car.has_method("drive_view_flip"):
+                var flip: float = current_car.drive_view_flip()
+                steer *= flip
+                throttle *= flip
+            steer = clampf(steer, -1.0, 1.0)
+            throttle = clampf(throttle, -1.0, 1.0)
             if current_car.has_method("set_drive_input"):
                 current_car.set_drive_input(steer, throttle)
             if current_car.has_method("set_handbrake"):
@@ -655,8 +673,9 @@ func _physics_process(delta: float) -> void :
                 _car_cam_pitch += _look_delta.y * look_sensitivity
                 _look_delta = Vector2.ZERO
             else:
-                _car_cam_yaw = lerpf(_car_cam_yaw, 0.0, clampf(delta * 3.0, 0.0, 1.0))
-                _car_cam_pitch = lerpf(_car_cam_pitch, 0.0, clampf(delta * 3.0, 0.0, 1.0))
+                _car_cam_yaw = lerpf(_car_cam_yaw, 0.0, clampf(delta * 5.0, 0.0, 1.0))
+                _car_cam_pitch = lerpf(_car_cam_pitch, 0.0, clampf(delta * 5.0, 0.0, 1.0))
+            _car_cam_yaw = clampf(_car_cam_yaw, -CAR_CAM_YAW_MAX, CAR_CAM_YAW_MAX)
             _car_cam_pitch = clampf(_car_cam_pitch, -0.35, 0.9)
             if current_car.has_method("set_cam_orbit"):
                 current_car.set_cam_orbit(_car_cam_yaw, _car_cam_pitch)
