@@ -5,7 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
-import { makeFacadeMaps, makeNoiseNormal } from "./textures";
+import { makeFacadeMaps, makeFacadeNormal } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -243,8 +243,8 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
 function Tile({ buildings, colliders }: { buildings: Building[]; colliders: boolean }) {
   const geom = useMemo(() => tileGeometry(buildings), [buildings]);
   const maps = useMemo(() => makeFacadeMaps(), []);
-  const nrm = useMemo(() => makeNoiseNormal(), []);
-  const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
+  const nrm = useMemo(() => makeFacadeNormal(), []); // brick-aligned relief
+  const nrmScale = useMemo(() => new THREE.Vector2(0.7, 0.7), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
 

@@ -140,6 +140,47 @@ export function makeFacadeMaps() {
   return _facade;
 }
 
+// Normal map matching the masonry albedo: a height field (bricks raised, mortar
+// joints + storey string-courses recessed) converted to a tangent-space normal
+// via Sobel, so walls catch raking light with real brick relief + self-shadow
+// instead of reading flat. Tiles on the same per-floor UV as the facade albedo.
+let _facadeNormal: THREE.Texture | null = null;
+export function makeFacadeNormal(): THREE.Texture {
+  if (_facadeNormal) return _facadeNormal;
+  const S = 128;
+  const [hc, h] = canvas(S);
+  // height field: bright = proud (brick), dark = recessed (joint)
+  h.fillStyle = "#bcbcbc"; h.fillRect(0, 0, S, S);
+  const BH = 8, BW = 26;
+  h.strokeStyle = "#3a3a3a"; h.lineWidth = 2;
+  for (let yy = 0, row = 0; yy <= S; yy += BH, row++) {
+    h.beginPath(); h.moveTo(0, yy); h.lineTo(S, yy); h.stroke();           // bed joints
+    const xoff = (row % 2) * (BW / 2);
+    for (let xx = xoff; xx <= S; xx += BW) { h.beginPath(); h.moveTo(xx, yy); h.lineTo(xx, yy + BH); h.stroke(); } // head joints
+  }
+  h.fillStyle = "#2a2a2a"; h.fillRect(0, 0, S, 2); h.fillRect(0, S - 2, S, 2); // string-course groove
+  const src = h.getImageData(0, 0, S, S).data;
+  const [nc, n] = canvas(S);
+  const dst = n.createImageData(S, S);
+  const ht = (x: number, y: number) => src[(((y + S) % S) * S + ((x + S) % S)) * 4] / 255; // wrap, red = height
+  const k = 2.4; // relief strength
+  for (let y = 0; y < S; y++) for (let x = 0; x < S; x++) {
+    const dx = (ht(x - 1, y) - ht(x + 1, y)) * k;
+    const dy = (ht(x, y - 1) - ht(x, y + 1)) * k;
+    const len = Math.hypot(dx, dy, 1);
+    const i = (y * S + x) * 4;
+    dst.data[i] = Math.round((dx / len * 0.5 + 0.5) * 255);
+    dst.data[i + 1] = Math.round((dy / len * 0.5 + 0.5) * 255);
+    dst.data[i + 2] = Math.round((1 / len * 0.5 + 0.5) * 255);
+    dst.data[i + 3] = 255;
+  }
+  n.putImageData(dst, 0, 0);
+  const t = new THREE.Texture(nc);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  _facadeNormal = asData(t);
+  return _facadeNormal;
+}
+
 /** A 1980s flyer/poster (radio station or street-feast), procedural. */
 export function makePoster(variant: number): THREE.Texture {
   const [c, ctx] = canvas(256);
