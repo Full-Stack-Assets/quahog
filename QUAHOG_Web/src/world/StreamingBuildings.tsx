@@ -38,12 +38,14 @@ function hipRoof(b: Building, roofH: number, col: THREE.Color): THREE.BufferGeom
   for (const [e, n] of fp) { cx += e; cn += n; }
   cx /= fp.length; cn /= fp.length;
   const apex: [number, number, number] = [cx, b.height + roofH, -cn];
+  const EAVE = 1.07; // base ring pushed out from the centroid → roof overhangs walls
   const pos: number[] = [], colr: number[] = [], uv: number[] = [];
   const push = (x: number, y: number, z: number) => { pos.push(x, y, z); colr.push(col.r, col.g, col.b); uv.push(0.04, 0.04); };
   for (let i = 0; i < fp.length; i++) {
     const [e0, n0] = fp[i], [e1, n1] = fp[(i + 1) % fp.length];
-    const a: [number, number, number] = [e0, b.height, -n0];
-    const c: [number, number, number] = [e1, b.height, -n1];
+    // overhang: expand each eave vertex outward from the footprint centroid
+    const a: [number, number, number] = [cx + (e0 - cx) * EAVE, b.height, -(cn + (n0 - cn) * EAVE)];
+    const c: [number, number, number] = [cx + (e1 - cx) * EAVE, b.height, -(cn + (n1 - cn) * EAVE)];
     // face normal (a→c→apex); flip if it points down so roofs catch the sun
     const ux = c[0] - a[0], uy = c[1] - a[1], uz = c[2] - a[2];
     const vx = apex[0] - a[0], vy = apex[1] - a[1], vz = apex[2] - a[2];
