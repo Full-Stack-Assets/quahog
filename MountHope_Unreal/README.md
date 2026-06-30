@@ -62,6 +62,9 @@ Point `UE_ROOT` at your engine install directory. The script invokes
 
 See `Docs/IMPROVEMENT_PLAN.md` for the full roadmap and packaging notes.
 
+**First playable in editor:** `Docs/EDITOR_SETUP.md` (or run
+`Scripts/editor_bootstrap_vertical_slice.py` inside the editor).
+
 ## Open in Unreal
 
 1. Install the latest stable Unreal Engine 5 version available to your desktop

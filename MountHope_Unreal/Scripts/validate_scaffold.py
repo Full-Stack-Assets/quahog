@@ -48,7 +48,12 @@ REQUIRED_FILES = [
     "Data/Economy/businesses.json",
     "Docs/VERTICAL_SLICE.md",
     "Docs/OSM_TO_UNREAL.md",
+    "Docs/EDITOR_SETUP.md",
+    "Docs/IMPROVEMENT_PLAN.md",
+    "Content/README.md",
     "Scripts/build.sh",
+    "Scripts/package.sh",
+    "Scripts/editor_bootstrap_vertical_slice.py",
 ]
 
 EXPECTED_PLUGINS = {

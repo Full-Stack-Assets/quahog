@@ -96,8 +96,8 @@ enabled).
 
 ### Phase 5 — Repo consolidation
 
-Reconcile or retire `QUAHOG_Unreal/` to avoid maintaining two divergent UE
-tracks. `MountHope_Unreal/` is the documented PC/console path.
+`QUAHOG_Unreal/` is marked **legacy** (`QUAHOG_Unreal/LEGACY.md`). Its framework
+patterns live in `MountHope_Unreal/`; do not add new features to the old tree.
 
 ## Local compile & package
 
@@ -106,10 +106,11 @@ export UE_ROOT="/path/to/UE_5.6"
 ./MountHope_Unreal/Scripts/build.sh
 
 # Package (after editor content exists):
-# "$UE_ROOT/Engine/Build/BatchFiles/RunUAT.sh" BuildCookRun \
-#   -project="$(pwd)/MountHope_Unreal/MountHope.uproject" \
-#   -platform=Win64 -clientconfig=Development -cook -stage -pak -archive
+./MountHope_Unreal/Scripts/package.sh
 ```
+
+See `Docs/EDITOR_SETUP.md` for the Phase 1 editor checklist and
+`Scripts/editor_bootstrap_vertical_slice.py` for in-editor automation.
 
 ## CI (cloud sandbox)
 

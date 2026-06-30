@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import sys
 from pathlib import Path
 
 
@@ -124,3 +125,8 @@ if __name__ == "__main__":
     validate_default_config()
     validate_framework_wiring()
     print("MountHope Unreal bootstrap validation passed (UE 5.8 target).")
+    print(
+        "NOTE: QUAHOG_Unreal/ is legacy. Use MountHope_Unreal/ — "
+        "see QUAHOG_Unreal/LEGACY.md",
+        file=sys.stderr,
+    )
