@@ -54,6 +54,7 @@ const HERO_LANDMARKS: Array = [
     {"name": "Fairhaven", "pos": Vector2(1539, 32)},
     {"name": "Dartmouth Mall", "pos": Vector2(-3921, -378), "tag": "mall", "h": 16.0},
     {"name": "Cape Cod Canal", "pos": Vector2(-11050, -47600), "tag": "cape", "h": 20.0},
+    {"name": "Heritage Marina", "pos": Vector2(-10520, -47420), "tag": "marina", "h": 16.0},
     {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
     {"name": "Westport", "pos": Vector2(-11897, 1521)},
     {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
@@ -88,6 +89,11 @@ var _day_phase: float = 0.0
 var _rain: CPUParticles3D = null
 var _weather_t: float = 25.0
 var _raining: bool = false
+var _gloria_flood: MeshInstance3D = null
+var _gloria_flood_y: float = -2.0
+var _gloria_active: bool = false
+var _rain_dir_calm: Vector3 = Vector3(0.05, -1.0, 0.0)
+var _rain_box_calm: Vector3 = Vector3(26.0, 0.5, 26.0)
 # Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
 # but exposes the same spawn fields (player_spawn, car_slots, light_slots,
 # npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
@@ -114,6 +120,34 @@ var _tod_life_t: float = 0.0
 
 func get_wanted_system() -> Node:
     return _wanted_system
+
+
+func set_gloria_storm(active: bool) -> void :
+    if _gloria_active == active:
+        return
+    _gloria_active = active
+    if GameManager:
+        GameManager.gloria_storm_active = active
+    if active:
+        _raining = true
+        if _rain:
+            _rain.emitting = true
+        _weather_t = 9999.0
+        if _gloria_flood:
+            _gloria_flood.visible = true
+        GameManager.show_message("GLORIA — Hurricane Gloria coming ashore. Get to high ground!")
+        if has_node("/root/RadioHooks"):
+            get_node("/root/RadioHooks").call_deferred("on_gloria_started")
+    else:
+        _weather_t = 90.0
+        if _gloria_flood:
+            _gloria_flood.visible = false
+            _gloria_flood_y = -2.0
+            _gloria_flood.position.y = -2.0
+        if _rain:
+            _rain.direction = _rain_dir_calm
+            _rain.emission_box_extents = _rain_box_calm
+        GameManager.show_message("The storm's breaking — skies clearing over the bay.")
 
 
 func _ready() -> void :
@@ -155,6 +189,7 @@ func _ready() -> void :
     HeroHubsScript.build(self)
     _start_audio()
     _setup_weather()
+    _setup_gloria_flood()
     call_deferred("_apply_tod_life")
 
 
@@ -193,6 +228,9 @@ func _place_landmark_beacons() -> void :
         elif tag == "cape":
             m.albedo_color = Color(0.38, 0.55, 0.68)
             m.emission = Color(0.55, 0.82, 0.95)
+        elif tag == "marina":
+            m.albedo_color = Color(0.42, 0.52, 0.62)
+            m.emission = Color(0.55, 0.75, 0.88)
         else:
             m.albedo_color = Color(0.95, 0.72, 0.36)
             m.emission = Color(1.0, 0.74, 0.34)
@@ -261,6 +299,25 @@ func _setup_weather() -> void :
     rain.emitting = false
     add_child(rain)
     _rain = rain
+
+
+func _setup_gloria_flood() -> void :
+    var flood: = MeshInstance3D.new()
+    flood.name = "GloriaFlood"
+    var plane: = PlaneMesh.new()
+    plane.size = Vector2(420.0, 420.0)
+    flood.mesh = plane
+    flood.rotation.x = -PI * 0.5
+    flood.position.y = -2.0
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.08, 0.22, 0.38, 0.62)
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.roughness = 0.06
+    mat.metallic = 0.08
+    flood.material_override = mat
+    flood.visible = false
+    add_child(flood)
+    _gloria_flood = flood
 
 
 
@@ -383,6 +440,20 @@ func _update_weather(delta: float) -> void :
     # Keep the emitter riding above the player.
     if _player != null and is_instance_valid(_player):
         _rain.global_position = _player.global_position + Vector3(0.0, 22.0, 0.0)
+    # Scripted Gloria hurricane overrides the normal rain cycle.
+    if GameManager and GameManager.gloria_storm_active:
+        _raining = true
+        _rain.emitting = true
+        _rain.amount = maxi(420, GameManager.rain_particle_count())
+        _rain.direction = Vector3(0.38, -1.0, 0.14).normalized()
+        _rain.emission_box_extents = Vector3(44.0, 0.5, 44.0)
+        if _env != null:
+            _env.fog_density += 0.0048
+        _update_gloria_flood(delta)
+        return
+    if _rain:
+        _rain.direction = _rain_dir_calm
+        _rain.emission_box_extents = _rain_box_calm
     # Cheat: a forced weather state overrides the timer.
     if GameManager and GameManager.cheat_force_rain >= 0:
         var want: bool = GameManager.cheat_force_rain == 1
@@ -399,6 +470,14 @@ func _update_weather(delta: float) -> void :
     # Rain thickens the haze slightly on top of the day/night base.
     if _raining and _env != null:
         _env.fog_density += 0.0012
+
+
+func _update_gloria_flood(delta: float) -> void :
+    if not _gloria_active or _gloria_flood == null or _player == null:
+        return
+    _gloria_flood.global_position = Vector3(_player.global_position.x, 0.0, _player.global_position.z)
+    _gloria_flood_y = move_toward(_gloria_flood_y, 1.75, delta * 0.32)
+    _gloria_flood.position.y = _gloria_flood_y
 
 
 func _apply_day_night() -> void :

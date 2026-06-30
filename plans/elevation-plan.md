@@ -67,9 +67,16 @@ These are the highest-leverage moves, in order:
 
 ### Tier 5 — Act II & polish (Fall River arc)
 
-19. **Act II missions** — Spindle City + Acquitted (`story_mission.gd`; Braga → Battleship → Borden).  
-20. **Quiet ambient engine** — low-volume cabin rumble while driving (`vehicle_engine_ambient.mp3`).  
-21. **Act III prep** — Gloria storm, Battleship finale (content; not started).
+19. **Act II missions** — Spindle City + Acquitted (`story_mission.gd`; Braga → Battleship → Borden). **DONE**
+20. **Quiet ambient engine** — low-volume cabin rumble while driving (`vehicle_engine_ambient.mp3`). **DONE**
+21. **Act III prep** — Gloria storm, Battleship finale. **DONE** (see Tier 6).
+
+### Tier 6 — Act III finale (Cape & the Storm)
+
+22. **Act III missions** — Heritage Marina, Compound Interest, Gloria, Big Mamie (`story_mission.gd`). **DONE**
+23. **Gloria storm set-piece** — scripted hurricane weather, flood plane, radio barks (`game_world.gd`). **DONE**
+24. **Heritage Marina hub** — Cape yacht-club set dressing (`hero_hubs.gd`). **DONE**
+25. **Web mission parity** — Act III chain in `QUAHOG_Web/src/mission.ts`. **DONE**
 
 ---
 
@@ -92,7 +99,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A7 | “Off the Boat” story opener | **[Godot]** done |
 | A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | **[Godot]** done |
 | A9 | Act II: Spindle City, Acquitted (Borden) | **[Godot]** done |
-| A10 | Act III: Gloria storm, Battleship finale | Content |
+| A10 | Act III: Gloria storm, Battleship finale | **[Godot]** done |
 | A11 | Delivery job polish (markers, payout UX, chains) | **[Both]** |
 | A12 | Side activities: street races, boxing, boat smuggling | **[Both]** |
 | A13 | Collectibles / photo-ops at landmarks | **[Web]** partial |
@@ -142,7 +149,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | B13 | Headlights/taillights/brake/reverse/turn signals | Partial |
 | B14 | Speedometer (MPH/km/h) | **[Both]** |
 | B15 | Tire skid marks + screech audio | Partial |
-| B16 | Engine RPM/audio layers | Partial |
+| B16 | Engine RPM/audio layers | **[Godot]** partial (quiet ambient loop) |
 | B17 | Wheel rotation + suspension animation | |
 | B18 | Water non-drivable | done |
 | B19 | Collision crunch + sparks | Partial |

@@ -147,6 +147,8 @@ var has_saved_pos: bool = false
 # day_phase 0 = dusk; the loop runs dusk→night→dawn→day→dusk.
 var day_phase: float = 0.0
 var raining: bool = false
+# Scripted Act III hurricane — forces heavy rain, wind, and coastal flood visuals.
+var gloria_storm_active: bool = false
 
 func time_string() -> String:
     var hours: float = fmod(day_phase * 24.0 + 18.0, 24.0)

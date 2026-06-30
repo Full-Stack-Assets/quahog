@@ -64,6 +64,36 @@ const MISSIONS: Mission[] = [
       { text: "Run the ledger to Battleship Cove — and lose the tail", target: [-20000, 0, -7400], radius: 40, noHeat: true, reward: 2000 },
     ],
   },
+  // --- Act III — The Cape & the Storm -------------------------------------
+  {
+    title: "Heritage Marina",
+    steps: [
+      { text: "Drive to Chip Worthington's heritage marina on the Cape", target: [-10520, 0, 47420], radius: 40, needCar: true },
+      { text: "Photograph the laundered hull numbers — get out clean", target: [-10520, 0, 47420], radius: 28, noHeat: true, reward: 2500 },
+    ],
+  },
+  {
+    title: "Compound Interest",
+    steps: [
+      { text: "Roll up on the Fake Kennedys' Hyannis compound", target: [-8480, 0, 52100], radius: 32, needCar: true },
+      { text: "Plant the bug in the guest house — ditch the tail", target: [-8480, 0, 52100], radius: 22, noHeat: true, reward: 3000 },
+    ],
+  },
+  {
+    title: "Gloria",
+    steps: [
+      { text: "Gloria's coming ashore — grab wheels and head for high ground", needCar: true },
+      { text: "Ride out the surge at the Hurricane Barrier", target: [860, 0, 2000], radius: 50, needCar: true, reward: 3500 },
+      { text: "Smuggle the ledger across flooded downtown", target: [-560, 0, 90], radius: 55, noHeat: true, reward: 2000 },
+    ],
+  },
+  {
+    title: "Big Mamie",
+    steps: [
+      { text: "Storm's breaking — book it west over the Braga Bridge", target: [-19000, 0, -7000], radius: 55, needCar: true },
+      { text: "Take the deck of the USS Massachusetts — end this", target: [-20000, 0, -7400], radius: 35, reward: 10000 },
+    ],
+  },
 ];
 
 interface MissionState {

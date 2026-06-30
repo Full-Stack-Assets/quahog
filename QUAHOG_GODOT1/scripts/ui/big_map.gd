@@ -40,6 +40,8 @@ const REGIONS: Array = [
     {"name": "Bridgewater", "pos": Vector2(-4113, -39407)},
     {"name": "Brockton", "pos": Vector2(-8100, -49768)},
     {"name": "Cape Cod Canal", "pos": Vector2(-11050, -47600)},
+    {"name": "Heritage Marina", "pos": Vector2(-10520, -47420)},
+    {"name": "Hyannis Compound", "pos": Vector2(-8480, -52100)},
     {"name": "Dartmouth", "pos": Vector2(-3744, 806)},
     {"name": "Stoughton", "pos": Vector2(-14916, -54435)},
     {"name": "Braintree", "pos": Vector2(-6951, -63664)},

@@ -1,7 +1,7 @@
 extends Node
 class_name StoryMission
 
-# Campaign driver: opener + Act I + Act II (Spindle City, Acquitted).
+# Campaign driver: opener + Act I + Act II + Act III (Gloria finale).
 # Steps mirror the web mission chain (world x, z = -north).
 
 signal mission_changed(active: bool, text: String, target: Vector3)
@@ -19,6 +19,10 @@ const LONG_ISLAND_BAR: = Vector3(6092.0, 0.0, -4485.0)
 const BRAGA_BRIDGE: = Vector3(-20372.0, 0.0, -7829.0)
 const BATTLESHIP_COVE: = Vector3(-20180.0, 0.0, -7882.0)
 const BORDEN_HOUSE: = Vector3(-19599.0, 0.0, -7080.0)
+const HERITAGE_MARINA: = Vector3(-10520.0, 0.0, -47420.0)
+const HYANNIS_COMPOUND: = Vector3(-8480.0, 0.0, -52100.0)
+const HURRICANE_BARRIER: = Vector3(860.0, 0.0, -2000.0)
+const DOWNTOWN_NB: = Vector3(-560.0, 0.0, -90.0)
 
 const MISSIONS: Array = [
     {
@@ -73,6 +77,39 @@ const MISSIONS: Array = [
             {"text": "Run the ledger to Battleship Cove — lose the tail", "pos": BATTLESHIP_COVE, "radius": 40.0, "no_heat": true, "reward": 2000},
         ],
         "reward": 0,
+    },
+    {
+        "title": "Heritage Marina",
+        "steps": [
+            {"text": "Drive to Chip Worthington's heritage marina on the Cape", "pos": HERITAGE_MARINA, "radius": 40.0, "need_car": true},
+            {"text": "Photograph the laundered hull numbers — get out clean", "pos": HERITAGE_MARINA, "radius": 28.0, "no_heat": true, "reward": 2500},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "Compound Interest",
+        "steps": [
+            {"text": "Roll up on the Fake Kennedys' Hyannis compound", "pos": HYANNIS_COMPOUND, "radius": 32.0, "need_car": true},
+            {"text": "Plant the bug in the guest house — ditch the tail", "pos": HYANNIS_COMPOUND, "radius": 22.0, "no_heat": true, "reward": 3000},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "Gloria",
+        "steps": [
+            {"text": "Gloria's coming ashore — grab wheels and head for high ground", "need_car": true, "gloria": "start"},
+            {"text": "Ride out the surge at the Hurricane Barrier", "pos": HURRICANE_BARRIER, "radius": 50.0, "need_car": true, "reward": 3500},
+            {"text": "Smuggle the ledger across flooded downtown", "pos": DOWNTOWN_NB, "radius": 55.0, "no_heat": true, "reward": 2000},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "Big Mamie",
+        "steps": [
+            {"text": "Storm's breaking — book it west over the Braga Bridge", "pos": BRAGA_BRIDGE, "radius": 55.0, "need_car": true},
+            {"text": "Take the deck of the USS Massachusetts — end this", "pos": BATTLESHIP_COVE, "radius": 35.0, "reward": 10000},
+        ],
+        "reward": 5000,
     },
 ]
 
@@ -192,6 +229,16 @@ func _advance_step() -> void :
         return
     _sync_marker()
     _emit()
+    _apply_step_weather(_current_step())
+
+
+func _apply_step_weather(step: Dictionary) -> void :
+    if not step.has("gloria"):
+        return
+    if world == null or not world.has_method("set_gloria_storm"):
+        return
+    var mode: String = str(step["gloria"])
+    world.set_gloria_storm(mode == "start")
 
 
 func _finish_mission(mi: int) -> void :
@@ -205,6 +252,9 @@ func _finish_mission(mi: int) -> void :
     GameManager.record_mission_complete()
     GameManager.save_game()
     mission_completed.emit(title)
+    # Gloria storm ends once the hurricane mission wraps; finale runs in the clearing.
+    if mi == 8 and world and world.has_method("set_gloria_storm"):
+        world.set_gloria_storm(false)
 
     if mi == 0:
         GameManager.show_message("Safehouse reached. Welcome to the Narrows. +$%d" % maxi(reward, 150))
@@ -217,13 +267,14 @@ func _finish_mission(mi: int) -> void :
         GameManager.campaign_done = true
         _clear_marker()
         mission_changed.emit(false, "Campaign complete", Vector3.ZERO)
-        if mi >= 5:
-            GameManager.show_message("Act II wrapped — Lady Borden owes you one.")
-        else:
-            GameManager.show_message("Act I wrapped — the harbor's yours.")
+        GameManager.show_message("Act III complete — the Narrows is yours, kid.")
         return
     if mi == 3:
         GameManager.show_message("Act I wrapped — Fall River's next.")
+    elif mi == 5:
+        GameManager.show_message("Act II wrapped — the Cape's calling.")
+    elif mi == 7:
+        GameManager.show_message("The Kennedys are handled — Gloria's on the horizon.")
     var nxt: String = str(MISSIONS[GameManager.campaign_mi]["title"])
     GameManager.show_message("Next job: %s" % nxt)
     _begin_mission(GameManager.campaign_mi)
@@ -240,6 +291,7 @@ func _begin_mission(mi: int) -> void :
         GameManager.show_message(title + " — " + str(MISSIONS[mi]["steps"][0]["text"]))
     _sync_marker()
     _emit()
+    _apply_step_weather(_current_step())
 
 
 func _sync_marker() -> void :

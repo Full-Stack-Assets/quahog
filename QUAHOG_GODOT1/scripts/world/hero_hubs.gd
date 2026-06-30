@@ -1,11 +1,13 @@
 extends RefCounted
 class_name HeroHubs
 
-# Hero district hubs — Dartmouth Mall, Champion City Gym (Brockton), Cape Cod Canal.
+# Hero district hubs — Dartmouth Mall, Champion City Gym (Brockton), Cape Cod Canal,
+# Chip Worthington's Heritage Marina (Act III).
 
 const DARTMOUTH_MALL: = Vector3(-3921.0, 0.0, -378.0)
 const CHAMPION_GYM: = Vector3(-8350.0, 0.0, -49620.0)
 const CAPE_CANAL: = Vector3(-11050.0, 0.0, -47600.0)
+const HERITAGE_MARINA: = Vector3(-10520.0, 0.0, -47420.0)
 
 
 static func build(parent: Node3D) -> void :
@@ -15,6 +17,7 @@ static func build(parent: Node3D) -> void :
     _dartmouth_mall(root)
     _champion_gym(root)
     _cape_canal(root)
+    _heritage_marina(root)
 
 
 static func _dartmouth_mall(root: Node3D) -> void :
@@ -197,3 +200,54 @@ static func _cape_canal(root: Node3D) -> void :
     lbl.pixel_size = 0.024
     lbl.position = Vector3(0.0, 18.0, 0.0)
     hub.add_child(lbl)
+
+
+static func _heritage_marina(root: Node3D) -> void :
+    var hub: = Node3D.new()
+    hub.name = "HeritageMarina"
+    hub.position = HERITAGE_MARINA
+    root.add_child(hub)
+
+    var dock: = MeshInstance3D.new()
+    var dock_plane: = PlaneMesh.new()
+    dock_plane.size = Vector2(90.0, 28.0)
+    dock.mesh = dock_plane
+    dock.rotation.x = -PI * 0.5
+    dock.position = Vector3(0.0, 0.08, 8.0)
+    var wood: = StandardMaterial3D.new()
+    wood.albedo_color = Color(0.42, 0.34, 0.26)
+    wood.roughness = 0.92
+    dock.material_override = wood
+    hub.add_child(dock)
+
+    var yacht: = MeshInstance3D.new()
+    var hull: = BoxMesh.new()
+    hull.size = Vector3(18.0, 5.0, 6.0)
+    yacht.mesh = hull
+    yacht.position = Vector3(-12.0, 2.5, 0.0)
+    var hull_mat: = StandardMaterial3D.new()
+    hull_mat.albedo_color = Color(0.92, 0.94, 0.96)
+    hull_mat.roughness = 0.35
+    hull_mat.metallic = 0.15
+    yacht.material_override = hull_mat
+    hub.add_child(yacht)
+
+    var clubhouse: = MeshInstance3D.new()
+    var club_box: = BoxMesh.new()
+    club_box.size = Vector3(22.0, 8.0, 14.0)
+    clubhouse.mesh = club_box
+    clubhouse.position = Vector3(28.0, 4.0, -10.0)
+    var club_mat: = StandardMaterial3D.new()
+    club_mat.albedo_color = Color(0.68, 0.62, 0.52)
+    club_mat.roughness = 0.85
+    clubhouse.material_override = club_mat
+    hub.add_child(clubhouse)
+
+    var sign: = Label3D.new()
+    sign.text = "HERITAGE MARINA"
+    sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    sign.modulate = Color(0.82, 0.9, 0.95)
+    sign.font_size = 44
+    sign.pixel_size = 0.024
+    sign.position = Vector3(0.0, 14.0, 18.0)
+    hub.add_child(sign)

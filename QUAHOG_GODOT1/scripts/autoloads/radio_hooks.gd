@@ -21,6 +21,12 @@ const RAIN_LINES: Array[String] = [
     "Rain comin' sideways off Buzzards Bay. Both hands on the wheel.",
 ]
 
+const GLORIA_LINES: Array[String] = [
+    "Hurricane Gloria's on the doorstep — this is not a drill, South Coast.",
+    "Barrier's gonna get tested tonight. If you're on the waterfront, move.",
+    "Eighty-five all over again — batten down and stay off the bridges.",
+]
+
 var _was_raining: bool = false
 var _last_wanted: int = 0
 
@@ -49,6 +55,11 @@ func _on_wanted(level: int) -> void :
 func on_mission_completed(_title: String) -> void :
     if Radio and Radio.current >= 0:
         _flash(MISSION_LINES.pick_random())
+
+
+func on_gloria_started() -> void :
+    if Radio and Radio.current >= 0:
+        _flash(GLORIA_LINES.pick_random())
 
 
 func _flash(line: String) -> void :

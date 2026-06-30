@@ -306,7 +306,13 @@ func _process(_delta: float) -> void :
     if _clock_label:
         var gm: = get_node_or_null("/root/GameManager")
         if gm and gm.has_method("time_string"):
-            _clock_label.text = ("%s  ☔" % gm.time_string()) if gm.raining else gm.time_string()
+            var storm: bool = gm.gloria_storm_active if "gloria_storm_active" in gm else false
+            if storm:
+                _clock_label.text = "%s  🌪" % gm.time_string()
+            elif gm.raining:
+                _clock_label.text = ("%s  ☔" % gm.time_string())
+            else:
+                _clock_label.text = gm.time_string()
 
     # Speedometer while driving.
     if _driving_now and _speed_label and _player != null and is_instance_valid(_player):
