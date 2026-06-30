@@ -49,14 +49,19 @@ func offer_job() -> bool:
 
     _pickup_pos = _pick_far_location(player.global_position)
     _dropoff_pos = _pick_far_location(_pickup_pos)
-    _reward = 80 + (randi() % 9) * 15
+    var route_m: float = _pickup_pos.distance_to(_dropoff_pos)
+    _reward = 70 + int(route_m / 35.0) * 12 + (randi() % 7) * 8
     stage = Stage.PICKUP
     _spawn_marker(_pickup_pos, Color(0.95, 0.78, 0.25))
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/ui/ui_job_accept.mp3")
         if snd:
             AudioManager.play_sfx(snd, -6.0)
-    GameManager.show_message("Job accepted — grab the package. Pays $%d." % _reward)
+    var km: float = route_m / 1000.0
+    if km >= 1.0:
+        GameManager.show_message("Job accepted — %.1f km run pays $%d." % [km, _reward])
+    else:
+        GameManager.show_message("Job accepted — %d m run pays $%d." % [int(route_m), _reward])
     _emit()
     return true
 
@@ -112,5 +117,9 @@ func _emit() -> void :
     if stage == Stage.PICKUP:
         text = "Pick up the package"
     elif stage == Stage.DROPOFF:
-        text = "Deliver the package"
+        var d: float = player.global_position.distance_to(_dropoff_pos) if player else 0.0
+        if d >= 1000.0:
+            text = "Deliver the package — %.1f km" % (d / 1000.0)
+        else:
+            text = "Deliver the package — %d m" % int(d)
     job_changed.emit(stage != Stage.NONE, text, get_objective_position())

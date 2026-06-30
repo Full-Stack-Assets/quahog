@@ -149,6 +149,10 @@ func _draw() -> void :
         for cop in wanted_system.get_cops():
             if is_instance_valid(cop):
                 _draw_blip(cop.global_position, center, Color(0.95, 0.3, 0.3), 4.0)
+    if wanted_system and wanted_system.has_method("get_enforcers"):
+        for goon in wanted_system.get_enforcers():
+            if is_instance_valid(goon):
+                _draw_blip(goon.global_position, center, Color(0.95, 0.45, 0.2), 4.0)
 
 
     var yaw: float = 0.0

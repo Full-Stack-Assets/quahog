@@ -85,6 +85,12 @@ These are the highest-leverage moves, in order:
 28. **The Undefeated** — Champion City Gym side mission between Act II and Act III. **DONE**
 29. **Pay-n-Spray** — clears faction heat as well as police. **DONE**
 
+### Tier 8 — Consequence & pursuit depth
+
+30. **Busted/Wasted screens** — full-screen blackout overlay, hospital/police respawn (`consequence_manager.gd`). **DONE**
+31. **Faction enforcers** — street muscle spawn when faction heat ≥ 1 (`faction_enforcer.gd`). **DONE**
+32. **Delivery job polish** — distance-scaled payout + km readout (`job_manager.gd`). **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -107,13 +113,13 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | **[Godot]** done |
 | A9 | Act II: Spindle City, Acquitted (Borden) | **[Godot]** done |
 | A10 | Act III: Gloria storm, Battleship finale | **[Godot]** done |
-| A11 | Delivery job polish (markers, payout UX, chains) | **[Both]** |
+| A11 | Delivery job polish (markers, payout UX, chains) | **[Godot]** done |
 | A12 | Side activities: street races, boxing, boat smuggling | **[Both]** |
 | A13 | Collectibles / photo-ops at landmarks | **[Web]** partial |
 | A14 | Chop shop / weapons gated by progression | Design |
 | A15 | Respect/reputation per faction | Design |
 | A16 | Player upgrades (driving, shooting, health, stamina) | |
-| A17 | Busted/wasted consequence screens | **[Web]** partial |
+| A17 | Busted/wasted consequence screens | **[Godot]** done |
 | A18 | Near-miss driving cash bonus | **[Web]** |
 | A19 | Carjack traffic on foot | **[Web]** |
 | A20 | Vehicle damage, smoke, explosions | **[Godot]** partial (body damage, impacts, smoke) |

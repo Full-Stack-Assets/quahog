@@ -476,17 +476,23 @@ func add_armor(amount: int) -> void :
 func _die() -> void :
     if dead:
         return
+    if ConsequenceManager and ConsequenceManager.is_active():
+        return
     dead = true
-    _invuln = 3.0
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/player/player_player_wasted.mp3")
         if snd:
             AudioManager.play_sfx(snd, -2.0)
+    if ConsequenceManager and ConsequenceManager.has_method("start"):
+        ConsequenceManager.start("wasted")
+        return
+    # Fallback if autoload missing.
     var lost: int = int(GameManager.cash * 0.4) + 30 if GameManager else 0
     if GameManager:
         GameManager.add_cash( - lost)
         GameManager.show_message("WASTED — you woke up at the clinic. Lost $%d." % lost)
         GameManager.set_wanted(0)
+        GameManager.set_faction(0)
     _respawn()
     dead = false
 
