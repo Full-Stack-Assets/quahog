@@ -64,6 +64,10 @@ const MAX_BODY_DAMAGE: float = 100.0
 var _impact_cd: float = 0.0
 var _smoke_t: float = 0.0
 var _near_miss_cd: float = 0.0
+var _skid_t: float = 0.0
+var _last_skid_l: Vector3 = Vector3.ZERO
+var _last_skid_r: Vector3 = Vector3.ZERO
+var _skid_marks: Array = []
 
 
 func _ready() -> void :
@@ -312,6 +316,7 @@ func _physics_process(delta: float) -> void :
     _impact_cd = maxf(0.0, _impact_cd - delta)
     _drive(delta)
     _recover_if_flipped(delta)
+    _update_skid_marks(delta)
     if active:
         _update_camera(delta)
 
@@ -354,7 +359,13 @@ func _drive(delta: float) -> void :
         direction = sign(input.z) if absf(input.z) > 0.1 else 1.0
 
     var speed_frac: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
+    var wetness: float = 0.0
+    if GameManager and (GameManager.raining or GameManager.gloria_storm_active):
+        wetness = 1.0
+    if sphere and sphere.physics_material_override is PhysicsMaterial:
+        (sphere.physics_material_override as PhysicsMaterial).friction = lerpf(4.0, 2.7, wetness)
     var steering_grip: float = clampf(0.48 + speed_frac * 0.52, 0.48, 1.0)
+    steering_grip *= lerpf(1.0, 0.82, wetness)
     # High-speed stability: turn rate tapers so triple-digit runs stay controllable.
     var turn_gain: float = lerpf(6.8, 3.6, speed_frac)
     if handbrake_on and active:
@@ -372,13 +383,13 @@ func _drive(delta: float) -> void :
 
     var target_speed: float = input.z
     if handbrake_on and active:
-        linear_speed = lerpf(linear_speed, 0.0, delta * 6.0)   # hard stop
+        linear_speed = lerpf(linear_speed, 0.0, delta * lerpf(6.0, 4.4, wetness))   # wet roads lengthen stops
     elif target_speed < 0.0 and linear_speed > 0.01:
-        linear_speed = lerpf(linear_speed, 0.0, delta * 8.0)   # brake before reversing
+        linear_speed = lerpf(linear_speed, 0.0, delta * lerpf(8.0, 5.8, wetness))   # brake before reversing
     elif target_speed < 0.0:
         linear_speed = lerpf(linear_speed, target_speed * 0.5, delta * 3.0)  # reverse, slower
     else:
-        linear_speed = lerpf(linear_speed, target_speed, delta * 16.0)
+        linear_speed = lerpf(linear_speed, target_speed, delta * lerpf(16.0, 13.0, wetness))
 
     acceleration = lerpf(acceleration, linear_speed, delta)
 
@@ -429,10 +440,76 @@ func _effect_skid(delta: float) -> void :
         var loud: float = remap(clampf(drift, 1.05, 2.8), 1.05, 2.8, -14.0, 0.0)
         screech_sound.volume_db = lerpf(screech_sound.volume_db, loud, delta * 12.0)
         screech_sound.pitch_scale = lerpf(screech_sound.pitch_scale, 0.92 + clampf(drift * 0.12, 0.0, 0.4), delta * 8.0)
+        _spawn_skid_marks(delta, drift)
     else:
         screech_sound.volume_db = lerpf(screech_sound.volume_db, -40.0, delta * 14.0)
         if screech_sound.volume_db < -28.0 and screech_sound.playing:
             screech_sound.stop()
+        _skid_t = 0.0
+        _last_skid_l = Vector3.ZERO
+        _last_skid_r = Vector3.ZERO
+
+
+func _spawn_skid_marks(delta: float, drift: float) -> void :
+    if vehicle_model == null:
+        return
+    _skid_t -= delta
+    if _skid_t > 0.0:
+        return
+    _skid_t = 0.07
+    var basis: Basis = vehicle_model.global_basis
+    var left: Vector3 = vehicle_model.global_position - basis.x.normalized() * 0.72
+    var right: Vector3 = vehicle_model.global_position + basis.x.normalized() * 0.72
+    left.y = 0.03
+    right.y = 0.03
+    if _last_skid_l != Vector3.ZERO:
+        _add_skid_segment(_last_skid_l, left, 0.24 + clampf(drift * 0.05, 0.0, 0.12))
+    if _last_skid_r != Vector3.ZERO:
+        _add_skid_segment(_last_skid_r, right, 0.24 + clampf(drift * 0.05, 0.0, 0.12))
+    _last_skid_l = left
+    _last_skid_r = right
+
+
+func _add_skid_segment(a: Vector3, b: Vector3, width: float) -> void :
+    var mid: Vector3 = (a + b) * 0.5
+    var delta: Vector3 = b - a
+    var len: float = delta.length()
+    if len < 0.18:
+        return
+    var mark: = MeshInstance3D.new()
+    var quad: = QuadMesh.new()
+    quad.size = Vector2(width, len)
+    mark.mesh = quad
+    mark.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.02, 0.02, 0.02, 0.5)
+    mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.no_depth_test = false
+    mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+    mark.material_override = mat
+    mark.global_position = mid
+    mark.rotation.x = -PI * 0.5
+    mark.rotation.y = atan2(delta.x, delta.z)
+    get_tree().current_scene.add_child(mark)
+    _skid_marks.append({"node": mark, "life": 8.0})
+
+
+func _update_skid_marks(delta: float) -> void :
+    for i in range(_skid_marks.size() - 1, -1, -1):
+        var data: Dictionary = _skid_marks[i]
+        var node: MeshInstance3D = data.get("node")
+        var life: float = float(data.get("life", 0.0)) - delta
+        if not is_instance_valid(node) or life <= 0.0:
+            if is_instance_valid(node):
+                node.queue_free()
+            _skid_marks.remove_at(i)
+            continue
+        data["life"] = life
+        if node.material_override is StandardMaterial3D:
+            var mat: StandardMaterial3D = node.material_override as StandardMaterial3D
+            mat.albedo_color.a = minf(0.5, life / 8.0 * 0.5)
+        _skid_marks[i] = data
 
 
 func _effect_damage_smoke(delta: float) -> void :

@@ -119,6 +119,7 @@ var _story_mission: Node = null
 var _water_hazard: Node = null
 var _ambient_player: AudioStreamPlayer = null
 var _tod_life_t: float = 0.0
+var _day_phase_override_pending: bool = false
 
 
 func get_wanted_system() -> Node:
@@ -389,9 +390,14 @@ func _setup_environment() -> void :
 # Drive the sun + ambient/fog from _day_phase (0=dusk → night → dawn → day →
 # back to dusk). Kept warm and gentle so the city keeps its dusk character.
 func _process(delta: float) -> void :
+    if GameManager and absf(GameManager.day_phase - _day_phase) > 0.08:
+        _day_phase = GameManager.day_phase
+        _day_phase_override_pending = true
     # Cheat: a forced time of day pins the clock; otherwise it advances normally.
     if GameManager and GameManager.cheat_time_phase >= 0.0:
         _day_phase = GameManager.cheat_time_phase
+    elif _day_phase_override_pending:
+        _day_phase_override_pending = false
     else:
         _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()

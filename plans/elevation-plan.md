@@ -104,6 +104,12 @@ These are the highest-leverage moves, in order:
 38. **Revenue events** — random boom/leak windfalls on owned fronts (`business_manager.gd`). **DONE**
 39. **Owned-front rest** — heal + bleed heat while standing in owned rings (`business_fronts.gd`). **DONE**
 
+### Tier 11 — Driving polish + time-skip
+
+40. **Safehouse time-skip** — sleep now advances the actual world clock to morning (`game_world.gd`, `safehouse_zone.gd`). **DONE**
+41. **Wet-road handling** — rain reduces tire grip and lengthens braking distances (`car.gd`). **DONE**
+42. **Tire skid marks** — drifting and handbrake skids stamp fading road decals (`car.gd`). **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -150,8 +156,8 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A32 | Revenue events (margin leak, boom) | **[Godot]** done |
 | A33 | Shops: weapons, clothing, food, vehicle mods | |
 | A34 | Bank, stash, bribes, fines | |
-| A35 | Time-skip via sleep at safehouse | **[Web]** |
-| A36 | Weather affects vehicle friction | |
+| A35 | Time-skip via sleep at safehouse | **[Godot]** done |
+| A36 | Weather affects vehicle friction | **[Godot]** done |
 | A37 | Cheat menu → settings/debug only in dev builds | **[Godot]** |
 
 ---
@@ -174,7 +180,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | B12 | Horn button + SFX | done |
 | B13 | Headlights/taillights/brake/reverse/turn signals | Partial |
 | B14 | Speedometer (MPH/km/h) | **[Both]** |
-| B15 | Tire skid marks + screech audio | Partial |
+| B15 | Tire skid marks + screech audio | **[Godot]** done |
 | B16 | Engine RPM/audio layers | **[Godot]** partial (quiet ambient loop) |
 | B17 | Wheel rotation + suspension animation | |
 | B18 | Water non-drivable | done |
