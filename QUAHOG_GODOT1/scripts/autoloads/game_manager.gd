@@ -8,6 +8,7 @@ signal cash_changed(new_cash: int)
 signal notify(message: String)
 signal wanted_changed(level: int)
 signal open_shop_requested(shop_kind: String)
+signal open_diner_requested()
 
 const SAVE_PATH: = "user://mount_hope_save.json"
 const STARTING_CASH: = 40
@@ -16,6 +17,9 @@ var cash: int = STARTING_CASH
 var missions_completed: int = 0
 var wanted_level: int = 0
 var opener_complete: bool = false
+var campaign_mi: int = 0
+var campaign_step: int = 0
+var campaign_done: bool = false
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
 
@@ -149,6 +153,9 @@ func save_game() -> void :
         "missions_completed": missions_completed,
         "wanted_level": wanted_level,
         "opener_complete": opener_complete,
+        "campaign_mi": campaign_mi,
+        "campaign_step": campaign_step,
+        "campaign_done": campaign_done,
         "has_pos": has_saved_pos,
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
@@ -175,6 +182,9 @@ func load_game() -> void :
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
     opener_complete = bool(data.get("opener_complete", false))
+    campaign_mi = int(data.get("campaign_mi", 0 if not opener_complete else 1))
+    campaign_step = int(data.get("campaign_step", 0))
+    campaign_done = bool(data.get("campaign_done", false))
     var cd: Variant = data.get("cheats", {})
     if cd is Dictionary:
         _load_cheats(cd)
@@ -189,6 +199,9 @@ func reset_save() -> void :
     missions_completed = 0
     wanted_level = 0
     opener_complete = false
+    campaign_mi = 0
+    campaign_step = 0
+    campaign_done = false
     has_saved_pos = false
     saved_pos = Vector3.ZERO
     saved_yaw = 0.0

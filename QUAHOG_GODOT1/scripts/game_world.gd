@@ -20,6 +20,9 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 const StoryMissionScript: = preload("res://scripts/systems/story_mission.gd")
 const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
 const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
+const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
+const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
+const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
 
 # Cars everywhere: every parked car is a real, takeable drivable car (parked
 # cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
@@ -138,6 +141,8 @@ func _ready() -> void :
     _spawn_pickups()
     _spawn_shops()
     _build_shop_menu()
+    _build_diner()
+    NeonSignsScript.build(self)
     _start_audio()
     _setup_weather()
     call_deferred("_apply_tod_life")
@@ -219,7 +224,7 @@ func _place_landmark_beacons() -> void :
 func _setup_weather() -> void :
     var rain: = CPUParticles3D.new()
     rain.name = "Rain"
-    rain.amount = 700
+    rain.amount = 280
     rain.lifetime = 1.1
     rain.local_coords = false
     rain.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
@@ -273,7 +278,7 @@ func _setup_environment() -> void :
     # just enough aerial perspective for distance.
     env.fog_enabled = true
     env.fog_light_color = Color(0.55, 0.60, 0.64)
-    env.fog_density = 0.0035
+    env.fog_density = 0.0018
     env.fog_sky_affect = 0.25
     env.fog_aerial_perspective = 0.25
 
@@ -358,10 +363,10 @@ func _update_weather(delta: float) -> void :
         if _weather_t <= 0.0:
             _raining = not _raining
             _rain.emitting = _raining
-            _weather_t = 40.0 if _raining else 90.0
-    # Rain thickens the haze on top of the day/night base.
+            _weather_t = 18.0 if _raining else 180.0
+    # Rain thickens the haze slightly on top of the day/night base.
     if _raining and _env != null:
-        _env.fog_density += 0.004
+        _env.fog_density += 0.0012
 
 
 func _apply_day_night() -> void :
@@ -383,7 +388,7 @@ func _apply_day_night() -> void :
     _env.background_energy_multiplier = lerp(0.75, 1.1, daylight)
     # Lighter haze overall (it was crushing the foreground to black).
     _env.fog_light_color = Color(0.34, 0.38, 0.46).lerp(Color(0.58, 0.63, 0.67), daylight)
-    _env.fog_density = lerp(0.0030, 0.0016, daylight)
+    _env.fog_density = lerp(0.0014, 0.0009, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
     # Time-of-day colour grade: richer, moodier at dusk/night; flatter by day.
     _env.adjustment_saturation = lerp(1.22, 1.10, daylight)
@@ -400,6 +405,13 @@ func _apply_day_night() -> void :
     for lamp in get_tree().get_nodes_in_group("mooring_light"):
         if lamp is OmniLight3D:
             (lamp as OmniLight3D).light_energy = lamp_e * 0.55
+    var neon_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 1.6
+    for lamp in get_tree().get_nodes_in_group("neon_light"):
+        if lamp is OmniLight3D:
+            (lamp as OmniLight3D).light_energy = neon_e
+    for sign in get_tree().get_nodes_in_group("neon_sign"):
+        if sign is MeshInstance3D and sign.material_override is StandardMaterial3D:
+            (sign.material_override as StandardMaterial3D).emission_energy_multiplier = 0.1 + neon_e * 0.3
     for tc in _traffic:
         if is_instance_valid(tc) and tc.has_method("update_running_lights"):
             tc.update_running_lights(night)
@@ -485,9 +497,9 @@ func _place_cars() -> void :
         return
 
     var models: = [
-        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0, "mass": 1000.0},
-        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0, "mass": 1100.0},
-        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0, "mass": 1500.0},
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 16.0, "trq": 110.0, "mass": 1000.0},
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 18.0, "trq": 120.0, "mass": 1100.0},
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 15.0, "trq": 145.0, "mass": 1500.0},
     ]
     # Spawn the pool on road points near where the player starts (dense), not
     # smeared across the whole 80 km region. _restream_cars keeps them near you.
@@ -684,6 +696,8 @@ func _build_systems() -> void :
         _hud.bind_systems(_job_manager, _wanted_system)
     if _hud and _hud.has_method("bind_story") and _story_mission:
         _hud.bind_story(_story_mission)
+    if _story_mission and _story_mission.has_signal("mission_completed"):
+        _story_mission.mission_completed.connect(_on_mission_completed)
 
 
 func _job_locations() -> Array[Vector3]:
@@ -738,6 +752,24 @@ func _build_shop_menu() -> void :
     add_child(shop_menu)
     if _player:
         shop_menu.bind_player(_player)
+
+
+func _build_diner() -> void :
+    var diner: = Node3D.new()
+    diner.set_script(DinerInteriorScript)
+    add_child(diner)
+    diner.setup(Vector3(-300.0, 0.0, -92.0))
+    var diner_menu: = CanvasLayer.new()
+    diner_menu.set_script(DinerMenuScript)
+    add_child(diner_menu)
+    if _player:
+        diner_menu.bind_player(_player)
+
+
+func _on_mission_completed(title: String) -> void :
+    var hooks: = get_node_or_null("/root/RadioHooks")
+    if hooks and hooks.has_method("on_mission_completed"):
+        hooks.on_mission_completed(title)
 
 
 # Gunfire scatters nearby pedestrians and draws police attention.

@@ -53,10 +53,10 @@ These are the highest-leverage moves, in order:
 
 ### Tier 3 — Make it memorable (content & identity)
 
-11. **Act I missions** — Harbor takeover arc (Sully, Reggie’s chop shop, Linguiça Run).  
-12. **Economy spend loop** — shops for weapons/ammo, one enterable interior (diner or bar).  
-13. **Coastal Neon style pass** — signage, wet dusk reflections, neon tavern signs per `quahog-project-files/STYLE_GUIDE.md`.  
-14. **Radio milestone hooks** — hosts react to wanted level, mission completion, weather.  
+11. **Act I missions** — **DONE** (Auction Rules, Linguiça Run, Harbor Heat in `story_mission.gd`).  
+12. **Economy spend loop** — **DONE** (gun shop + Linguiça Linq diner interior with food purchases).  
+13. **Coastal Neon style pass** — **DONE** (`neon_signs.gd`; TOD neon lamp energy in `game_world.gd`).  
+14. **Radio milestone hooks** — **DONE** (`radio_hooks.gd` autoload; wanted/mission/rain barks).  
 15. **Rebrand** — **DONE** (`The Narrows`, 2026 present-day; see `plans/the-narrows.md`).
 
 ### Tier 4 — Scale & performance
@@ -84,7 +84,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A5 | Pay-n-Spray / respray clears heat | **[Godot]** done |
 | A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** partial |
 | A7 | “Off the Boat” story opener | **[Godot]** done |
-| A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | Content |
+| A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | **[Godot]** done |
 | A9 | Act II: Spindle City, Acquitted (Borden) | Content |
 | A10 | Act III: Gloria storm, Battleship finale | Content |
 | A11 | Delivery job polish (markers, payout UX, chains) | **[Both]** |
@@ -96,7 +96,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A17 | Busted/wasted consequence screens | **[Web]** partial |
 | A18 | Near-miss driving cash bonus | **[Web]** |
 | A19 | Carjack traffic on foot | **[Web]** |
-| A20 | Vehicle damage, smoke, explosions | |
+| A20 | Vehicle damage, smoke, explosions | **[Godot]** partial (body damage, impacts, smoke) |
 | A21 | Ram traffic to stop / steal | **[Both]** |
 | A22 | Pilotable boat / yacht | **[Web]** |
 | A23 | Motorcycles, mopeds, bicycles | |

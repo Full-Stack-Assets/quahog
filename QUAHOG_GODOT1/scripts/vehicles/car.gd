@@ -58,6 +58,11 @@ var prev_position: Vector3 = Vector3.ZERO
 var max_throttle: float = 11.0
 var torque: float = 95.0
 var mass: float = 1000.0
+var body_damage: float = 0.0
+
+const MAX_BODY_DAMAGE: float = 100.0
+var _impact_cd: float = 0.0
+var _smoke_t: float = 0.0
 
 
 func _ready() -> void :
@@ -95,7 +100,7 @@ func _ready() -> void :
     sphere.contact_monitor = true
     sphere.max_contacts_reported = 2
     sphere.collision_layer = 1
-    sphere.collision_mask = 1
+    sphere.collision_mask = 1 | 4   # world geometry + ambient traffic
     var pm: = PhysicsMaterial.new()
     pm.friction = 4.0
     pm.rough = true
@@ -107,6 +112,7 @@ func _ready() -> void :
     scol.shape = ssh
     sphere.add_child(scol)
     add_child(sphere)
+    sphere.body_entered.connect(_on_body_entered)
 
     prev_position = vehicle_model.position
 
@@ -129,9 +135,9 @@ func _ensure_cabin() -> void :
         engine_sound = AudioStreamPlayer3D.new()
         engine_sound.name = "EngineSound"
         engine_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3")
-        engine_sound.unit_size = 8.0
+        engine_sound.unit_size = 10.0
         engine_sound.max_db = 0.0
-        engine_sound.volume_db = -40.0
+        engine_sound.volume_db = -28.0
         engine_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
         if engine_sound.stream is AudioStreamMP3:
             (engine_sound.stream as AudioStreamMP3).loop = true
@@ -140,7 +146,7 @@ func _ensure_cabin() -> void :
         screech_sound = AudioStreamPlayer3D.new()
         screech_sound.name = "ScreechSound"
         screech_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_tire_screech.mp3")
-        screech_sound.volume_db = -60.0
+        screech_sound.volume_db = -50.0
         screech_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
         if screech_sound.stream is AudioStreamMP3:
             (screech_sound.stream as AudioStreamMP3).loop = true
@@ -250,6 +256,7 @@ func place_at(pos: Vector3, yaw_deg: float) -> void :
     acceleration = 0.0
     _throttle = 0.0
     _steer = 0.0
+    body_damage = 0.0
     if active:
         _snap_camera()
 
@@ -295,11 +302,16 @@ func get_speed_kmh() -> float:
     return linear_velocity.length() * 3.6   # m/s -> km/h
 
 
+func get_damage_percent() -> float:
+    return clampf(body_damage / MAX_BODY_DAMAGE, 0.0, 1.0)
+
+
 # Seconds the car has been on its side/roof; used to auto-right it.
 var _flip_t: float = 0.0
 
 
 func _physics_process(delta: float) -> void :
+    _impact_cd = maxf(0.0, _impact_cd - delta)
     _drive(delta)
     _recover_if_flipped(delta)
     if active:
@@ -334,6 +346,8 @@ func _drive(delta: float) -> void :
 
     input.x = _steer if (active and grounded) else 0.0
     input.z = (_throttle * max_throttle) if (active and grounded) else 0.0
+    var dmg_factor: float = 1.0 - get_damage_percent() * 0.35
+    input.z *= dmg_factor
     if GameManager and GameManager.cheat_car_turbo:
         input.z *= 2.0   # turbo: double top speed / acceleration
 
@@ -341,11 +355,12 @@ func _drive(delta: float) -> void :
     if direction == 0.0:
         direction = sign(input.z) if absf(input.z) > 0.1 else 1.0
 
-    var steering_grip: float = clampf(absf(linear_speed) / max_throttle, 0.18, 1.0)
+    var speed_frac: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
+    var steering_grip: float = clampf(0.42 + speed_frac * 0.58, 0.42, 1.0)
     # Handbrake: break rear grip so the car slides, and turn harder into the slide.
-    var turn_gain: float = 4.6 if (handbrake_on and active) else 3.4
+    var turn_gain: float = 5.4 if (handbrake_on and active) else 4.8
     var target_angular: float = - input.x * steering_grip * turn_gain * direction
-    angular_speed = lerpf(angular_speed, target_angular, delta * 5.0)
+    angular_speed = lerpf(angular_speed, target_angular, delta * 9.0)
     vehicle_model.rotate_y(angular_speed * delta)
 
     if grounded:
@@ -363,7 +378,7 @@ func _drive(delta: float) -> void :
     elif target_speed < 0.0:
         linear_speed = lerpf(linear_speed, target_speed * 0.5, delta * 3.0)  # reverse, slower
     else:
-        linear_speed = lerpf(linear_speed, target_speed, delta * 5.0)
+        linear_speed = lerpf(linear_speed, target_speed, delta * 7.5)
 
     acceleration = lerpf(acceleration, linear_speed, delta)
 
@@ -376,6 +391,7 @@ func _drive(delta: float) -> void :
 
     _effect_engine(delta)
     _effect_skid(delta)
+    _effect_damage_smoke(delta)
     if active and GameManager:
         var ang: float = GameManager.day_phase * TAU
         var daylight: float = clampf(sin(ang + PI), 0.0, 1.0)
@@ -388,26 +404,74 @@ func _effect_engine(delta: float) -> void :
     if engine_sound == null:
         return
     if not active:
-        engine_sound.volume_db = lerpf(engine_sound.volume_db, -40.0, delta * 4.0)
+        engine_sound.volume_db = lerpf(engine_sound.volume_db, -50.0, delta * 5.0)
         return
-    var speed_factor: float = clampf(absf(linear_speed) / max_throttle, 0.0, 1.0)
+    var speed_factor: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
     var throttle_factor: float = clampf(absf(_throttle), 0.0, 1.0)
-    var target_volume: float = remap(speed_factor + throttle_factor * 0.5, 0.0, 1.5, -18.0, -4.0)
-    engine_sound.volume_db = lerpf(engine_sound.volume_db, target_volume, delta * 5.0)
-    var target_pitch: float = remap(speed_factor, 0.0, 1.0, 0.6, 2.6)
-    if throttle_factor > 0.1:
-        target_pitch += 0.2
-    engine_sound.pitch_scale = lerpf(engine_sound.pitch_scale, target_pitch, delta * 2.0)
+    var target_volume: float = remap(speed_factor * 0.85 + throttle_factor * 0.4, 0.0, 1.2, -22.0, -6.0)
+    engine_sound.volume_db = lerpf(engine_sound.volume_db, target_volume, delta * 4.0)
+    var target_pitch: float = remap(speed_factor, 0.0, 1.0, 0.92, 1.65) + throttle_factor * 0.08
+    engine_sound.pitch_scale = lerpf(engine_sound.pitch_scale, target_pitch, delta * 3.0)
 
 
 func _effect_skid(delta: float) -> void :
     if screech_sound == null:
         return
-    var drift: float = absf(angular_speed) * clampf(absf(linear_speed) / max_throttle, 0.0, 1.0)
-    var target_volume: float = -60.0
-    if active and drift > 0.5:
-        target_volume = remap(clampf(drift, 0.5, 2.0), 0.5, 2.0, -16.0, -4.0)
-    screech_sound.volume_db = lerpf(screech_sound.volume_db, target_volume, delta * 8.0)
+    var drift: float = absf(angular_speed) * clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
+    var handbrake_skid: float = 1.4 if (handbrake_on and absf(linear_speed) > 3.0) else 0.0
+    drift += handbrake_skid
+    var target_volume: float = -50.0
+    if active and drift > 0.85:
+        target_volume = remap(clampf(drift, 0.85, 2.4), 0.85, 2.4, -18.0, -5.0)
+    screech_sound.volume_db = lerpf(screech_sound.volume_db, target_volume, delta * 10.0)
+    screech_sound.pitch_scale = lerpf(screech_sound.pitch_scale, 0.95 + clampf(drift * 0.15, 0.0, 0.35), delta * 6.0)
+
+
+func _effect_damage_smoke(delta: float) -> void :
+    if not active or body_damage < 45.0 or vehicle_model == null:
+        return
+    _smoke_t -= delta
+    if _smoke_t > 0.0:
+        return
+    _smoke_t = 0.22 if body_damage < 75.0 else 0.12
+    if VFX:
+        var fwd: Vector3 = vehicle_model.global_basis.z.normalized()
+        var pos: Vector3 = vehicle_model.global_position + fwd * 1.6 + Vector3(0, 0.9, 0)
+        VFX.spawn_impact(pos, 0.35 if body_damage < 80.0 else 0.55)
+
+
+func _on_body_entered(body: Node) -> void :
+    if not active or _impact_cd > 0.0 or not is_instance_valid(vehicle_model):
+        return
+    var impact: float = linear_velocity.length()
+    if impact < 5.0:
+        return
+    var other: Node = body
+    if body is CollisionShape3D and body.get_parent():
+        other = body.get_parent()
+    var building: bool = other is StaticBody3D
+    var traffic: bool = other is CharacterBody3D
+    if not building and not traffic:
+        return
+    var dmg: float = clampf((impact - 4.0) * (3.0 if building else 2.2), 3.0, 38.0)
+    body_damage = minf(MAX_BODY_DAMAGE, body_damage + dmg)
+    _impact_cd = 0.4
+    linear_speed *= 0.5
+    angular_speed *= 0.65
+    if traffic:
+        other.global_position += vehicle_model.global_basis.z.normalized() * 1.2
+        if "speed" in other:
+            other.speed = 0.0
+    if AudioManager:
+        var snd: = load("res://assets/audio/sfx/vehicle/vehicle_impact.mp3")
+        if snd:
+            AudioManager.play_sfx(snd, -2.0)
+    if VFX:
+        VFX.spawn_impact(vehicle_model.global_position + Vector3(0, 0.8, 0), 0.45)
+    if GameManager and dmg >= 12.0:
+        GameManager.show_message("Vehicle damage — body at %d%%" % int(get_damage_percent() * 100.0))
+    if body_damage >= MAX_BODY_DAMAGE and GameManager:
+        GameManager.show_message("Ride's totaled — grab another car.")
 
 
 # Camera orbit offset (driver can pan the chase cam around the car).
