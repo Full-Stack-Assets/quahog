@@ -52,13 +52,21 @@ python3 MountHope_Unreal/Scripts/validate_scaffold.py
 
 ### Local compile (requires Unreal Engine 5.6+)
 
+**Windows (PowerShell):**
+
+```powershell
+cd MountHope_Unreal
+.\Scripts\build.ps1
+```
+
+See [`Docs/BUILD_WINDOWS.md`](Docs/BUILD_WINDOWS.md) for Visual Studio prerequisites, Epic Launcher paths, and troubleshooting.
+
+**macOS / Linux:**
+
 ```bash
 export UE_ROOT="/path/to/UE_5.6"
 ./MountHope_Unreal/Scripts/build.sh
 ```
-
-Point `UE_ROOT` at your engine install directory. The script invokes
-`RunUBT.sh` to build `MountHopeEditor` for your platform.
 
 See `Docs/IMPROVEMENT_PLAN.md` for the full roadmap and packaging notes.
 
