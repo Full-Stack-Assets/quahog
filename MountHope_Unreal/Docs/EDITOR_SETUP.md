@@ -150,7 +150,13 @@ axis/action mappings still work (WASD, mouse, E, F).
 - **E** while conversation active: advance lines (on-screen cyan subtitles in PIE)
 - Final line with `completeObjective: true` advances the current mission step
 
-Blueprint a UMG widget later by binding to `UMHDialogueSubsystem::OnDialogueLineChanged`.
+Blueprint a custom layout with `Scripts/editor_create_hud_widget.py` (optional).
+The C++ `UMHGameHudWidget` builds its own UI at runtime if no Widget Blueprint is assigned.
+
+### 9. HUD & weather
+
+- HUD appears automatically (objective, cash, weather, dialogue)
+- Press **.** to cycle weather in PIE
 
 ---
 

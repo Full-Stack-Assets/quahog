@@ -4,6 +4,8 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MHGameStateSubsystem.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMHOnWeatherChanged, EMHWeatherState, NewWeather);
+
 UENUM(BlueprintType)
 enum class EMHWeatherState : uint8
 {
@@ -40,6 +42,9 @@ class MOUNTHOPE_API UMHGameStateSubsystem : public UGameInstanceSubsystem
     GENERATED_BODY()
 
 public:
+    UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Weather")
+    FMHOnWeatherChanged OnWeatherChanged;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Player")
     int32 Cash = 250;
 
@@ -75,6 +80,9 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Weather")
     void CycleWeather();
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Weather")
+    void SetWeather(EMHWeatherState NewWeather);
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Economy")
     bool BuyBusiness(const FString& BusinessId);

@@ -89,9 +89,15 @@ Run `Scripts/editor_create_enhanced_input.py` in the editor to create
 
 ### Phase 4 — Content & polish
 
-- MetaHuman mesh on `MHDialogueNpcActor` (Deacon Mealy)
-- UMG widget bound to `OnDialogueLineChanged` (replaces on-screen debug text)
-- Weather VFX tied to `EMHWeatherState`
+**Implemented in C++:**
+- `UMHGameHudWidget` — objective, cash/weather status, dialogue subtitles (binds to `OnDialogueLineChanged`)
+- `AMHPlayerController` — creates HUD at runtime; **.** cycles weather (debug)
+- `AMHWeatherDirectorActor` — blends fog/sun per `EMHWeatherState`
+
+**Still editor-authored:**
+- MetaHuman mesh on `MHDialogueNpcActor`
+- Optional `WBP_MHGameHud` via `Scripts/editor_create_hud_widget.py`
+- Niagara rain particles for CoastalRain / Nor'easter
 - Package Development build via `Scripts/package.sh`
 
 ### Phase 5 — Repo consolidation

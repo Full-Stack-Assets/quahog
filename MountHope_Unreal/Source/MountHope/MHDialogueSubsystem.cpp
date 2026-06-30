@@ -1,7 +1,6 @@
 #include "MHDialogueSubsystem.h"
 
 #include "Dom/JsonObject.h"
-#include "Engine/Engine.h"
 #include "MHGameModeBase.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
@@ -223,18 +222,6 @@ void UMHDialogueSubsystem::BroadcastCurrentLine()
     }
 
     OnDialogueLineChanged.Broadcast(ActiveConversationId, Speaker, LineText);
-
-    if (GEngine)
-    {
-        const FString ScreenMessage = FString::Printf(TEXT("%s: %s"), *Speaker.ToString(), *LineText.ToString());
-        GEngine->AddOnScreenDebugMessage(
-            INDEX_NONE,
-            5.0f,
-            FColor::Cyan,
-            ScreenMessage,
-            true,
-            FVector2D(1.2f, 1.2f));
-    }
 
     UE_LOG(LogTemp, Log, TEXT("MountHope Dialogue [%s]: %s"), *Speaker.ToString(), *LineText.ToString());
 }

@@ -49,6 +49,12 @@ REQUIRED_FILES = [
     "Source/MountHope/MHDialogueSubsystem.cpp",
     "Source/MountHope/MHDialogueNpcActor.h",
     "Source/MountHope/MHDialogueNpcActor.cpp",
+    "Source/MountHope/MHGameHudWidget.h",
+    "Source/MountHope/MHGameHudWidget.cpp",
+    "Source/MountHope/MHPlayerController.h",
+    "Source/MountHope/MHPlayerController.cpp",
+    "Source/MountHope/MHWeatherDirectorActor.h",
+    "Source/MountHope/MHWeatherDirectorActor.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
     "Data/Dialogue/vertical_slice.json",
@@ -64,6 +70,7 @@ REQUIRED_FILES = [
     "Scripts/editor_import_osm.py",
     "Scripts/editor_import_southcoast_roads.py",
     "Scripts/editor_setup_navmesh.py",
+    "Scripts/editor_create_hud_widget.py",
 ]
 
 EXPECTED_PLUGINS = {
@@ -151,6 +158,10 @@ def validate_source_contract() -> None:
     game_mode_source = read_text("Source/MountHope/MHGameModeBase.cpp")
     if "AMHPlayerCharacter::StaticClass()" not in game_mode_source:
         fail("MHGameModeBase.cpp does not set MHPlayerCharacter as the default pawn")
+    if "AMHPlayerController::StaticClass()" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not set MHPlayerController")
+    if "AMHWeatherDirectorActor" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not spawn weather director")
     for symbol in (
         "CompleteCurrentObjective",
         "TryCompleteVehicleObjective",
@@ -171,6 +182,23 @@ def validate_source_contract() -> None:
     npc_source = read_text("Source/MountHope/MHDialogueNpcActor.cpp")
     if "Interact_Implementation" not in npc_source:
         fail("MHDialogueNpcActor.cpp does not implement interaction")
+
+    hud_source = read_text("Source/MountHope/MHGameHudWidget.cpp")
+    for symbol in ("SetDialogueLine", "RefreshHud", "HandleDialogueLineChanged"):
+        if symbol not in hud_source:
+            fail(f"MHGameHudWidget.cpp is missing: {symbol}")
+
+    controller_source = read_text("Source/MountHope/MHPlayerController.cpp")
+    if "UMHGameHudWidget" not in controller_source:
+        fail("MHPlayerController.cpp does not create HUD widget")
+
+    weather_source = read_text("Source/MountHope/MHWeatherDirectorActor.cpp")
+    if "ApplyWeather" not in weather_source:
+        fail("MHWeatherDirectorActor.cpp is missing ApplyWeather")
+
+    game_state_header = read_text("Source/MountHope/MHGameStateSubsystem.h")
+    if "OnWeatherChanged" not in game_state_header:
+        fail("MHGameStateSubsystem.h missing OnWeatherChanged delegate")
 
     player_source = read_text("Source/MountHope/MHPlayerCharacter.cpp")
     for symbol in (

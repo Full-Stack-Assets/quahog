@@ -59,18 +59,29 @@ void UMHGameStateSubsystem::CycleWeather()
     switch (Weather)
     {
     case EMHWeatherState::Clear:
-        Weather = EMHWeatherState::DenseFog;
+        SetWeather(EMHWeatherState::DenseFog);
         break;
     case EMHWeatherState::DenseFog:
-        Weather = EMHWeatherState::CoastalRain;
+        SetWeather(EMHWeatherState::CoastalRain);
         break;
     case EMHWeatherState::CoastalRain:
-        Weather = EMHWeatherState::Noreaster;
+        SetWeather(EMHWeatherState::Noreaster);
         break;
     default:
-        Weather = EMHWeatherState::Clear;
+        SetWeather(EMHWeatherState::Clear);
         break;
     }
+}
+
+void UMHGameStateSubsystem::SetWeather(EMHWeatherState NewWeather)
+{
+    if (Weather == NewWeather)
+    {
+        return;
+    }
+
+    Weather = NewWeather;
+    OnWeatherChanged.Broadcast(Weather);
 }
 
 bool UMHGameStateSubsystem::BuyBusiness(const FString& BusinessId)
@@ -206,6 +217,7 @@ bool UMHGameStateSubsystem::LoadFromSlot(const FString& SlotName, int32 UserInde
     PoliceHeat = ClampHeat(Save->PoliceHeat);
     FactionHeat = ClampHeat(Save->FactionHeat);
     Weather = static_cast<EMHWeatherState>(FMath::Clamp<int32>(Save->Weather, 0, 3));
+    OnWeatherChanged.Broadcast(Weather);
 
     OwnedBusinessIds.Reset();
     for (const FString& Id : Save->OwnedBusinessIds)

@@ -62,8 +62,13 @@ Working title: **Harbor Errand**
   source data.
 - Lighting, post-process, and materials target cinematic realism, even if final
   assets are placeholders.
+- Runtime HUD shows objectives, dialogue, cash, and weather (`UMHGameHudWidget`).
 
-## Art direction notes
+## HUD & weather
+
+`AMHPlayerController` spawns the game HUD at play start. Dialogue lines render
+as bottom subtitles; objectives and cash/weather display in the corners. Press
+`.` in PIE to cycle `EMHWeatherState` (fog/sun adjusted by `AMHWeatherDirectorActor`).
 
 - Use Lumen, Nanite-ready assets, virtual shadow maps, and cinematic exposure.
 - Favor overcast coastal realism, sodium vapor street lighting, wet asphalt,

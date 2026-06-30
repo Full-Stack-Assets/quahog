@@ -4,11 +4,14 @@
 #include "MHMissionSubsystem.h"
 #include "MHMissionTriggerActor.h"
 #include "MHPlayerCharacter.h"
+#include "MHPlayerController.h"
+#include "MHWeatherDirectorActor.h"
 
 AMHGameModeBase::AMHGameModeBase()
 {
     PrimaryActorTick.bCanEverTick = true;
     DefaultPawnClass = AMHPlayerCharacter::StaticClass();
+    PlayerControllerClass = AMHPlayerController::StaticClass();
 }
 
 void AMHGameModeBase::BeginPlay()
@@ -28,6 +31,17 @@ void AMHGameModeBase::BeginPlay()
     }
 
     RefreshObjectiveTrigger();
+
+    if (GetWorld())
+    {
+        FActorSpawnParameters SpawnParams;
+        SpawnParams.Name = TEXT("MH_WeatherDirector");
+        GetWorld()->SpawnActor<AMHWeatherDirectorActor>(
+            AMHWeatherDirectorActor::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            SpawnParams);
+    }
 }
 
 void AMHGameModeBase::Tick(float DeltaSeconds)
