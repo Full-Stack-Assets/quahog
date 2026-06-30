@@ -293,12 +293,12 @@ export function Roads({ roads }: { roads: Road[] }) {
         <group key={i} ref={(el) => (groups.current[i] = el)}>
           {c.apron && (
             <mesh geometry={c.apron} receiveShadow>
-              <meshStandardMaterial map={sidewalkTex} color="#9a9890" roughness={0.95} userData={{ base: 0.95 }} />
+              <meshStandardMaterial map={sidewalkTex} normalMap={nrm} normalScale={ns} color="#9a9890" roughness={0.95} userData={{ base: 0.95 }} />
             </mesh>
           )}
           {c.sidewalk && (
             <mesh geometry={c.sidewalk} receiveShadow castShadow>
-              <meshStandardMaterial map={sidewalkTex} color="#b0aea6" roughness={0.92} userData={{ base: 0.92 }} />
+              <meshStandardMaterial map={sidewalkTex} normalMap={nrm} normalScale={ns} color="#b0aea6" roughness={0.92} userData={{ base: 0.92 }} />
             </mesh>
           )}
           {c.cobble && (
