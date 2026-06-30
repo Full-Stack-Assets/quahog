@@ -15,6 +15,9 @@ public:
     UFUNCTION(BlueprintPure, Category = "Mount Hope|Vehicle")
     bool CanDriverEnter(const APawn* CandidateDriver) const;
 
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Vehicle")
+    FVector GetSuggestedExitLocation() const;
+
 protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     float EntryRadiusMeters = 3.5f;

@@ -4,6 +4,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 #include "MHEconomySubsystem.generated.h"
 
+/** Legacy cash API — delegates to UMHGameStateSubsystem for backward compatibility. */
 UCLASS()
 class MOUNTHOPE_API UMHEconomySubsystem : public UGameInstanceSubsystem
 {
@@ -18,8 +19,4 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Economy")
     bool SpendCash(int32 Amount, FName Reason);
-
-private:
-    UPROPERTY()
-    int32 CashBalance = 120;
 };

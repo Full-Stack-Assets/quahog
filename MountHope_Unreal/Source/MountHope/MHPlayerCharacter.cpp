@@ -3,10 +3,14 @@
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "MHGameModeBase.h"
 #include "MHInteractable.h"
+#include "MHVehiclePawn.h"
 
 AMHPlayerCharacter::AMHPlayerCharacter()
 {
@@ -52,6 +56,18 @@ void AMHPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 
 void AMHPlayerCharacter::TryInteract()
 {
+    if (bInVehicle)
+    {
+        ExitVehicle();
+        return;
+    }
+
+    if (AMHVehiclePawn* NearbyVehicle = FindNearestVehicle())
+    {
+        EnterVehicle(NearbyVehicle);
+        return;
+    }
+
     TArray<FOverlapResult> Overlaps;
     const float RadiusUnrealUnits = InteractionRadiusMeters * 100.0f;
     const FCollisionShape InteractionShape = FCollisionShape::MakeSphere(RadiusUnrealUnits);
@@ -77,12 +93,66 @@ void AMHPlayerCharacter::TryInteract()
 
 void AMHPlayerCharacter::RequestEnterExitVehicle()
 {
-    // Vehicle possession will hand off here once the first Chaos vehicle pawn exists.
+    if (bInVehicle)
+    {
+        ExitVehicle();
+        return;
+    }
+
+    if (AMHVehiclePawn* NearbyVehicle = FindNearestVehicle())
+    {
+        EnterVehicle(NearbyVehicle);
+    }
+}
+
+bool AMHPlayerCharacter::EnterVehicle(AMHVehiclePawn* VehiclePawn)
+{
+    if (bInVehicle || !VehiclePawn || !Controller)
+    {
+        return false;
+    }
+
+    if (!VehiclePawn->CanDriverEnter(this))
+    {
+        return false;
+    }
+
+    CurrentVehicle = VehiclePawn;
+    bInVehicle = true;
+
+    SetActorEnableCollision(false);
+    SetActorHiddenInGame(true);
+    Controller->Possess(VehiclePawn);
+
+    if (AMHGameModeBase* GameMode = GetWorld() ? Cast<AMHGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr)
+    {
+        GameMode->TryCompleteVehicleObjective(true);
+    }
+
+    return true;
+}
+
+bool AMHPlayerCharacter::ExitVehicle()
+{
+    if (!bInVehicle || !CurrentVehicle || !Controller)
+    {
+        return false;
+    }
+
+    const FVector ExitLocation = CurrentVehicle->GetSuggestedExitLocation();
+    SetActorLocation(ExitLocation);
+    SetActorEnableCollision(true);
+    SetActorHiddenInGame(false);
+    Controller->Possess(this);
+
+    bInVehicle = false;
+    CurrentVehicle = nullptr;
+    return true;
 }
 
 void AMHPlayerCharacter::MoveForward(float Value)
 {
-    if (Controller == nullptr || FMath::IsNearlyZero(Value))
+    if (Controller == nullptr || FMath::IsNearlyZero(Value) || bInVehicle)
     {
         return;
     }
@@ -93,7 +163,7 @@ void AMHPlayerCharacter::MoveForward(float Value)
 
 void AMHPlayerCharacter::MoveRight(float Value)
 {
-    if (Controller == nullptr || FMath::IsNearlyZero(Value))
+    if (Controller == nullptr || FMath::IsNearlyZero(Value) || bInVehicle)
     {
         return;
     }
@@ -110,4 +180,34 @@ void AMHPlayerCharacter::Turn(float Value)
 void AMHPlayerCharacter::LookUp(float Value)
 {
     AddControllerPitchInput(Value);
+}
+
+AMHVehiclePawn* AMHPlayerCharacter::FindNearestVehicle() const
+{
+    if (!GetWorld())
+    {
+        return nullptr;
+    }
+
+    AMHVehiclePawn* BestVehicle = nullptr;
+    float BestDistSq = VehicleInteractRange * VehicleInteractRange;
+    const FVector MyLoc = GetActorLocation();
+
+    for (TActorIterator<AMHVehiclePawn> It(GetWorld()); It; ++It)
+    {
+        AMHVehiclePawn* Candidate = *It;
+        if (!IsValid(Candidate))
+        {
+            continue;
+        }
+
+        const float DistSq = FVector::DistSquared(MyLoc, Candidate->GetActorLocation());
+        if (DistSq <= BestDistSq)
+        {
+            BestDistSq = DistSq;
+            BestVehicle = Candidate;
+        }
+    }
+
+    return BestVehicle;
 }

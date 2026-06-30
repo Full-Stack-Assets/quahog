@@ -1,0 +1,21 @@
+name: unreal-ci
+
+# Sandbox-safe validation for the UE5 scaffold. Full C++ compile requires a local
+# Unreal Engine install (see MountHope_Unreal/Scripts/build.sh).
+on:
+  push:
+    paths:
+      - "MountHope_Unreal/**"
+      - ".github/workflows/unreal-ci.yml"
+  pull_request:
+    paths:
+      - "MountHope_Unreal/**"
+      - ".github/workflows/unreal-ci.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Unreal scaffold
+        run: python3 MountHope_Unreal/Scripts/validate_scaffold.py
