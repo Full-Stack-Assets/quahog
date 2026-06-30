@@ -19,6 +19,10 @@ const COBBLE = new Set(["footway", "path", "pedestrian", "steps", "cycleway", "t
 // darker surface UNDER the real streets (no lane markings, no curb apron, no
 // sidewalks) so the map doesn't read as a tangle of equal-weight roads converging.
 const SERVICE = new Set(["service"]);
+// motorway/trunk/primary on/off ramps — drawn as their own slightly-distinct,
+// slightly-raised layer so an interchange reads as mainline + ramps weaving over
+// it, not one coplanar converging blob.
+const RAMP = new Set(["motorway_link", "trunk_link", "primary_link"]);
 const TILE = 8; // metres of road per texture repeat along length
 
 // Builds one merged ribbon geometry (with UVs). `uScale` controls cross-width
@@ -148,14 +152,15 @@ export function Roads({ roads }: { roads: Road[] }) {
   // chunk roads into a spatial grid so off-screen/distant cells are culled
   const chunks = useMemo(() => {
     const land = roads.filter((r) => !r.bridge); // bridges handled by <Bridges/>
-    const cells = new Map<string, { cb: Road[]; sf: Road[]; hw: Road[]; sv: Road[]; cx: number; cz: number }>();
+    const cells = new Map<string, { cb: Road[]; sf: Road[]; hw: Road[]; rp: Road[]; sv: Road[]; cx: number; cz: number }>();
     for (const r of land) {
       const mid = r.points[Math.floor(r.points.length / 2)] ?? r.points[0];
       const gx = Math.floor(mid[0] / CELL), gn = Math.floor(mid[1] / CELL);
       const key = `${gx}_${gn}`;
       let c = cells.get(key);
-      if (!c) { c = { cb: [], sf: [], hw: [], sv: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
-      if (HIGHWAY.has(r.highway)) c.hw.push(r);
+      if (!c) { c = { cb: [], sf: [], hw: [], rp: [], sv: [], cx: (gx + 0.5) * CELL, cz: -(gn + 0.5) * CELL }; cells.set(key, c); }
+      if (RAMP.has(r.highway)) c.rp.push(r);
+      else if (HIGHWAY.has(r.highway)) c.hw.push(r);
       else if (COBBLE.has(r.highway)) c.cb.push(r);
       else if (SERVICE.has(r.highway)) c.sv.push(r);
       else c.sf.push(r);
@@ -163,7 +168,7 @@ export function Roads({ roads }: { roads: Road[] }) {
     return [...cells.values()].map((c) => ({
       cx: c.cx, cz: c.cz,
       // concrete curb/sidewalk apron under + around the carriageway
-      apron: buildRibbon([...c.sf, ...c.hw], 0.04, 0, 2.6),
+      apron: buildRibbon([...c.sf, ...c.hw, ...c.rp], 0.04, 0, 2.6),
       // raised curb + walkway flanking ordinary streets (not highways/cobble)
       sidewalk: buildSidewalks(c.sf, 0.14, 0.1, 2.0),
       cobble: buildRibbon(c.cb, 0.05, 1.2),
@@ -177,6 +182,9 @@ export function Roads({ roads }: { roads: Road[] }) {
       // directions of I-195) read as separate roads with a median gap instead of
       // one squished/converging blob; the concrete apron keeps the shoulders.
       highway: buildRibbon(c.hw, 0.08, 0, 0, 0.72),
+      // ramps: narrower + a touch higher so they overlay the mainline cleanly
+      // where they merge, reading as separate weaving ribbons
+      ramp: buildRibbon(c.rp, 0.09, 0, 0, 0.62),
     }));
   }, [roads]);
 
@@ -238,6 +246,11 @@ export function Roads({ roads }: { roads: Road[] }) {
           {c.highway && (
             <mesh geometry={c.highway} receiveShadow>
               <meshStandardMaterial map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
+            </mesh>
+          )}
+          {c.ramp && (
+            <mesh geometry={c.ramp} receiveShadow>
+              <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#787a84" roughness={0.84} userData={{ base: 0.84 }} polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
             </mesh>
           )}
         </group>
