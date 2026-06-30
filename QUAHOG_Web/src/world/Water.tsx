@@ -117,14 +117,16 @@ export function Water({ polys, holes = [] }: { polys: [number, number][][]; hole
     <mesh ref={meshRef} geometry={geometry} position={[0, WATER_Y, 0]} receiveShadow>
       <meshStandardMaterial
         ref={matRef}
-        color="#1a5167"
-        roughness={0.16}
-        metalness={0.55}
-        envMapIntensity={1.2}
+        color="#1d566b"
+        roughness={0.14}
+        metalness={0.6}
+        envMapIntensity={1.35}
         normalMap={normalMap}
-        normalScale={new THREE.Vector2(0.45, 0.45)}
+        normalScale={new THREE.Vector2(0.5, 0.5)}
         transparent
-        opacity={0.96}
+        // semi-transparent so the real aerial harbour tone reads through while
+        // the 3D surface still carries the wave reflections + specular glints
+        opacity={0.8}
       />
     </mesh>
   );

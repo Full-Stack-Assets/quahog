@@ -1,4 +1,5 @@
 import { Text } from "@react-three/drei";
+import { CuboidCollider, RigidBody } from "@react-three/rapier";
 import { BATTLESHIP_COVE, LIZZIE_BORDEN, DARTMOUTH_MALL } from "../places";
 
 // Hand-placed hero landmarks (§37/§28). Stylized but recognizable: the USS
@@ -16,7 +17,9 @@ function Battleship() {
     </group>
   );
   return (
-    <group position={BATTLESHIP_COVE} rotation-y={0.4}>
+    <RigidBody type="fixed" colliders={false} position={BATTLESHIP_COVE} rotation={[0, 0.4, 0]}>
+      {/* solid hull collider so you can't drive through the battleship */}
+      <CuboidCollider args={[14, 5.5, 100]} position={[0, 3, 0]} />
       {/* hull */}
       <mesh castShadow position={[0, 3, 0]}><boxGeometry args={[28, 8, 200]} /><meshStandardMaterial color={grey} roughness={0.65} metalness={0.35} /></mesh>
       <mesh castShadow position={[0, 3, 104]} rotation-y={Math.PI / 4}><boxGeometry args={[19.8, 8, 19.8]} /><meshStandardMaterial color={grey} roughness={0.65} metalness={0.35} /></mesh>
@@ -34,14 +37,15 @@ function Battleship() {
       {turret(40)}
       {turret(-66)}
       <Text position={[0, 9, 30]} fontSize={3.2} color="#dfe4e8" anchorX="center" anchorY="middle" outlineWidth={0.1} outlineColor="#000">MASSACHUSETTS</Text>
-    </group>
+    </RigidBody>
   );
 }
 
 function LizzieBorden() {
   const body = "#5a6b5e", trim = "#e8e4d8", roof = "#3a3a3e";
   return (
-    <group position={LIZZIE_BORDEN}>
+    <RigidBody type="fixed" colliders={false} position={LIZZIE_BORDEN}>
+      <CuboidCollider args={[4.5, 4, 5.5]} position={[0, 4, 0]} />
       <mesh castShadow receiveShadow position={[0, 4, 0]}><boxGeometry args={[9, 8, 11]} /><meshStandardMaterial color={body} roughness={0.85} /></mesh>
       {/* gable roof */}
       <mesh castShadow position={[0, 9.4, 0]} rotation-y={Math.PI / 2}><cylinderGeometry args={[3.6, 3.6, 9.2, 3]} /><meshStandardMaterial color={roof} roughness={0.9} flatShading /></mesh>
@@ -50,13 +54,15 @@ function LizzieBorden() {
       {/* chimney */}
       <mesh position={[2.6, 11, -1]}><boxGeometry args={[1.1, 4, 1.1]} /><meshStandardMaterial color="#6e4a3e" /></mesh>
       <Text position={[0, 6.4, 5.7]} fontSize={0.5} color="#1a1a1a" anchorX="center" anchorY="middle">LIZZIE BORDEN HOUSE</Text>
-    </group>
+    </RigidBody>
   );
 }
 
 function DartmouthMall() {
   return (
-    <group position={DARTMOUTH_MALL}>
+    <RigidBody type="fixed" colliders={false} position={DARTMOUTH_MALL}>
+      {/* solid mall mass (parking apron stays walkable/drivable) */}
+      <CuboidCollider args={[75, 6, 35]} position={[0, 6, -20]} />
       {/* parking apron */}
       <mesh rotation-x={-Math.PI / 2} position={[0, 0.05, 40]} receiveShadow><planeGeometry args={[160, 120]} /><meshStandardMaterial color="#3c3f47" roughness={0.95} /></mesh>
       {/* big-box mall */}
@@ -68,7 +74,7 @@ function DartmouthMall() {
       <mesh position={[60, 8, 70]}><boxGeometry args={[1.2, 16, 1.2]} /><meshStandardMaterial color="#33373d" /></mesh>
       <mesh position={[60, 14, 70]}><boxGeometry args={[10, 5, 0.6]} /><meshStandardMaterial color="#1f4e79" emissive="#1f4e79" emissiveIntensity={0.4} /></mesh>
       <Text position={[60, 14, 70.4]} fontSize={1.2} color="#fff" anchorX="center" anchorY="middle" maxWidth={9}>DARTMOUTH MALL</Text>
-    </group>
+    </RigidBody>
   );
 }
 

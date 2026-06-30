@@ -3,7 +3,7 @@ import { useThree } from "@react-three/fiber";
 import { Physics } from "@react-three/rapier";
 import { loadSlice, type Slice } from "./slice";
 import { useGame } from "./store";
-import { Ground } from "./world/Ground";
+import { AerialGround } from "./world/AerialGround";
 import { Roads } from "./world/Roads";
 import { Bridges } from "./world/Bridges";
 import { StreamingBuildings } from "./world/StreamingBuildings";
@@ -128,7 +128,7 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
       <Hazards />
 
       <Physics gravity={[0, -9.81, 0]}>
-        <Ground />
+        <AerialGround origin={slice?.origin} />
         <Player />
         <Car />
         <Boat />
@@ -146,6 +146,8 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
               ))}
           </>
         )}
+        {/* Heroes use RigidBody colliders → must live inside <Physics> */}
+        <Heroes />
       </Physics>
 
       {/* Area polys sit BELOW the road apron (0.04) so roads/sidewalks always
@@ -179,7 +181,7 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
       {slice && <Crosswalks roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <UtilityPoles roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <Decals roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
-      {slice && <Graffiti roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
+      {slice && <Graffiti roads={slice.roads} buildings={slice.buildings} center={[CORE[0], -CORE[1]]} />}
       {slice && <StreetSigns roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <TrafficLights roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       {slice && <ParkedCars roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
@@ -194,7 +196,6 @@ export function Experience({ onReady, onProgress }: { onReady?: (s: Slice) => vo
       {slice && <StreetLife roads={slice.roads} center={[CORE[0], -CORE[1]]} />}
       <Safehouse />
       <Hospital />
-      <Heroes />
       <Businesses />
       <Respray />
       <NeonSigns />
