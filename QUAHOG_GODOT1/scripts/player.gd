@@ -630,8 +630,9 @@ func _physics_process(delta: float) -> void :
             _driving = false
         else:
             var kb_drive: = Input.get_vector("move_left", "move_right", "move_back", "move_forward")
-            var steer: float = clampf(_move_input.x + kb_drive.x, -1.0, 1.0)
-            var throttle: float = clampf( - _move_input.y + kb_drive.y, -1.0, 1.0)
+            # Virtual stick axes are inverted for driving (on-foot uses them as-is).
+            var steer: float = clampf(-_move_input.x + kb_drive.x, -1.0, 1.0)
+            var throttle: float = clampf(_move_input.y + kb_drive.y, -1.0, 1.0)
             if current_car.has_method("set_drive_input"):
                 current_car.set_drive_input(steer, throttle)
             if current_car.has_method("set_handbrake"):
