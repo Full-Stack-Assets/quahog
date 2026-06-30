@@ -61,9 +61,9 @@ These are the highest-leverage moves, in order:
 
 ### Tier 4 — Scale & performance
 
-16. Godot: 200-car pool perf, streaming radius tuning, texture compression.  
-17. Web: LOD/impostors for far buildings, object pooling, quality presets.  
-18. Expand map: Brockton, Cape Cod, Dartmouth Mall hub.
+16. Godot: 200-car pool perf, streaming radius tuning, texture compression — **DONE** (quality presets, staggered car restream, building LOD, tile budget).  
+17. Web: LOD/impostors for far buildings, object pooling, quality presets — **DONE** (`quality.ts`, far-tile impostors, pause-menu preset).  
+18. Expand map: Brockton, Cape Cod, Dartmouth Mall hub — **DONE** (hero hubs, fast-travel, mall gun shop).
 
 ---
 
@@ -131,7 +131,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | B8 | Free-look orbit while driving | **[Godot]** done |
 | B9 | Fast travel brings your car | **[Both]** done |
 | B10 | Park cars at curb (not lane center) | **[Godot]** done |
-| B11 | 200-car pool with restreaming | **[Godot]** |
+| B11 | 200-car pool with restreaming | **[Godot]** done |
 | B12 | Horn button + SFX | done |
 | B13 | Headlights/taillights/brake/reverse/turn signals | Partial |
 | B14 | Speedometer (MPH/km/h) | **[Both]** |

@@ -9,8 +9,10 @@ signal notify(message: String)
 signal wanted_changed(level: int)
 signal open_shop_requested(shop_kind: String)
 signal open_diner_requested()
+signal graphics_quality_changed(level: int)
 
 const SAVE_PATH: = "user://mount_hope_save.json"
+const QUALITY_NAMES: PackedStringArray = ["Low", "Medium", "High"]
 const STARTING_CASH: = 40
 
 var cash: int = STARTING_CASH
@@ -44,6 +46,59 @@ var cheat_time_scale: float = 1.0  # global slow-mo / fast-forward
 var cheat_teleport_anywhere: bool = false
 # Chase-cam side: false = behind the car, true = flipped to the other side (CAM button).
 var cam_flip: bool = false
+# Graphics quality: 0=Low (mobile), 1=Medium, 2=High. Affects streaming radius,
+# car pool, traffic, rain, and building LOD.
+var graphics_quality: int = 1
+
+
+func stream_radius() -> int:
+    return [1, 2, 3][graphics_quality]
+
+
+func car_pool_size() -> int:
+    return [100, 150, 200][graphics_quality]
+
+
+func traffic_car_count() -> int:
+    return [8, 12, 16][graphics_quality]
+
+
+func stream_tile_budget() -> int:
+    return [2, 5, 12][graphics_quality]
+
+
+func building_lod() -> int:
+    return graphics_quality
+
+
+func rain_particle_count() -> int:
+    return [0, 180, 280][graphics_quality]
+
+
+func car_restream_batch() -> int:
+    return [8, 12, 20][graphics_quality]
+
+
+func set_graphics_quality(level: int) -> void :
+    level = clampi(level, 0, 2)
+    if level == graphics_quality:
+        return
+    graphics_quality = level
+    graphics_quality_changed.emit(graphics_quality)
+    _save_graphics_cfg()
+
+
+func _load_graphics_cfg() -> void :
+    var cfg: = ConfigFile.new()
+    if cfg.load("user://settings.cfg") == OK:
+        graphics_quality = clampi(int(cfg.get_value("graphics", "quality", 1)), 0, 2)
+
+
+func _save_graphics_cfg() -> void :
+    var cfg: = ConfigFile.new()
+    cfg.load("user://settings.cfg")
+    cfg.set_value("graphics", "quality", graphics_quality)
+    cfg.save("user://settings.cfg")
 
 
 func toggle_cam_flip() -> void :
@@ -108,6 +163,7 @@ func set_wanted(level: int) -> void :
     wanted_changed.emit(wanted_level)
 
 func _ready() -> void :
+    _load_graphics_cfg()
     load_game()
 
 func add_cash(amount: int) -> void :

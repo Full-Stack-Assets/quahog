@@ -108,6 +108,31 @@ var _asphalt_tex: Texture2D = null
 var _buildings_root: Node3D = null
 var _tiles: Dictionary = {}                # Vector2i tile -> MeshInstance3D
 var _stream_radius: int = 2
+var _stream_budget: int = 5
+var _base_lod: int = 2
+var _pending_tiles: Array = []          # [{key: Vector2i, lod: int}]
+func set_stream_quality(radius: int, budget: int, base_lod: int) -> void :
+    _stream_radius = clampi(radius, 1, 4)
+    _stream_budget = clampi(budget, 1, 20)
+    _base_lod = clampi(base_lod, 0, 2)
+
+
+func _tile_lod(tile_dist: int) -> int:
+    # Outer ring drops one LOD tier; impostor boxes at the far edge on Low/Medium.
+    var lod: int = _base_lod
+    if tile_dist >= _stream_radius:
+        lod -= 1
+    elif tile_dist == _stream_radius - 1 and _base_lod <= 1:
+        lod = 0
+    return clampi(lod, 0, 2)
+
+
+func _pending_has(key: Vector2i) -> bool:
+    for item in _pending_tiles:
+        if item["key"] == key:
+            return true
+    return false
+
 # Roads stream per-tile too (tiles/r_X_Y.json), so the ~38k-road network isn't
 # all built at load. _junctions (arterial intersections) is computed once up front
 # for stop-bar/crosswalk placement inside the streamed tiles.
@@ -190,7 +215,8 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
 
 
 # Build the building tiles within _stream_radius of center and free those that
-# have moved out of range. Call as the player moves / after fast travel.
+# have moved out of range. New tiles are budgeted per call so fast-travel spikes
+# don't hitch the frame.
 func stream_buildings(center: Vector3) -> void :
     if _buildings_root == null:
         return
@@ -200,10 +226,27 @@ func stream_buildings(center: Vector3) -> void :
     for dx in range(-r, r + 1):
         for dy in range(-r, r + 1):
             var key: = Vector2i(ctx + dx, cty + dy)
-            if not _tiles.has(key):
-                _build_streamed_tile(key)
+            var dist: int = maxi(absi(dx), absi(dy))
+            var lod: int = _tile_lod(dist)
+            if not _tiles.has(key) and not _pending_has(key):
+                _pending_tiles.append({"key": key, "lod": lod})
             if not _road_tiles.has(key):
                 _build_road_tile(key)
+    _pending_tiles.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+        var ak: Vector2i = a["key"]
+        var bk: Vector2i = b["key"]
+        var ad: int = maxi(absi(ak.x - ctx), absi(ak.y - cty))
+        var bd: int = maxi(absi(bk.x - ctx), absi(bk.y - cty))
+        return ad < bd
+    )
+    var budget: int = _stream_budget
+    while budget > 0 and _pending_tiles.size() > 0:
+        var item: Dictionary = _pending_tiles.pop_front()
+        var pkey: Vector2i = item["key"]
+        if _tiles.has(pkey):
+            continue
+        _build_streamed_tile(pkey, int(item["lod"]))
+        budget -= 1
     # Free tiles beyond the radius (with one tile of hysteresis).
     for key in _tiles.keys():
         if absi(key.x - ctx) > r + 1 or absi(key.y - cty) > r + 1:
@@ -235,13 +278,13 @@ func road_points_near(center: Vector3, radius: float, cap: int = 800) -> Array:
     return out
 
 
-func _build_streamed_tile(key: Vector2i) -> void :
+func _build_streamed_tile(key: Vector2i, lod: int = 2) -> void :
     _tiles[key] = null   # reserve so we don't re-attempt a missing tile every pass
     var path: = "%s/tiles/b_%d_%d.json" % [MAP_DIR, key.x, key.y]
     var data: Variant = _read_json(path)
     if data == null or not (data is Array):
         return
-    var mi: = _build_tile(_buildings_root, data, key.x, key.y)
+    var mi: = _build_tile(_buildings_root, data, key.x, key.y, lod)
     if mi != null:
         _tiles[key] = mi
 
@@ -270,7 +313,7 @@ func _build_ground(parent: Node3D, bbox: Rect2) -> void :
     parent.add_child(body)
 
 
-func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> Node3D:
+func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int, lod: int = 2) -> Node3D:
     # Three façade materials by height tier (clapboard/windows · brick · concrete).
     var st_w: = SurfaceTool.new()
     st_w.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -301,7 +344,7 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> Node3D:
         else:
             st = st_w
             any_w = true
-        _emit_building(st, faces, fp, h)
+        _emit_building(st, faces, fp, h, lod)
         buildings_built += 1
         any = true
         if b.has("name"):
@@ -312,11 +355,11 @@ func _build_tile(root: Node3D, buildings: Array, tx: int, ty: int) -> Node3D:
     var tile_root: = Node3D.new()
     tile_root.name = "Tile_%d_%d" % [tx, ty]
     if any_w:
-        _commit_facade(tile_root, st_w, _facade_tex)
+        _commit_facade(tile_root, st_w, _facade_tex if lod >= 1 else null)
     if any_b:
-        _commit_facade(tile_root, st_b, _brick_tex)
+        _commit_facade(tile_root, st_b, _brick_tex if lod >= 1 else null)
     if any_o:
-        _commit_facade(tile_root, st_o, _office_tex)
+        _commit_facade(tile_root, st_o, _office_tex if lod >= 1 else null)
     # One trimesh collider for the whole tile's walls/roofs.
     var body: = StaticBody3D.new()
     var col: = CollisionShape3D.new()
@@ -350,7 +393,7 @@ func _commit_facade(parent: Node3D, st: SurfaceTool, tex: Texture2D) -> void :
     parent.add_child(mi)
 
 
-func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float) -> void :
+func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: float, lod: int = 2) -> void :
     # Per-building tint by height tier, with deterministic variety inside each tier
     # so the streetscape reads as mixed eras (granite civic / brick mills / painted
     # triple-deckers) instead of three flat tones. Seed from the footprint so a
@@ -381,7 +424,8 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
     # peaked hip roof — a fan from each footprint edge up to an apex over the
     # centroid — so they aren't flat-topped boxes. Tall granite/mills stay flat.
     var roof_col: = col.lightened(0.08)
-    if h < 14.0:
+    var use_pitch: bool = h < 14.0 and lod >= 2
+    if use_pitch:
         var cx: = 0.0
         var cy: = 0.0
         for p2 in poly2:
@@ -413,8 +457,9 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
                 faces.append(v)
 
     # Walls (extrude each edge from ground to roof) with window-grid UVs that
-    # tile by wall length and floor height.
+    # tile by wall length and floor height. Impostor LOD uses flat UVs.
     var vmax: = h / WALL_TILE_V
+    var flat_uv: bool = lod <= 0
     for i in range(n):
         var a2: = poly2[i]
         var b2: = poly2[(i + 1) % n]
@@ -431,7 +476,7 @@ func _emit_building(st: SurfaceTool, faces: PackedVector3Array, fp: Array, h: fl
         ]
         for j in verts.size():
             st.set_color(col)
-            st.set_uv(uvs[j])
+            st.set_uv(Vector2(0.05, 0.05) if flat_uv else uvs[j])
             st.add_vertex(verts[j])
             faces.append(verts[j])
 

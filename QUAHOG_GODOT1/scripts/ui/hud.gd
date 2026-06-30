@@ -25,6 +25,7 @@ var _speed_label: Label = null
 var _driving_now: bool = false
 var _pause_panel: Control
 var _settings_panel: Control
+var _quality_option: OptionButton
 var _edit_banner: Control
 var _font: Font
 
@@ -521,6 +522,22 @@ func _build_settings() -> void :
     vbox.add_child(_volume_row("Music", "Music"))
     vbox.add_child(_volume_row("Sound FX", "SFX"))
 
+    var qual_row: = VBoxContainer.new()
+    qual_row.add_theme_constant_override("separation", 4)
+    var qual_lbl: = Label.new()
+    qual_lbl.text = "Graphics"
+    _apply_font(qual_lbl, 26, Color(0.92, 0.9, 0.86))
+    qual_row.add_child(qual_lbl)
+    _quality_option = OptionButton.new()
+    _quality_option.custom_minimum_size = Vector2(500, 44)
+    for i in GameManager.QUALITY_NAMES.size():
+        _quality_option.add_item(GameManager.QUALITY_NAMES[i], i)
+    if GameManager:
+        _quality_option.select(GameManager.graphics_quality)
+    _quality_option.item_selected.connect(_on_quality_selected)
+    qual_row.add_child(_quality_option)
+    vbox.add_child(qual_row)
+
     var back: = _menu_button("Back", _close_settings)
     vbox.add_child(back)
 
@@ -542,6 +559,12 @@ func _volume_row(label_text: String, bus_name: String) -> Control:
     slider.value_changed.connect(_on_volume_changed.bind(bus_name))
     row.add_child(slider)
     return row
+
+
+func _on_quality_selected(index: int) -> void :
+    if GameManager:
+        GameManager.set_graphics_quality(index)
+    _save_settings()
 
 
 func _on_volume_changed(value: float, bus_name: String) -> void :
@@ -568,10 +591,13 @@ func _close_settings() -> void :
 
 func _save_settings() -> void :
     var cfg: = ConfigFile.new()
+    cfg.load("user://settings.cfg")
     for bus_name in ["Master", "Music", "SFX"]:
         var idx: int = AudioServer.get_bus_index(bus_name)
         if idx >= 0:
             cfg.set_value("audio", bus_name, AudioServer.get_bus_volume_db(idx))
+    if GameManager:
+        cfg.set_value("graphics", "quality", GameManager.graphics_quality)
     cfg.save("user://settings.cfg")
 
 

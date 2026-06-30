@@ -23,6 +23,7 @@ const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
 const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
 const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
 const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
+const HeroHubsScript: = preload("res://scripts/world/hero_hubs.gd")
 
 # Cars everywhere: every parked car is a real, takeable drivable car (parked
 # cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
@@ -51,7 +52,8 @@ const HERO_LANDMARKS: Array = [
     {"name": "Fort Taber", "pos": Vector2(1495, 4560)},
     {"name": "Clark's Point Light", "pos": Vector2(1598, 4764)},
     {"name": "Fairhaven", "pos": Vector2(1539, 32)},
-    {"name": "Dartmouth Town Hall", "pos": Vector2(-3744, 806)},
+    {"name": "Dartmouth Mall", "pos": Vector2(-3921, -378), "tag": "mall", "h": 16.0},
+    {"name": "Cape Cod Canal", "pos": Vector2(-11050, -47600), "tag": "cape", "h": 20.0},
     {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
     {"name": "Westport", "pos": Vector2(-11897, 1521)},
     {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
@@ -97,6 +99,10 @@ var _traffic: Array = []
 var _npcs: Array = []
 var _street_lights: Array = []
 var _last_stream_tile: Vector2i = Vector2i(999999, 999999)
+var _car_restream_i: int = 0
+var _road_cands: Array = []
+var _road_cand_tile: Vector2i = Vector2i(999999, 999999)
+var _road_cand_i: int = 0
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -120,7 +126,10 @@ func _ready() -> void :
     _tex_concrete = load("res://assets/textures/floors/concrete_sidewalk.png")
 
     _setup_environment()
+    if GameManager:
+        GameManager.graphics_quality_changed.connect(_apply_graphics_quality)
     _build_city()
+    _apply_graphics_quality()
     _place_cars()
     _spawn_traffic()
     _place_streetlights()
@@ -143,6 +152,7 @@ func _ready() -> void :
     _build_shop_menu()
     _build_diner()
     NeonSignsScript.build(self)
+    HeroHubsScript.build(self)
     _start_audio()
     _setup_weather()
     call_deferred("_apply_tod_life")
@@ -177,6 +187,12 @@ func _place_landmark_beacons() -> void :
         elif tag == "borden":
             m.albedo_color = Color(0.62, 0.48, 0.42)
             m.emission = Color(1.0, 0.55, 0.35)
+        elif tag == "mall":
+            m.albedo_color = Color(0.55, 0.62, 0.78)
+            m.emission = Color(0.45, 0.72, 1.0)
+        elif tag == "cape":
+            m.albedo_color = Color(0.38, 0.55, 0.68)
+            m.emission = Color(0.55, 0.82, 0.95)
         else:
             m.albedo_color = Color(0.95, 0.72, 0.36)
             m.emission = Color(1.0, 0.74, 0.34)
@@ -224,7 +240,7 @@ func _place_landmark_beacons() -> void :
 func _setup_weather() -> void :
     var rain: = CPUParticles3D.new()
     rain.name = "Rain"
-    rain.amount = 280
+    rain.amount = GameManager.rain_particle_count() if GameManager else 280
     rain.lifetime = 1.1
     rain.local_coords = false
     rain.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
@@ -329,20 +345,36 @@ func _process(delta: float) -> void :
         GameManager.raining = _raining
 
 
-# Stream building tiles around the player as they cross the 500 m tile grid, so
-# the whole South Coast (NB → Westport → Fall River) is explorable without
-# loading every tile at once.
+# Stream building tiles around the player. Tile builds are budgeted per frame;
+# parked cars re-stream in small batches so a 200-car pool stays cheap.
 func _update_streaming() -> void :
     if _city == null or _player == null or not is_instance_valid(_player):
         return
     var p: Vector3 = _player.global_position
-    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
-    if tile == _last_stream_tile:
-        return
-    _last_stream_tile = tile
     if _city.has_method("stream_buildings"):
         _city.stream_buildings(p)
-    _restream_cars(p)
+    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
+    if tile != _road_cand_tile:
+        _road_cand_tile = tile
+        if _city.has_method("road_points_near"):
+            _road_cands = _city.road_points_near(p, CAR_NEAR, 800)
+            _road_cands.shuffle()
+            _road_cand_i = 0
+    _restream_cars_staggered(p)
+    _last_stream_tile = tile
+
+
+func _apply_graphics_quality() -> void :
+    if _city == null or GameManager == null:
+        return
+    if _city.has_method("set_stream_quality"):
+        _city.set_stream_quality(
+            GameManager.stream_radius(),
+            GameManager.stream_tile_budget(),
+            GameManager.building_lod()
+        )
+    if _rain:
+        _rain.amount = GameManager.rain_particle_count()
 
 
 func _update_weather(delta: float) -> void :
@@ -488,7 +520,8 @@ func _build_city() -> void :
     # of the procedural grid. MapLoader also lays a ground plane + collider and
     # derives all the spawn fields game_world relies on.
     _city = MapLoaderScript.new()
-    _city.build_region(self, Vector2i.ZERO, MAP_RADIUS)
+    var radius: int = GameManager.stream_radius() if GameManager else MAP_RADIUS
+    _city.build_region(self, Vector2i.ZERO, radius)
 
 
 
@@ -497,9 +530,9 @@ func _place_cars() -> void :
         return
 
     var models: = [
-        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 16.0, "trq": 110.0, "mass": 1000.0},
-        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 18.0, "trq": 120.0, "mass": 1100.0},
-        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 15.0, "trq": 145.0, "mass": 1500.0},
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 68.0, "trq": 280.0, "mass": 1000.0},
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 76.0, "trq": 310.0, "mass": 1100.0},
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 62.0, "trq": 340.0, "mass": 1500.0},
     ]
     # Spawn the pool on road points near where the player starts (dense), not
     # smeared across the whole 80 km region. _restream_cars keeps them near you.
@@ -507,7 +540,8 @@ func _place_cars() -> void :
     if _city.has_method("road_points_near"):
         slots = _city.road_points_near(_city.player_spawn, CAR_NEAR, 800)
     slots.shuffle()
-    var count: int = mini(CAR_POOL, slots.size())
+    var pool: int = GameManager.car_pool_size() if GameManager else CAR_POOL
+    var count: int = mini(pool, slots.size())
     for i in count:
         var slot = slots[i]
         var m: Dictionary = models[i % models.size()]
@@ -530,17 +564,22 @@ func _parked_xform(slot: Array) -> Array:
     return [pos + offset, yaw]
 
 
-# Relocate parked cars that have drifted far from the player onto road points
-# nearby, so the streamed world always has ~CAR_POOL takeable cars around you.
-func _restream_cars(center: Vector3) -> void :
-    if _city == null or not _city.has_method("road_points_near"):
+# Relocate far parked cars onto road points near the player in small batches.
+func _restream_cars_staggered(center: Vector3) -> void :
+    if _city == null or _drivable_cars.is_empty():
         return
-    var cand: Array = _city.road_points_near(center, CAR_NEAR, 800)
-    if cand.is_empty():
+    var batch: int = GameManager.car_restream_batch() if GameManager else 12
+    if _road_cands.is_empty() and _city.has_method("road_points_near"):
+        _road_cands = _city.road_points_near(center, CAR_NEAR, 800)
+        _road_cands.shuffle()
+        _road_cand_i = 0
+    if _road_cands.is_empty():
         return
-    cand.shuffle()
-    var ci: int = 0
-    for car in _drivable_cars:
+    for _i in batch:
+        if _drivable_cars.is_empty():
+            break
+        _car_restream_i = (_car_restream_i + 1) % _drivable_cars.size()
+        var car = _drivable_cars[_car_restream_i]
         if not is_instance_valid(car):
             continue
         if _player != null and _player.current_car == car:
@@ -548,9 +587,9 @@ func _restream_cars(center: Vector3) -> void :
         var cp: Vector3 = car.global_position
         if Vector2(cp.x - center.x, cp.z - center.z).length() <= CAR_FAR:
             continue
-        while ci < cand.size():
-            var slot = cand[ci]
-            ci += 1
+        while _road_cand_i < _road_cands.size():
+            var slot = _road_cands[_road_cand_i]
+            _road_cand_i += 1
             var sp: Vector3 = slot[0]
             if Vector2(sp.x - center.x, sp.z - center.z).length() > 40.0:
                 var park: Array = _parked_xform(slot)
@@ -597,9 +636,9 @@ func _spawn_traffic() -> void :
         ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
         ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
     ]
-    var want_traffic: int = TRAFFIC_CARS
+    var want_traffic: int = GameManager.traffic_car_count() if GameManager else TRAFFIC_CARS
     if GameManager:
-        want_traffic = int(round(float(TRAFFIC_CARS) * GameManager.cheat_traffic_mult))
+        want_traffic = int(round(float(want_traffic) * GameManager.cheat_traffic_mult))
     var n: int = mini(want_traffic, waypoints.size())
     for i in n:
         var m: Array = models[i % models.size()]
@@ -737,7 +776,8 @@ func _spawn_shops() -> void :
     var spots: = [
         Vector3(50.0, 0.0, 6.0), 
         Vector3(-52.0, 0.0, -12.0), 
-        Vector3(6.0, 0.0, -110.0), 
+        Vector3(6.0, 0.0, -110.0),
+        Vector3(-3921.0, 0.0, -378.0),  # Dartmouth Mall hub
     ]
     for p in spots:
         var shop: = Node3D.new()

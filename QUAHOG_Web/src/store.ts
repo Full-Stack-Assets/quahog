@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Slice } from "./slice";
 import { shared } from "./shared";
+import type { Quality } from "./quality";
 
 export type Mode = "foot" | "car" | "boat";
 export type View = "third" | "first";
@@ -32,6 +33,7 @@ interface GameState {
   shadows: boolean;
   fov: number;
   reduceShake: boolean;
+  quality: Quality;
   photo: boolean;
   scrimshaw: number; // collectibles found (for the HUD counter)
   waypoint: { x: number; z: number } | null; // player-placed map waypoint
@@ -59,6 +61,8 @@ interface GameState {
   toggleShadows: () => void;
   setFov: (n: number) => void;
   toggleReduceShake: () => void;
+  cycleQuality: () => void;
+  setQuality: (q: Quality) => void;
   togglePhoto: () => void;
   setScrimshaw: (n: number) => void;
   setWaypoint: (w: { x: number; z: number } | null) => void;
@@ -88,6 +92,7 @@ export const useGame = create<GameState>((set) => ({
   shadows: true,
   fov: 60,
   reduceShake: false,
+  quality: 1,
   photo: false,
   scrimshaw: 0,
   waypoint: null,
@@ -116,6 +121,8 @@ export const useGame = create<GameState>((set) => ({
   toggleShadows: () => set((s) => ({ shadows: !s.shadows })),
   setFov: (fov) => set({ fov: Math.max(45, Math.min(85, fov)) }),
   toggleReduceShake: () => set((s) => ({ reduceShake: !s.reduceShake })),
+  cycleQuality: () => set((s) => ({ quality: ((s.quality + 1) % 3) as Quality })),
+  setQuality: (quality) => set({ quality }),
   togglePhoto: () => set((s) => ({ photo: !s.photo })),
   setScrimshaw: (scrimshaw) => set({ scrimshaw }),
   setWaypoint: (waypoint) => set({ waypoint }),
