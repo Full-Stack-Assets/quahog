@@ -86,6 +86,13 @@ export function makeFacadeMaps() {
   // wall
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
+  // faint horizontal courses (clapboard siding / masonry bands) + a little
+  // vertical grain so the wall reads as material instead of flat paint — these
+  // multiply the per-building base colour; the window is drawn over them
+  a.strokeStyle = "rgba(0,0,0,0.06)"; a.lineWidth = 1;
+  for (let yy = 8; yy < S; yy += 11) { a.beginPath(); a.moveTo(0, yy + 0.5); a.lineTo(S, yy + 0.5); a.stroke(); }
+  a.strokeStyle = "rgba(0,0,0,0.03)";
+  for (let xx = 16; xx < S; xx += 32) { a.beginPath(); a.moveTo(xx + 0.5, 0); a.lineTo(xx + 0.5, S); a.stroke(); }
   // window opening, centred, taller than wide (typical sash window)
   const mx = 30, my = 20, w = S - mx * 2, h = S - my * 2;
   // --- albedo ---
