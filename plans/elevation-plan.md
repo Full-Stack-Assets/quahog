@@ -33,23 +33,15 @@ These are the highest-leverage moves, in order:
 
 ### Tier 1 — Make the loop feel like a real game
 
-1. **Re-enable police/heat by default in Godot**  
-   Flip `cheat_no_police` default to `false`. Tune wanted decay, bust cost, and cop spawn so chases are fun, not punishing. This alone elevates stakes dramatically.
-
-2. **Complete the core crime loop polish**  
-   - Horn (button + SFX)  
-   - Water as non-drivable barrier (harbor/rivers)  
-   - Health/armor pickups + cop damage tuning  
-   - Pay-n-Spray / heat clear (web has this; port to Godot)
-
-3. **Ship “Off the Boat” opener** (from `quahog-project-files/CHARACTERS_AND_MISSIONS.md`)  
-   Fish pier → Bethel → ambush → steal car → fog getaway → safehouse. This becomes tutorial + first-time experience + reason to care.
-
-4. **Weapon variety on the street**  
-   Shotgun, bat, rifle pickups with distinct feel (web partial; Godot has `weapon_db` but limited world placement).
-
-5. **Smoke-test checklist per build**  
-   Load → walk → drive → shoot → job → heat → save/continue → radio. Automate what you can (`npm run build`, Godot `--export-release "Web"`).
+1. **Re-enable police/heat by default in Godot** — **DONE** (`cheat_no_police` default `false`; tuned decay/bust/cop damage)
+2. **Complete the core crime loop polish** — **DONE**
+   - Horn (button + SFX) — `H` + HORN touch button
+   - Water as non-drivable barrier — `water_zones.gd` + `water_hazard.gd`
+   - Health/armor pickups + cop damage tuning — pickups expanded; cop damage 6
+   - Pay-n-Spray / heat clear — `respray_zone.gd` at gun-shop area ($200)
+3. **Ship “Off the Boat” opener** — **DONE** (`story_mission.gd`; auto-starts on new game)
+4. **Weapon variety on the street** — **DONE** (pistol/bat/shotgun/rifle + ammo pickups)
+5. **Smoke-test checklist per build** — **DONE** (`plans/smoke-test-checklist.md`)
 
 ### Tier 2 — Make the world believable
 
@@ -85,13 +77,13 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 
 | # | Improvement | Notes |
 |---|-------------|-------|
-| A1 | Re-enable police/wanted by default | **[Godot]** — critical |
-| A2 | Tune wanted decay, bust fines, evade rewards | **[Both]** |
+| A1 | Re-enable police/wanted by default | **[Godot]** done |
+| A2 | Tune wanted decay, bust fines, evade rewards | **[Godot]** done |
 | A3 | Dual-axis heat (police + faction aggro) | **[Web]** has it; port **[Godot]** |
 | A4 | Safehouse (sleep, save, clear heat) | **[Web]** partial |
-| A5 | Pay-n-Spray / respray clears heat | **[Web]** |
-| A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** |
-| A7 | “Off the Boat” story opener | **[Both]** |
+| A5 | Pay-n-Spray / respray clears heat | **[Godot]** done |
+| A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** partial |
+| A7 | “Off the Boat” story opener | **[Godot]** done |
 | A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | Content |
 | A9 | Act II: Spindle City, Acquitted (Borden) | Content |
 | A10 | Act III: Gloria storm, Battleship finale | Content |
@@ -113,8 +105,8 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A26 | Sprint stamina | **[Web]** |
 | A27 | Lock-on / aim assist | |
 | A28 | Melee combos, block, grapple | |
-| A29 | Gun: reload, ammo pickups, weapon wheel | **[Both]** partial |
-| A30 | Health regen, medkits, armor vests | **[Both]** partial |
+| A29 | Gun: reload, ammo pickups, weapon wheel | **[Godot]** partial (pickups) |
+| A30 | Health regen, medkits, armor vests | **[Godot]** done |
 | A31 | Businesses to buy (5 fronts) + passive income | **[Web]** |
 | A32 | Revenue events (margin leak, boom) | **[Web]** |
 | A33 | Shops: weapons, clothing, food, vehicle mods | |
@@ -140,13 +132,13 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | B9 | Fast travel brings your car | **[Both]** done |
 | B10 | Park cars at curb (not lane center) | **[Godot]** done |
 | B11 | 200-car pool with restreaming | **[Godot]** |
-| B12 | Horn button + SFX | Open |
+| B12 | Horn button + SFX | done |
 | B13 | Headlights/taillights/brake/reverse/turn signals | Partial |
 | B14 | Speedometer (MPH/km/h) | **[Both]** |
 | B15 | Tire skid marks + screech audio | Partial |
 | B16 | Engine RPM/audio layers | Partial |
 | B17 | Wheel rotation + suspension animation | |
-| B18 | Water non-drivable | Open |
+| B18 | Water non-drivable | done |
 | B19 | Collision crunch + sparks | Partial |
 | B20 | Car radio audible inside cabin | |
 | B21 | Garage / storage / paint customization | |

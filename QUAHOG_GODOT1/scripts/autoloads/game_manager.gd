@@ -15,12 +15,13 @@ const STARTING_CASH: = 40
 var cash: int = STARTING_CASH
 var missions_completed: int = 0
 var wanted_level: int = 0
+var opener_complete: bool = false
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
 
 # Cheats (toggled from the main-menu CHEATS panel; persisted with the save).
-# no_police suppresses all wanted-heat so you can test freely. Defaults ON.
-var cheat_no_police: bool = true
+# no_police suppresses all wanted-heat for testing. Defaults OFF so the crime loop bites.
+var cheat_no_police: bool = false
 var cheat_godmode: bool = false
 # Forced time of day: -1 = normal day/night clock; otherwise a fixed day_phase
 # (0=dusk, 0.25=night, 0.5=dawn, 0.75=midday).
@@ -54,7 +55,7 @@ func _cheat_dict() -> Dictionary:
 
 
 func _load_cheats(d: Dictionary) -> void :
-    cheat_no_police = bool(d.get("no_police", true))
+    cheat_no_police = bool(d.get("no_police", false))
     cheat_godmode = bool(d.get("godmode", false))
     cheat_time_phase = float(d.get("time_phase", -1.0))
     cheat_infinite_ammo = bool(d.get("inf_ammo", false))
@@ -139,6 +140,7 @@ func save_game() -> void :
         "cash": cash,
         "missions_completed": missions_completed,
         "wanted_level": wanted_level,
+        "opener_complete": opener_complete,
         "has_pos": has_saved_pos,
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
@@ -164,6 +166,7 @@ func load_game() -> void :
     cash = int(data.get("cash", STARTING_CASH))
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
+    opener_complete = bool(data.get("opener_complete", false))
     var cd: Variant = data.get("cheats", {})
     if cd is Dictionary:
         _load_cheats(cd)
@@ -177,6 +180,7 @@ func reset_save() -> void :
     cash = STARTING_CASH
     missions_completed = 0
     wanted_level = 0
+    opener_complete = false
     has_saved_pos = false
     saved_pos = Vector3.ZERO
     saved_yaw = 0.0

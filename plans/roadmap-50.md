@@ -5,12 +5,12 @@ to bottom; each batch is verified with a clean `--export-release "Web"` before
 commit. Checkboxes flip as they land.
 
 ## A. Driving & vehicles
-1. [ ] Water is non-drivable — cars/player can't cross the harbor (collision or slow/stop zone).
+1. [x] Water is non-drivable — cars/player can't cross the harbor (collision or slow/stop zone).
 2. [x] Car model faces its travel direction (no rear-first driving).
 3. [x] Camera collision — chase cam doesn't clip through buildings.
 4. [x] Brake vs reverse feel + handbrake.
 5. [x] Flip/stuck recovery (right the car if overturned or wedged).
-6. [ ] Horn (button + SFX).
+6. [x] Horn (button + SFX).
 7. [ ] Headlights on at night.
 8. [x] Speedometer correctness (km/h) + needle.
 9. [x] Per-model handling spread (mass/grip/top speed).
@@ -49,14 +49,14 @@ commit. Checkboxes flip as they land.
 
 ## E. Gameplay & systems
 36. [ ] Job/mission flow polish (markers, objectives, completion).
-37. [ ] Police/wanted system re-enable + tuning (off by cheat now).
+37. [x] Police/wanted system re-enable + tuning (off by cheat now).
 38. [ ] Pedestrian NPCs on sidewalks.
 39. [ ] A few enterable interiors (shop/diner).
 40. [ ] Save/load slots + settings persistence.
 41. [ ] Economy loop (earn/spend).
 42. [ ] Big-map markers for missions/shops.
 43. [ ] Weapon wheel / inventory UI.
-44. [ ] Health/armor pickups in the world.
+44. [x] Health/armor pickups in the world.
 45. [ ] Time-of-day affects traffic/ped density.
 
 ## F. Performance & tech
@@ -64,4 +64,4 @@ commit. Checkboxes flip as they land.
 47. [ ] 200-car pool perf pass (dormancy/instancing).
 48. [ ] Web VRAM/texture-compression tuning.
 49. [ ] On-screen error/telemetry overlay for web debugging.
-50. [ ] Loading-screen progress + faster first paint.
+50. [x] Loading-screen progress + faster first paint.

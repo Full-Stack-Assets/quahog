@@ -15,9 +15,9 @@ var _spawn_timer: float = 0.0
 var _decay_timer: float = 0.0
 var _busted_cooldown: float = 0.0
 
-const MAX_COPS: = 6
-const SPAWN_DIST: = 38.0
-const DECAY_TIME: = 11.0
+const MAX_COPS: = 5
+const SPAWN_DIST: = 42.0
+const DECAY_TIME: = 13.0
 
 
 func setup(p_player: Node3D, p_world: Node3D) -> void :
@@ -78,7 +78,7 @@ func _process(delta: float) -> void :
     var want_cops: int = min(level + 1, MAX_COPS)
     _spawn_timer -= delta
     if _cops.size() < want_cops and _spawn_timer <= 0.0:
-        _spawn_timer = 1.4
+        _spawn_timer = 1.6
         _spawn_cop()
 
 
@@ -99,7 +99,7 @@ func _spawn_cop() -> void :
 
 func _busted() -> void :
     _busted_cooldown = 4.0
-    var lost: int = int(GameManager.cash * 0.3) + 20
+    var lost: int = int(GameManager.cash * 0.25) + 15
     GameManager.add_cash( - lost)
     GameManager.show_message("BUSTED! The cops took $%d." % lost)
     if AudioManager:

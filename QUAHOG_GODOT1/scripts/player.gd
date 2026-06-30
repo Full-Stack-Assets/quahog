@@ -575,6 +575,13 @@ func on_busted() -> void :
     global_position = home_spawn if home_spawn != Vector3.ZERO else global_position
     velocity = Vector3.ZERO
 
+
+func recover_from_water(pos: Vector3, in_car: bool) -> void :
+    if in_car and current_car != null and is_instance_valid(current_car) and current_car.has_method("place_at"):
+        current_car.place_at(pos, get_map_heading())
+    global_position = pos
+    velocity = Vector3.ZERO
+
 func set_heading(yaw: float) -> void :
     if mesh_root:
         mesh_root.rotation.y = yaw
@@ -637,6 +644,8 @@ func _physics_process(delta: float) -> void :
                 current_car.set_drive_input(steer, throttle)
             if current_car.has_method("set_handbrake"):
                 current_car.set_handbrake(Input.is_action_pressed("handbrake"))
+            if Input.is_action_just_pressed("horn") and current_car.has_method("honk"):
+                current_car.honk()
             if "vehicle_model" in current_car and current_car.vehicle_model:
                 global_position = current_car.vehicle_model.global_position
             # Pan the chase cam with look input; when released, ease back so the

@@ -17,7 +17,7 @@ var target: Node3D = null
 var wanted_system: Node = null
 
 const FIRE_RANGE: float = 22.0
-const FIRE_DAMAGE: int = 8
+const FIRE_DAMAGE: int = 6
 const FIRE_INTERVAL: float = 1.1
 
 var mesh_root: Node3D
