@@ -45,11 +45,11 @@ These are the highest-leverage moves, in order:
 
 ### Tier 2 — Make the world believable
 
-6. **Water barrier + drivable bridges** — Braga, Fairhaven, hurricane barrier; no driving on open ocean.  
-7. **Night readability** — building window emission, car headlights/taillights, street lamp point lights.  
-8. **Traffic & ped life** — stop signs/lights (visual first), peds flee/panic, density by time of day.  
-9. **Hero landmarks** — Lizzie Borden House (manual coord), Whaling Museum detail, Battleship Cove polish.  
-10. **Audio pass** — harbor gulls, traffic hum, surface footsteps, tire screech, weapon impacts.
+6. **Water barrier + drivable bridges** — **DONE** (`water_zones.gd` bridge corridors; `map_loader.gd` deck colliders for Braga, hurricane barrier, Fairhaven).  
+7. **Night readability** — **DONE** (facade window emission, car head/taillights, street lamps + mooring lights).  
+8. **Traffic & ped life** — **DONE** (stop signs + traffic lights at junctions; ped panic on gunfire; TOD density scaling).  
+9. **Hero landmarks** — **DONE** (Lizzie Borden House, Whaling Museum + Battleship Cove polish).  
+10. **Audio pass** — **DONE** (harbor ambient loop; footsteps/screech/impacts already wired).
 
 ### Tier 3 — Make it memorable (content & identity)
 
