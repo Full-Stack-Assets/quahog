@@ -86,13 +86,23 @@ export function makeFacadeMaps() {
   // wall
   a.fillStyle = "#ffffff"; a.fillRect(0, 0, S, S);          // white → keep base colour
   e.fillStyle = "#000000"; e.fillRect(0, 0, S, S);          // black → wall doesn't glow
-  // faint horizontal courses (clapboard siding / masonry bands) + a little
-  // vertical grain so the wall reads as material instead of flat paint — these
-  // multiply the per-building base colour; the window is drawn over them
-  a.strokeStyle = "rgba(0,0,0,0.06)"; a.lineWidth = 1;
-  for (let yy = 8; yy < S; yy += 11) { a.beginPath(); a.moveTo(0, yy + 0.5); a.lineTo(S, yy + 0.5); a.stroke(); }
-  a.strokeStyle = "rgba(0,0,0,0.03)";
-  for (let xx = 16; xx < S; xx += 32) { a.beginPath(); a.moveTo(xx + 0.5, 0); a.lineTo(xx + 0.5, S); a.stroke(); }
+  // running-bond masonry: mortar bed/head joints + subtle per-brick value
+  // variation so the wall reads as real brick/granite/clapboard. Kept neutral
+  // (dark joints only) so it MULTIPLIES each building's base colour correctly —
+  // red base → brick, grey base → granite. The window is drawn over this.
+  const BH = 8, BW = 26; // course height ~0.2m and brick length at floor-tile scale
+  for (let yy = 0, row = 0; yy <= S; yy += BH, row++) {
+    a.strokeStyle = "rgba(0,0,0,0.11)"; a.lineWidth = 1;
+    a.beginPath(); a.moveTo(0, yy + 0.5); a.lineTo(S, yy + 0.5); a.stroke(); // bed joint
+    const xoff = (row % 2) * (BW / 2);                                       // running-bond offset
+    for (let xx = xoff; xx <= S; xx += BW) {
+      a.beginPath(); a.moveTo(xx + 0.5, yy + 0.5); a.lineTo(xx + 0.5, yy + BH + 0.5); a.stroke(); // head joint
+      if (Math.random() < 0.55) {                                           // weather a few bricks
+        a.fillStyle = `rgba(0,0,0,${0.02 + Math.random() * 0.05})`;
+        a.fillRect(xx + 1, yy + 1, BW - 2, BH - 2);
+      }
+    }
+  }
   // window opening, centred, taller than wide (typical sash window)
   const mx = 30, my = 20, w = S - mx * 2, h = S - my * 2;
   // --- albedo ---
