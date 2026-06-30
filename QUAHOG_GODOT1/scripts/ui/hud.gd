@@ -17,6 +17,9 @@ const LAYOUT_PATH: = "user://controls_layout.json"
 var _player: CharacterBody3D = null
 var _root: Control
 var _cash_label: Label
+var _scrimshaw_label: Label = null
+var _fronts_label: Label = null
+var _buy_prompt: Label = null
 var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
@@ -25,6 +28,9 @@ var _speed_label: Label = null
 var _driving_now: bool = false
 var _pause_panel: Control
 var _settings_panel: Control
+var _controls_panel: Control
+var _quality_option: OptionButton
+var _pause_stats_label: Label
 var _edit_banner: Control
 var _font: Font
 
@@ -37,6 +43,7 @@ var _obj_active: bool = false
 var _obj_text: String = ""
 var _obj_target: Vector3 = Vector3.ZERO
 var _wanted_label: Label = null
+var _faction_label: Label = null
 var _ammo_label: Label = null
 var _health_bar: ProgressBar = null
 var _armor_bar: ProgressBar = null
@@ -88,8 +95,16 @@ func _ready() -> void :
         GameManager.cash_changed.connect(_on_cash_changed)
         GameManager.notify.connect(show_toast)
         GameManager.wanted_changed.connect(_on_wanted_changed)
+        GameManager.faction_changed.connect(_on_faction_changed)
+        GameManager.scrimshaw_changed.connect(_on_scrimshaw_changed)
+        GameManager.businesses_changed.connect(_on_businesses_changed)
         _on_cash_changed(GameManager.cash)
         _on_wanted_changed(GameManager.wanted_level)
+        _on_faction_changed(GameManager.faction_level)
+        _on_scrimshaw_changed(GameManager.scrimshaw_found())
+        _on_businesses_changed(GameManager.businesses_owned())
+    if BusinessManager:
+        BusinessManager.near_buy_changed.connect(_on_near_buy_changed)
 
 
 func bind_player(player: CharacterBody3D) -> void :
@@ -174,6 +189,17 @@ func _build_gameplay_panels() -> void :
     _wanted_label.position = Vector2(-260, 92)
     _wanted_label.custom_minimum_size = Vector2(236, 40)
     _wanted_label.visible = false
+
+    _faction_label = Label.new()
+    _faction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _apply_font(_faction_label, 34, Color(1.0, 0.45, 0.42))
+    _faction_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _faction_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_faction_label)
+    _faction_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    _faction_label.position = Vector2(-260, 132)
+    _faction_label.custom_minimum_size = Vector2(236, 40)
+    _faction_label.visible = false
 
 
     _objective_panel = PanelContainer.new()
@@ -260,6 +286,16 @@ func _on_wanted_changed(level: int) -> void :
     _wanted_label.text = "★".repeat(level)
 
 
+func _on_faction_changed(level: int) -> void :
+    if _faction_label == null:
+        return
+    if level <= 0:
+        _faction_label.visible = false
+        return
+    _faction_label.visible = true
+    _faction_label.text = "🔪".repeat(level)
+
+
 func _on_weapon_changed(weapon_name: String, clip: int, reserve: int, melee: bool) -> void :
     if _ammo_label == null:
         return
@@ -305,7 +341,13 @@ func _process(_delta: float) -> void :
     if _clock_label:
         var gm: = get_node_or_null("/root/GameManager")
         if gm and gm.has_method("time_string"):
-            _clock_label.text = ("%s  ☔" % gm.time_string()) if gm.raining else gm.time_string()
+            var storm: bool = gm.gloria_storm_active if "gloria_storm_active" in gm else false
+            if storm:
+                _clock_label.text = "%s  🌪" % gm.time_string()
+            elif gm.raining:
+                _clock_label.text = ("%s  ☔" % gm.time_string())
+            else:
+                _clock_label.text = gm.time_string()
 
     # Speedometer while driving.
     if _driving_now and _speed_label and _player != null and is_instance_valid(_player):
@@ -346,7 +388,7 @@ func _build_top_bar() -> void :
     _root.add_child(panel)
     panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
     panel.position = Vector2(-260, 24)
-    panel.custom_minimum_size = Vector2(236, 64)
+    panel.custom_minimum_size = Vector2(236, 88)
 
     var margin: = MarginContainer.new()
     margin.add_theme_constant_override("margin_left", 22)
@@ -355,12 +397,27 @@ func _build_top_bar() -> void :
     margin.add_theme_constant_override("margin_bottom", 8)
     panel.add_child(margin)
 
+    var stack: = VBoxContainer.new()
+    stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    margin.add_child(stack)
+
     _cash_label = Label.new()
     _cash_label.text = "$0"
     _cash_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    _cash_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     _apply_font(_cash_label, 34, Color(0.96, 0.81, 0.45))
-    margin.add_child(_cash_label)
+    stack.add_child(_cash_label)
+
+    _scrimshaw_label = Label.new()
+    _scrimshaw_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_scrimshaw_label, 20, Color(0.92, 0.86, 0.68))
+    _scrimshaw_label.visible = false
+    stack.add_child(_scrimshaw_label)
+
+    _fronts_label = Label.new()
+    _fronts_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_fronts_label, 20, Color(0.78, 0.92, 0.72))
+    _fronts_label.visible = false
+    stack.add_child(_fronts_label)
 
 
 func _build_prompt() -> void :
@@ -374,6 +431,17 @@ func _build_prompt() -> void :
     _prompt_label.position = Vector2(-260, -300)
     _prompt_label.custom_minimum_size = Vector2(520, 40)
     _prompt_label.visible = false
+
+    _buy_prompt = Label.new()
+    _buy_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_buy_prompt, 24, Color(0.06, 0.13, 0.08))
+    _buy_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+    _buy_prompt.add_theme_constant_override("outline_size", 4)
+    _root.add_child(_buy_prompt)
+    _buy_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    _buy_prompt.position = Vector2(-320, -360)
+    _buy_prompt.custom_minimum_size = Vector2(640, 72)
+    _buy_prompt.visible = false
 
 
 func _build_toast() -> void :
@@ -480,12 +548,21 @@ func _build_pause() -> void :
     _apply_font(title, 64, Color(0.96, 0.81, 0.45))
     vbox.add_child(title)
 
+    _pause_stats_label = Label.new()
+    _pause_stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _pause_stats_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    _pause_stats_label.custom_minimum_size = Vector2(520, 120)
+    _apply_font(_pause_stats_label, 22, Color(0.9, 0.9, 0.84))
+    vbox.add_child(_pause_stats_label)
+
     vbox.add_child(_menu_button("Resume", _toggle_pause))
     vbox.add_child(_menu_button("Settings", _open_settings))
+    vbox.add_child(_menu_button("Controls", _open_controls))
     vbox.add_child(_menu_button("Edit Controls", func(): _toggle_pause();_toggle_edit()))
     vbox.add_child(_menu_button("Main Menu", _go_to_menu))
 
     _build_settings()
+    _build_controls()
 
 
 # Audio settings overlay (web parity): Master / Music / SFX volume sliders,
@@ -521,8 +598,77 @@ func _build_settings() -> void :
     vbox.add_child(_volume_row("Music", "Music"))
     vbox.add_child(_volume_row("Sound FX", "SFX"))
 
+    var qual_row: = VBoxContainer.new()
+    qual_row.add_theme_constant_override("separation", 4)
+    var qual_lbl: = Label.new()
+    qual_lbl.text = "Graphics"
+    _apply_font(qual_lbl, 26, Color(0.92, 0.9, 0.86))
+    qual_row.add_child(qual_lbl)
+    _quality_option = OptionButton.new()
+    _quality_option.custom_minimum_size = Vector2(500, 44)
+    for i in GameManager.QUALITY_NAMES.size():
+        _quality_option.add_item(GameManager.QUALITY_NAMES[i], i)
+    if GameManager:
+        _quality_option.select(GameManager.graphics_quality)
+    _quality_option.item_selected.connect(_on_quality_selected)
+    qual_row.add_child(_quality_option)
+    vbox.add_child(qual_row)
+
     var back: = _menu_button("Back", _close_settings)
     vbox.add_child(back)
+
+
+func _build_controls() -> void :
+    _controls_panel = Control.new()
+    _controls_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+    _controls_panel.visible = false
+    _root.add_child(_controls_panel)
+    _controls_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var dim: = ColorRect.new()
+    dim.color = Color(0.02, 0.03, 0.04, 0.9)
+    _controls_panel.add_child(dim)
+    dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var center: = CenterContainer.new()
+    _controls_panel.add_child(center)
+    center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+    var panel: = VBoxContainer.new()
+    panel.add_theme_constant_override("separation", 14)
+    panel.custom_minimum_size = Vector2(760, 0)
+    center.add_child(panel)
+
+    var title: = Label.new()
+    title.text = "CONTROLS"
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(title, 56, Color(0.96, 0.81, 0.45))
+    panel.add_child(title)
+
+    var body: = Label.new()
+    body.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+    body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+    body.custom_minimum_size = Vector2(760, 0)
+    body.text = "\n".join([
+        "Move  WASD / left stick",
+        "Jump  SPACE",
+        "Sprint  SHIFT",
+        "Use  E",
+        "Enter / exit car  F",
+        "Buy business  B",
+        "Fire / aim  Mouse buttons",
+        "Reload  R",
+        "Swap weapon  Q",
+        "Crouch  C",
+        "Horn  H",
+        "Handbrake  SPACE while driving",
+        "Sleep at safehouse  T",
+        "Pause  ESC",
+    ])
+    _apply_font(body, 24, Color(0.92, 0.9, 0.86))
+    panel.add_child(body)
+
+    panel.add_child(_menu_button("Back", _close_controls))
 
 
 func _volume_row(label_text: String, bus_name: String) -> Control:
@@ -542,6 +688,12 @@ func _volume_row(label_text: String, bus_name: String) -> Control:
     slider.value_changed.connect(_on_volume_changed.bind(bus_name))
     row.add_child(slider)
     return row
+
+
+func _on_quality_selected(index: int) -> void :
+    if GameManager:
+        GameManager.set_graphics_quality(index)
+    _save_settings()
 
 
 func _on_volume_changed(value: float, bus_name: String) -> void :
@@ -566,12 +718,30 @@ func _close_settings() -> void :
         _pause_panel.visible = true
 
 
+func _open_controls() -> void :
+    if _pause_panel:
+        _pause_panel.visible = false
+    if _controls_panel:
+        _controls_panel.visible = true
+        _controls_panel.move_to_front()
+
+
+func _close_controls() -> void :
+    if _controls_panel:
+        _controls_panel.visible = false
+    if _pause_panel:
+        _pause_panel.visible = true
+
+
 func _save_settings() -> void :
     var cfg: = ConfigFile.new()
+    cfg.load("user://settings.cfg")
     for bus_name in ["Master", "Music", "SFX"]:
         var idx: int = AudioServer.get_bus_index(bus_name)
         if idx >= 0:
             cfg.set_value("audio", bus_name, AudioServer.get_bus_volume_db(idx))
+    if GameManager:
+        cfg.set_value("graphics", "quality", GameManager.graphics_quality)
     cfg.save("user://settings.cfg")
 
 
@@ -598,6 +768,17 @@ func _build_radio() -> void :
     map_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
     map_btn.position = Vector2(416, 28)
     map_btn.pressed.connect(_on_map_pressed)
+
+    var cam_btn: = TouchButton.new()
+    cam_btn.control_id = "cam"
+    cam_btn.label_text = "CAM"
+    cam_btn.custom_minimum_size = Vector2(124, 96)
+    cam_btn.size = cam_btn.custom_minimum_size
+    cam_btn.accent = Color(0.45, 0.4, 0.3)
+    _root.add_child(cam_btn)
+    cam_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    cam_btn.position = Vector2(556, 28)
+    cam_btn.pressed.connect(_on_cam_pressed)
 
     _clock_label = Label.new()
     _apply_font(_clock_label, 26, Color(0.96, 0.92, 0.78))
@@ -649,6 +830,14 @@ func _on_radio_pressed() -> void :
 func _on_map_pressed() -> void :
     if _big_map and _big_map.has_method("toggle"):
         _big_map.toggle()
+
+
+func _on_cam_pressed() -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and gm.has_method("toggle_cam_flip"):
+        gm.toggle_cam_flip()
+    if _player and _player.has_method("snap_drive_camera"):
+        _player.snap_drive_camera()
 
 
 func _on_radio_station(_index: int, station_name: String) -> void :
@@ -858,6 +1047,62 @@ func _on_cash_changed(value: int) -> void :
         _cash_label.text = "$" + str(value)
 
 
+func _on_scrimshaw_changed(found: int) -> void :
+    if _scrimshaw_label == null:
+        return
+    if found <= 0:
+        _scrimshaw_label.visible = false
+        return
+    _scrimshaw_label.visible = true
+    _scrimshaw_label.text = "🦴 %d/%d scrimshaw" % [found, GameManager.SCRIMSHAW_TOTAL]
+
+
+func _on_businesses_changed(count: int) -> void :
+    if _fronts_label == null or BusinessManager == null:
+        return
+    if count <= 0:
+        _fronts_label.visible = false
+        return
+    _fronts_label.visible = true
+    _fronts_label.text = "🏠 %d/%d fronts" % [count, BusinessManager.business_count()]
+
+
+func _on_near_buy_changed(index: int) -> void :
+    if _buy_prompt == null or BusinessManager == null:
+        return
+    if index < 0:
+        _buy_prompt.visible = false
+        return
+    var b: Dictionary = BusinessManager.BUSINESSES[index]
+    var cost: int = int(b["cost"])
+    var affordable: bool = GameManager.can_afford(cost)
+    var col: Color = Color(0.29, 0.84, 0.43) if affordable else Color(0.75, 0.75, 0.78)
+    _buy_prompt.add_theme_color_override("font_color", col)
+    _buy_prompt.text = "PRESS B — BUY %s ($%d)\n%s · +$%d/day" % [
+        str(b["name"]).to_upper(), cost, str(b["blurb"]), int(b["per_day"])
+    ]
+    _buy_prompt.visible = true
+
+
+func _refresh_pause_stats() -> void :
+    if _pause_stats_label == null:
+        return
+    var mission_name: String = "Free roam"
+    if _story_mission and _story_mission.has_method("current_title"):
+        mission_name = str(_story_mission.current_title())
+    var fronts: String = "0/0"
+    if BusinessManager:
+        fronts = "%d/%d" % [GameManager.businesses_owned(), BusinessManager.business_count()]
+    _pause_stats_label.text = "Cash  $%d\nMission  %s\nCompleted jobs  %d\nFronts  %s   •   Scrimshaw  %d/%d" % [
+        GameManager.cash,
+        mission_name,
+        GameManager.missions_completed,
+        fronts,
+        GameManager.scrimshaw_found(),
+        GameManager.SCRIMSHAW_TOTAL,
+    ]
+
+
 func _on_interactable_changed(prompt: String) -> void :
     if not _prompt_label:
         return
@@ -887,8 +1132,12 @@ func _toggle_pause() -> void :
     var paused: = not get_tree().paused
     get_tree().paused = paused
     _pause_panel.visible = paused
+    if paused:
+        _refresh_pause_stats()
     if not paused and _settings_panel:
         _settings_panel.visible = false
+    if not paused and _controls_panel:
+        _controls_panel.visible = false
 
 
 func _go_to_menu() -> void :

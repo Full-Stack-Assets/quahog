@@ -64,9 +64,13 @@ var _autosave_t: float = 0.0
 var _driving: bool = false
 var current_car: Node = null
 # Free-look orbit while driving — accumulates look input, eases back to centre.
+# Yaw is clamped so the chase cam never swings to the side/front (profile view
+# makes car-local throttle read as sideways on screen and feels inverted).
+const CAR_CAM_YAW_MAX: float = 0.85
 var _car_cam_yaw: float = 0.0
 var _car_cam_pitch: float = 0.0
 var _cars: Array = []
+var _traffic_cars: Array = []
 
 
 var wanted_system: Node = null
@@ -231,6 +235,10 @@ func register_systems(p_wanted: Node, p_spawn: Vector3) -> void :
 func register_cars(cars: Array) -> void :
     _cars = cars
 
+
+func register_traffic(cars: Array) -> void :
+    _traffic_cars = cars
+
 func owns_weapon(id: String) -> bool:
     return _weapons.has(id)
 
@@ -369,6 +377,8 @@ func do_fire() -> void :
 
     if wanted_system and wanted_system.has_method("add_heat"):
         wanted_system.add_heat(int(def.get("heat", 1)))
+    if wanted_system and wanted_system.has_method("add_faction_heat"):
+        wanted_system.add_faction_heat(1)
 
 func _fire_ray(origin: Vector3, dir: Vector3, rng: float, dmg: int, def: Dictionary) -> void :
     var space: = get_world_3d().direct_space_state
@@ -414,6 +424,8 @@ func _melee_attack(def: Dictionary) -> void :
                 VFX.spawn_impact(hit.position, 0.3)
             if wanted_system and wanted_system.has_method("add_heat"):
                 wanted_system.add_heat(int(def.get("heat", 1)))
+            if wanted_system and wanted_system.has_method("add_faction_heat"):
+                wanted_system.add_faction_heat(1)
 
 func do_reload() -> void :
     if _driving or dead:
@@ -457,6 +469,11 @@ func heal(amount: int) -> void :
     health = min(max_health, health + amount)
     health_changed.emit(health, max_health, armor)
 
+
+func heal_full() -> void :
+    health = max_health
+    health_changed.emit(health, max_health, armor)
+
 func add_armor(amount: int) -> void :
     armor = min(100, armor + amount)
     health_changed.emit(health, max_health, armor)
@@ -464,17 +481,23 @@ func add_armor(amount: int) -> void :
 func _die() -> void :
     if dead:
         return
+    if ConsequenceManager and ConsequenceManager.is_active():
+        return
     dead = true
-    _invuln = 3.0
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/player/player_player_wasted.mp3")
         if snd:
             AudioManager.play_sfx(snd, -2.0)
+    if ConsequenceManager and ConsequenceManager.has_method("start"):
+        ConsequenceManager.start("wasted")
+        return
+    # Fallback if autoload missing.
     var lost: int = int(GameManager.cash * 0.4) + 30 if GameManager else 0
     if GameManager:
         GameManager.add_cash( - lost)
         GameManager.show_message("WASTED — you woke up at the clinic. Lost $%d." % lost)
         GameManager.set_wanted(0)
+        GameManager.set_faction(0)
     _respawn()
     dead = false
 
@@ -524,6 +547,14 @@ func try_enter_vehicle() -> void :
     if _driving:
         exit_car()
         return
+    var world: = get_tree().get_first_node_in_group("game_world")
+    if world and world.has_method("find_carjackable_traffic"):
+        var tc: Variant = world.find_carjackable_traffic(global_position, 6.5)
+        if tc and world.has_method("carjack_traffic"):
+            var jacked: Variant = world.carjack_traffic(tc)
+            if jacked:
+                enter_car(jacked)
+                return
     var nearest: Node = null
     var best: = 7.5
     for c in _cars:
@@ -537,9 +568,18 @@ func try_enter_vehicle() -> void :
     elif GameManager:
         GameManager.show_message("No car nearby — walk up to one and tap CAR.")
 
+func snap_drive_camera() -> void :
+    if _driving and current_car != null and is_instance_valid(current_car) and current_car.has_method("_snap_camera"):
+        current_car._snap_camera()
+
+
 func enter_car(car: Node) -> void :
     _driving = true
     current_car = car
+    _car_cam_yaw = 0.0
+    _car_cam_pitch = 0.0
+    if car.has_method("set_cam_orbit"):
+        car.set_cam_orbit(0.0, 0.0)
     set_collision_layer_value(2, false)
     _set_capsule(true)
     visible = false
@@ -638,8 +678,19 @@ func _physics_process(delta: float) -> void :
         else:
             var kb_drive: = Input.get_vector("move_left", "move_right", "move_back", "move_forward")
             # Stick up (negative y) = gas; stick down = reverse/brake. Keyboard unchanged.
-            var steer: float = clampf(_move_input.x + kb_drive.x, -1.0, 1.0)
-            var throttle: float = clampf(-_move_input.y + kb_drive.y, -1.0, 1.0)
+            var raw: = Vector2(_move_input.x + kb_drive.x, -_move_input.y + kb_drive.y)
+            if raw.length() > 1.0:
+                raw = raw.normalized()
+            var steer: float = raw.x
+            var throttle: float = raw.y
+            # If the chase cam slipped in front of the car, gas would drive toward
+            # the lens — flip so push-up always means "away from camera".
+            if current_car.has_method("drive_view_flip"):
+                var flip: float = current_car.drive_view_flip()
+                steer *= flip
+                throttle *= flip
+            steer = clampf(steer, -1.0, 1.0)
+            throttle = clampf(throttle, -1.0, 1.0)
             if current_car.has_method("set_drive_input"):
                 current_car.set_drive_input(steer, throttle)
             if current_car.has_method("set_handbrake"):
@@ -655,8 +706,9 @@ func _physics_process(delta: float) -> void :
                 _car_cam_pitch += _look_delta.y * look_sensitivity
                 _look_delta = Vector2.ZERO
             else:
-                _car_cam_yaw = lerpf(_car_cam_yaw, 0.0, clampf(delta * 3.0, 0.0, 1.0))
-                _car_cam_pitch = lerpf(_car_cam_pitch, 0.0, clampf(delta * 3.0, 0.0, 1.0))
+                _car_cam_yaw = lerpf(_car_cam_yaw, 0.0, clampf(delta * 5.0, 0.0, 1.0))
+                _car_cam_pitch = lerpf(_car_cam_pitch, 0.0, clampf(delta * 5.0, 0.0, 1.0))
+            _car_cam_yaw = clampf(_car_cam_yaw, -CAR_CAM_YAW_MAX, CAR_CAM_YAW_MAX)
             _car_cam_pitch = clampf(_car_cam_pitch, -0.35, 0.9)
             if current_car.has_method("set_cam_orbit"):
                 current_car.set_cam_orbit(_car_cam_yaw, _car_cam_pitch)

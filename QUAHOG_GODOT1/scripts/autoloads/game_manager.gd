@@ -7,17 +7,32 @@ extends Node
 signal cash_changed(new_cash: int)
 signal notify(message: String)
 signal wanted_changed(level: int)
+signal faction_changed(level: int)
+signal scrimshaw_changed(found: int)
+signal businesses_changed(count: int)
 signal open_shop_requested(shop_kind: String)
+signal open_diner_requested()
+signal graphics_quality_changed(level: int)
 
 const SAVE_PATH: = "user://mount_hope_save.json"
+const QUALITY_NAMES: PackedStringArray = ["Low", "Medium", "High"]
 const STARTING_CASH: = 40
+const SCRIMSHAW_TOTAL: int = 8
+const BUSINESS_TOTAL: int = 7
 
 var cash: int = STARTING_CASH
 var missions_completed: int = 0
 var wanted_level: int = 0
+var faction_level: int = 0
+var campaign_format: int = 2  # bumps when mission list changes (save migration)
 var opener_complete: bool = false
+var campaign_mi: int = 0
+var campaign_step: int = 0
+var campaign_done: bool = false
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
+var scrimshaw_mask: int = 0
+var owned_business_mask: int = 0
 
 # Cheats (toggled from the main-menu CHEATS panel; persisted with the save).
 # no_police suppresses all wanted-heat for testing. Defaults OFF so the crime loop bites.
@@ -38,6 +53,66 @@ var cheat_force_rain: int = -1     # -1 auto · 0 forced dry · 1 forced rain
 var cheat_traffic_mult: float = 1.0
 var cheat_time_scale: float = 1.0  # global slow-mo / fast-forward
 var cheat_teleport_anywhere: bool = false
+# Chase-cam side: false = behind the car, true = flipped to the other side (CAM button).
+var cam_flip: bool = false
+# Graphics quality: 0=Low (mobile), 1=Medium, 2=High. Affects streaming radius,
+# car pool, traffic, rain, and building LOD.
+var graphics_quality: int = 1
+
+
+func stream_radius() -> int:
+    return [1, 2, 3][graphics_quality]
+
+
+func car_pool_size() -> int:
+    return [100, 150, 200][graphics_quality]
+
+
+func traffic_car_count() -> int:
+    return [8, 12, 16][graphics_quality]
+
+
+func stream_tile_budget() -> int:
+    return [2, 5, 12][graphics_quality]
+
+
+func building_lod() -> int:
+    return graphics_quality
+
+
+func rain_particle_count() -> int:
+    return [0, 180, 280][graphics_quality]
+
+
+func car_restream_batch() -> int:
+    return [8, 12, 20][graphics_quality]
+
+
+func set_graphics_quality(level: int) -> void :
+    level = clampi(level, 0, 2)
+    if level == graphics_quality:
+        return
+    graphics_quality = level
+    graphics_quality_changed.emit(graphics_quality)
+    _save_graphics_cfg()
+
+
+func _load_graphics_cfg() -> void :
+    var cfg: = ConfigFile.new()
+    if cfg.load("user://settings.cfg") == OK:
+        graphics_quality = clampi(int(cfg.get_value("graphics", "quality", 1)), 0, 2)
+
+
+func _save_graphics_cfg() -> void :
+    var cfg: = ConfigFile.new()
+    cfg.load("user://settings.cfg")
+    cfg.set_value("graphics", "quality", graphics_quality)
+    cfg.save("user://settings.cfg")
+
+
+func toggle_cam_flip() -> void :
+    cam_flip = not cam_flip
+    save_game()
 
 
 # All cheat flags, keyed for compact save/load (avoids a giant literal twice).
@@ -50,7 +125,7 @@ func _cheat_dict() -> Dictionary:
         "super_jump": cheat_super_jump, "inf_cash": cheat_infinite_cash,
         "car_turbo": cheat_car_turbo, "force_rain": cheat_force_rain,
         "traffic_mult": cheat_traffic_mult, "time_scale": cheat_time_scale,
-        "tp_anywhere": cheat_teleport_anywhere,
+        "tp_anywhere": cheat_teleport_anywhere, "cam_flip": cam_flip,
     }
 
 
@@ -70,6 +145,7 @@ func _load_cheats(d: Dictionary) -> void :
     cheat_traffic_mult = float(d.get("traffic_mult", 1.0))
     cheat_time_scale = float(d.get("time_scale", 1.0))
     cheat_teleport_anywhere = bool(d.get("tp_anywhere", false))
+    cam_flip = bool(d.get("cam_flip", false))
 
 # Last known player position/heading, persisted so the menu can offer Continue.
 var saved_pos: = Vector3.ZERO
@@ -80,6 +156,8 @@ var has_saved_pos: bool = false
 # day_phase 0 = dusk; the loop runs dusk→night→dawn→day→dusk.
 var day_phase: float = 0.0
 var raining: bool = false
+# Scripted Act III hurricane — forces heavy rain, wind, and coastal flood visuals.
+var gloria_storm_active: bool = false
 
 func time_string() -> String:
     var hours: float = fmod(day_phase * 24.0 + 18.0, 24.0)
@@ -95,7 +173,61 @@ func set_wanted(level: int) -> void :
     wanted_level = level
     wanted_changed.emit(wanted_level)
 
+
+func set_faction(level: int) -> void :
+    level = clampi(level, 0, 5)
+    if level == faction_level:
+        return
+    faction_level = level
+    faction_changed.emit(faction_level)
+
+
+func scrimshaw_found() -> int:
+    var n: int = 0
+    for i in SCRIMSHAW_TOTAL:
+        if scrimshaw_mask & (1 << i):
+            n += 1
+    return n
+
+
+func is_scrimshaw_collected(index: int) -> bool:
+    return index >= 0 and index < SCRIMSHAW_TOTAL and (scrimshaw_mask & (1 << index)) != 0
+
+
+func collect_scrimshaw(index: int) -> bool:
+    if index < 0 or index >= SCRIMSHAW_TOTAL:
+        return false
+    if is_scrimshaw_collected(index):
+        return false
+    scrimshaw_mask |= 1 << index
+    scrimshaw_changed.emit(scrimshaw_found())
+    return true
+
+
+func businesses_owned() -> int:
+    var n: int = 0
+    for i in BUSINESS_TOTAL:
+        if owned_business_mask & (1 << i):
+            n += 1
+    return n
+
+
+func is_business_owned(index: int) -> bool:
+    return index >= 0 and index < BUSINESS_TOTAL and (owned_business_mask & (1 << index)) != 0
+
+
+func own_business(index: int) -> bool:
+    if index < 0 or index >= BUSINESS_TOTAL:
+        return false
+    if is_business_owned(index):
+        return false
+    owned_business_mask |= 1 << index
+    businesses_changed.emit(businesses_owned())
+    save_game()
+    return true
+
 func _ready() -> void :
+    _load_graphics_cfg()
     load_game()
 
 func add_cash(amount: int) -> void :
@@ -103,6 +235,14 @@ func add_cash(amount: int) -> void :
     cash = max(cash, 0)
     cash_changed.emit(cash)
     save_game()
+
+
+func add_cash_silent(amount: int) -> void :
+    if amount == 0:
+        return
+    cash += amount
+    cash = max(cash, 0)
+    cash_changed.emit(cash)
 
 func spend_cash(amount: int) -> bool:
     if cheat_infinite_cash:
@@ -140,10 +280,17 @@ func save_game() -> void :
         "cash": cash,
         "missions_completed": missions_completed,
         "wanted_level": wanted_level,
+        "faction_level": faction_level,
+        "campaign_format": 2,
         "opener_complete": opener_complete,
+        "campaign_mi": campaign_mi,
+        "campaign_step": campaign_step,
+        "campaign_done": campaign_done,
         "has_pos": has_saved_pos,
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
+        "scrimshaw_mask": scrimshaw_mask,
+        "owned_business_mask": owned_business_mask,
         "cheats": _cheat_dict(),
     }
     var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -166,7 +313,17 @@ func load_game() -> void :
     cash = int(data.get("cash", STARTING_CASH))
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
+    faction_level = int(data.get("faction_level", 0))
+    var fmt: int = int(data.get("campaign_format", 1))
+    campaign_format = fmt
+    # v2 campaign inserts "The Undefeated" at index 6 — bump saves already past Acquitted.
+    if fmt < 2 and campaign_mi >= 6 and not campaign_done:
+        campaign_mi += 1
+        campaign_format = 2
     opener_complete = bool(data.get("opener_complete", false))
+    campaign_mi = int(data.get("campaign_mi", 0 if not opener_complete else 1))
+    campaign_step = int(data.get("campaign_step", 0))
+    campaign_done = bool(data.get("campaign_done", false))
     var cd: Variant = data.get("cheats", {})
     if cd is Dictionary:
         _load_cheats(cd)
@@ -174,15 +331,28 @@ func load_game() -> void :
     if has_saved_pos:
         saved_pos = Vector3(float(data.get("px", 0.0)), float(data.get("py", 0.0)), float(data.get("pz", 0.0)))
         saved_yaw = float(data.get("yaw", 0.0))
+    scrimshaw_mask = int(data.get("scrimshaw_mask", 0))
+    scrimshaw_changed.emit(scrimshaw_found())
+    owned_business_mask = int(data.get("owned_business_mask", 0))
+    businesses_changed.emit(businesses_owned())
     cash_changed.emit(cash)
 
 func reset_save() -> void :
     cash = STARTING_CASH
     missions_completed = 0
     wanted_level = 0
+    faction_level = 0
+    campaign_format = 2
     opener_complete = false
+    campaign_mi = 0
+    campaign_step = 0
+    campaign_done = false
     has_saved_pos = false
     saved_pos = Vector3.ZERO
     saved_yaw = 0.0
+    scrimshaw_mask = 0
+    scrimshaw_changed.emit(0)
+    owned_business_mask = 0
+    businesses_changed.emit(0)
     cash_changed.emit(cash)
     save_game()

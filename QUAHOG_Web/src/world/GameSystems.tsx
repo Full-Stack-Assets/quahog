@@ -95,6 +95,7 @@ export function GameSystems() {
       if (typeof s.shadows === "boolean" && s.shadows !== g.shadows) g.toggleShadows();
       if (typeof s.fov === "number") g.setFov(s.fov);
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
+      if (typeof s.quality === "number") g.setQuality(s.quality as 0 | 1 | 2);
       if (s.weather) useGame.setState({ weather: s.weather });
     } catch { /* ignore */ }
     // persist position on tab-hide / close so a quick exit still resumes
@@ -177,7 +178,7 @@ export function GameSystems() {
       st.save();
       if (useGame.getState().started) savePos();
       const g = useGame.getState();
-      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather })); } catch { /* ignore */ }
+      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather, quality: g.quality })); } catch { /* ignore */ }
     }
   });
   return null;

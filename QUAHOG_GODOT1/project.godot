@@ -28,6 +28,9 @@ AudioManager="*res://scripts/autoloads/audio_manager.gd"
 GameManager="*res://scripts/autoloads/game_manager.gd"
 VFX="*res://scripts/autoloads/vfx_helper.gd"
 Radio="*res://scripts/autoloads/radio.gd"
+RadioHooks="*res://scripts/autoloads/radio_hooks.gd"
+ConsequenceManager="*res://scripts/autoloads/consequence_manager.gd"
+BusinessManager="*res://scripts/autoloads/business_manager.gd"
 TesanaWorldEditor="*res://addons/tesana_world_editor/scene_export.gd"
 
 [display]
@@ -56,6 +59,22 @@ sample={
 "force/max_rate_hz": 22050,
 "force/max_rate_mode": 0,
 "force/mono": false
+}
+texture={
+"compress/channel_pack": 0,
+"compress/hdr_compression": 1,
+"compress/high_quality": false,
+"compress/lossy_quality": 0.7,
+"compress/mode": 2,
+"compress/normal_map": 0,
+"mipmaps/generate": true,
+"mipmaps/limit": -1,
+"process/fix_alpha_border": true,
+"process/hdr_as_srgb": false,
+"process/normal_map_invert_y": false,
+"process/size_limit": 0,
+"roughness/mode": 0,
+"roughness/src_normal": ""
 }
 
 [input]
@@ -133,6 +152,16 @@ handbrake={
 horn={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":72,"key_label":0,"unicode":104,"location":0,"echo":false,"script":null)
+]
+}
+sleep={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":84,"key_label":0,"unicode":116,"location":0,"echo":false,"script":null)
+]
+}
+buy_business={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":66,"key_label":0,"unicode":98,"location":0,"echo":false,"script":null)
 ]
 }
 

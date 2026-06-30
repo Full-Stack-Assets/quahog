@@ -4,6 +4,8 @@ import { useFrame } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
+import { useGame } from "../store";
+import { collideRadius, tileImpostor, viewRadius } from "../quality";
 import { Buildings } from "./Buildings";
 import { makeFacadeMaps, makeNoiseNormal, FACADE_GRID, FACADE_VARIANTS } from "./textures";
 import type { Building } from "../slice";
@@ -14,8 +16,8 @@ import type { Building } from "../slice";
 // player's own tile + neighbours (COLLIDE_R) get a static collider. Falls back
 // to the monolithic <Buildings> if the manifest isn't present.
 
-const VIEW_R = 3;     // tiles loaded around the player (each TILE metres)
-const COLLIDE_R = 1;  // tiles that get physics colliders
+const VIEW_R_DEFAULT = 3;     // overridden by quality preset
+const COLLIDE_R_DEFAULT = 1;
 const WINDOW_GLOW = new THREE.Color("#ffcf8a");
 // New Bedford palette: brick reds, painted clapboard, weathered wood (short
 // residential/commercial) vs granite + concrete (tall downtown).
@@ -222,7 +224,7 @@ function baseGeometry(b: Building, wall: THREE.Color, hash: number): THREE.Buffe
 // Returns one merged geometry per façade variant (or null for an empty bucket).
 // Buildings are split across variants so neighbours show different window styles
 // instead of one shared texture — the core fix for the "repetitive boxes" read.
-function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
+function tileGeometry(buildings: Building[], impostor = false): (THREE.BufferGeometry | null)[] {
   const buckets: THREE.BufferGeometry[][] = Array.from({ length: FACADE_VARIANTS }, () => []);
   buildings.forEach((b, i) => {
     const shape = new THREE.Shape();
@@ -275,7 +277,7 @@ function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
     buckets[variant].push(g);
     // short residential/commercial footprints get a peaked roof so the skyline
     // stops reading as a field of flat boxes (heroes keep their modeled look).
-    if (!isHero && b.height < PITCH_MAX_H) {
+    if (!isHero && b.height < PITCH_MAX_H && !impostor) {
       const rg = roofGeometry(b.footprint, b.height, roof);
       if (rg) buckets[variant].push(rg);
     }
@@ -283,8 +285,8 @@ function tileGeometry(buildings: Building[]): (THREE.BufferGeometry | null)[] {
   return buckets.map((geoms) => (geoms.length ? mergeGeometries(geoms, false) : null));
 }
 
-function Tile({ buildings, colliders }: { buildings: Building[]; colliders: boolean }) {
-  const geoms = useMemo(() => tileGeometry(buildings), [buildings]);
+function Tile({ buildings, colliders, impostor = false }: { buildings: Building[]; colliders: boolean; impostor?: boolean }) {
+  const geoms = useMemo(() => tileGeometry(buildings, impostor), [buildings, impostor]);
   const maps = useMemo(() => Array.from({ length: FACADE_VARIANTS }, (_, v) => makeFacadeMaps(v)), []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const nrmScale = useMemo(() => new THREE.Vector2(0.35, 0.35), []);
@@ -369,9 +371,12 @@ const _rc = new THREE.Color();
 const ROOF_UNIT = ["#55585e", "#6a6258", "#4a4e54", "#736a5e", "#5e5a52", "#484c50"]; // varied HVAC/tank tones
 
 export function StreamingBuildings({ fallback, center }: { fallback: Building[]; center: [number, number] }) {
+  const quality = useGame((s) => s.quality);
+  const viewR = viewRadius(quality);
+  const collideR = collideRadius(quality);
   const [manifest, setManifest] = useState<Manifest | null>(null);
   const [failed, setFailed] = useState(false);
-  const [active, setActive] = useState<{ key: string; collide: boolean }[]>([]);
+  const [active, setActive] = useState<{ key: string; collide: boolean; impostor: boolean }[]>([]);
   const cache = useRef<Map<string, Building[]>>(new Map());
   const keySet = useRef<Set<string>>(new Set());
   const sig = useRef("");
@@ -396,15 +401,20 @@ export function StreamingBuildings({ fallback, center }: { fallback: Building[];
     const px = t?.x ?? 0, pn = -(t?.z ?? 0); // north = -z
     const gx = Math.floor(px / m.tile), gn = Math.floor(pn / m.tile);
 
-    const want: { key: string; collide: boolean }[] = [];
-    for (let dx = -VIEW_R; dx <= VIEW_R; dx++) {
-      for (let dn = -VIEW_R; dn <= VIEW_R; dn++) {
+    const want: { key: string; collide: boolean; impostor: boolean }[] = [];
+    for (let dx = -viewR; dx <= viewR; dx++) {
+      for (let dn = -viewR; dn <= viewR; dn++) {
         const key = `${gx + dx}_${gn + dn}`;
         if (!keySet.current.has(key)) continue;
-        want.push({ key, collide: Math.abs(dx) <= COLLIDE_R && Math.abs(dn) <= COLLIDE_R });
+        const ring = Math.max(Math.abs(dx), Math.abs(dn));
+        want.push({
+          key,
+          collide: ring <= collideR,
+          impostor: tileImpostor(quality, ring, viewR),
+        });
       }
     }
-    const s = want.map((w) => w.key + (w.collide ? "*" : "")).sort().join(",");
+    const s = want.map((w) => w.key + (w.collide ? "*" : "") + (w.impostor ? "i" : "")).sort().join(",");
     if (s === sig.current) return;
     sig.current = s;
 
@@ -422,9 +432,9 @@ export function StreamingBuildings({ fallback, center }: { fallback: Building[];
 
   return (
     <group>
-      {active.map(({ key, collide }) => {
+      {active.map(({ key, collide, impostor }) => {
         const b = cache.current.get(key);
-        return b ? <Tile key={key} buildings={b} colliders={collide} /> : null;
+        return b ? <Tile key={key} buildings={b} colliders={collide} impostor={impostor} /> : null;
       })}
     </group>
   );

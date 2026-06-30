@@ -53,17 +53,67 @@ These are the highest-leverage moves, in order:
 
 ### Tier 3 — Make it memorable (content & identity)
 
-11. **Act I missions** — Harbor takeover arc (Sully, Reggie’s chop shop, Linguiça Run).  
-12. **Economy spend loop** — shops for weapons/ammo, one enterable interior (diner or bar).  
-13. **Coastal Neon style pass** — signage, wet dusk reflections, neon tavern signs per `quahog-project-files/STYLE_GUIDE.md`.  
-14. **Radio milestone hooks** — hosts react to wanted level, mission completion, weather.  
+11. **Act I missions** — **DONE** (Auction Rules, Linguiça Run, Harbor Heat in `story_mission.gd`).  
+12. **Economy spend loop** — **DONE** (gun shop + Linguiça Linq diner interior with food purchases).  
+13. **Coastal Neon style pass** — **DONE** (`neon_signs.gd`; TOD neon lamp energy in `game_world.gd`).  
+14. **Radio milestone hooks** — **DONE** (`radio_hooks.gd` autoload; wanted/mission/rain barks).  
 15. **Rebrand** — **DONE** (`The Narrows`, 2026 present-day; see `plans/the-narrows.md`).
 
 ### Tier 4 — Scale & performance
 
-16. Godot: 200-car pool perf, streaming radius tuning, texture compression.  
-17. Web: LOD/impostors for far buildings, object pooling, quality presets.  
-18. Expand map: Brockton, Cape Cod, Dartmouth Mall hub.
+16. Godot: 200-car pool perf, streaming radius tuning, texture compression — **DONE** (quality presets, staggered car restream, building LOD, tile budget).  
+17. Web: LOD/impostors for far buildings, object pooling, quality presets — **DONE** (`quality.ts`, far-tile impostors, pause-menu preset).  
+18. Expand map: Brockton, Cape Cod, Dartmouth Mall hub — **DONE** (hero hubs, fast-travel, mall gun shop).
+
+### Tier 5 — Act II & polish (Fall River arc)
+
+19. **Act II missions** — Spindle City + Acquitted (`story_mission.gd`; Braga → Battleship → Borden). **DONE**
+20. **Quiet ambient engine** — low-volume cabin rumble while driving (`vehicle_engine_ambient.mp3`). **DONE**
+21. **Act III prep** — Gloria storm, Battleship finale. **DONE** (see Tier 6).
+
+### Tier 6 — Act III finale (Cape & the Storm)
+
+22. **Act III missions** — Heritage Marina, Compound Interest, Gloria, Big Mamie (`story_mission.gd`). **DONE**
+23. **Gloria storm set-piece** — scripted hurricane weather, flood plane, radio barks (`game_world.gd`). **DONE**
+24. **Heritage Marina hub** — Cape yacht-club set dressing (`hero_hubs.gd`). **DONE**
+25. **Web mission parity** — Act III chain in `QUAHOG_Web/src/mission.ts`. **DONE**
+
+### Tier 7 — Systems depth (heat, safehouse, boxing)
+
+26. **Dual-axis heat** — faction aggro 0–5 alongside police wanted (`game_manager.gd`, `wanted_system.gd`, HUD). **DONE**
+27. **Safehouse** — Maplecroft zone bleeds heat, autosaves, sleep clears both axes (`safehouse_zone.gd`). **DONE**
+28. **The Undefeated** — Champion City Gym side mission between Act II and Act III. **DONE**
+29. **Pay-n-Spray** — clears faction heat as well as police. **DONE**
+
+### Tier 8 — Consequence & pursuit depth
+
+30. **Busted/Wasted screens** — full-screen blackout overlay, hospital/police respawn (`consequence_manager.gd`). **DONE**
+31. **Faction enforcers** — street muscle spawn when faction heat ≥ 1 (`faction_enforcer.gd`). **DONE**
+32. **Delivery job polish** — distance-scaled payout + km readout (`job_manager.gd`). **DONE**
+
+### Tier 9 — Exploration & driving rewards
+
+33. **Scrimshaw collectibles** — 8 hidden artifacts downtown, persisted save, HUD tally. **DONE**
+34. **Near-miss bonus** — fast close passes on traffic pay +$15 (`car.gd`). **DONE**
+35. **Traffic carjack** — ram traffic to stop it, then steal the ride (`traffic_car.gd`, `game_world.gd`). **DONE**
+
+### Tier 10 — Economy loop (business empire)
+
+36. **Buyable business fronts** — 7 South Coast properties with gold/green rings (`business_fronts.gd`, `business_manager.gd`). **DONE**
+37. **Passive income** — owned fronts trickle cash per in-game day (`business_manager.gd`). **DONE**
+38. **Revenue events** — random boom/leak windfalls on owned fronts (`business_manager.gd`). **DONE**
+39. **Owned-front rest** — heal + bleed heat while standing in owned rings (`business_fronts.gd`). **DONE**
+
+### Tier 11 — Driving polish + time-skip
+
+40. **Safehouse time-skip** — sleep now advances the actual world clock to morning (`game_world.gd`, `safehouse_zone.gd`). **DONE**
+41. **Wet-road handling** — rain reduces tire grip and lengthens braking distances (`car.gd`). **DONE**
+42. **Tire skid marks** — drifting and handbrake skids stamp fading road decals (`car.gd`). **DONE**
+
+### Tier 12 — Pause-menu usability
+
+43. **Controls reference screen** — in-game controls overlay from pause (`hud.gd`). **DONE**
+44. **Pause progression summary** — pause menu now shows cash, mission, jobs, fronts, and scrimshaw (`hud.gd`). **DONE**
 
 ---
 
@@ -79,24 +129,24 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 |---|-------------|-------|
 | A1 | Re-enable police/wanted by default | **[Godot]** done |
 | A2 | Tune wanted decay, bust fines, evade rewards | **[Godot]** done |
-| A3 | Dual-axis heat (police + faction aggro) | **[Web]** has it; port **[Godot]** |
-| A4 | Safehouse (sleep, save, clear heat) | **[Web]** partial |
+| A3 | Dual-axis heat (police + faction aggro) | **[Godot]** done |
+| A4 | Safehouse (sleep, save, clear heat) | **[Godot]** done |
 | A5 | Pay-n-Spray / respray clears heat | **[Godot]** done |
 | A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** partial |
 | A7 | “Off the Boat” story opener | **[Godot]** done |
-| A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | Content |
-| A9 | Act II: Spindle City, Acquitted (Borden) | Content |
-| A10 | Act III: Gloria storm, Battleship finale | Content |
-| A11 | Delivery job polish (markers, payout UX, chains) | **[Both]** |
+| A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | **[Godot]** done |
+| A9 | Act II: Spindle City, Acquitted (Borden) | **[Godot]** done |
+| A10 | Act III: Gloria storm, Battleship finale | **[Godot]** done |
+| A11 | Delivery job polish (markers, payout UX, chains) | **[Godot]** done |
 | A12 | Side activities: street races, boxing, boat smuggling | **[Both]** |
-| A13 | Collectibles / photo-ops at landmarks | **[Web]** partial |
+| A13 | Collectibles / photo-ops at landmarks | **[Godot]** done (scrimshaw) |
 | A14 | Chop shop / weapons gated by progression | Design |
 | A15 | Respect/reputation per faction | Design |
 | A16 | Player upgrades (driving, shooting, health, stamina) | |
-| A17 | Busted/wasted consequence screens | **[Web]** partial |
-| A18 | Near-miss driving cash bonus | **[Web]** |
-| A19 | Carjack traffic on foot | **[Web]** |
-| A20 | Vehicle damage, smoke, explosions | |
+| A17 | Busted/wasted consequence screens | **[Godot]** done |
+| A18 | Near-miss driving cash bonus | **[Godot]** done |
+| A19 | Carjack traffic on foot | **[Godot]** done |
+| A20 | Vehicle damage, smoke, explosions | **[Godot]** partial (body damage, impacts, smoke) |
 | A21 | Ram traffic to stop / steal | **[Both]** |
 | A22 | Pilotable boat / yacht | **[Web]** |
 | A23 | Motorcycles, mopeds, bicycles | |
@@ -107,12 +157,12 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A28 | Melee combos, block, grapple | |
 | A29 | Gun: reload, ammo pickups, weapon wheel | **[Godot]** partial (pickups) |
 | A30 | Health regen, medkits, armor vests | **[Godot]** done |
-| A31 | Businesses to buy (5 fronts) + passive income | **[Web]** |
-| A32 | Revenue events (margin leak, boom) | **[Web]** |
+| A31 | Businesses to buy (5 fronts) + passive income | **[Godot]** done (7 fronts) |
+| A32 | Revenue events (margin leak, boom) | **[Godot]** done |
 | A33 | Shops: weapons, clothing, food, vehicle mods | |
 | A34 | Bank, stash, bribes, fines | |
-| A35 | Time-skip via sleep at safehouse | **[Web]** |
-| A36 | Weather affects vehicle friction | |
+| A35 | Time-skip via sleep at safehouse | **[Godot]** done |
+| A36 | Weather affects vehicle friction | **[Godot]** done |
 | A37 | Cheat menu → settings/debug only in dev builds | **[Godot]** |
 
 ---
@@ -131,12 +181,12 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | B8 | Free-look orbit while driving | **[Godot]** done |
 | B9 | Fast travel brings your car | **[Both]** done |
 | B10 | Park cars at curb (not lane center) | **[Godot]** done |
-| B11 | 200-car pool with restreaming | **[Godot]** |
+| B11 | 200-car pool with restreaming | **[Godot]** done |
 | B12 | Horn button + SFX | done |
 | B13 | Headlights/taillights/brake/reverse/turn signals | Partial |
 | B14 | Speedometer (MPH/km/h) | **[Both]** |
-| B15 | Tire skid marks + screech audio | Partial |
-| B16 | Engine RPM/audio layers | Partial |
+| B15 | Tire skid marks + screech audio | **[Godot]** done |
+| B16 | Engine RPM/audio layers | **[Godot]** partial (quiet ambient loop) |
 | B17 | Wheel rotation + suspension animation | |
 | B18 | Water non-drivable | done |
 | B19 | Collision crunch + sparks | Partial |
@@ -271,7 +321,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | G8 | Pause menu + settings (volume, shadows, effects) |
 | G9 | Main menu: New / Continue / Load / Settings |
 | G10 | Multiple save slots |
-| G11 | Controls reference screen |
+| G11 | Controls reference screen | **[Godot]** done |
 | G12 | Coastal Neon UI theme (Courier, neon palette) |
 | G13 | Subtitles + dialogue UI |
 | G14 | Weapon wheel / inventory UI |

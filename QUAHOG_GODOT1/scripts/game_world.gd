@@ -20,6 +20,13 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 const StoryMissionScript: = preload("res://scripts/systems/story_mission.gd")
 const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
 const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
+const SafehouseZoneScript: = preload("res://scripts/world/safehouse_zone.gd")
+const ScrimshawCollectibleScript: = preload("res://scripts/world/scrimshaw_collectible.gd")
+const BusinessFrontsScript: = preload("res://scripts/world/business_fronts.gd")
+const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
+const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
+const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
+const HeroHubsScript: = preload("res://scripts/world/hero_hubs.gd")
 
 # Cars everywhere: every parked car is a real, takeable drivable car (parked
 # cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
@@ -48,7 +55,9 @@ const HERO_LANDMARKS: Array = [
     {"name": "Fort Taber", "pos": Vector2(1495, 4560)},
     {"name": "Clark's Point Light", "pos": Vector2(1598, 4764)},
     {"name": "Fairhaven", "pos": Vector2(1539, 32)},
-    {"name": "Dartmouth Town Hall", "pos": Vector2(-3744, 806)},
+    {"name": "Dartmouth Mall", "pos": Vector2(-3921, -378), "tag": "mall", "h": 16.0},
+    {"name": "Cape Cod Canal", "pos": Vector2(-11050, -47600), "tag": "cape", "h": 20.0},
+    {"name": "Heritage Marina", "pos": Vector2(-10520, -47420), "tag": "marina", "h": 16.0},
     {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
     {"name": "Westport", "pos": Vector2(-11897, 1521)},
     {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
@@ -83,6 +92,11 @@ var _day_phase: float = 0.0
 var _rain: CPUParticles3D = null
 var _weather_t: float = 25.0
 var _raining: bool = false
+var _gloria_flood: MeshInstance3D = null
+var _gloria_flood_y: float = -2.0
+var _gloria_active: bool = false
+var _rain_dir_calm: Vector3 = Vector3(0.05, -1.0, 0.0)
+var _rain_box_calm: Vector3 = Vector3(26.0, 0.5, 26.0)
 # Real-map builder (MapLoader). Untyped because it replaces the old CityBuilder
 # but exposes the same spawn fields (player_spawn, car_slots, light_slots,
 # npc_waypoints, npc_spawns, mission_giver_pos/rot, job_points).
@@ -94,6 +108,10 @@ var _traffic: Array = []
 var _npcs: Array = []
 var _street_lights: Array = []
 var _last_stream_tile: Vector2i = Vector2i(999999, 999999)
+var _car_restream_i: int = 0
+var _road_cands: Array = []
+var _road_cand_tile: Vector2i = Vector2i(999999, 999999)
+var _road_cand_i: int = 0
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
@@ -101,10 +119,39 @@ var _story_mission: Node = null
 var _water_hazard: Node = null
 var _ambient_player: AudioStreamPlayer = null
 var _tod_life_t: float = 0.0
+var _day_phase_override_pending: bool = false
 
 
 func get_wanted_system() -> Node:
     return _wanted_system
+
+
+func set_gloria_storm(active: bool) -> void :
+    if _gloria_active == active:
+        return
+    _gloria_active = active
+    if GameManager:
+        GameManager.gloria_storm_active = active
+    if active:
+        _raining = true
+        if _rain:
+            _rain.emitting = true
+        _weather_t = 9999.0
+        if _gloria_flood:
+            _gloria_flood.visible = true
+        GameManager.show_message("GLORIA — Hurricane Gloria coming ashore. Get to high ground!")
+        if has_node("/root/RadioHooks"):
+            get_node("/root/RadioHooks").call_deferred("on_gloria_started")
+    else:
+        _weather_t = 90.0
+        if _gloria_flood:
+            _gloria_flood.visible = false
+            _gloria_flood_y = -2.0
+            _gloria_flood.position.y = -2.0
+        if _rain:
+            _rain.direction = _rain_dir_calm
+            _rain.emission_box_extents = _rain_box_calm
+        GameManager.show_message("The storm's breaking — skies clearing over the bay.")
 
 
 func _ready() -> void :
@@ -117,7 +164,10 @@ func _ready() -> void :
     _tex_concrete = load("res://assets/textures/floors/concrete_sidewalk.png")
 
     _setup_environment()
+    if GameManager:
+        GameManager.graphics_quality_changed.connect(_apply_graphics_quality)
     _build_city()
+    _apply_graphics_quality()
     _place_cars()
     _spawn_traffic()
     _place_streetlights()
@@ -136,10 +186,15 @@ func _ready() -> void :
     _build_hud()
     _build_systems()
     _spawn_pickups()
+    _spawn_scrimshaw()
     _spawn_shops()
     _build_shop_menu()
+    _build_diner()
+    NeonSignsScript.build(self)
+    HeroHubsScript.build(self)
     _start_audio()
     _setup_weather()
+    _setup_gloria_flood()
     call_deferred("_apply_tod_life")
 
 
@@ -172,6 +227,15 @@ func _place_landmark_beacons() -> void :
         elif tag == "borden":
             m.albedo_color = Color(0.62, 0.48, 0.42)
             m.emission = Color(1.0, 0.55, 0.35)
+        elif tag == "mall":
+            m.albedo_color = Color(0.55, 0.62, 0.78)
+            m.emission = Color(0.45, 0.72, 1.0)
+        elif tag == "cape":
+            m.albedo_color = Color(0.38, 0.55, 0.68)
+            m.emission = Color(0.55, 0.82, 0.95)
+        elif tag == "marina":
+            m.albedo_color = Color(0.42, 0.52, 0.62)
+            m.emission = Color(0.55, 0.75, 0.88)
         else:
             m.albedo_color = Color(0.95, 0.72, 0.36)
             m.emission = Color(1.0, 0.74, 0.34)
@@ -219,7 +283,7 @@ func _place_landmark_beacons() -> void :
 func _setup_weather() -> void :
     var rain: = CPUParticles3D.new()
     rain.name = "Rain"
-    rain.amount = 700
+    rain.amount = GameManager.rain_particle_count() if GameManager else 280
     rain.lifetime = 1.1
     rain.local_coords = false
     rain.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
@@ -240,6 +304,25 @@ func _setup_weather() -> void :
     rain.emitting = false
     add_child(rain)
     _rain = rain
+
+
+func _setup_gloria_flood() -> void :
+    var flood: = MeshInstance3D.new()
+    flood.name = "GloriaFlood"
+    var plane: = PlaneMesh.new()
+    plane.size = Vector2(420.0, 420.0)
+    flood.mesh = plane
+    flood.rotation.x = -PI * 0.5
+    flood.position.y = -2.0
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.08, 0.22, 0.38, 0.62)
+    mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+    mat.roughness = 0.06
+    mat.metallic = 0.08
+    flood.material_override = mat
+    flood.visible = false
+    add_child(flood)
+    _gloria_flood = flood
 
 
 
@@ -273,7 +356,7 @@ func _setup_environment() -> void :
     # just enough aerial perspective for distance.
     env.fog_enabled = true
     env.fog_light_color = Color(0.55, 0.60, 0.64)
-    env.fog_density = 0.0035
+    env.fog_density = 0.0018
     env.fog_sky_affect = 0.25
     env.fog_aerial_perspective = 0.25
 
@@ -307,9 +390,14 @@ func _setup_environment() -> void :
 # Drive the sun + ambient/fog from _day_phase (0=dusk → night → dawn → day →
 # back to dusk). Kept warm and gentle so the city keeps its dusk character.
 func _process(delta: float) -> void :
+    if GameManager and absf(GameManager.day_phase - _day_phase) > 0.08:
+        _day_phase = GameManager.day_phase
+        _day_phase_override_pending = true
     # Cheat: a forced time of day pins the clock; otherwise it advances normally.
     if GameManager and GameManager.cheat_time_phase >= 0.0:
         _day_phase = GameManager.cheat_time_phase
+    elif _day_phase_override_pending:
+        _day_phase_override_pending = false
     else:
         _day_phase = fposmod(_day_phase + delta / DAY_LENGTH, 1.0)
     _apply_day_night()
@@ -324,20 +412,36 @@ func _process(delta: float) -> void :
         GameManager.raining = _raining
 
 
-# Stream building tiles around the player as they cross the 500 m tile grid, so
-# the whole South Coast (NB → Westport → Fall River) is explorable without
-# loading every tile at once.
+# Stream building tiles around the player. Tile builds are budgeted per frame;
+# parked cars re-stream in small batches so a 200-car pool stays cheap.
 func _update_streaming() -> void :
     if _city == null or _player == null or not is_instance_valid(_player):
         return
     var p: Vector3 = _player.global_position
-    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
-    if tile == _last_stream_tile:
-        return
-    _last_stream_tile = tile
     if _city.has_method("stream_buildings"):
         _city.stream_buildings(p)
-    _restream_cars(p)
+    var tile: = Vector2i(int(floor(p.x / 500.0)), int(floor(-p.z / 500.0)))
+    if tile != _road_cand_tile:
+        _road_cand_tile = tile
+        if _city.has_method("road_points_near"):
+            _road_cands = _city.road_points_near(p, CAR_NEAR, 800)
+            _road_cands.shuffle()
+            _road_cand_i = 0
+    _restream_cars_staggered(p)
+    _last_stream_tile = tile
+
+
+func _apply_graphics_quality() -> void :
+    if _city == null or GameManager == null:
+        return
+    if _city.has_method("set_stream_quality"):
+        _city.set_stream_quality(
+            GameManager.stream_radius(),
+            GameManager.stream_tile_budget(),
+            GameManager.building_lod()
+        )
+    if _rain:
+        _rain.amount = GameManager.rain_particle_count()
 
 
 func _update_weather(delta: float) -> void :
@@ -346,6 +450,20 @@ func _update_weather(delta: float) -> void :
     # Keep the emitter riding above the player.
     if _player != null and is_instance_valid(_player):
         _rain.global_position = _player.global_position + Vector3(0.0, 22.0, 0.0)
+    # Scripted Gloria hurricane overrides the normal rain cycle.
+    if GameManager and GameManager.gloria_storm_active:
+        _raining = true
+        _rain.emitting = true
+        _rain.amount = maxi(420, GameManager.rain_particle_count())
+        _rain.direction = Vector3(0.38, -1.0, 0.14).normalized()
+        _rain.emission_box_extents = Vector3(44.0, 0.5, 44.0)
+        if _env != null:
+            _env.fog_density += 0.0048
+        _update_gloria_flood(delta)
+        return
+    if _rain:
+        _rain.direction = _rain_dir_calm
+        _rain.emission_box_extents = _rain_box_calm
     # Cheat: a forced weather state overrides the timer.
     if GameManager and GameManager.cheat_force_rain >= 0:
         var want: bool = GameManager.cheat_force_rain == 1
@@ -358,10 +476,18 @@ func _update_weather(delta: float) -> void :
         if _weather_t <= 0.0:
             _raining = not _raining
             _rain.emitting = _raining
-            _weather_t = 40.0 if _raining else 90.0
-    # Rain thickens the haze on top of the day/night base.
+            _weather_t = 18.0 if _raining else 180.0
+    # Rain thickens the haze slightly on top of the day/night base.
     if _raining and _env != null:
-        _env.fog_density += 0.004
+        _env.fog_density += 0.0012
+
+
+func _update_gloria_flood(delta: float) -> void :
+    if not _gloria_active or _gloria_flood == null or _player == null:
+        return
+    _gloria_flood.global_position = Vector3(_player.global_position.x, 0.0, _player.global_position.z)
+    _gloria_flood_y = move_toward(_gloria_flood_y, 1.75, delta * 0.32)
+    _gloria_flood.position.y = _gloria_flood_y
 
 
 func _apply_day_night() -> void :
@@ -383,7 +509,7 @@ func _apply_day_night() -> void :
     _env.background_energy_multiplier = lerp(0.75, 1.1, daylight)
     # Lighter haze overall (it was crushing the foreground to black).
     _env.fog_light_color = Color(0.34, 0.38, 0.46).lerp(Color(0.58, 0.63, 0.67), daylight)
-    _env.fog_density = lerp(0.0030, 0.0016, daylight)
+    _env.fog_density = lerp(0.0014, 0.0009, daylight)
     _env.glow_intensity = lerp(0.7, 0.35, daylight) + night * 0.2
     # Time-of-day colour grade: richer, moodier at dusk/night; flatter by day.
     _env.adjustment_saturation = lerp(1.22, 1.10, daylight)
@@ -400,6 +526,13 @@ func _apply_day_night() -> void :
     for lamp in get_tree().get_nodes_in_group("mooring_light"):
         if lamp is OmniLight3D:
             (lamp as OmniLight3D).light_energy = lamp_e * 0.55
+    var neon_e: float = clampf(1.0 - daylight, 0.0, 1.0) * 1.6
+    for lamp in get_tree().get_nodes_in_group("neon_light"):
+        if lamp is OmniLight3D:
+            (lamp as OmniLight3D).light_energy = neon_e
+    for sign in get_tree().get_nodes_in_group("neon_sign"):
+        if sign is MeshInstance3D and sign.material_override is StandardMaterial3D:
+            (sign.material_override as StandardMaterial3D).emission_energy_multiplier = 0.1 + neon_e * 0.3
     for tc in _traffic:
         if is_instance_valid(tc) and tc.has_method("update_running_lights"):
             tc.update_running_lights(night)
@@ -476,7 +609,8 @@ func _build_city() -> void :
     # of the procedural grid. MapLoader also lays a ground plane + collider and
     # derives all the spawn fields game_world relies on.
     _city = MapLoaderScript.new()
-    _city.build_region(self, Vector2i.ZERO, MAP_RADIUS)
+    var radius: int = GameManager.stream_radius() if GameManager else MAP_RADIUS
+    _city.build_region(self, Vector2i.ZERO, radius)
 
 
 
@@ -485,9 +619,9 @@ func _place_cars() -> void :
         return
 
     var models: = [
-        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 11.0, "trq": 95.0, "mass": 1000.0},
-        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 12.5, "trq": 105.0, "mass": 1100.0},
-        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 9.5, "trq": 130.0, "mass": 1500.0},
+        {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 68.0, "trq": 280.0, "mass": 1000.0},
+        {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 76.0, "trq": 310.0, "mass": 1100.0},
+        {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 62.0, "trq": 340.0, "mass": 1500.0},
     ]
     # Spawn the pool on road points near where the player starts (dense), not
     # smeared across the whole 80 km region. _restream_cars keeps them near you.
@@ -495,7 +629,8 @@ func _place_cars() -> void :
     if _city.has_method("road_points_near"):
         slots = _city.road_points_near(_city.player_spawn, CAR_NEAR, 800)
     slots.shuffle()
-    var count: int = mini(CAR_POOL, slots.size())
+    var pool: int = GameManager.car_pool_size() if GameManager else CAR_POOL
+    var count: int = mini(pool, slots.size())
     for i in count:
         var slot = slots[i]
         var m: Dictionary = models[i % models.size()]
@@ -518,17 +653,22 @@ func _parked_xform(slot: Array) -> Array:
     return [pos + offset, yaw]
 
 
-# Relocate parked cars that have drifted far from the player onto road points
-# nearby, so the streamed world always has ~CAR_POOL takeable cars around you.
-func _restream_cars(center: Vector3) -> void :
-    if _city == null or not _city.has_method("road_points_near"):
+# Relocate far parked cars onto road points near the player in small batches.
+func _restream_cars_staggered(center: Vector3) -> void :
+    if _city == null or _drivable_cars.is_empty():
         return
-    var cand: Array = _city.road_points_near(center, CAR_NEAR, 800)
-    if cand.is_empty():
+    var batch: int = GameManager.car_restream_batch() if GameManager else 12
+    if _road_cands.is_empty() and _city.has_method("road_points_near"):
+        _road_cands = _city.road_points_near(center, CAR_NEAR, 800)
+        _road_cands.shuffle()
+        _road_cand_i = 0
+    if _road_cands.is_empty():
         return
-    cand.shuffle()
-    var ci: int = 0
-    for car in _drivable_cars:
+    for _i in batch:
+        if _drivable_cars.is_empty():
+            break
+        _car_restream_i = (_car_restream_i + 1) % _drivable_cars.size()
+        var car = _drivable_cars[_car_restream_i]
         if not is_instance_valid(car):
             continue
         if _player != null and _player.current_car == car:
@@ -536,9 +676,9 @@ func _restream_cars(center: Vector3) -> void :
         var cp: Vector3 = car.global_position
         if Vector2(cp.x - center.x, cp.z - center.z).length() <= CAR_FAR:
             continue
-        while ci < cand.size():
-            var slot = cand[ci]
-            ci += 1
+        while _road_cand_i < _road_cands.size():
+            var slot = _road_cands[_road_cand_i]
+            _road_cand_i += 1
             var sp: Vector3 = slot[0]
             if Vector2(sp.x - center.x, sp.z - center.z).length() > 40.0:
                 var park: Array = _parked_xform(slot)
@@ -585,9 +725,9 @@ func _spawn_traffic() -> void :
         ["res://assets/props/vehicles/taxi.glb", 1.5, 9.5],
         ["res://assets/props/vehicles/suv.glb", 1.85, 7.5],
     ]
-    var want_traffic: int = TRAFFIC_CARS
+    var want_traffic: int = GameManager.traffic_car_count() if GameManager else TRAFFIC_CARS
     if GameManager:
-        want_traffic = int(round(float(TRAFFIC_CARS) * GameManager.cheat_traffic_mult))
+        want_traffic = int(round(float(want_traffic) * GameManager.cheat_traffic_mult))
     var n: int = mini(want_traffic, waypoints.size())
     for i in n:
         var m: Array = models[i % models.size()]
@@ -671,6 +811,20 @@ func _build_systems() -> void :
     add_child(respray)
     respray.global_position = Vector3(48.0, 0.0, -12.0)
 
+    var safehouse: = Node3D.new()
+    safehouse.set_script(SafehouseZoneScript)
+    add_child(safehouse)
+    safehouse.global_position = Vector3(-188.0, 0.0, -40.0)
+
+    var fronts: = Node3D.new()
+    fronts.set_script(BusinessFrontsScript)
+    add_child(fronts)
+    fronts.setup(_player)
+    if GameManager:
+        GameManager.businesses_changed.connect(fronts.on_owned_changed)
+    if BusinessManager:
+        BusinessManager.set_active(true)
+
 
     for c in _contacts:
         if is_instance_valid(c):
@@ -680,10 +834,14 @@ func _build_systems() -> void :
         _player.register_systems(_wanted_system, spawn)
     if _player.has_method("register_cars"):
         _player.register_cars(_drivable_cars)
+    if _player.has_method("register_traffic"):
+        _player.register_traffic(_traffic)
     if _hud and _hud.has_method("bind_systems"):
         _hud.bind_systems(_job_manager, _wanted_system)
     if _hud and _hud.has_method("bind_story") and _story_mission:
         _hud.bind_story(_story_mission)
+    if _story_mission and _story_mission.has_signal("mission_completed"):
+        _story_mission.mission_completed.connect(_on_mission_completed)
 
 
 func _job_locations() -> Array[Vector3]:
@@ -719,11 +877,74 @@ func _spawn_pickups() -> void :
         pickup.setup(s[2], _player, s[0], s[1], 0)
 
 
+func _spawn_scrimshaw() -> void :
+    if _player == null:
+        return
+    # World XZ (z = -north) — mirrors web Collectibles.tsx spots.
+    var spots: Array[Vector3] = [
+        Vector3(-272.0, 0.0, -106.0), Vector3(-244.0, 0.0, -70.0), Vector3(-300.0, 0.0, -130.0),
+        Vector3(-210.0, 0.0, -100.0), Vector3(-330.0, 0.0, -80.0), Vector3(-256.0, 0.0, -150.0),
+        Vector3(-225.0, 0.0, -60.0), Vector3(-290.0, 0.0, -175.0),
+    ]
+    for i in spots.size():
+        if GameManager and GameManager.is_scrimshaw_collected(i):
+            continue
+        var c: = Node3D.new()
+        c.set_script(ScrimshawCollectibleScript)
+        add_child(c)
+        c.setup(i, spots[i], _player)
+
+
+func find_carjackable_traffic(near: Vector3, radius: float) -> Node:
+    var best: Node = null
+    var best_d: float = radius
+    for tc in _traffic:
+        if not is_instance_valid(tc):
+            continue
+        if not tc.has_method("can_carjack") or not tc.can_carjack():
+            continue
+        var d: float = near.distance_to(tc.global_position)
+        if d < best_d:
+            best_d = d
+            best = tc
+    return best
+
+
+func carjack_traffic(tc: Node) -> Node:
+    if tc == null or not is_instance_valid(tc) or not tc.has_method("can_carjack"):
+        return null
+    if not tc.can_carjack():
+        return null
+    tc.carjacked = true
+    tc.visible = false
+    tc.set_physics_process(false)
+    var pos: Vector3 = tc.global_position
+    var yaw: float = 0.0
+    if "mesh_root" in tc and tc.mesh_root:
+        yaw = rad_to_deg(tc.mesh_root.rotation.y)
+    var path: String = str(tc.model_path) if "model_path" in tc else "res://assets/props/vehicles/sedan.glb"
+    var spec: Dictionary = {
+        "res://assets/props/vehicles/taxi.glb": {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 76.0, "trq": 310.0, "mass": 1100.0},
+        "res://assets/props/vehicles/suv.glb": {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 62.0, "trq": 340.0, "mass": 1500.0},
+    }.get(path, {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 68.0, "trq": 280.0, "mass": 1000.0})
+    _spawn_drivable_car(spec, pos, yaw)
+    var car = _drivable_cars.back()
+    if _player and _player.has_method("register_cars"):
+        _player.register_cars(_drivable_cars)
+    if _wanted_system and _wanted_system.has_method("add_heat"):
+        _wanted_system.add_heat(1)
+    if _wanted_system and _wanted_system.has_method("add_faction_heat"):
+        _wanted_system.add_faction_heat(1)
+    GameManager.show_message("Carjacked — lose the heat.")
+    return car
+
+
 func _spawn_shops() -> void :
     var spots: = [
         Vector3(50.0, 0.0, 6.0), 
         Vector3(-52.0, 0.0, -12.0), 
-        Vector3(6.0, 0.0, -110.0), 
+        Vector3(6.0, 0.0, -110.0),
+        Vector3(-3921.0, 0.0, -378.0),  # Dartmouth Mall hub
     ]
     for p in spots:
         var shop: = Node3D.new()
@@ -738,6 +959,24 @@ func _build_shop_menu() -> void :
     add_child(shop_menu)
     if _player:
         shop_menu.bind_player(_player)
+
+
+func _build_diner() -> void :
+    var diner: = Node3D.new()
+    diner.set_script(DinerInteriorScript)
+    add_child(diner)
+    diner.setup(Vector3(-300.0, 0.0, -92.0))
+    var diner_menu: = CanvasLayer.new()
+    diner_menu.set_script(DinerMenuScript)
+    add_child(diner_menu)
+    if _player:
+        diner_menu.bind_player(_player)
+
+
+func _on_mission_completed(title: String) -> void :
+    var hooks: = get_node_or_null("/root/RadioHooks")
+    if hooks and hooks.has_method("on_mission_completed"):
+        hooks.on_mission_completed(title)
 
 
 # Gunfire scatters nearby pedestrians and draws police attention.

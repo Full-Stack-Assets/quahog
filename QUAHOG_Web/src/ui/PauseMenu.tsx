@@ -5,6 +5,7 @@ import { useMission } from "../mission";
 import { useEconomy, BUSINESSES } from "../economy";
 import { sfx } from "../audio/sfx";
 import { radio } from "../audio/radioEngine";
+import { QUALITY_LABELS } from "../quality";
 import { shared } from "../shared";
 
 // Pause / settings overlay (§26). Opens on Esc/P (handled in GameSystems).
@@ -42,6 +43,7 @@ export function PauseMenu() {
   const shadows = useGame((s) => s.shadows);
   const fov = useGame((s) => s.fov);
   const reduceShake = useGame((s) => s.reduceShake);
+  const quality = useGame((s) => s.quality);
   const cash = useStats((s) => s.cash);
   const health = useStats((s) => s.health);
   const police = useStats((s) => s.police);
@@ -94,6 +96,9 @@ export function PauseMenu() {
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleShadows()}>
           Shadows: {shadows ? "On" : "Off"}
+        </button>
+        <button style={btn} onClick={() => useGame.getState().cycleQuality()}>
+          Graphics: {QUALITY_LABELS[quality]}
         </button>
         <button style={btn} onClick={() => useGame.getState().toggleReduceShake()}>
           Camera shake: {reduceShake ? "Off" : "On"}
