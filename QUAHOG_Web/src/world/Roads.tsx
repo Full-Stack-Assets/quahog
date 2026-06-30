@@ -1,6 +1,8 @@
 import { useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
+import polygonClipping from "polygon-clipping";
 import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal, makeGroundTexture } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
@@ -90,6 +92,83 @@ function buildRibbon(roads: Road[], y: number, uScale: number, pad = 0, widthSca
   return g;
 }
 
+// Mitered ribbon quads for one road as closed [e,n] rings (slice coords), for the
+// polygon union below. Mirrors buildRibbon's per-vertex miter so the union input
+// matches the rest of the road network.
+function ribbonQuads(r: Road, widthScale: number): [number, number][][] {
+  const half = (r.width * widthScale) / 2;
+  const P = r.points, m = P.length;
+  const nrm: [number, number][] = [], seg: number[] = [];
+  for (let i = 0; i < m - 1; i++) {
+    const dx = P[i + 1][0] - P[i][0], dz = P[i + 1][1] - P[i][1];
+    const l = Math.hypot(dx, dz);
+    if (l < 1e-6) { nrm.push([0, 0]); seg.push(0); continue; }
+    nrm.push([-dz / l, dx / l]); seg.push(l);
+  }
+  const off: [number, number][] = [];
+  for (let i = 0; i < m; i++) {
+    if (i === 0) { off.push([nrm[0][0] * half, nrm[0][1] * half]); continue; }
+    if (i === m - 1) { off.push([nrm[m - 2][0] * half, nrm[m - 2][1] * half]); continue; }
+    let mx = nrm[i - 1][0] + nrm[i][0], mz = nrm[i - 1][1] + nrm[i][1];
+    const ml = Math.hypot(mx, mz);
+    if (ml < 1e-6) { off.push([nrm[i][0] * half, nrm[i][1] * half]); continue; }
+    mx /= ml; mz /= ml;
+    const cos = Math.max(mx * nrm[i][0] + mz * nrm[i][1], 0.33);
+    off.push([(mx * half) / cos, (mz * half) / cos]);
+  }
+  const out: [number, number][][] = [];
+  for (let i = 0; i < m - 1; i++) {
+    if (seg[i] < 1e-6) continue;
+    const a = P[i], b = P[i + 1], oa = off[i], ob = off[i + 1];
+    out.push([
+      [a[0] + oa[0], a[1] + oa[1]], [b[0] + ob[0], b[1] + ob[1]],
+      [b[0] - ob[0], b[1] - ob[1]], [a[0] - oa[0], a[1] - oa[1]],
+      [a[0] + oa[0], a[1] + oa[1]],
+    ]);
+  }
+  return out;
+}
+
+// Highways as a *unioned* surface: the divided carriageways + on/off ramps of an
+// interchange overlap as many ribbon quads; unioning them merges the overlaps
+// into one clean paved polygon (no z-fighting, no jutting corners) while keeping
+// genuinely-separate carriageways separate. Triangulated via earcut (handles the
+// concave interchange outline + holes). Returns null on any failure so the caller
+// falls back to the plain ribbon.
+function buildHighwayUnion(roads: Road[], y: number, widthScale: number): THREE.BufferGeometry | null {
+  if (!roads.length) return null;
+  try {
+    const polys: [number, number][][][] = [];
+    for (const r of roads) for (const q of ribbonQuads(r, widthScale)) polys.push([q]);
+    if (!polys.length) return null;
+    const merged = polygonClipping.union(polys[0], ...polys.slice(1));
+    const geoms: THREE.BufferGeometry[] = [];
+    for (const poly of merged) {
+      if (!poly.length || poly[0].length < 4) continue;
+      const shape = new THREE.Shape(poly[0].map(([e, n]) => new THREE.Vector2(e, n)));
+      for (let h = 1; h < poly.length; h++) {
+        if (poly[h].length >= 4) shape.holes.push(new THREE.Path(poly[h].map(([e, n]) => new THREE.Vector2(e, n))));
+      }
+      const sg = new THREE.ShapeGeometry(shape);
+      sg.rotateX(-Math.PI / 2); // (e,n) plane → world (x, 0, -n)
+      geoms.push(sg);
+    }
+    if (!geoms.length) return null;
+    const g = mergeGeometries(geoms, false);
+    if (!g) return null;
+    g.translate(0, y, 0);
+    // planar UV (world metres) for the tiling asphalt texture
+    const p = g.attributes.position, n = p.count;
+    const uv = new Float32Array(n * 2);
+    for (let i = 0; i < n; i++) { uv[i * 2] = p.getX(i) / TILE; uv[i * 2 + 1] = p.getZ(i) / TILE; }
+    g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+    g.computeVertexNormals();
+    return g;
+  } catch {
+    return null; // degrade to the ribbon renderer at the call site
+  }
+}
+
 // Raised curb + sidewalk flanking each street: a top strip at height `top` with
 // a short vertical curb face down to grade on the inner (street-facing) edge, on
 // both sides of the centerline. Reads as a real walkway instead of flat paint.
@@ -139,7 +218,6 @@ function buildSidewalks(roads: Road[], top: number, inner: number, width: number
 
 export function Roads({ roads }: { roads: Road[] }) {
   const surfaceTex = useMemo(() => makeAsphaltTexture(false), []);
-  const highwayTex = useMemo(() => makeAsphaltTexture(true), []);
   const cobbleTex = useMemo(() => {
     const t = makeCobbleTexture();
     t.repeat.set(1, 0.5); // bigger cobbles along length
@@ -178,10 +256,10 @@ export function Roads({ roads }: { roads: Road[] }) {
       // painted centre line down arterials (>=8m: secondary/tertiary) so streets
       // read as real roads, not bare asphalt. Thin ribbon along the centerline.
       centerline: buildRibbon(c.sf.filter((r) => r.width >= 8), 0.066, 0, 0, 0.025),
-      // trim highway carriageway width so close divided carriageways (the two
-      // directions of I-195) read as separate roads with a median gap instead of
-      // one squished/converging blob; the concrete apron keeps the shoulders.
-      highway: buildRibbon(c.hw, 0.08, 0, 0, 0.72),
+      // highways: union the carriageway + branch ribbons into clean merged
+      // polygons so interchanges stop reading as overlapping/converging ribbons;
+      // fall back to a plain ribbon if the union can't be built.
+      highway: buildHighwayUnion(c.hw, 0.08, 0.72) ?? buildRibbon(c.hw, 0.08, 0, 0, 0.72),
       // ramps: narrower + a touch higher so they overlay the mainline cleanly
       // where they merge, reading as separate weaving ribbons
       ramp: buildRibbon(c.rp, 0.09, 0, 0, 0.62),
@@ -245,7 +323,7 @@ export function Roads({ roads }: { roads: Road[] }) {
           )}
           {c.highway && (
             <mesh geometry={c.highway} receiveShadow>
-              <meshStandardMaterial map={highwayTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
+              <meshStandardMaterial map={surfaceTex} normalMap={nrm} normalScale={ns} color="#6a6c76" roughness={0.82} userData={{ base: 0.82 }} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
             </mesh>
           )}
           {c.ramp && (
