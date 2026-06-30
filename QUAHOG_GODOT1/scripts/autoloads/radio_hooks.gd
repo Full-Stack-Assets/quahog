@@ -27,14 +27,23 @@ const GLORIA_LINES: Array[String] = [
     "Eighty-five all over again — batten down and stay off the bridges.",
 ]
 
+const FACTION_LINES: Array[String] = [
+    "Word is you stirred up the crews downtown. They don't forget.",
+    "Somebody's put a price on disrespectin' the neighborhood.",
+    "The syndicate's talkin'. Watch your back in the Flint.",
+]
+
 var _was_raining: bool = false
 var _last_wanted: int = 0
+var _last_faction: int = 0
 
 
 func _ready() -> void :
     if GameManager:
         GameManager.wanted_changed.connect(_on_wanted)
+        GameManager.faction_changed.connect(_on_faction)
         _last_wanted = GameManager.wanted_level
+        _last_faction = GameManager.faction_level
 
 
 func _process(_delta: float) -> void :
@@ -50,6 +59,12 @@ func _on_wanted(level: int) -> void :
     if level > _last_wanted and level >= 1 and Radio and Radio.current >= 0:
         _flash(WANTED_LINES.pick_random())
     _last_wanted = level
+
+
+func _on_faction(level: int) -> void :
+    if level > _last_faction and level >= 1 and Radio and Radio.current >= 0:
+        _flash(FACTION_LINES.pick_random())
+    _last_faction = level
 
 
 func on_mission_completed(_title: String) -> void :

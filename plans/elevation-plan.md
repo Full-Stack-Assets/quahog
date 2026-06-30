@@ -78,6 +78,13 @@ These are the highest-leverage moves, in order:
 24. **Heritage Marina hub** — Cape yacht-club set dressing (`hero_hubs.gd`). **DONE**
 25. **Web mission parity** — Act III chain in `QUAHOG_Web/src/mission.ts`. **DONE**
 
+### Tier 7 — Systems depth (heat, safehouse, boxing)
+
+26. **Dual-axis heat** — faction aggro 0–5 alongside police wanted (`game_manager.gd`, `wanted_system.gd`, HUD). **DONE**
+27. **Safehouse** — Maplecroft zone bleeds heat, autosaves, sleep clears both axes (`safehouse_zone.gd`). **DONE**
+28. **The Undefeated** — Champion City Gym side mission between Act II and Act III. **DONE**
+29. **Pay-n-Spray** — clears faction heat as well as police. **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -92,8 +99,8 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 |---|-------------|-------|
 | A1 | Re-enable police/wanted by default | **[Godot]** done |
 | A2 | Tune wanted decay, bust fines, evade rewards | **[Godot]** done |
-| A3 | Dual-axis heat (police + faction aggro) | **[Web]** has it; port **[Godot]** |
-| A4 | Safehouse (sleep, save, clear heat) | **[Web]** partial |
+| A3 | Dual-axis heat (police + faction aggro) | **[Godot]** done |
+| A4 | Safehouse (sleep, save, clear heat) | **[Godot]** done |
 | A5 | Pay-n-Spray / respray clears heat | **[Godot]** done |
 | A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** partial |
 | A7 | “Off the Boat” story opener | **[Godot]** done |

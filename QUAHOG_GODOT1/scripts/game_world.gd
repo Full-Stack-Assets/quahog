@@ -20,6 +20,7 @@ const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
 const StoryMissionScript: = preload("res://scripts/systems/story_mission.gd")
 const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
 const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
+const SafehouseZoneScript: = preload("res://scripts/world/safehouse_zone.gd")
 const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
 const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
 const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
@@ -800,6 +801,11 @@ func _build_systems() -> void :
     respray.set_script(ResprayZoneScript)
     add_child(respray)
     respray.global_position = Vector3(48.0, 0.0, -12.0)
+
+    var safehouse: = Node3D.new()
+    safehouse.set_script(SafehouseZoneScript)
+    add_child(safehouse)
+    safehouse.global_position = Vector3(-188.0, 0.0, -40.0)
 
 
     for c in _contacts:

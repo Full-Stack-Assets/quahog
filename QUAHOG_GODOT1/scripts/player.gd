@@ -372,6 +372,8 @@ func do_fire() -> void :
 
     if wanted_system and wanted_system.has_method("add_heat"):
         wanted_system.add_heat(int(def.get("heat", 1)))
+    if wanted_system and wanted_system.has_method("add_faction_heat"):
+        wanted_system.add_faction_heat(1)
 
 func _fire_ray(origin: Vector3, dir: Vector3, rng: float, dmg: int, def: Dictionary) -> void :
     var space: = get_world_3d().direct_space_state
@@ -417,6 +419,8 @@ func _melee_attack(def: Dictionary) -> void :
                 VFX.spawn_impact(hit.position, 0.3)
             if wanted_system and wanted_system.has_method("add_heat"):
                 wanted_system.add_heat(int(def.get("heat", 1)))
+            if wanted_system and wanted_system.has_method("add_faction_heat"):
+                wanted_system.add_faction_heat(1)
 
 func do_reload() -> void :
     if _driving or dead:
@@ -458,6 +462,11 @@ func take_damage(amount: int) -> void :
 
 func heal(amount: int) -> void :
     health = min(max_health, health + amount)
+    health_changed.emit(health, max_health, armor)
+
+
+func heal_full() -> void :
+    health = max_health
     health_changed.emit(health, max_health, armor)
 
 func add_armor(amount: int) -> void :

@@ -64,6 +64,13 @@ const MISSIONS: Mission[] = [
       { text: "Run the ledger to Battleship Cove — and lose the tail", target: [-20000, 0, -7400], radius: 40, noHeat: true, reward: 2000 },
     ],
   },
+  {
+    title: "The Undefeated",
+    steps: [
+      { text: "Meet Iron Mike at Champion City Gym — Brockton's waiting", target: [-8350, 0, 49620], radius: 38 },
+      { text: "Back the kid in the fixed fight — don't throw it", target: [-8350, 0, 49620], radius: 28, noHeat: true, reward: 1800 },
+    ],
+  },
   // --- Act III — The Cape & the Storm -------------------------------------
   {
     title: "Heritage Marina",

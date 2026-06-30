@@ -38,6 +38,7 @@ var _obj_active: bool = false
 var _obj_text: String = ""
 var _obj_target: Vector3 = Vector3.ZERO
 var _wanted_label: Label = null
+var _faction_label: Label = null
 var _ammo_label: Label = null
 var _health_bar: ProgressBar = null
 var _armor_bar: ProgressBar = null
@@ -89,8 +90,10 @@ func _ready() -> void :
         GameManager.cash_changed.connect(_on_cash_changed)
         GameManager.notify.connect(show_toast)
         GameManager.wanted_changed.connect(_on_wanted_changed)
+        GameManager.faction_changed.connect(_on_faction_changed)
         _on_cash_changed(GameManager.cash)
         _on_wanted_changed(GameManager.wanted_level)
+        _on_faction_changed(GameManager.faction_level)
 
 
 func bind_player(player: CharacterBody3D) -> void :
@@ -176,6 +179,17 @@ func _build_gameplay_panels() -> void :
     _wanted_label.custom_minimum_size = Vector2(236, 40)
     _wanted_label.visible = false
 
+    _faction_label = Label.new()
+    _faction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+    _apply_font(_faction_label, 34, Color(1.0, 0.45, 0.42))
+    _faction_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+    _faction_label.add_theme_constant_override("outline_size", 5)
+    _root.add_child(_faction_label)
+    _faction_label.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+    _faction_label.position = Vector2(-260, 132)
+    _faction_label.custom_minimum_size = Vector2(236, 40)
+    _faction_label.visible = false
+
 
     _objective_panel = PanelContainer.new()
     _objective_panel.theme_type_variation = "HudPanel"
@@ -259,6 +273,16 @@ func _on_wanted_changed(level: int) -> void :
         return
     _wanted_label.visible = true
     _wanted_label.text = "★".repeat(level)
+
+
+func _on_faction_changed(level: int) -> void :
+    if _faction_label == null:
+        return
+    if level <= 0:
+        _faction_label.visible = false
+        return
+    _faction_label.visible = true
+    _faction_label.text = "🔪".repeat(level)
 
 
 func _on_weapon_changed(weapon_name: String, clip: int, reserve: int, melee: bool) -> void :

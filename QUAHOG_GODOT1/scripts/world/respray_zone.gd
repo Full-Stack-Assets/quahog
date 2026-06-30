@@ -53,13 +53,14 @@ func _physics_process(delta: float) -> void :
     var cp: Vector3 = player.current_car.vehicle_model.global_position if "vehicle_model" in player.current_car else player.global_position
     if Vector2(cp.x - global_position.x, cp.z - global_position.z).length() > RADIUS:
         return
-    if GameManager.wanted_level <= 0:
+    if GameManager.wanted_level <= 0 and GameManager.faction_level <= 0:
         return
     if not GameManager.spend_cash(FEE):
         GameManager.show_message("Can't afford a respray ($%d)." % FEE)
         _cooldown = 4.0
         return
     GameManager.set_wanted(0)
+    GameManager.set_faction(0)
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/ui/ui_shop_buy.mp3")
         if snd:

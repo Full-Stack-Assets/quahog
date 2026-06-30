@@ -7,6 +7,7 @@ extends Node
 signal cash_changed(new_cash: int)
 signal notify(message: String)
 signal wanted_changed(level: int)
+signal faction_changed(level: int)
 signal open_shop_requested(shop_kind: String)
 signal open_diner_requested()
 signal graphics_quality_changed(level: int)
@@ -18,6 +19,8 @@ const STARTING_CASH: = 40
 var cash: int = STARTING_CASH
 var missions_completed: int = 0
 var wanted_level: int = 0
+var faction_level: int = 0
+var campaign_format: int = 2  # bumps when mission list changes (save migration)
 var opener_complete: bool = false
 var campaign_mi: int = 0
 var campaign_step: int = 0
@@ -164,6 +167,14 @@ func set_wanted(level: int) -> void :
     wanted_level = level
     wanted_changed.emit(wanted_level)
 
+
+func set_faction(level: int) -> void :
+    level = clampi(level, 0, 5)
+    if level == faction_level:
+        return
+    faction_level = level
+    faction_changed.emit(faction_level)
+
 func _ready() -> void :
     _load_graphics_cfg()
     load_game()
@@ -210,6 +221,8 @@ func save_game() -> void :
         "cash": cash,
         "missions_completed": missions_completed,
         "wanted_level": wanted_level,
+        "faction_level": faction_level,
+        "campaign_format": 2,
         "opener_complete": opener_complete,
         "campaign_mi": campaign_mi,
         "campaign_step": campaign_step,
@@ -239,6 +252,13 @@ func load_game() -> void :
     cash = int(data.get("cash", STARTING_CASH))
     missions_completed = int(data.get("missions_completed", 0))
     wanted_level = int(data.get("wanted_level", 0))
+    faction_level = int(data.get("faction_level", 0))
+    var fmt: int = int(data.get("campaign_format", 1))
+    campaign_format = fmt
+    # v2 campaign inserts "The Undefeated" at index 6 — bump saves already past Acquitted.
+    if fmt < 2 and campaign_mi >= 6 and not campaign_done:
+        campaign_mi += 1
+        campaign_format = 2
     opener_complete = bool(data.get("opener_complete", false))
     campaign_mi = int(data.get("campaign_mi", 0 if not opener_complete else 1))
     campaign_step = int(data.get("campaign_step", 0))
@@ -256,6 +276,8 @@ func reset_save() -> void :
     cash = STARTING_CASH
     missions_completed = 0
     wanted_level = 0
+    faction_level = 0
+    campaign_format = 2
     opener_complete = false
     campaign_mi = 0
     campaign_step = 0

@@ -41,6 +41,18 @@ func add_heat(stars: int) -> void :
         GameManager.show_message("You've drawn police attention!")
 
 
+func add_faction_heat(stars: int) -> void :
+    if GameManager == null:
+        return
+    if _busted_cooldown > 0.0:
+        return
+    var was: int = GameManager.faction_level
+    GameManager.set_faction(GameManager.faction_level + stars)
+    _decay_timer = DECAY_TIME * 1.5
+    if was == 0 and GameManager.faction_level >= 1:
+        GameManager.show_message("The streets noticed that.")
+
+
 func on_cop_killed() -> void :
     add_heat(1)
 
@@ -59,20 +71,33 @@ func _process(delta: float) -> void :
             _cops.remove_at(i)
 
     var level: int = GameManager.wanted_level
-    if level <= 0 or player == null or not is_instance_valid(player):
-
+    var faction: int = GameManager.faction_level
+    if level <= 0 and faction <= 0:
         if not _cops.is_empty():
             _clear_cops()
         return
 
+    if level <= 0 and not _cops.is_empty():
+        _clear_cops()
 
     _decay_timer -= delta
     if _decay_timer <= 0.0:
         _decay_timer = DECAY_TIME
-        GameManager.set_wanted(level - 1)
-        if GameManager.wanted_level == 0:
-            GameManager.show_message("You lost the cops.")
-            return
+        level = GameManager.wanted_level
+        faction = GameManager.faction_level
+        if level > 0:
+            GameManager.set_wanted(level - 1)
+            if GameManager.wanted_level == 0 and GameManager.faction_level == 0:
+                GameManager.show_message("You lost the heat.")
+            elif GameManager.wanted_level == 0:
+                GameManager.show_message("You lost the cops.")
+        if faction > 0:
+            GameManager.set_faction(faction - 1)
+            if GameManager.faction_level == 0 and GameManager.wanted_level > 0:
+                GameManager.show_message("The crews backed off.")
+
+    if GameManager.wanted_level <= 0:
+        return
 
 
     var want_cops: int = min(level + 1, MAX_COPS)
@@ -107,6 +132,7 @@ func _busted() -> void :
         if snd:
             AudioManager.play_sfx(snd, -2.0)
     GameManager.set_wanted(0)
+    GameManager.set_faction(0)
     _clear_cops()
 
     if player and is_instance_valid(player) and player.has_method("on_busted"):

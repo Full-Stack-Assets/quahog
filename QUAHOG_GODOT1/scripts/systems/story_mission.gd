@@ -23,6 +23,7 @@ const HERITAGE_MARINA: = Vector3(-10520.0, 0.0, -47420.0)
 const HYANNIS_COMPOUND: = Vector3(-8480.0, 0.0, -52100.0)
 const HURRICANE_BARRIER: = Vector3(860.0, 0.0, -2000.0)
 const DOWNTOWN_NB: = Vector3(-560.0, 0.0, -90.0)
+const CHAMPION_GYM: = Vector3(-8350.0, 0.0, -49620.0)
 
 const MISSIONS: Array = [
     {
@@ -75,6 +76,14 @@ const MISSIONS: Array = [
         "steps": [
             {"text": "Meet the Lady's man at the Borden House on Second St", "pos": BORDEN_HOUSE, "radius": 18.0, "need_car": true},
             {"text": "Run the ledger to Battleship Cove — lose the tail", "pos": BATTLESHIP_COVE, "radius": 40.0, "no_heat": true, "reward": 2000},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "The Undefeated",
+        "steps": [
+            {"text": "Meet Iron Mike at Champion City Gym — Brockton's waiting", "pos": CHAMPION_GYM, "radius": 38.0},
+            {"text": "Back the kid in the fixed fight — don't throw it", "pos": CHAMPION_GYM, "radius": 28.0, "no_heat": true, "reward": 1800},
         ],
         "reward": 0,
     },
@@ -187,7 +196,7 @@ func _step_complete() -> bool:
         if not ("_driving" in player and player._driving):
             return false
     if bool(step.get("no_heat", false)):
-        if GameManager and GameManager.wanted_level >= 1:
+        if GameManager and (GameManager.wanted_level >= 1 or GameManager.faction_level >= 1):
             return false
     if step.has("pos"):
         var pos: Vector3 = step["pos"]
@@ -253,7 +262,7 @@ func _finish_mission(mi: int) -> void :
     GameManager.save_game()
     mission_completed.emit(title)
     # Gloria storm ends once the hurricane mission wraps; finale runs in the clearing.
-    if mi == 8 and world and world.has_method("set_gloria_storm"):
+    if mi == 9 and world and world.has_method("set_gloria_storm"):
         world.set_gloria_storm(false)
 
     if mi == 0:
@@ -272,8 +281,10 @@ func _finish_mission(mi: int) -> void :
     if mi == 3:
         GameManager.show_message("Act I wrapped — Fall River's next.")
     elif mi == 5:
-        GameManager.show_message("Act II wrapped — the Cape's calling.")
-    elif mi == 7:
+        GameManager.show_message("Act II wrapped — Brockton's calling.")
+    elif mi == 6:
+        GameManager.show_message("Iron Mike's proud — the Cape's next.")
+    elif mi == 8:
         GameManager.show_message("The Kennedys are handled — Gloria's on the horizon.")
     var nxt: String = str(MISSIONS[GameManager.campaign_mi]["title"])
     GameManager.show_message("Next job: %s" % nxt)
