@@ -103,6 +103,11 @@ export function makeFacadeMaps() {
       }
     }
   }
+  // floor string-course: a stronger band at the tile boundary (one per storey,
+  // since the facade tiles per floor) — the brick/stone belt course of mill +
+  // downtown blocks
+  a.fillStyle = "rgba(0,0,0,0.16)";
+  a.fillRect(0, 0, S, 2); a.fillRect(0, S - 2, S, 2);
   // window opening, centred, taller than wide (typical sash window)
   const mx = 30, my = 20, w = S - mx * 2, h = S - my * 2;
   // --- albedo ---
