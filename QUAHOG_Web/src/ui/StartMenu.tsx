@@ -44,11 +44,11 @@ export function StartMenu({ sliceName, progress = 0 }: { sliceName: string; prog
       background: "radial-gradient(ellipse at 50% 40%, rgba(30,20,55,.7), rgba(4,5,12,.94))",
       fontFamily: "'Courier New', monospace", color: "#e7e0ff",
     }}>
-      <div style={{ fontSize: 13, letterSpacing: 8, color: "#ff7ad9", opacity: 0.9 }}>SOUTH COAST · 1986</div>
+      <div style={{ fontSize: 13, letterSpacing: 8, color: "#ff7ad9", opacity: 0.9 }}>SOUTH COAST · NOW</div>
       <div style={{ fontSize: 76, fontWeight: 900, letterSpacing: 6, color: "#fff", textShadow: "0 4px 30px rgba(255,80,180,.5)", lineHeight: 1 }}>
-        MOUNT HOPE
+        THE NARROWS
       </div>
-      <div style={{ fontSize: 14, opacity: 0.7, marginTop: 8 }}>New Bedford · the Whaling City</div>
+      <div style={{ fontSize: 14, opacity: 0.7, marginTop: 8 }}>New Bedford · Fall River · the Narrows</div>
 
       <div style={{ marginTop: 34, display: "flex", gap: 14 }}>
         {save && (

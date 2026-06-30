@@ -103,7 +103,7 @@ func _complete() -> void :
         var snd: = load("res://assets/audio/sfx/pickup/pickup_cash_reward.mp3")
         if snd:
             AudioManager.play_sfx(snd, -2.0)
-    GameManager.show_message("Safehouse reached. Welcome to Mount Hope. +$150")
+    GameManager.show_message("Safehouse reached. Welcome to the Narrows. +$150")
     if _marker and is_instance_valid(_marker):
         _marker.queue_free()
     _marker = null

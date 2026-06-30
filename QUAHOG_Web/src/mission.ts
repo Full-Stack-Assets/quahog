@@ -93,7 +93,7 @@ export const useMission = create<MissionState>((set, get) => ({
     if (nm < MISSIONS.length) {
       set({ mi: nm, steps: MISSIONS[nm].steps, step: 0, title: MISSIONS[nm].title, objective: MISSIONS[nm].steps[0].text });
     } else {
-      set({ step: next, done: true, objective: "Campaign complete — Mount Hope is yours." });
+      set({ step: next, done: true, objective: "Campaign complete — the Narrows is yours." });
     }
   },
   reset: () => set({ mi: 0, steps: MISSIONS[0].steps, step: 0, done: false, title: MISSIONS[0].title, objective: MISSIONS[0].steps[0].text }),

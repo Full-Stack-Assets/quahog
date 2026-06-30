@@ -144,7 +144,7 @@ export function Props({ roads, center }: { roads: Road[]; center: [number, numbe
         <meshStandardMaterial color="#ffffff" roughness={0.6} />
       </instancedMesh>
 
-      {/* mailboxes (USPS blue, 1986) */}
+      {/* mailboxes (USPS blue) */}
       <instancedMesh ref={boxes} args={[undefined, undefined, Math.max(1, L.mailboxes.length)]} castShadow>
         <boxGeometry args={[0.5, 1.0, 0.5]} />
         <meshStandardMaterial color="#1f4e79" roughness={0.55} metalness={0.3} />

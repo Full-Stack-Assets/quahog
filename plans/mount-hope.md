@@ -1,12 +1,14 @@
-# Mount Hope — Master Plan & Source of Truth
+# The Narrows — Master Plan & Source of Truth
+
+> **Title:** The Narrows (*South Coast · Now*, 2026). Legacy working titles: Project QUAHOG, Mount Hope. See `plans/the-narrows.md`.
 
 The one file to track everything. Update the **checklist** as work lands and append
 to the **running log** every working session. Keep it honest: only check a box when
 it's actually built, verified (the Godot project compiles), and shipped.
 
-- **Working title:** Mount Hope (retired “Project QUAHOG”)
+- **Working title:** **The Narrows** (retired “Project QUAHOG” and “Mount Hope” as product name)
 - **Canonical engine (build target):** `QUAHOG_GODOT1/` — **Godot 4.6**, GL Compatibility (mobile/web export), pure GDScript. This is what we ship.
-- **Reference spec (port FROM here):** `QUAHOG_Web/` — Three.js / React Three Fiber + Rapier. The web build is the most complete realization of Mount Hope; **Parts I–III below describe its feature set and are the target the Godot port recreates.** Live: https://projectsouthcoast.vercel.app
+- **Reference spec (port FROM here):** `QUAHOG_Web/` — Three.js / React Three Fiber + Rapier. The web build is the most complete realization of The Narrows; **Parts I–III below describe its feature set and are the target the Godot port recreates.** Live: https://projectsouthcoast.vercel.app
 - **Goal:** recreate the web game in Godot — the exact New Bedford map (buildings, roads, waterfront), the characters/heroes, vehicles, and the full GTA-style gameplay loop — as a faithful port, then carry it forward natively.
 - **Cadence:** months of daily iteration via the **Working loop** below. One coherent task per cycle; keep the Godot project compiling; restructure freely as the port’s reality dictates.
 - **Design canon:** `quahog-project-files/CHARACTERS_AND_MISSIONS.md`, `GEMINI_BUILD_PROMPT.md`, `ROADMAP.md`.
@@ -58,7 +60,7 @@ time; keep the build green; be honest about status.
 What `QUAHOG_GODOT1/` actually has today (from the initial upload), verified compiling
 on Godot 4.6. This is the floor we build the recreation on.
 
-- [x] Project boots: `project.godot` (Mount Hope, GL Compatibility, mobile/landscape), autoloads (LoadingScreen, AudioManager, GameManager, VFX), input map (move/jump/sprint/interact/fire/aim/reload/enter_vehicle/crouch/pause).
+- [x] Project boots: `project.godot` (The Narrows, GL Compatibility, mobile/landscape), autoloads (LoadingScreen, AudioManager, GameManager, VFX), input map (move/jump/sprint/interact/fire/aim/reload/enter_vehicle/crouch/pause).
 - [x] Main menu scene → game world scene flow (`scenes/main.tscn`, `game_world.tscn`, `player.tscn`).
 - [x] Player controller: walk/sprint, health/armor/damage (`take_damage`), melee + gunfire, hooks for models/audio (load-at-runtime, degrades without assets).
 - [x] Weapons data + behavior: fists/bat/pistol/shotgun/rifle (`data/weapon_db.gd`), pickups.
@@ -106,7 +108,7 @@ expanding outward from the New Bedford core along the real highway spine.
 ## 0. Foundations & ops
 - [x] Repo + branch workflow; Vercel project + git auto-deploy (`projectsouthcoast`)
 - [x] Engine reconciliation: R3F canonical; Unity/Godot marked legacy
-- [x] Game named **Mount Hope**
+- [x] Game named **The Narrows** (formerly Mount Hope)
 - [x] Design docs: README, ROADMAP, Characters & Missions bible, Gemini build spec
 - [x] CI: typecheck/build check on PRs — `.github/workflows/web-ci.yml` runs `tsc && vite build` on PRs/pushes touching `QUAHOG_Web` (uses `npm install`; lockfile drifts from package.json — `@vercel/blob` missing from the lock)
 - [~] Bundle code-splitting — `vite.config` `manualChunks` splits three / @react-three / rapier / react into long-lived vendor chunks; earth is already its own entry (lazy-load of the earth route still open)
@@ -146,7 +148,7 @@ expanding outward from the New Bedford core along the real highway spine.
 - [ ] LOD + impostors for distant buildings
 
 ## 3. Aesthetics & art direction
-- [ ] Define a **style guide** (palette, era 1986, materials, signage fonts, mood boards) in `quahog-project-files/`
+- [ ] Define a **style guide** (palette, era 2026, materials, signage fonts, mood boards) in `quahog-project-files/` — see STYLE_GUIDE.md
 - [ ] Time-of-day color grading (dawn/day/golden hour/dusk/night palettes)
 - [x] Filmic tone mapping (ACES) + exposure
 - [~] Post FX: bloom, SSAO/GTAO, vignette, subtle film grain, chromatic aberration, sharpen — bloom + vignette + SMAA + **chromatic aberration + film grain** live (Effects.tsx); SSAO/sharpen TODO

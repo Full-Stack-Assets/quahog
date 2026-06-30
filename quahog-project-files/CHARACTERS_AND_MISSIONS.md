@@ -1,6 +1,6 @@
-# Mount Hope — Characters & Missions Bible
+# The Narrows — Characters & Missions Bible
 
-Story design for **Mount Hope**, an original open-world crime story set on the
+Story design for **The Narrows**, an original open-world crime story set on the
 **real Massachusetts South Coast** — New Bedford, Fall River, Brockton, Cape Cod.
 Real places and real landmarks; **original characters**; historical/parody figures
 where they fit. Tone: rust-belt noir with a salt-air sense of humor — *Vice City
