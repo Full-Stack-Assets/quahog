@@ -31,7 +31,7 @@ From `Docs/VERTICAL_SLICE.md`:
 | Drive on roads | Needs vehicle mesh + wheel setup |
 | Mission NPC + short crime mission | JSON campaign + trigger actors wired |
 | Earn/spend money | `MHGameStateSubsystem` + businesses JSON |
-| Dialogue exchanges | Not started |
+| Dialogue exchanges | `UMHDialogueSubsystem` + `MHDialogueNpcActor` + JSON |
 | OSM slice data loaded at runtime | `MHWorldSliceSubsystem` loads web slice JSON |
 | Cinematic Lumen/Nanite lighting | Config defaults set; needs content |
 
@@ -89,10 +89,10 @@ Run `Scripts/editor_create_enhanced_input.py` in the editor to create
 
 ### Phase 4 — Content & polish
 
-- MetaHuman NPC for mission giver
-- Dialogue UI (UMG) backed by mission JSON
+- MetaHuman mesh on `MHDialogueNpcActor` (Deacon Mealy)
+- UMG widget bound to `OnDialogueLineChanged` (replaces on-screen debug text)
 - Weather VFX tied to `EMHWeatherState`
-- Package Development build via `RunUAT BuildCookRun`
+- Package Development build via `Scripts/package.sh`
 
 ### Phase 5 — Repo consolidation
 

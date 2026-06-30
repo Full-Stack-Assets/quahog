@@ -22,5 +22,8 @@ public:
     FString EconomyPath = TEXT("Data/Economy/businesses.json");
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Boot")
+    FString DialoguePath = TEXT("Data/Dialogue/vertical_slice.json");
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Boot")
     FString SaveSlotName = TEXT("MountHopeSlot");
 };

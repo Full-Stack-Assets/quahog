@@ -44,8 +44,14 @@ REQUIRED_FILES = [
     "Source/MountHope/MHSaveGame.h",
     "Source/MountHope/MHMissionTriggerActor.h",
     "Source/MountHope/MHMissionTriggerActor.cpp",
+    "Source/MountHope/MHDialogueTypes.h",
+    "Source/MountHope/MHDialogueSubsystem.h",
+    "Source/MountHope/MHDialogueSubsystem.cpp",
+    "Source/MountHope/MHDialogueNpcActor.h",
+    "Source/MountHope/MHDialogueNpcActor.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
+    "Data/Dialogue/vertical_slice.json",
     "Docs/VERTICAL_SLICE.md",
     "Docs/OSM_TO_UNREAL.md",
     "Docs/EDITOR_SETUP.md",
@@ -56,6 +62,8 @@ REQUIRED_FILES = [
     "Scripts/editor_bootstrap_vertical_slice.py",
     "Scripts/editor_create_enhanced_input.py",
     "Scripts/editor_import_osm.py",
+    "Scripts/editor_import_southcoast_roads.py",
+    "Scripts/editor_setup_navmesh.py",
 ]
 
 EXPECTED_PLUGINS = {
@@ -151,6 +159,19 @@ def validate_source_contract() -> None:
         if symbol not in game_mode_source:
             fail(f"MHGameModeBase.cpp is missing mission helper: {symbol}")
 
+    game_instance = read_text("Source/MountHope/MHGameInstance.cpp")
+    if "LoadDialogueFromJson" not in game_instance:
+        fail("MHGameInstance.cpp does not bootstrap dialogue JSON")
+
+    dialogue_source = read_text("Source/MountHope/MHDialogueSubsystem.cpp")
+    for symbol in ("LoadDialogueFromJson", "StartConversation", "AdvanceConversation"):
+        if symbol not in dialogue_source:
+            fail(f"MHDialogueSubsystem.cpp is missing: {symbol}")
+
+    npc_source = read_text("Source/MountHope/MHDialogueNpcActor.cpp")
+    if "Interact_Implementation" not in npc_source:
+        fail("MHDialogueNpcActor.cpp does not implement interaction")
+
     player_source = read_text("Source/MountHope/MHPlayerCharacter.cpp")
     for symbol in (
         "UEnhancedInputComponent",
@@ -204,6 +225,25 @@ def validate_missions() -> None:
                     fail(f"Mission step missing field: {field}")
 
 
+def validate_dialogue() -> None:
+    data = load_json("Data/Dialogue/vertical_slice.json")
+    conversations = data.get("conversations", [])
+    if not conversations:
+        fail("No conversations defined in dialogue vertical_slice.json")
+    total_lines = 0
+    for conversation in conversations:
+        if not conversation.get("id"):
+            fail("Dialogue conversation missing id")
+        if not conversation.get("speaker"):
+            fail("Dialogue conversation missing speaker")
+        lines = conversation.get("lines", [])
+        if not lines:
+            fail(f"Dialogue {conversation.get('id')} has no lines")
+        total_lines += len(lines)
+    if total_lines < 3:
+        fail("Vertical slice requires at least three authored dialogue lines")
+
+
 def validate_economy() -> None:
     data = load_json("Data/Economy/businesses.json")
     businesses = data.get("businesses", [])
@@ -237,6 +277,7 @@ def main() -> None:
     validate_source_contract()
     validate_default_config()
     validate_missions()
+    validate_dialogue()
     validate_economy()
     validate_existing_data_links()
     print("MountHope_Unreal scaffold validation passed")

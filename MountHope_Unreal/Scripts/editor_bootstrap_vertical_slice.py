@@ -25,6 +25,9 @@ PLAYER_START_LOCATION = unreal.Vector(-27200.0, 0.0, 200.0)
 PLAYER_START_ROTATION = unreal.Rotator(0.0, 0.0, 0.0)
 VEHICLE_LOCATION = unreal.Vector(-27000.0, 500.0, 200.0)
 VEHICLE_ROTATION = unreal.Rotator(0.0, 90.0, 0.0)
+NPC_LOCATION = unreal.Vector(-27223.0, 0.0, 10650.0)
+NPC_CONVERSATION_ID = "deacon_mealy_harbor_errand"
+NPC_SPEAKER = "Deacon Mealy"
 
 CONTENT_FOLDERS = (
     "/Game/Maps",
@@ -105,6 +108,37 @@ def spawn_vehicle_pawn() -> None:
     log("Spawned MHVehiclePawn (assign mesh + Chaos wheels in editor)")
 
 
+def spawn_mission_npc() -> None:
+    npc_class = unreal.load_class(None, "/Script/MountHope.MHDialogueNpcActor")
+    if npc_class is None:
+        warn("Could not load MHDialogueNpcActor; compile C++ first.")
+        return
+
+    for actor in unreal.EditorLevelLibrary.get_all_level_actors():
+        if actor.get_class() == npc_class:
+            log("MHDialogueNpcActor already placed")
+            return
+
+    actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+        npc_class,
+        NPC_LOCATION,
+        unreal.Rotator(0.0, 0.0, 0.0),
+    )
+    actor.set_actor_label("BP_DeaconMealy_NPC")
+    try:
+        actor.set_editor_property("conversation_id", unreal.Name(NPC_CONVERSATION_ID))
+        actor.set_editor_property("speaker_display_name", NPC_SPEAKER)
+        actor.set_editor_property("interaction_prompt_override", f"Talk to {NPC_SPEAKER}")
+    except Exception:
+        try:
+            actor.set_editor_property("ConversationId", unreal.Name(NPC_CONVERSATION_ID))
+            actor.set_editor_property("SpeakerDisplayName", NPC_SPEAKER)
+        except Exception:
+            warn("Set ConversationId on Deacon Mealy NPC manually in Details panel.")
+
+    log("Spawned Deacon Mealy dialogue NPC")
+
+
 def save_dirty_packages() -> None:
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
 
@@ -114,8 +148,10 @@ def print_next_steps() -> None:
         "Run next:\n"
         "  1. Scripts/editor_create_enhanced_input.py\n"
         "  2. Scripts/editor_import_osm.py\n"
-        "  3. Create BP_MHPlayerCharacter / BP_MHVehicle (mesh + Chaos wheels)\n"
-        "  4. Press Play — see Docs/EDITOR_SETUP.md"
+        "  3. Scripts/editor_import_southcoast_roads.py (optional, denser roads)\n"
+        "  4. Scripts/editor_setup_navmesh.py\n"
+        "  5. Create BP_MHVehicle (mesh + Chaos wheels)\n"
+        "  6. Press Play — talk to Deacon Mealy with E to advance dialogue"
     )
 
 
@@ -125,6 +161,7 @@ def main() -> None:
     save_map_if_needed()
     spawn_or_find_player_start()
     spawn_vehicle_pawn()
+    spawn_mission_npc()
     save_dirty_packages()
     print_next_steps()
     log("Bootstrap complete.")

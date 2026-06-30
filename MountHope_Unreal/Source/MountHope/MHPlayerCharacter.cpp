@@ -13,6 +13,7 @@
 #include "InputAction.h"
 #include "InputActionValue.h"
 #include "MHGameModeBase.h"
+#include "MHDialogueSubsystem.h"
 #include "MHInteractable.h"
 #include "MHVehiclePawn.h"
 
@@ -150,6 +151,18 @@ void AMHPlayerCharacter::TryInteract()
     {
         ExitVehicle();
         return;
+    }
+
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UMHDialogueSubsystem* DialogueSubsystem = GameInstance->GetSubsystem<UMHDialogueSubsystem>())
+        {
+            if (DialogueSubsystem->IsConversationActive())
+            {
+                DialogueSubsystem->AdvanceConversation(false);
+                return;
+            }
+        }
     }
 
     if (AMHVehiclePawn* NearbyVehicle = FindNearestVehicle())

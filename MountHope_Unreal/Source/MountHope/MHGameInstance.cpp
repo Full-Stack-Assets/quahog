@@ -1,5 +1,6 @@
 #include "MHGameInstance.h"
 
+#include "MHDialogueSubsystem.h"
 #include "MHGameStateSubsystem.h"
 #include "MHMissionSubsystem.h"
 #include "MHWorldSliceSubsystem.h"
@@ -16,6 +17,11 @@ void UMHGameInstance::Init()
     if (UMHMissionSubsystem* MissionSubsystem = GetSubsystem<UMHMissionSubsystem>())
     {
         MissionSubsystem->LoadMissionsFromJson(MissionPath);
+    }
+
+    if (UMHDialogueSubsystem* DialogueSubsystem = GetSubsystem<UMHDialogueSubsystem>())
+    {
+        DialogueSubsystem->LoadDialogueFromJson(DialoguePath);
     }
 
     if (UMHGameStateSubsystem* GameStateSubsystem = GetSubsystem<UMHGameStateSubsystem>())

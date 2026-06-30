@@ -21,9 +21,11 @@ Run these scripts in order via **Tools → Execute Python Script…**
 
 | Order | Script | Purpose |
 | --- | --- | --- |
-| 1 | `editor_bootstrap_vertical_slice.py` | Map, folders, player start, vehicle spawn |
-| 2 | `editor_create_enhanced_input.py` | `IMC_Default` + Input Actions (WASD, sprint, E/F) |
-| 3 | `editor_import_osm.py` | Import `southcoast.obj` + slice road splines |
+| 1 | `editor_bootstrap_vertical_slice.py` | Map, player start, vehicle, Deacon Mealy NPC |
+| 2 | `editor_create_enhanced_input.py` | `IMC_Default` + Input Actions |
+| 3 | `editor_import_osm.py` | `southcoast.obj` blockout + slice road splines |
+| 4 | `editor_import_southcoast_roads.py` | Denser OSM roads near waterfront (optional) |
+| 5 | `editor_setup_navmesh.py` | Nav Mesh Bounds Volume + path build |
 
 Then complete manual vehicle mesh/Chaos wheel setup (§4) and press **Play**.
 
@@ -132,10 +134,23 @@ axis/action mappings still work (WASD, mouse, E, F).
 **Pass criteria**
 
 - [ ] Slice JSON loads without errors
-- [ ] Player moves on foot
+- [ ] Player moves on foot (sprint with Left Shift when Enhanced Input is set up)
 - [ ] Enter and exit vehicle
-- [ ] First mission step advances (check Output Log)
+- [ ] Talk to Deacon Mealy NPC — press **E** to advance each dialogue line
+- [ ] First mission step advances after final dialogue line or trigger overlap
 - [ ] Cash increases after rewarded steps
+
+### 8. Dialogue (JSON-driven)
+
+`Data/Dialogue/vertical_slice.json` loads at startup. The bootstrap script places
+`MHDialogueNpcActor` at the first mission target with conversation id
+`deacon_mealy_harbor_errand`.
+
+- **E** while near NPC: start conversation
+- **E** while conversation active: advance lines (on-screen cyan subtitles in PIE)
+- Final line with `completeObjective: true` advances the current mission step
+
+Blueprint a UMG widget later by binding to `UMHDialogueSubsystem::OnDialogueLineChanged`.
 
 ---
 

@@ -73,6 +73,10 @@ visible, extend with an Editor Utility that:
 The earlier plan to write this as a one-off Python script or C++ commandlet
 remains the next step once the slice splines prove the coordinate conversion.
 
+`Scripts/editor_import_southcoast_roads.py` imports a **bounded** subset from
+`southcoast-roads.json` (default: 900 m radius around the waterfront mission
+anchor). Increase `MAX_ROAD_SPLINES` / `RADIUS_M` as needed.
+
 ## Brockton expansion
 
 Brockton is a good candidate for the next real-world anchor if the game needs a
