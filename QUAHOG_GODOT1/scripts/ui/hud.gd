@@ -599,6 +599,17 @@ func _build_radio() -> void :
     map_btn.position = Vector2(416, 28)
     map_btn.pressed.connect(_on_map_pressed)
 
+    var cam_btn: = TouchButton.new()
+    cam_btn.control_id = "cam"
+    cam_btn.label_text = "CAM"
+    cam_btn.custom_minimum_size = Vector2(124, 96)
+    cam_btn.size = cam_btn.custom_minimum_size
+    cam_btn.accent = Color(0.45, 0.4, 0.3)
+    _root.add_child(cam_btn)
+    cam_btn.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+    cam_btn.position = Vector2(556, 28)
+    cam_btn.pressed.connect(_on_cam_pressed)
+
     _clock_label = Label.new()
     _apply_font(_clock_label, 26, Color(0.96, 0.92, 0.78))
     _clock_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
@@ -649,6 +660,14 @@ func _on_radio_pressed() -> void :
 func _on_map_pressed() -> void :
     if _big_map and _big_map.has_method("toggle"):
         _big_map.toggle()
+
+
+func _on_cam_pressed() -> void :
+    var gm: = get_node_or_null("/root/GameManager")
+    if gm and gm.has_method("toggle_cam_flip"):
+        gm.toggle_cam_flip()
+    if _player and _player.has_method("snap_drive_camera"):
+        _player.snap_drive_camera()
 
 
 func _on_radio_station(_index: int, station_name: String) -> void :

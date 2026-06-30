@@ -540,6 +540,11 @@ func try_enter_vehicle() -> void :
     elif GameManager:
         GameManager.show_message("No car nearby — walk up to one and tap CAR.")
 
+func snap_drive_camera() -> void :
+    if _driving and current_car != null and is_instance_valid(current_car) and current_car.has_method("_snap_camera"):
+        current_car._snap_camera()
+
+
 func enter_car(car: Node) -> void :
     _driving = true
     current_car = car
