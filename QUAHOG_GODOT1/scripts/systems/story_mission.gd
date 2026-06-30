@@ -1,7 +1,7 @@
 extends Node
 class_name StoryMission
 
-# Campaign driver: opener + Act I (Auction Rules, Linguiça Run, Harbor Heat).
+# Campaign driver: opener + Act I + Act II (Spindle City, Acquitted).
 # Steps mirror the web mission chain (world x, z = -north).
 
 signal mission_changed(active: bool, text: String, target: Vector3)
@@ -16,6 +16,9 @@ const OPENER_SAFE: = Vector3(-240.0, 0.0, -130.0)
 const QUOHOG_REPUBLIC: = Vector3(-240.0, 0.0, -122.0)
 const ANVIL_GARAGE: = Vector3(-320.0, 0.0, -60.0)
 const LONG_ISLAND_BAR: = Vector3(6092.0, 0.0, -4485.0)
+const BRAGA_BRIDGE: = Vector3(-20372.0, 0.0, -7829.0)
+const BATTLESHIP_COVE: = Vector3(-20180.0, 0.0, -7882.0)
+const BORDEN_HOUSE: = Vector3(-19599.0, 0.0, -7080.0)
 
 const MISSIONS: Array = [
     {
@@ -52,6 +55,22 @@ const MISSIONS: Array = [
         "steps": [
             {"text": "Hit Sully's count house — grab a fast car", "need_car": true},
             {"text": "Lose the cops, then go to ground at the safehouse", "pos": SAFEHOUSE, "radius": 12.0, "no_heat": true, "reward": 1200},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "Spindle City",
+        "steps": [
+            {"text": "Take I-195 west over the Braga Bridge", "pos": BRAGA_BRIDGE, "radius": 60.0, "need_car": true},
+            {"text": "Case Battleship Cove for Lady Borden's people", "pos": BATTLESHIP_COVE, "radius": 40.0, "reward": 1500},
+        ],
+        "reward": 0,
+    },
+    {
+        "title": "Acquitted",
+        "steps": [
+            {"text": "Meet the Lady's man at the Borden House on Second St", "pos": BORDEN_HOUSE, "radius": 18.0, "need_car": true},
+            {"text": "Run the ledger to Battleship Cove — lose the tail", "pos": BATTLESHIP_COVE, "radius": 40.0, "no_heat": true, "reward": 2000},
         ],
         "reward": 0,
     },
@@ -197,9 +216,14 @@ func _finish_mission(mi: int) -> void :
     if GameManager.campaign_mi >= MISSIONS.size():
         GameManager.campaign_done = true
         _clear_marker()
-        mission_changed.emit(false, "Act I complete", Vector3.ZERO)
-        GameManager.show_message("Act I wrapped — the harbor's yours. Check the radio.")
+        mission_changed.emit(false, "Campaign complete", Vector3.ZERO)
+        if mi >= 5:
+            GameManager.show_message("Act II wrapped — Lady Borden owes you one.")
+        else:
+            GameManager.show_message("Act I wrapped — the harbor's yours.")
         return
+    if mi == 3:
+        GameManager.show_message("Act I wrapped — Fall River's next.")
     var nxt: String = str(MISSIONS[GameManager.campaign_mi]["title"])
     GameManager.show_message("Next job: %s" % nxt)
     _begin_mission(GameManager.campaign_mi)

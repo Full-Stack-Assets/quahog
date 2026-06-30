@@ -22,6 +22,7 @@ var sphere: RigidBody3D
 var raycast: RayCast3D
 var vehicle_model: Node3D
 var camera: Camera3D
+var engine_ambient: AudioStreamPlayer3D
 var screech_sound: AudioStreamPlayer3D
 var _head_l: SpotLight3D
 var _head_r: SpotLight3D
@@ -120,7 +121,7 @@ func _ready() -> void :
                          # the map can be full of takeable cars at near-zero cost
 
 
-# Camera + tire screech are created lazily on first entry so parked cars stay cheap.
+# Camera + quiet cabin audio are created lazily on first entry.
 func _ensure_cabin() -> void :
     if camera == null:
         camera = Camera3D.new()
@@ -129,6 +130,17 @@ func _ensure_cabin() -> void :
         camera.far = 400.0
         add_child(camera)
         camera.top_level = true
+    if engine_ambient == null:
+        engine_ambient = AudioStreamPlayer3D.new()
+        engine_ambient.name = "EngineAmbient"
+        engine_ambient.stream = load("res://assets/audio/sfx/vehicle/vehicle_engine_ambient.mp3")
+        engine_ambient.unit_size = 12.0
+        engine_ambient.max_db = -6.0
+        engine_ambient.volume_db = -42.0
+        engine_ambient.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
+        if engine_ambient.stream is AudioStreamMP3:
+            (engine_ambient.stream as AudioStreamMP3).loop = true
+        vehicle_model.add_child(engine_ambient)
     if screech_sound == null:
         screech_sound = AudioStreamPlayer3D.new()
         screech_sound.name = "ScreechSound"
@@ -255,6 +267,8 @@ func enter(_driver: Node) -> void :
     _snap_camera()
     if camera:
         camera.make_current()
+    if engine_ambient and not engine_ambient.playing:
+        engine_ambient.play()
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/vehicle/vehicle_car_enter.mp3")
         if snd:
@@ -265,6 +279,8 @@ func exit() -> Vector3:
     active = false
     _steer = 0.0
     _throttle = 0.0
+    if engine_ambient:
+        engine_ambient.stop()
     if screech_sound:
         screech_sound.stop()
 
@@ -372,6 +388,7 @@ func _drive(delta: float) -> void :
     linear_velocity = (vehicle_model.position - prev_position) / delta
     prev_position = vehicle_model.position
 
+    _effect_ambient_engine(delta)
     _effect_skid(delta)
     _effect_damage_smoke(delta)
     if active and GameManager:
@@ -380,6 +397,21 @@ func _drive(delta: float) -> void :
         var night: float = clampf(1.0 - daylight, 0.0, 1.0)
         var braking: bool = handbrake_on or (_throttle < -0.05 and linear_speed > 0.5)
         update_vehicle_lights(night, braking)
+
+
+func _effect_ambient_engine(delta: float) -> void :
+    if engine_ambient == null:
+        return
+    if not active:
+        engine_ambient.volume_db = lerpf(engine_ambient.volume_db, -50.0, delta * 8.0)
+        return
+    var speed_factor: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
+    var throttle_factor: float = clampf(absf(_throttle), 0.0, 1.0)
+    # Subtle cabin rumble — present but never loud or buzzy.
+    var target_db: float = remap(speed_factor * 0.65 + throttle_factor * 0.35, 0.0, 1.0, -40.0, -30.0)
+    engine_ambient.volume_db = lerpf(engine_ambient.volume_db, target_db, delta * 3.5)
+    var target_pitch: float = 0.96 + speed_factor * 0.1 + throttle_factor * 0.04
+    engine_ambient.pitch_scale = lerpf(engine_ambient.pitch_scale, target_pitch, delta * 2.5)
 
 
 func _effect_skid(delta: float) -> void :

@@ -65,6 +65,12 @@ These are the highest-leverage moves, in order:
 17. Web: LOD/impostors for far buildings, object pooling, quality presets — **DONE** (`quality.ts`, far-tile impostors, pause-menu preset).  
 18. Expand map: Brockton, Cape Cod, Dartmouth Mall hub — **DONE** (hero hubs, fast-travel, mall gun shop).
 
+### Tier 5 — Act II & polish (Fall River arc)
+
+19. **Act II missions** — Spindle City + Acquitted (`story_mission.gd`; Braga → Battleship → Borden).  
+20. **Quiet ambient engine** — low-volume cabin rumble while driving (`vehicle_engine_ambient.mp3`).  
+21. **Act III prep** — Gloria storm, Battleship finale (content; not started).
+
 ---
 
 ## Comprehensive improvement list
@@ -85,7 +91,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A6 | Mission framework: go-to, deliver, chase, escape, steal | **[Both]** partial |
 | A7 | “Off the Boat” story opener | **[Godot]** done |
 | A8 | Act I: Auction Rules, Linguiça Run, Harbor Heat | **[Godot]** done |
-| A9 | Act II: Spindle City, Acquitted (Borden) | Content |
+| A9 | Act II: Spindle City, Acquitted (Borden) | **[Godot]** done |
 | A10 | Act III: Gloria storm, Battleship finale | Content |
 | A11 | Delivery job polish (markers, payout UX, chains) | **[Both]** |
 | A12 | Side activities: street races, boxing, boat smuggling | **[Both]** |
