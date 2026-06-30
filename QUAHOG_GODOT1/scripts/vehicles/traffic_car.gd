@@ -6,6 +6,12 @@ class_name TrafficCar
 # this exists purely to make the streets feel alive, mirroring the web build's
 # ambient traffic. Collides with buildings/player via move_and_slide.
 
+const MODEL_YAW_DEG: = {
+    "res://assets/props/vehicles/sedan.glb": -90.0,
+    "res://assets/props/vehicles/taxi.glb": 180.0,
+    "res://assets/props/vehicles/suv.glb": 0.0,
+}
+
 const GRAVITY: float = 18.0
 const ARRIVE_DIST: float = 3.0
 const TURN_RATE: float = 6.0       # rad/s yaw smoothing toward travel heading
@@ -56,6 +62,8 @@ func _ready() -> void :
             mesh_root.add_child(model)
             ModelUtils.scale_to_height(model, model_height)
             ModelUtils.ground_model(model, 0.0)
+            if MODEL_YAW_DEG.has(model_path):
+                model.rotation_degrees.y = MODEL_YAW_DEG[model_path]
             _add_running_lights(model)
 
     _pick_target()

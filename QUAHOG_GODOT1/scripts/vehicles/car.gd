@@ -10,6 +10,13 @@ var model_path: String = "res://assets/props/vehicles/sedan.glb"
 var model_height: float = 1.5
 var display_name: String = "Sedan"
 
+# GLB exports don't share one forward axis: sedan length is on +X, taxi faces -Z.
+const MODEL_YAW_DEG: = {
+    "res://assets/props/vehicles/sedan.glb": -90.0,
+    "res://assets/props/vehicles/taxi.glb": 180.0,
+    "res://assets/props/vehicles/suv.glb": 0.0,
+}
+
 
 var sphere: RigidBody3D
 var raycast: RayCast3D
@@ -73,10 +80,8 @@ func _ready() -> void :
         vehicle_model.add_child(model)
         ModelUtils.scale_to_height(model, model_height)
         ModelUtils.ground_model(model, 0.0)
-        # The GLB already faces +Z, which is the car's measured travel direction,
-        # so no extra rotation — the model faces the way it drives and the chase
-        # cam (on the -Z side) sees its rear. (An earlier 180° flip made the car
-        # face the camera, which read as "looking at the front / inverted".)
+        if MODEL_YAW_DEG.has(model_path):
+            model.rotation_degrees.y = MODEL_YAW_DEG[model_path]
 
 
     sphere = RigidBody3D.new()
@@ -411,8 +416,25 @@ var cam_pitch: float = 0.0
 
 
 func set_cam_orbit(yaw: float, pitch: float) -> void :
-    cam_yaw = yaw
+    cam_yaw = clampf(yaw, -0.85, 0.85)
     cam_pitch = clampf(pitch, -0.35, 0.9)
+
+
+# +1 when the chase cam is behind the car, -1 when it has swung in front so
+# throttle/steer stay "push up = away from the lens".
+func drive_view_flip() -> float:
+    if camera == null or vehicle_model == null:
+        return 1.0
+    var car_fwd: = vehicle_model.global_basis.z
+    car_fwd.y = 0.0
+    if car_fwd.length_squared() < 1e-6:
+        return 1.0
+    car_fwd = car_fwd.normalized()
+    var to_cam: = camera.global_position - vehicle_model.global_position
+    to_cam.y = 0.0
+    if to_cam.length_squared() < 1e-6:
+        return 1.0
+    return -1.0 if to_cam.normalized().dot(car_fwd) > 0.25 else 1.0
 
 
 func _chase_pos(car_pos: Vector3) -> Vector3:
@@ -421,7 +443,8 @@ func _chase_pos(car_pos: Vector3) -> Vector3:
     var forward: Vector3 = vehicle_model.global_basis.z.normalized().rotated(Vector3.UP, cam_yaw)
     var dist: float = 9.0
     var height: float = 4.6 + cam_pitch * 5.0
-    return car_pos - forward * dist + Vector3(0, height, 0)
+    var side: float = 1.0 if (GameManager and GameManager.cam_flip) else -1.0
+    return car_pos + forward * dist * side + Vector3(0, height, 0)
 
 
 # Pull the chase cam in if a building/ground is between it and the car, so it
