@@ -1,32 +1,72 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
-#include "Subsystems/WorldSubsystem.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "MHMissionSubsystem.generated.h"
 
-UCLASS()
-class MOUNTHOPE_API UMHMissionSubsystem : public UWorldSubsystem
+USTRUCT(BlueprintType)
+struct FMHMissionStep
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    FString Text;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    FVector Target = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    float Radius = 0.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    bool bNeedVehicle = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    int32 Reward = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FMHMission
+{
+    GENERATED_BODY()
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    FString Title;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    TArray<FMHMissionStep> Steps;
+};
+
+UCLASS(BlueprintType)
+class MOUNTHOPE_API UMHMissionSubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Missions")
-    bool StartMission(FGameplayTag MissionTag);
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    TArray<FMHMission> Missions;
 
-    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Missions")
-    bool CompleteMission(FGameplayTag MissionTag);
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    int32 MissionIndex = 0;
 
-    UFUNCTION(BlueprintPure, Category = "Mount Hope|Missions")
-    bool IsMissionActive(FGameplayTag MissionTag) const;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    int32 StepIndex = 0;
 
-    UFUNCTION(BlueprintPure, Category = "Mount Hope|Missions")
-    bool IsMissionComplete(FGameplayTag MissionTag) const;
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Mission")
+    bool bCampaignComplete = false;
 
-private:
-    UPROPERTY()
-    FGameplayTagContainer ActiveMissions;
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Mission")
+    bool LoadMissionsFromJson(const FString& RelativeOrAbsolutePath);
 
-    UPROPERTY()
-    FGameplayTagContainer CompletedMissions;
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Mission")
+    void ResetCampaign();
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Mission")
+    bool AdvanceStep();
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Mission")
+    bool GetCurrentMission(FMHMission& OutMission) const;
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Mission")
+    bool GetCurrentStep(FMHMissionStep& OutStep) const;
 };

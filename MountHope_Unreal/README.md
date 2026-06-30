@@ -35,8 +35,43 @@ the Unreal project is the premium PC/console path.
 | `Source/MountHope/` | Hybrid C++ foundation for game mode, player pawn, vehicle pawn, interactions, missions, economy, and OSM world source metadata. |
 | `Config/` | Initial maps, renderer, navigation, packaging, and input settings. |
 | `Content/` | Empty UE asset root; create maps, Blueprints, materials, vehicles, MetaHumans, and imported OSM meshes here in the editor. |
-| `Docs/` | Vertical-slice, ready-to-play acceptance, and OSM migration notes. |
-| `Scripts/` | Sandbox-safe validation utilities. |
+| `Data/` | Mission and economy JSON consumed at startup by `UMHGameInstance`. |
+| `Docs/` | Vertical-slice, OSM migration, and improvement-plan notes. |
+| `Scripts/` | Sandbox-safe validation (`validate_scaffold.py`) and local compile helper (`build.sh`). |
+
+## Build & validate
+
+### CI (no Unreal install required)
+
+GitHub Actions runs `Scripts/validate_scaffold.py` on changes under
+`MountHope_Unreal/` (see `.github/workflows/unreal-ci.yml`).
+
+```bash
+python3 MountHope_Unreal/Scripts/validate_scaffold.py
+```
+
+### Local compile (requires Unreal Engine 5.6+)
+
+**Windows (PowerShell):**
+
+```powershell
+cd MountHope_Unreal
+.\Scripts\build.ps1
+```
+
+See [`Docs/BUILD_WINDOWS.md`](Docs/BUILD_WINDOWS.md) for Visual Studio prerequisites, Epic Launcher paths, and troubleshooting.
+
+**macOS / Linux:**
+
+```bash
+export UE_ROOT="/path/to/UE_5.6"
+./MountHope_Unreal/Scripts/build.sh
+```
+
+See `Docs/IMPROVEMENT_PLAN.md` for the full roadmap and packaging notes.
+
+**First playable in editor:** `Docs/EDITOR_SETUP.md` (or run
+`Scripts/editor_bootstrap_vertical_slice.py` inside the editor).
 
 ## Open in Unreal
 
@@ -48,26 +83,6 @@ the Unreal project is the premium PC/console path.
 5. Add Blueprint children for `MHPlayerCharacter` and `MHVehiclePawn`.
 6. Import OSM-derived road/water geometry using `Docs/OSM_TO_UNREAL.md`.
 
-## Current C++ gameplay hooks
-
-- `MHPlayerCharacter` — third-person movement, camera, interaction, and vehicle
-  handoff input.
-- `MHVehiclePawn` — Chaos vehicle base with entry-distance logic.
-- `MHInteractable` — shared interaction interface for NPCs, vehicles, shops,
-  mission props, doors, and pickups.
-- `MHMissionSubsystem` — active/completed mission state keyed by gameplay tags.
-- `MHEconomySubsystem` — cash balance, rewards, purchases, fines, repairs, and
-  bribes.
-- `MHDialogueSubsystem` — speaker lines, subtitles, skippable dialogue, and
-  mission barks.
-- `MHWantedSubsystem` — crime heat, wanted level, police search state, and
-  suggested fines.
-- `MHReputationSubsystem` — faction standing for crews, police, businesses, and
-  community contacts.
-- `MHSaveGame` / `MHSaveSubsystem` — autosave/checkpoint payload and slot access.
-- `MHOpenWorldSubsystem` — OSM source profile and meters-to-centimeters
-  conversion metadata.
-
 ## Existing source material
 
 - Web gameplay reference: `../QUAHOG_Web/`
@@ -77,5 +92,3 @@ the Unreal project is the premium PC/console path.
 The first Unreal pass should reuse the existing South Coast data while leaving
 room to add Brockton or a combined fictionalized map once the OSM acquisition
 pipeline is extended.
-
-See `Docs/READY_TO_PLAY_CHECKLIST.md` before calling a packaged build complete.

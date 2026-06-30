@@ -2,11 +2,20 @@
 
 #include "Camera/CameraComponent.h"
 #include "Components/InputComponent.h"
+#include "EnhancedInputComponent.h"
+#include "EnhancedInputSubsystems.h"
 #include "Engine/World.h"
+#include "EngineUtils.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
+#include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "InputAction.h"
+#include "InputActionValue.h"
+#include "MHGameModeBase.h"
+#include "MHDialogueSubsystem.h"
 #include "MHInteractable.h"
+#include "MHVehiclePawn.h"
 
 AMHPlayerCharacter::AMHPlayerCharacter()
 {
@@ -24,13 +33,14 @@ AMHPlayerCharacter::AMHPlayerCharacter()
     bUseControllerRotationYaw = false;
     GetCharacterMovement()->bOrientRotationToMovement = true;
     GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f);
-    GetCharacterMovement()->MaxWalkSpeed = 450.0f;
+    GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
     GetCharacterMovement()->BrakingDecelerationWalking = 1800.0f;
 }
 
 void AMHPlayerCharacter::BeginPlay()
 {
     Super::BeginPlay();
+    AddDefaultMappingContext();
 }
 
 void AMHPlayerCharacter::Tick(float DeltaSeconds)
@@ -42,15 +52,239 @@ void AMHPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputC
 {
     Super::SetupPlayerInputComponent(PlayerInputComponent);
 
+    if (UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+    {
+        BindEnhancedInput(EnhancedInput);
+    }
+
+    BindLegacyInput(PlayerInputComponent);
+}
+
+void AMHPlayerCharacter::AddDefaultMappingContext()
+{
+    if (!DefaultMappingContext)
+    {
+        return;
+    }
+
+    if (APlayerController* PC = Cast<APlayerController>(Controller))
+    {
+        if (ULocalPlayer* LocalPlayer = PC->GetLocalPlayer())
+        {
+            if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem =
+                LocalPlayer->GetSubsystem<UEnhancedInputLocalPlayerSubsystem>())
+            {
+                InputSubsystem->AddMappingContext(DefaultMappingContext, 0);
+            }
+        }
+    }
+}
+
+void AMHPlayerCharacter::BindEnhancedInput(UInputComponent* PlayerInputComponent)
+{
+    UEnhancedInputComponent* EnhancedInput = Cast<UEnhancedInputComponent>(PlayerInputComponent);
+    if (!EnhancedInput)
+    {
+        return;
+    }
+
+    if (IA_Move)
+    {
+        EnhancedInput->BindAction(IA_Move, ETriggerEvent::Triggered, this, &AMHPlayerCharacter::InputMove);
+    }
+    if (IA_Look)
+    {
+        EnhancedInput->BindAction(IA_Look, ETriggerEvent::Triggered, this, &AMHPlayerCharacter::InputLook);
+    }
+    if (IA_Sprint)
+    {
+        EnhancedInput->BindAction(IA_Sprint, ETriggerEvent::Started, this, &AMHPlayerCharacter::InputSprintStart);
+        EnhancedInput->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &AMHPlayerCharacter::InputSprintStop);
+        EnhancedInput->BindAction(IA_Sprint, ETriggerEvent::Canceled, this, &AMHPlayerCharacter::InputSprintStop);
+    }
+    if (IA_Interact)
+    {
+        EnhancedInput->BindAction(IA_Interact, ETriggerEvent::Started, this, &AMHPlayerCharacter::InputInteract);
+    }
+    if (IA_EnterExitVehicle)
+    {
+        EnhancedInput->BindAction(
+            IA_EnterExitVehicle,
+            ETriggerEvent::Started,
+            this,
+            &AMHPlayerCharacter::InputEnterExitVehicle);
+    }
+}
+
+void AMHPlayerCharacter::BindLegacyInput(UInputComponent* PlayerInputComponent)
+{
+    if (DefaultMappingContext && IA_Move)
+    {
+        return;
+    }
+
     PlayerInputComponent->BindAxis(TEXT("MoveForward"), this, &AMHPlayerCharacter::MoveForward);
     PlayerInputComponent->BindAxis(TEXT("MoveRight"), this, &AMHPlayerCharacter::MoveRight);
     PlayerInputComponent->BindAxis(TEXT("Turn"), this, &AMHPlayerCharacter::Turn);
     PlayerInputComponent->BindAxis(TEXT("LookUp"), this, &AMHPlayerCharacter::LookUp);
     PlayerInputComponent->BindAction(TEXT("Interact"), IE_Pressed, this, &AMHPlayerCharacter::TryInteract);
-    PlayerInputComponent->BindAction(TEXT("EnterExitVehicle"), IE_Pressed, this, &AMHPlayerCharacter::RequestEnterExitVehicle);
+    PlayerInputComponent->BindAction(
+        TEXT("EnterExitVehicle"),
+        IE_Pressed,
+        this,
+        &AMHPlayerCharacter::RequestEnterExitVehicle);
+}
+
+void AMHPlayerCharacter::SetSprinting(bool bEnableSprint)
+{
+    if (bInVehicle)
+    {
+        return;
+    }
+
+    GetCharacterMovement()->MaxWalkSpeed = bEnableSprint ? SprintSpeed : WalkSpeed;
 }
 
 void AMHPlayerCharacter::TryInteract()
+{
+    if (bInVehicle)
+    {
+        ExitVehicle();
+        return;
+    }
+
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UMHDialogueSubsystem* DialogueSubsystem = GameInstance->GetSubsystem<UMHDialogueSubsystem>())
+        {
+            if (DialogueSubsystem->IsConversationActive())
+            {
+                DialogueSubsystem->AdvanceConversation(false);
+                return;
+            }
+        }
+    }
+
+    if (AMHVehiclePawn* NearbyVehicle = FindNearestVehicle())
+    {
+        EnterVehicle(NearbyVehicle);
+        return;
+    }
+
+    TryInteractWithWorld();
+}
+
+void AMHPlayerCharacter::RequestEnterExitVehicle()
+{
+    if (bInVehicle)
+    {
+        ExitVehicle();
+        return;
+    }
+
+    if (AMHVehiclePawn* NearbyVehicle = FindNearestVehicle())
+    {
+        EnterVehicle(NearbyVehicle);
+    }
+}
+
+bool AMHPlayerCharacter::EnterVehicle(AMHVehiclePawn* VehiclePawn)
+{
+    if (bInVehicle || !VehiclePawn || !Controller)
+    {
+        return false;
+    }
+
+    if (!VehiclePawn->CanDriverEnter(this))
+    {
+        return false;
+    }
+
+    CurrentVehicle = VehiclePawn;
+    bInVehicle = true;
+
+    SetActorEnableCollision(false);
+    SetActorHiddenInGame(true);
+    Controller->Possess(VehiclePawn);
+
+    if (AMHGameModeBase* GameMode = GetWorld() ? Cast<AMHGameModeBase>(GetWorld()->GetAuthGameMode()) : nullptr)
+    {
+        GameMode->TryCompleteVehicleObjective(true);
+    }
+
+    return true;
+}
+
+bool AMHPlayerCharacter::ExitVehicle()
+{
+    if (!bInVehicle || !CurrentVehicle || !Controller)
+    {
+        return false;
+    }
+
+    const FVector ExitLocation = CurrentVehicle->GetSuggestedExitLocation();
+    SetActorLocation(ExitLocation);
+    SetActorEnableCollision(true);
+    SetActorHiddenInGame(false);
+    Controller->Possess(this);
+
+    bInVehicle = false;
+    CurrentVehicle = nullptr;
+    return true;
+}
+
+void AMHPlayerCharacter::InputMove(const FInputActionValue& Value)
+{
+    if (bInVehicle)
+    {
+        return;
+    }
+
+    const FVector2D Axis = Value.Get<FVector2D>();
+    if (Axis.IsNearlyZero())
+    {
+        return;
+    }
+
+    if (Controller)
+    {
+        const FRotator YawRotation(0.0f, Controller->GetControlRotation().Yaw, 0.0f);
+        AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X), Axis.Y);
+        AddMovementInput(FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y), Axis.X);
+    }
+}
+
+void AMHPlayerCharacter::InputLook(const FInputActionValue& Value)
+{
+    const FVector2D Axis = Value.Get<FVector2D>();
+    if (!Axis.IsNearlyZero())
+    {
+        AddControllerYawInput(Axis.X);
+        AddControllerPitchInput(Axis.Y);
+    }
+}
+
+void AMHPlayerCharacter::InputSprintStart(const FInputActionValue& Value)
+{
+    SetSprinting(true);
+}
+
+void AMHPlayerCharacter::InputSprintStop(const FInputActionValue& Value)
+{
+    SetSprinting(false);
+}
+
+void AMHPlayerCharacter::InputInteract(const FInputActionValue& Value)
+{
+    TryInteract();
+}
+
+void AMHPlayerCharacter::InputEnterExitVehicle(const FInputActionValue& Value)
+{
+    RequestEnterExitVehicle();
+}
+
+void AMHPlayerCharacter::TryInteractWithWorld()
 {
     TArray<FOverlapResult> Overlaps;
     const float RadiusUnrealUnits = InteractionRadiusMeters * 100.0f;
@@ -75,14 +309,9 @@ void AMHPlayerCharacter::TryInteract()
     }
 }
 
-void AMHPlayerCharacter::RequestEnterExitVehicle()
-{
-    // Vehicle possession will hand off here once the first Chaos vehicle pawn exists.
-}
-
 void AMHPlayerCharacter::MoveForward(float Value)
 {
-    if (Controller == nullptr || FMath::IsNearlyZero(Value))
+    if (Controller == nullptr || FMath::IsNearlyZero(Value) || bInVehicle)
     {
         return;
     }
@@ -93,7 +322,7 @@ void AMHPlayerCharacter::MoveForward(float Value)
 
 void AMHPlayerCharacter::MoveRight(float Value)
 {
-    if (Controller == nullptr || FMath::IsNearlyZero(Value))
+    if (Controller == nullptr || FMath::IsNearlyZero(Value) || bInVehicle)
     {
         return;
     }
@@ -110,4 +339,34 @@ void AMHPlayerCharacter::Turn(float Value)
 void AMHPlayerCharacter::LookUp(float Value)
 {
     AddControllerPitchInput(Value);
+}
+
+AMHVehiclePawn* AMHPlayerCharacter::FindNearestVehicle() const
+{
+    if (!GetWorld())
+    {
+        return nullptr;
+    }
+
+    AMHVehiclePawn* BestVehicle = nullptr;
+    float BestDistSq = VehicleInteractRange * VehicleInteractRange;
+    const FVector MyLoc = GetActorLocation();
+
+    for (TActorIterator<AMHVehiclePawn> It(GetWorld()); It; ++It)
+    {
+        AMHVehiclePawn* Candidate = *It;
+        if (!IsValid(Candidate))
+        {
+            continue;
+        }
+
+        const float DistSq = FVector::DistSquared(MyLoc, Candidate->GetActorLocation());
+        if (DistSq <= BestDistSq)
+        {
+            BestDistSq = DistSq;
+            BestVehicle = Candidate;
+        }
+    }
+
+    return BestVehicle;
 }

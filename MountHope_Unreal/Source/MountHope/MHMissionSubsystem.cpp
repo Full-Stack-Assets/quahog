@@ -1,34 +1,156 @@
 #include "MHMissionSubsystem.h"
 
-bool UMHMissionSubsystem::StartMission(FGameplayTag MissionTag)
+#include "Dom/JsonObject.h"
+#include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
+
+namespace
 {
-    if (!MissionTag.IsValid() || CompletedMissions.HasTagExact(MissionTag))
+FString ResolvePath(const FString& RelativeOrAbsolutePath)
+{
+    if (FPaths::FileExists(RelativeOrAbsolutePath))
+    {
+        return RelativeOrAbsolutePath;
+    }
+
+    return FPaths::ConvertRelativePathToFull(FPaths::ProjectDir() / RelativeOrAbsolutePath);
+}
+}
+
+bool UMHMissionSubsystem::LoadMissionsFromJson(const FString& RelativeOrAbsolutePath)
+{
+    const FString FullPath = ResolvePath(RelativeOrAbsolutePath);
+    FString RawJson;
+    if (!FFileHelper::LoadFileToString(RawJson, *FullPath))
+    {
+        UE_LOG(LogTemp, Error, TEXT("MountHope: Unable to load mission JSON: %s"), *FullPath);
+        return false;
+    }
+
+    TSharedPtr<FJsonObject> RootObject;
+    TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(RawJson);
+    if (!FJsonSerializer::Deserialize(Reader, RootObject) || !RootObject.IsValid())
+    {
+        UE_LOG(LogTemp, Error, TEXT("MountHope: Invalid mission JSON: %s"), *FullPath);
+        return false;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>* MissionsArray = nullptr;
+    if (!RootObject->TryGetArrayField(TEXT("missions"), MissionsArray) || !MissionsArray)
     {
         return false;
     }
 
-    ActiveMissions.AddTag(MissionTag);
-    return true;
+    Missions.Reset();
+    for (const TSharedPtr<FJsonValue>& MissionValue : *MissionsArray)
+    {
+        const TSharedPtr<FJsonObject> MissionObject = MissionValue->AsObject();
+        if (!MissionObject.IsValid())
+        {
+            continue;
+        }
+
+        FMHMission Mission;
+        Mission.Title = MissionObject->GetStringField(TEXT("title"));
+
+        const TArray<TSharedPtr<FJsonValue>>* StepsArray = nullptr;
+        if (MissionObject->TryGetArrayField(TEXT("steps"), StepsArray) && StepsArray)
+        {
+            for (const TSharedPtr<FJsonValue>& StepValue : *StepsArray)
+            {
+                const TSharedPtr<FJsonObject> StepObject = StepValue->AsObject();
+                if (!StepObject.IsValid())
+                {
+                    continue;
+                }
+
+                FMHMissionStep Step;
+                Step.Text = StepObject->GetStringField(TEXT("text"));
+                Step.Radius = static_cast<float>(StepObject->GetNumberField(TEXT("radius")));
+                Step.bNeedVehicle = StepObject->GetBoolField(TEXT("needVehicle"));
+                Step.Reward = StepObject->GetIntegerField(TEXT("reward"));
+
+                const TArray<TSharedPtr<FJsonValue>>* TargetArray = nullptr;
+                if (StepObject->TryGetArrayField(TEXT("target"), TargetArray) && TargetArray && TargetArray->Num() >= 3)
+                {
+                    Step.Target = FVector(
+                        static_cast<float>((*TargetArray)[0]->AsNumber()),
+                        static_cast<float>((*TargetArray)[1]->AsNumber()),
+                        static_cast<float>((*TargetArray)[2]->AsNumber()));
+                }
+
+                Mission.Steps.Add(MoveTemp(Step));
+            }
+        }
+
+        if (Mission.Steps.Num() > 0)
+        {
+            Missions.Add(MoveTemp(Mission));
+        }
+    }
+
+    ResetCampaign();
+    UE_LOG(LogTemp, Log, TEXT("MountHope: Loaded %d missions"), Missions.Num());
+    return Missions.Num() > 0;
 }
 
-bool UMHMissionSubsystem::CompleteMission(FGameplayTag MissionTag)
+void UMHMissionSubsystem::ResetCampaign()
 {
-    if (!MissionTag.IsValid() || !ActiveMissions.HasTagExact(MissionTag))
+    MissionIndex = 0;
+    StepIndex = 0;
+    bCampaignComplete = Missions.Num() == 0;
+}
+
+bool UMHMissionSubsystem::AdvanceStep()
+{
+    if (bCampaignComplete || Missions.Num() == 0 || !Missions.IsValidIndex(MissionIndex))
     {
         return false;
     }
 
-    ActiveMissions.RemoveTag(MissionTag);
-    CompletedMissions.AddTag(MissionTag);
+    const FMHMission& Mission = Missions[MissionIndex];
+    if (!Mission.Steps.IsValidIndex(StepIndex))
+    {
+        return false;
+    }
+
+    ++StepIndex;
+    if (Mission.Steps.IsValidIndex(StepIndex))
+    {
+        return true;
+    }
+
+    ++MissionIndex;
+    StepIndex = 0;
+    bCampaignComplete = !Missions.IsValidIndex(MissionIndex);
     return true;
 }
 
-bool UMHMissionSubsystem::IsMissionActive(FGameplayTag MissionTag) const
+bool UMHMissionSubsystem::GetCurrentMission(FMHMission& OutMission) const
 {
-    return ActiveMissions.HasTagExact(MissionTag);
+    if (Missions.IsValidIndex(MissionIndex))
+    {
+        OutMission = Missions[MissionIndex];
+        return true;
+    }
+    return false;
 }
 
-bool UMHMissionSubsystem::IsMissionComplete(FGameplayTag MissionTag) const
+bool UMHMissionSubsystem::GetCurrentStep(FMHMissionStep& OutStep) const
 {
-    return CompletedMissions.HasTagExact(MissionTag);
+    if (!Missions.IsValidIndex(MissionIndex))
+    {
+        return false;
+    }
+
+    const FMHMission& Mission = Missions[MissionIndex];
+    if (Mission.Steps.IsValidIndex(StepIndex))
+    {
+        OutStep = Mission.Steps[StepIndex];
+        return true;
+    }
+
+    return false;
 }

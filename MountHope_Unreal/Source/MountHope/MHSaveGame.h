@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameplayTagContainer.h"
 #include "GameFramework/SaveGame.h"
 #include "MHSaveGame.generated.h"
 
@@ -11,27 +10,21 @@ class MOUNTHOPE_API UMHSaveGame : public USaveGame
     GENERATED_BODY()
 
 public:
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    FTransform PlayerTransform = FTransform::Identity;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    int32 Cash = 250;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    FTransform VehicleTransform = FTransform::Identity;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    float Health = 100.0f;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    int32 CashBalance = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    float PoliceHeat = 0.0f;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    int32 WantedLevel = 0;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    float FactionHeat = 0.0f;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    FGameplayTagContainer ActiveMissions;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    uint8 Weather = 0;
 
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    FGameplayTagContainer CompletedMissions;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    TMap<FName, int32> ReputationByFaction;
-
-    UPROPERTY(BlueprintReadWrite, Category = "Mount Hope|Save")
-    FName LastCheckpointId = NAME_None;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    TArray<FString> OwnedBusinessIds;
 };

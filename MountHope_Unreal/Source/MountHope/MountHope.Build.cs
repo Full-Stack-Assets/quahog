@@ -17,7 +17,9 @@ public class MountHope : ModuleRules
             "AIModule",
             "NavigationSystem",
             "UMG",
-            "ChaosVehicles"
+            "ChaosVehicles",
+            "Json",
+            "JsonUtilities"
         });
 
         PrivateDependencyModuleNames.AddRange(new[]

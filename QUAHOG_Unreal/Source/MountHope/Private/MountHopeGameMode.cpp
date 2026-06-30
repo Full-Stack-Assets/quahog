@@ -117,7 +117,7 @@ bool AMountHopeGameMode::TryCompleteVehicleObjective(bool bPlayerInVehicle)
 
 bool AMountHopeGameMode::IsWorldTargetObjective(const FMHMissionStep& Step) const
 {
-    return Step.Radius > KINDA_SMALL_NUMBER;
+    return Step.Radius > UE_KINDA_SMALL_NUMBER;
 }
 
 void AMountHopeGameMode::RefreshObjectiveTrigger()

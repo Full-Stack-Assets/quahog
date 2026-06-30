@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import sys
 from pathlib import Path
 
 
@@ -11,6 +12,9 @@ def load_json(path: Path):
         return json.load(f)
 
 
+EXPECTED_ENGINE = "5.8"
+
+
 def validate_uproject():
     project = load_json(ROOT / "MountHope.uproject")
     module_names = {m["Name"] for m in project.get("Modules", [])}
@@ -19,6 +23,34 @@ def validate_uproject():
     assert "EnhancedInput" in plugins, "EnhancedInput plugin missing"
     assert "ChaosVehiclesPlugin" in plugins, "ChaosVehiclesPlugin missing"
     assert "WorldPartitionHLODUtilities" in plugins, "WorldPartitionHLODUtilities missing"
+    assert project.get("EngineAssociation") == EXPECTED_ENGINE, (
+        f"EngineAssociation must be {EXPECTED_ENGINE}, got "
+        f"{project.get('EngineAssociation')!r}"
+    )
+
+
+def validate_target_rules():
+    """The target rules must track the installed engine, not a stale pin."""
+    for target in ("MountHope.Target.cs", "MountHopeEditor.Target.cs"):
+        text = (ROOT / "Source" / target).read_text(encoding="utf-8")
+        assert "EngineIncludeOrderVersion.Unreal5_4" not in text, (
+            f"{target} still pins the legacy Unreal5_4 include order"
+        )
+        assert "DefaultBuildSettings" in text, f"{target} missing DefaultBuildSettings"
+        assert "IncludeOrderVersion" in text, f"{target} missing IncludeOrderVersion"
+
+
+def validate_no_deprecated_macros():
+    """Guard against engine macros removed/deprecated on the way to 5.8."""
+    src_root = ROOT / "Source"
+    for path in src_root.rglob("*.cpp"):
+        text = path.read_text(encoding="utf-8")
+        for line in text.splitlines():
+            # The bare KINDA_SMALL_NUMBER family is deprecated in favour of the
+            # UE_-prefixed constants. Match the bare token, not UE_KINDA_...
+            assert "UE_KINDA_SMALL_NUMBER" in line or "KINDA_SMALL_NUMBER" not in line, (
+                f"{path.name}: use UE_KINDA_SMALL_NUMBER instead of KINDA_SMALL_NUMBER"
+            )
 
 
 def validate_expected_code_files():
@@ -85,9 +117,16 @@ def validate_framework_wiring():
 
 if __name__ == "__main__":
     validate_uproject()
+    validate_target_rules()
+    validate_no_deprecated_macros()
     validate_expected_code_files()
     validate_missions()
     validate_economy()
     validate_default_config()
     validate_framework_wiring()
-    print("MountHope Unreal bootstrap validation passed.")
+    print("MountHope Unreal bootstrap validation passed (UE 5.8 target).")
+    print(
+        "NOTE: QUAHOG_Unreal/ is legacy. Use MountHope_Unreal/ — "
+        "see QUAHOG_Unreal/LEGACY.md",
+        file=sys.stderr,
+    )

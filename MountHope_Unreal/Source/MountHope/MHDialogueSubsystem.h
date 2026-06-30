@@ -1,55 +1,67 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Subsystems/WorldSubsystem.h"
+#include "MHDialogueTypes.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "MHDialogueSubsystem.generated.h"
 
-USTRUCT(BlueprintType)
-struct FMHDialogueLine
-{
-    GENERATED_BODY()
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(
+    FMHOnDialogueLineChanged,
+    FName,
+    ConversationId,
+    FName,
+    Speaker,
+    FText,
+    LineText);
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Dialogue")
-    FName SpeakerId = NAME_None;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMHOnDialogueEnded, FName, ConversationId);
 
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Dialogue")
-    FText SpeakerName;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Dialogue")
-    FText Line;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Dialogue")
-    float MinimumDisplaySeconds = 2.0f;
-
-    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Dialogue")
-    bool bCanSkip = true;
-};
-
-UCLASS()
-class MOUNTHOPE_API UMHDialogueSubsystem : public UWorldSubsystem
+UCLASS(BlueprintType)
+class MOUNTHOPE_API UMHDialogueSubsystem : public UGameInstanceSubsystem
 {
     GENERATED_BODY()
 
 public:
-    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Dialogue")
-    void BeginConversation(FName ConversationId, const TArray<FMHDialogueLine>& Lines);
+    UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Dialogue")
+    FMHOnDialogueLineChanged OnDialogueLineChanged;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Dialogue")
+    FMHOnDialogueEnded OnDialogueEnded;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Dialogue")
+    TArray<FMHDialogueConversation> Conversations;
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Dialogue")
-    bool AdvanceConversation();
+    bool LoadDialogueFromJson(const FString& RelativeOrAbsolutePath);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Dialogue")
+    bool StartConversation(FName ConversationId);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Dialogue")
+    bool AdvanceConversation(bool bPlayerInVehicle);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Dialogue")
+    void EndConversation();
 
     UFUNCTION(BlueprintPure, Category = "Mount Hope|Dialogue")
     bool IsConversationActive() const;
 
     UFUNCTION(BlueprintPure, Category = "Mount Hope|Dialogue")
-    FMHDialogueLine GetCurrentLine() const;
+    bool GetActiveConversation(FMHDialogueConversation& OutConversation) const;
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Dialogue")
+    bool GetCurrentLine(FText& OutLineText, FName& OutSpeaker) const;
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Dialogue")
+    bool FindConversation(FName ConversationId, FMHDialogueConversation& OutConversation) const;
 
 private:
     UPROPERTY()
     FName ActiveConversationId = NAME_None;
 
     UPROPERTY()
-    TArray<FMHDialogueLine> ActiveLines;
-
-    UPROPERTY()
     int32 ActiveLineIndex = INDEX_NONE;
+
+    bool ApplyCompletion(const FMHDialogueCompletion& Completion, bool bPlayerInVehicle);
+    void BroadcastCurrentLine();
 };
