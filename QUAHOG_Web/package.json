@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "description": "Web 3D vertical slice (Three.js / React Three Fiber) — New Bedford waterfront. Working title: Project QUAHOG (name TBD).",
+  "description": "The Narrows — web 3D open-world crime game (Three.js / R3F) on the real Massachusetts South Coast.",
   "scripts": {
     "dev": "vite",
     "predev": "node scripts/gen_manifests.mjs",

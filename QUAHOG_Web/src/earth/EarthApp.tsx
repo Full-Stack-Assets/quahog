@@ -20,7 +20,7 @@ import { PlayerRig, TileNpcs, type View } from "./PlayWorld";
 import { Ambient, type Weather } from "./Ambient";
 import { Radio } from "../audio/Radio";
 
-// Mount Hope on Google Photorealistic 3D Tiles. Two ways to authenticate:
+// The Narrows on Google Photorealistic 3D Tiles. Two ways to authenticate:
 //   • Cesium ion access token (FREE tier, easiest): ?ion=TOKEN or
 //     VITE_CESIUM_ION_TOKEN — streams the same Google tiles via ion asset 2275207.
 //   • Google Maps key (Map Tiles API): ?key=YOUR_KEY or VITE_GOOGLE_MAPS_API_KEY.
@@ -328,7 +328,7 @@ function NoKeyNotice() {
   return (
     <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#e7e0ff", background: "#05070d", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
       <div style={{ maxWidth: 600 }}>
-        <h2 style={{ color: "#7ad9ff" }}>Mount Hope (photoreal) — needs an access token</h2>
+        <h2 style={{ color: "#7ad9ff" }}>The Narrows (photoreal) — needs an access token</h2>
         <p>Renders Google's Photorealistic 3D Tiles (real buildings + streets). Pick either source:</p>
         <p style={{ textAlign: "left", background: "#0c1a14", padding: 12, borderRadius: 8, border: "1px solid #1f5c44" }}>
           <b style={{ color: "#8ff0c2" }}>Cesium ion — free, easiest:</b><br />

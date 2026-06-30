@@ -1,8 +1,8 @@
-# Mount Hope — Evaluation & Elevation Plan
+# The Narrows — Evaluation & Elevation Plan
 
 ## Where the game is today
 
-Mount Hope is past the “tech demo” stage and into a **playable open-world crime loop**, but it still reads more like a strong vertical slice than a finished game. Two builds exist:
+The Narrows is past the “tech demo” stage and into a **playable open-world crime loop**, but it still reads more like a strong vertical slice than a finished game. Two builds exist:
 
 | Build | Role | Maturity |
 |-------|------|----------|
@@ -55,9 +55,9 @@ These are the highest-leverage moves, in order:
 
 11. **Act I missions** — Harbor takeover arc (Sully, Reggie’s chop shop, Linguiça Run).  
 12. **Economy spend loop** — shops for weapons/ammo, one enterable interior (diner or bar).  
-13. **1986 Coastal Neon style pass** — signage, wet dusk reflections, neon tavern signs per `quahog-project-files/STYLE_GUIDE.md`.  
+13. **Coastal Neon style pass** — signage, wet dusk reflections, neon tavern signs per `quahog-project-files/STYLE_GUIDE.md`.  
 14. **Radio milestone hooks** — hosts react to wanted level, mission completion, weather.  
-15. **Rename off “QUAHOG”** → Mount Hope in UI, URLs, repo branding.
+15. **Rebrand** — **DONE** (`The Narrows`, 2026 present-day; see `plans/the-narrows.md`).
 
 ### Tier 4 — Scale & performance
 
@@ -184,7 +184,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 
 | # | Improvement |
 |---|-------------|
-| D1 | 1986 Coastal Neon dusk look (style guide) |
+| D1 | Coastal Neon dusk look (style guide, 2026) |
 | D2 | Smooth day/night sky transitions |
 | D3 | Night window emission (per-window masks) |
 | D4 | Neon/shop signs as light sources |
@@ -272,7 +272,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | G9 | Main menu: New / Continue / Load / Settings |
 | G10 | Multiple save slots |
 | G11 | Controls reference screen |
-| G12 | 1986 retro UI theme (Courier, neon palette) |
+| G12 | Coastal Neon UI theme (Courier, neon palette) |
 | G13 | Subtitles + dialogue UI |
 | G14 | Weapon wheel / inventory UI |
 | G15 | Character/outfit menu |
@@ -359,7 +359,7 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 
 | # | Improvement |
 |---|-------------|
-| K1 | Rename repo/UI from QUAHOG → Mount Hope |
+| K1 | Rebrand: The Narrows (UI done; repo rename optional) |
 | K2 | Consistent domain/branding |
 | K3 | Pitch materials aligned with playable build |
 | K4 | STYLE_GUIDE.md enforced in assets |
@@ -388,7 +388,7 @@ flowchart TD
 4. Weapon variety + shops (give cash a purpose)  
 5. One focused audio/FX pass (footsteps, screech, harbor ambience)
 
-That sequence turns “impressive sandbox” into “game I’d show someone and they’d understand what Mount Hope is.”
+That sequence turns “impressive sandbox” into “game I’d show someone and they’d understand what The Narrows is.”
 
 ---
 
@@ -396,6 +396,7 @@ That sequence turns “impressive sandbox” into “game I’d show someone and
 
 - `plans/mount-hope.md` — master plan & running log (Godot port target spec)
 - `plans/roadmap-50.md` — next 50 curated tasks
+- `plans/the-narrows.md` — title, era (2026), brand stack
 - `quahog-project-files/CHARACTERS_AND_MISSIONS.md` — story bible
 - `quahog-project-files/STYLE_GUIDE.md` — visual direction
 - `QUAHOG_Web/ROADMAP.md` — photoreal build stability & phases

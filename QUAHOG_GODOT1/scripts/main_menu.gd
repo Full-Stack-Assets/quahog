@@ -100,7 +100,7 @@ func _ready() -> void :
 # Web StartMenu parity: era tag, subtitle, a rotating tip, and the OSM
 # attribution footer.
 func _build_text_overlay() -> void :
-    var era: = _make_label("SOUTH COAST · 1986", 22, Color(1.0, 0.48, 0.85, 0.9))
+    var era: = _make_label("SOUTH COAST · NOW", 22, Color(1.0, 0.48, 0.85, 0.9))
     era.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     add_child(era)
     era.anchor_left = 0.0
@@ -109,7 +109,7 @@ func _build_text_overlay() -> void :
     era.offset_top = 36
     era.offset_bottom = 70
 
-    var subtitle: = _make_label("New Bedford · the Whaling City", 26, Color(0.9, 0.86, 0.78, 0.85))
+    var subtitle: = _make_label("New Bedford · Fall River · the Narrows", 26, Color(0.9, 0.86, 0.78, 0.85))
     subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
     add_child(subtitle)
     subtitle.anchor_left = 0.0
@@ -187,24 +187,17 @@ func _build_background() -> void :
 
 
 func _build_wordmark() -> void :
-    if not ResourceLoader.exists("res://assets/ui/wordmark_title.png"):
-        return
-    _wordmark = TextureRect.new()
-    _wordmark.texture = load("res://assets/ui/wordmark_title.png")
-    _wordmark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-    _wordmark.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
-    _wordmark.mouse_filter = Control.MOUSE_FILTER_IGNORE
-    add_child(_wordmark)
-
-
-    _wordmark.anchor_left = 0.5
-    _wordmark.anchor_right = 0.5
-    _wordmark.anchor_top = 0.0
-    _wordmark.anchor_bottom = 0.0
-    _wordmark.offset_left = -450
-    _wordmark.offset_right = 450
-    _wordmark.offset_top = 80
-    _wordmark.offset_bottom = 380
+    # Text title (replaces legacy Mount Hope wordmark PNG until new key art ships).
+    var title: = _make_label("THE NARROWS", 88, Color(1.0, 1.0, 1.0, 0.98))
+    title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    title.add_theme_constant_override("outline_size", 8)
+    add_child(title)
+    title.anchor_left = 0.0
+    title.anchor_right = 1.0
+    title.anchor_top = 0.0
+    title.offset_top = 88
+    title.offset_bottom = 200
+    _wordmark = null
 
 
 func _build_buttons() -> void :
@@ -225,6 +218,11 @@ func _build_buttons() -> void :
     if _wordmark != null:
         var spacer: = Control.new()
         spacer.custom_minimum_size = Vector2(0, 240)
+        spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        vbox.add_child(spacer)
+    else:
+        var spacer: = Control.new()
+        spacer.custom_minimum_size = Vector2(0, 200)
         spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
         vbox.add_child(spacer)
 

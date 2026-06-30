@@ -1,4 +1,4 @@
-# Mount Hope — smoke test checklist (Godot Web)
+# The Narrows — smoke test checklist (Godot Web)
 
 Run after each meaningful build. Export must pass: `cd QUAHOG_GODOT1 && bash build_web.sh`
 

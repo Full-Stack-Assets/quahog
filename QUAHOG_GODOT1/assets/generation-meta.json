@@ -300,7 +300,7 @@
       "primary_prompt": "gritty South Coast Massachusetts crime district at dusk, wet empty streets, weathered brick textile mills, triple-decker houses, coastal fog, glowing sodium streetlights, a used sedan parked at the curb, Open-World Crime, moody cinematic noir, realistic, used sedan, brick mill smokestack, foggy harbor, sodium streetlight, wet asphalt reflections",
       "raw_input": {
         "type": "title_poster",
-        "gameName": "Mount Hope",
+        "gameName": "The Narrows",
         "theme": "gritty South Coast Massachusetts crime district at dusk, wet empty streets, weathered brick textile mills, triple-decker houses, coastal fog, glowing sodium streetlights, a used sedan parked at the curb",
         "genre": "Open-World Crime",
         "style": "realistic",
@@ -321,7 +321,7 @@
       "primary_prompt": "foggy New England waterfront street at dusk, wet asphalt reflecting orange sodium lights, weathered brick buildings, mist rolling in from the harbor, realistic",
       "raw_input": {
         "type": "loading_screen",
-        "gameName": "Mount Hope",
+        "gameName": "The Narrows",
         "theme": "foggy New England waterfront street at dusk, wet asphalt reflecting orange sodium lights, weathered brick buildings, mist rolling in from the harbor",
         "style": "realistic",
         "includeProgressBar": true

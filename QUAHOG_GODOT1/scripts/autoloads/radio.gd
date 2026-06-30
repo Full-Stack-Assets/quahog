@@ -1,6 +1,6 @@
 extends Node
 
-# Mount Hope radio — station playlists (WHALE / The Rage / The Anvil / Maré Alta)
+# The Narrows radio — station playlists (WHALE / The Rage / The Anvil / Maré Alta)
 # loaded from a committed manifest so it works in the Web export (no runtime
 # DirAccess scanning). Drop new .mp3s into assets/audio/music/radio/<station>/
 # and regenerate the manifest to add them. OFF = -1.

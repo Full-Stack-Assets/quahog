@@ -1,12 +1,13 @@
-# Mount Hope
+# The Narrows
 
 An original 3D open-world game set on the **real Massachusetts South Coast**
 (New Bedford, Fall River, Brockton, Cape Cod) — walk real streets and real
 landmarks, populated by original characters, with GTA-style walk/drive
 mechanics. *GTA: Vice City is only a tonal reference; this is original work.*
 
-Named for **Mount Hope Bay** and Mount Hope, the historic seat of the region.
-*(Repo/dir names still use the old "QUAHOG" working title; a rename can follow.)*
+**The Narrows** — subtitle *South Coast · Now* (2026). Named for the Taunton River
+narrows between Fall River and Somerset; **Mount Hope Bay** remains in-world geography.
+*(Repo/dir names still use the legacy "QUAHOG" working title; see `plans/the-narrows.md`.)*
 
 ## Engines — canonical vs. legacy
 

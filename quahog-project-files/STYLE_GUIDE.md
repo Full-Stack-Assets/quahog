@@ -1,13 +1,15 @@
-# Mount Hope — Visual Style Guide
+# The Narrows — Visual Style Guide
 
-The canonical look: **stylized-realistic, 1986 South Coast Massachusetts**, with
-photoreal elements folded into hero zones. Read should land between *Vice City
-dusk* and *a faded Kodachrome postcard of the working waterfront*.
+The canonical look: **stylized-realistic, present-day (2026) South Coast Massachusetts**,
+with photoreal elements folded into hero zones. Read should land between *modern
+crime-drama dusk* and *a salt-stained postcard of the working waterfront*.
 
 ## Era & mood
-- **Year:** 1986. No modern cars, glass towers, LEDs, or cell phones.
+- **Year:** 2026 (now). Contemporary cars, phones, and signage on the real OSM map.
 - **Mood:** salt air, peeling paint, granite and brick, neon tavern signs at
   dusk, fog off Buzzards Bay. Hard-working, a little melancholy, proud.
+- **Coastal Neon** is a *lighting palette* (wet asphalt, sodium lamps, pink/cyan
+  accents) — not a period lock.
 
 ## Palette
 | Role | Hex | Use |
@@ -24,7 +26,7 @@ dusk* and *a faded Kodachrome postcard of the working waterfront*.
 Asphalt (wet-shine in rain), granite setts/cobble, red brick (multiple bonds),
 Fall River granite block, clapboard, wood shingle, painted brick, plate glass,
 weathered steel. Everything carries **grime, salt-stain, peeling paint** — never
-clean.
+sterile showroom clean.
 
 ## Buildings
 - **By use/height:** short (<14 m) → warm brick/clapboard; tall → granite/concrete
@@ -35,7 +37,7 @@ clean.
 
 ## Lighting
 - Warm key sun, cool sky fill; **golden-hour** and **coastal-neon dusk** are the
-  signature times. Sun + shadows follow the player. Lit windows + sodium street
+  signature times. Sun + shadows follow the player. Lit windows + sodium/LED street
   lamps at night; lighthouse beam; emergency lights flashing.
 
 ## Post
@@ -43,10 +45,10 @@ ACES tone-map · bloom (neon/headlights/sun glints) · soft vignette · light
 chromatic aberration + film grain · SMAA. Add SSAO + wet-road reflections (P2).
 
 ## Signage & type
-Green MUTCD street blades, route shields, hand-painted tavern/shop signs, the
-Feast of the Blessed Sacrament banner. UI font: Courier mono, neon-on-dark.
+Green MUTCD street blades, route shields, hand-painted and LED tavern/shop signs.
+UI font: Courier mono, neon-on-dark. Title: **THE NARROWS** / *South Coast · Now*.
 
 ## Don'ts
-No modern brands, no clean/new surfaces, no flat untextured massing, no daylight
-that looks like noon all the time. If it doesn't feel like 1986 New Bedford in the
-fog, it's wrong.
+No flat untextured massing, no daylight that looks like flat noon all the time,
+no sterile mall-clean streets. If it doesn't feel like the South Coast in the
+fog at dusk, it's wrong.

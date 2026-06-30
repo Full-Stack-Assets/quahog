@@ -221,7 +221,7 @@ export function PauseMenu() {
             Web-Speech fallback); music tracks per their own licenses.<br /><br />
 
             <b style={{ color: "#e7e0ff" }}>Disclaimer</b><br />
-            Mount Hope is a work of parody/fiction set in a fictionalized South
+            The Narrows is a work of parody/fiction set in a fictionalized South
             Coast. All characters, businesses, factions, and events are invented;
             any resemblance to real people or businesses is coincidental. Not
             affiliated with or endorsed by any real entity.<br /><br />

@@ -17,7 +17,7 @@ export class ErrorBoundary extends React.Component<
     return (
       <div style={{ position: "fixed", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "#05070d", color: "#e7e0ff", font: "14px/1.6 'Courier New', monospace", padding: 24, textAlign: "center" }}>
         <div style={{ maxWidth: 540 }}>
-          <h2 style={{ color: "#ff7a7a" }}>Mount Hope hit a snag</h2>
+          <h2 style={{ color: "#ff7a7a" }}>The Narrows hit a snag</h2>
           <p>The game crashed while rendering. Reloading usually clears it.</p>
           <pre style={{ textAlign: "left", background: "#0c0f1a", padding: 12, borderRadius: 8, overflow: "auto", fontSize: 11, maxHeight: 180 }}>
             {String(this.state.error?.message || this.state.error)}

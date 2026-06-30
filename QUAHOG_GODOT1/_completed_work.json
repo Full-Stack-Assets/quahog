@@ -15,13 +15,13 @@
     {"id": "story-missions", "title": "Story missions with stakes", "description": "Hand-crafted jobs with bigger payouts, twists and rival crews.", "priority": "medium", "category": "gameplay"}
   ],
   "phase_summary": "Phase 2 complete — the crime gameplay loop is in: drive, take jobs, earn cash, draw heat",
-  "game_state": "Mount Hope is now a playable open-world crime game. You roam a large city on foot or behind the wheel of cars you can steal and drive. Contacts hand out paid delivery jobs you complete by driving to pickup and drop-off markers. You can find and fire a pistol with real ammo, recoil and impact effects. Trouble raises a wanted level that sends police chasing you across the grid, and getting caught busts you for cash. A live minimap with district names ties it all together, on top of fully customizable touch controls.",
+  "game_state": "The Narrows is now a playable open-world crime game. You roam a large city on foot or behind the wheel of cars you can steal and drive. Contacts hand out paid delivery jobs you complete by driving to pickup and drop-off markers. You can find and fire a pistol with real ammo, recoil and impact effects. Trouble raises a wanted level that sends police chasing you across the grid, and getting caught busts you for cash. A live minimap with district names ties it all together, on top of fully customizable touch controls.",
   "complexity": "complex",
   "design_phase": "gameplay_added_polish_next",
   "next_phase_prompt": {
     "show_modal": false,
     "headline": "The crime loop is live",
-    "body": "Drive, deliver, earn, and outrun the cops. Where should Mount Hope go next?",
+    "body": "Drive, deliver, earn, and outrun the cops. Where should the Narrows go next?",
     "primary_cta_label": "Add more weapons",
     "secondary_cta_label": "Keep building it out",
     "suggested_feature_ids": ["health-armor", "weapon-variety"]

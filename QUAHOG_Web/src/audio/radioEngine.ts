@@ -1,4 +1,4 @@
-// Mount Hope radio. Procedural, royalty-free music (Web Audio synth) + scripted
+// The Narrows radio. Procedural, royalty-free music (Web Audio synth) + scripted
 // host voices — real ElevenLabs VO when configured, else Web Speech (see vo.ts).
 // No audio files, no copyright. Stations switch live; talk stations speak
 // continuously, music stations drop DJ IDs between beds. Must be started from a

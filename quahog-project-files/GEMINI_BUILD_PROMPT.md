@@ -1,4 +1,4 @@
-# Mount Hope — Build Prompt (Photorealistic, Console + PC)
+# The Narrows — Build Prompt (Photorealistic, Console + PC)
 
 > Feed the block below to a Gemini vibe-coding app as the master spec. It
 > describes the **ideal finished product**: a **fully developed, AAA-grade,
@@ -10,7 +10,7 @@
 
 ## PROMPT
 
-Build **“Mount Hope”** — a **complete, shippable AAA open-world action game for PlayStation 5, Xbox Series X|S, and Windows PC** (gamepad-first, full mouse/keyboard support). It is a third/first-person crime epic set in the **real Massachusetts South Coast** (New Bedford and Fall River, with Cape Cod and Brockton), rendered on **photorealistic real-world 3D geography**. Think *Grand Theft Auto* meets *Google Earth*, at full production value: you walk and drive through the actual streets, harbors, mills, and real landmarks, populated with original characters, living traffic and crowds, dynamic weather, a full radio suite, and a multi-act story campaign with side content. This is a disc/digital-storefront title (Steam, Epic, PlayStation Store, Microsoft Store) with installer, save system, settings, achievements/trophies, controller support, and accessibility options — a real game, not a tech demo or web app.
+Build **“The Narrows”** — a **complete, shippable AAA open-world action game for PlayStation 5, Xbox Series X|S, and Windows PC** (gamepad-first, full mouse/keyboard support). It is a third/first-person crime epic set in the **real Massachusetts South Coast** (New Bedford and Fall River, with Cape Cod and Brockton), rendered on **photorealistic real-world 3D geography**. Think *Grand Theft Auto* meets *Google Earth*, at full production value: you walk and drive through the actual streets, harbors, mills, and real landmarks, populated with original characters, living traffic and crowds, dynamic weather, a full radio suite, and a multi-act story campaign with side content. This is a disc/digital-storefront title (Steam, Epic, PlayStation Store, Microsoft Store) with installer, save system, settings, achievements/trophies, controller support, and accessibility options — a real game, not a tech demo or web app.
 
 ### Core vibe
 Rust-belt coastal noir with salt-air humor. Overcast harbor light, wet cobblestones, gulls, fishing boats, granite mills, neon tavern signs at dusk. Cinematic but readable. The world is *real* (photogrammetry); the characters, cars, story, and UI are stylized-but-grounded game assets layered on top.
@@ -104,7 +104,7 @@ Make it feel like a real place you can get lost in — the Whaling City, rendere
 
 ## FULL CANON (treat everything below as authoritative; build all of it)
 
-**Title / naming.** Working title was “Project QUAHOG” — retired (Family Guy collision). Ship as **Mount Hope** (after Mount Hope Bay; also Metacomet’s historic seat). Tone & systems follow the original pitch/GDD: *GTA: South Coast* feel, 1986 era flavor, **Coastal Neon** aesthetic. Naming canon: **real geography + real landmark names + original characters**; the original pitch’s parody district names are kept as in-world *flavor/brand* names (mapping below).
+**Title / naming.** Ship as **The Narrows** (*South Coast · Now*, 2026). Retired codenames: Project QUAHOG (Family Guy collision), Mount Hope (in-world bay/avenue only). Tone & systems: *GTA: South Coast* feel, **Coastal Neon** aesthetic (lighting mood, not a period piece). Naming canon: **real geography + real landmark names + original characters**; parody district names are in-world *flavor* (mapping below).
 
 ### Districts (real place ↔ canonical parody name ↔ flavor)
 The open world is four core districts split by structural **canal bridges**:

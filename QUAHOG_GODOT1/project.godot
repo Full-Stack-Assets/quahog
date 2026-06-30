@@ -16,7 +16,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="Mount Hope"
+config/name="The Narrows"
 config/description="A grounded New England crime-drama open world set on the Massachusetts South Coast."
 run/main_scene="res://scenes/main.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")

@@ -1,7 +1,7 @@
-# Mount Hope (QUAHOG)
+# The Narrows (QUAHOG)
 
-An original 3D open-world game set on the real Massachusetts South Coast. See
-`README.md` and `ENGINES.md` for the full picture.
+**The Narrows** — open-world crime game on the real Massachusetts South Coast (2026).
+See `README.md` and `plans/the-narrows.md`. Shippable product: `QUAHOG_GODOT1/`.
 
 ## Cursor Cloud specific instructions
 

@@ -1,6 +1,6 @@
-# Mount Hope — Radio host VO scripts + music prompts
+# The Narrows — Radio host VO scripts + music prompts
 
-Era: 1986, the South Coast (New Bedford / Fairhaven / Dartmouth / Fall River).
+Era: 2026, the South Coast (New Bedford / Fairhaven / Dartmouth / Fall River).
 All original characters and fictional businesses; no real brands or song titles.
 Each host below is ~1000 words of standalone segments — feed them to ElevenLabs
 TTS as-is, or split on the blank lines for individual barks. Recommended voices
