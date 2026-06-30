@@ -40,6 +40,7 @@ one-pager, and system-design PDFs.
 
 ## Legacy / reference (not active)
 
+- `QUAHOG_Unreal/` — earlier UE 5.8 bootstrap; framework merged into `MountHope_Unreal/`. See [`QUAHOG_Unreal/LEGACY.md`](QUAHOG_Unreal/LEGACY.md).
 - `QUAHOG_Godot/` — earlier Godot (GDScript) port. See [`QUAHOG_Godot/LEGACY.md`](QUAHOG_Godot/LEGACY.md).
 - `QUAHOG_Unity/` — earlier Unity (C#) project, incl. a parallel Unity→WebGL slice. See [`QUAHOG_Unity/LEGACY.md`](QUAHOG_Unity/LEGACY.md).
 - `tools/csharp/`, `tools/mapgen/` — tooling for the Unity track (headless C# compile/test; a Unity-targeted OSM fetcher). Superseded for web by `quahog-project-files/mapdata/`.

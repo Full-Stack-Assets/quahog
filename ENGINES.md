@@ -28,6 +28,7 @@ vehicles, OSM-grounded map import, missions, NPCs, economy, and dialogue.
 |-------|--------|--------|-------|
 | `QUAHOG_Web/` | Three.js / R3F + Rapier | **canonical** | real data, deployed, walk/drive/collision + street life |
 | `MountHope_Unreal/` | Unreal Engine 5 | PC/console scaffold | separate vertical-slice track; requires Unreal editor |
+| `QUAHOG_Unreal/` | Unreal Engine 5.8 | legacy | earlier UE bootstrap; framework merged into `MountHope_Unreal/` — see `QUAHOG_Unreal/LEGACY.md` |
 | `QUAHOG_Unity/` (PR #18) | Unity C# → WebGL | legacy | same slice idea; data was a placeholder grid; needs the Unity editor to build |
 | `QUAHOG_Godot/` | Godot GDScript | legacy | earlier port; predates the web decision |
 

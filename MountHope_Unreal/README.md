@@ -35,8 +35,43 @@ the Unreal project is the premium PC/console path.
 | `Source/MountHope/` | Hybrid C++ foundation for game mode, player pawn, vehicle pawn, interactions, missions, economy, and OSM world source metadata. |
 | `Config/` | Initial maps, renderer, navigation, packaging, and input settings. |
 | `Content/` | Empty UE asset root; create maps, Blueprints, materials, vehicles, MetaHumans, and imported OSM meshes here in the editor. |
-| `Docs/` | Vertical-slice and OSM migration notes. |
-| `Scripts/` | Sandbox-safe validation utilities. |
+| `Data/` | Mission and economy JSON consumed at startup by `UMHGameInstance`. |
+| `Docs/` | Vertical-slice, OSM migration, and improvement-plan notes. |
+| `Scripts/` | Sandbox-safe validation (`validate_scaffold.py`) and local compile helper (`build.sh`). |
+
+## Build & validate
+
+### CI (no Unreal install required)
+
+GitHub Actions runs `Scripts/validate_scaffold.py` on changes under
+`MountHope_Unreal/` (see `.github/workflows/unreal-ci.yml`).
+
+```bash
+python3 MountHope_Unreal/Scripts/validate_scaffold.py
+```
+
+### Local compile (requires Unreal Engine 5.6+)
+
+**Windows (PowerShell):**
+
+```powershell
+cd MountHope_Unreal
+.\Scripts\build.ps1
+```
+
+See [`Docs/BUILD_WINDOWS.md`](Docs/BUILD_WINDOWS.md) for Visual Studio prerequisites, Epic Launcher paths, and troubleshooting.
+
+**macOS / Linux:**
+
+```bash
+export UE_ROOT="/path/to/UE_5.6"
+./MountHope_Unreal/Scripts/build.sh
+```
+
+See `Docs/IMPROVEMENT_PLAN.md` for the full roadmap and packaging notes.
+
+**First playable in editor:** `Docs/EDITOR_SETUP.md` (or run
+`Scripts/editor_bootstrap_vertical_slice.py` inside the editor).
 
 ## Open in Unreal
 

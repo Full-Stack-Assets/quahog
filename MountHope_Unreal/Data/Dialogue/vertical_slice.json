@@ -1,0 +1,43 @@
+{
+  "conversations": [
+    {
+      "id": "deacon_mealy_harbor_errand",
+      "speaker": "Deacon Mealy",
+      "prompt": "Talk to Deacon Mealy",
+      "lines": [
+        "Another stray off the boat? The Bethel sees everything.",
+        "Package is at the pier. The contact owes the Republic money — collect or crack skulls, your call.",
+        "Take a car if you have to. Heat stays low if you are quick."
+      ],
+      "onComplete": {
+        "completeObjective": true,
+        "requireOnFoot": true
+      }
+    },
+    {
+      "id": "dock_contact_package",
+      "speaker": "Pier Contact",
+      "prompt": "Talk to the pier contact",
+      "lines": [
+        "You Mealy's new errand dog? Figures.",
+        "Package is in the trunk. Republic boys already sniffing around.",
+        "Do not die on my planks — paperwork is a nightmare."
+      ],
+      "onComplete": {
+        "completeObjective": false
+      }
+    },
+    {
+      "id": "quohog_republic_brief",
+      "speaker": "Republic Runner",
+      "prompt": "Talk to the runner",
+      "lines": [
+        "Linguica does not deliver itself. Off the Hook still owes us two favors.",
+        "Drive it downtown. Smile for the cameras you cannot see."
+      ],
+      "onComplete": {
+        "completeObjective": false
+      }
+    }
+  ]
+}
