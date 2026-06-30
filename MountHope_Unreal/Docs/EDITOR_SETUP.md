@@ -16,15 +16,16 @@ PIE smoke test).
 
 ## Quick path (automated)
 
-1. Open `MountHope.uproject` in the editor.
-2. Enable the **Python Editor Script Plugin** (Edit → Plugins → search “Python”).
-3. Restart the editor if prompted.
-4. Run the bootstrap script:
-   - **Tools → Execute Python Script…**
-   - Select `Scripts/editor_bootstrap_vertical_slice.py`
-5. Complete the manual steps the script prints (Chaos vehicle wheel setup — see
-   §4 below).
-6. Press **Play**.
+Run these scripts in order via **Tools → Execute Python Script…**
+(Python Editor Script Plugin required):
+
+| Order | Script | Purpose |
+| --- | --- | --- |
+| 1 | `editor_bootstrap_vertical_slice.py` | Map, folders, player start, vehicle spawn |
+| 2 | `editor_create_enhanced_input.py` | `IMC_Default` + Input Actions (WASD, sprint, E/F) |
+| 3 | `editor_import_osm.py` | Import `southcoast.obj` + slice road splines |
+
+Then complete manual vehicle mesh/Chaos wheel setup (§4) and press **Play**.
 
 ---
 
@@ -102,19 +103,21 @@ exists relative to the project directory.
 
 Save the level.
 
-### 6. Input (legacy — current default)
+### 6. Input
 
-`Config/DefaultInput.ini` defines:
+**Enhanced Input (recommended)** — run `Scripts/editor_create_enhanced_input.py`
+to create `/Game/Input/IMC_Default` and wire actions on `MHPlayerCharacter`.
 
-| Action / Axis | Key |
+| Action | Key |
 | --- | --- |
-| MoveForward / MoveBack | W / S |
-| MoveRight / MoveLeft | D / A |
-| Turn / LookUp | Mouse X / Y |
-| Interact | E |
-| EnterExitVehicle | F |
+| Move | WASD |
+| Look | Mouse |
+| Sprint | Left Shift |
+| Interact / enter vehicle | E |
+| Enter/exit vehicle (alt) | F |
 
-No Enhanced Input assets are required for Phase 1.
+**Legacy fallback** — if no Input Actions are assigned, `DefaultInput.ini`
+axis/action mappings still work (WASD, mouse, E, F).
 
 ### 7. PIE smoke test
 
@@ -138,12 +141,12 @@ No Enhanced Input assets are required for Phase 1.
 
 ## Optional graybox ground
 
-Until OSM mesh import (Phase 2):
+**Automated:** run `Scripts/editor_import_osm.py` to import `southcoast.obj` and
+place it at the world origin (100× scale, meters → centimeters). The script
+also spawns debug road splines from `slice-newbedford.json` near the vertical
+slice (capped at 120 splines for editor performance).
 
-1. Add a large **Plane** or **Landscape** under Z=0.
-2. Or import `../quahog-project-files/mapdata/southcoast.obj` per
-   `Docs/OSM_TO_UNREAL.md` (scale: 1 Blender/OSM unit = 100 Unreal units if
-   source is meters).
+**Manual:** add a large **Plane** or **Landscape**, or import per steps below.
 
 ---
 

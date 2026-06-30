@@ -32,6 +32,22 @@ flip the Unreal `Y` axis only for data that came directly from the web slice.
 
 ## First import path
 
+### Automated (recommended)
+
+With the editor open on `MH_VerticalSlice`, run:
+
+```text
+Tools → Execute Python Script → Scripts/editor_import_osm.py
+```
+
+This imports `southcoast.obj` to `/Game/OSM/SM_SouthCoast_Blockout`, places it
+at the origin with 100× scale, and spawns debug splines for slice roads near the
+playable district.
+
+Tune `MAX_ROAD_SPLINES` and `SLICE_ROAD_BBOX_METERS` at the top of the script.
+
+### Manual
+
 1. Import `southcoast.obj` into `/Game/OSM/SouthCoast`.
 2. Keep scale at `1.0` if the OBJ importer treats units as centimeters; use
    `100.0` only if the mesh appears meter-scaled in Unreal.
@@ -44,15 +60,18 @@ flip the Unreal `Y` axis only for data that came directly from the web slice.
 
 ## Next import path
 
-After the first mesh is visible in Unreal, write an Editor Utility Python script
-or C++ editor commandlet that:
+`Scripts/editor_import_osm.py` covers the first graybox pass. After the mesh is
+visible, extend with an Editor Utility that:
 
-- reads `southcoast-roads.json`;
+- reads `southcoast-roads.json` (full South Coast, 12k+ roads);
 - creates road splines per OSM road;
 - assigns road width by `highway` class;
 - adds traffic lane metadata;
 - tags mission-relevant roads and parking spots;
 - exports simplified navigation blockers for sidewalks, water, and buildings.
+
+The earlier plan to write this as a one-off Python script or C++ commandlet
+remains the next step once the slice splines prove the coordinate conversion.
 
 ## Brockton expansion
 

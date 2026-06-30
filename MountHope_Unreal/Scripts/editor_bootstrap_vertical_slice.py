@@ -111,12 +111,11 @@ def save_dirty_packages() -> None:
 
 def print_next_steps() -> None:
     warn(
-        "Manual steps remaining:\n"
-        "  1. Create BP_MHPlayerCharacter (parent: MHPlayerCharacter) with a mesh\n"
-        "  2. Create BP_MHVehicle (parent: MHVehiclePawn) with body mesh + Chaos wheels\n"
-        "  3. Replace placed MHVehiclePawn with BP_MHVehicle or configure wheels on instance\n"
-        "  4. Add a ground plane/landscape or import southcoast.obj\n"
-        "  5. Press Play — see Docs/EDITOR_SETUP.md"
+        "Run next:\n"
+        "  1. Scripts/editor_create_enhanced_input.py\n"
+        "  2. Scripts/editor_import_osm.py\n"
+        "  3. Create BP_MHPlayerCharacter / BP_MHVehicle (mesh + Chaos wheels)\n"
+        "  4. Press Play — see Docs/EDITOR_SETUP.md"
     )
 
 

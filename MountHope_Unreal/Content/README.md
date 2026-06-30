@@ -16,15 +16,16 @@ the vertical slice.
 
 | Asset path | Purpose |
 | --- | --- |
-| `/Game/Input/IMC_Default` | Enhanced Input mapping context (Phase 3) |
-| `/Game/Input/IA_Move`, `IA_Look`, `IA_Interact` | Input actions |
-| `/Game/Materials/M_GroundPlaceholder` | Graybox ground |
-| `/Game/OSM/SouthCoast_Blockout` | Imported `southcoast.obj` |
+| `/Game/Input/IMC_Default` | Enhanced Input mapping context | Run `editor_create_enhanced_input.py` |
+| `/Game/Input/IA_Move`, `IA_Look`, `IA_Sprint`, `IA_Interact` | Input actions | Created by same script |
+| `/Game/OSM/SM_SouthCoast_Blockout` | OSM graybox mesh | Run `editor_import_osm.py` |
 
 ## Automation
 
-Run `Scripts/editor_bootstrap_vertical_slice.py` from **Tools → Execute Python
-Script** to create the map, folders, player start, and placed vehicle actor
-shell. You still need to assign meshes and Chaos wheels in `BP_MHVehicle`.
+Run in order via **Tools → Execute Python Script**:
+
+1. `Scripts/editor_bootstrap_vertical_slice.py` — map, player start, vehicle
+2. `Scripts/editor_create_enhanced_input.py` — Input Actions + IMC
+3. `Scripts/editor_import_osm.py` — OSM mesh + road splines
 
 See `Docs/EDITOR_SETUP.md` for the full walkthrough.

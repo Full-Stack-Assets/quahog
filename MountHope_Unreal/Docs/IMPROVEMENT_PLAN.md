@@ -77,15 +77,15 @@ From `Docs/VERTICAL_SLICE.md`:
 
 ### Phase 2 — World geometry
 
-1. Import `quahog-project-files/mapdata/southcoast.obj` per `Docs/OSM_TO_UNREAL.md`.
-2. Procedural mesh or spline actors driven by `UMHWorldSliceSubsystem` road data.
+1. Run `Scripts/editor_import_osm.py` (imports OBJ + slice road splines).
+2. Verify scale/collision in viewport; tune bbox caps in the script if needed.
 3. Nav mesh bake on imported roads.
 
 ### Phase 3 — Enhanced Input migration
 
-Replace legacy `DefaultInput.ini` axis/action bindings with `UInputMappingContext`
-assets and wire `MHPlayerCharacter` to `UEnhancedInputComponent` (plugin already
-enabled).
+Done in C++ (`MHPlayerCharacter` supports Enhanced Input with legacy fallback).
+Run `Scripts/editor_create_enhanced_input.py` in the editor to create
+`IMC_Default` and Input Action assets.
 
 ### Phase 4 — Content & polish
 

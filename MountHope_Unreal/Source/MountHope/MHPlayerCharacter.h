@@ -7,6 +7,9 @@
 class USpringArmComponent;
 class UCameraComponent;
 class AMHVehiclePawn;
+class UInputAction;
+class UInputMappingContext;
+struct FInputActionValue;
 
 UCLASS()
 class MOUNTHOPE_API AMHPlayerCharacter : public ACharacter
@@ -31,6 +34,9 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Vehicle")
     bool ExitVehicle();
 
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Movement")
+    void SetSprinting(bool bEnableSprint);
+
 protected:
     virtual void BeginPlay() override;
 
@@ -40,11 +46,35 @@ protected:
     UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Mount Hope|Camera")
     TObjectPtr<UCameraComponent> FollowCamera;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float WalkSpeed = 450.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float SprintSpeed = 700.0f;
+
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Interaction")
     float InteractionRadiusMeters = 2.75f;
 
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     float VehicleInteractRange = 350.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputMappingContext> DefaultMappingContext = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_Move = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_Look = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_Sprint = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_Interact = nullptr;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_EnterExitVehicle = nullptr;
 
     UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     bool bInVehicle = false;
@@ -53,10 +83,22 @@ protected:
     TObjectPtr<AMHVehiclePawn> CurrentVehicle = nullptr;
 
 private:
+    void BindLegacyInput(UInputComponent* PlayerInputComponent);
+    void BindEnhancedInput(UInputComponent* PlayerInputComponent);
+    void AddDefaultMappingContext();
+
+    void InputMove(const FInputActionValue& Value);
+    void InputLook(const FInputActionValue& Value);
+    void InputSprintStart(const FInputActionValue& Value);
+    void InputSprintStop(const FInputActionValue& Value);
+    void InputInteract(const FInputActionValue& Value);
+    void InputEnterExitVehicle(const FInputActionValue& Value);
+
     void MoveForward(float Value);
     void MoveRight(float Value);
     void Turn(float Value);
     void LookUp(float Value);
 
+    void TryInteractWithWorld();
     AMHVehiclePawn* FindNearestVehicle() const;
 };

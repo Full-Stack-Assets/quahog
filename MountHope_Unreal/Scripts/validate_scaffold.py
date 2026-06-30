@@ -54,6 +54,8 @@ REQUIRED_FILES = [
     "Scripts/build.sh",
     "Scripts/package.sh",
     "Scripts/editor_bootstrap_vertical_slice.py",
+    "Scripts/editor_create_enhanced_input.py",
+    "Scripts/editor_import_osm.py",
 ]
 
 EXPECTED_PLUGINS = {
@@ -150,12 +152,21 @@ def validate_source_contract() -> None:
             fail(f"MHGameModeBase.cpp is missing mission helper: {symbol}")
 
     player_source = read_text("Source/MountHope/MHPlayerCharacter.cpp")
-    for binding in ("MoveForward", "MoveRight", "Interact", "EnterExitVehicle"):
-        if binding not in player_source:
-            fail(f"MHPlayerCharacter.cpp is missing input binding: {binding}")
-    for symbol in ("EnterVehicle", "ExitVehicle", "FindNearestVehicle"):
+    for symbol in (
+        "UEnhancedInputComponent",
+        "BindEnhancedInput",
+        "BindLegacyInput",
+        "InputMove",
+        "EnterVehicle",
+        "ExitVehicle",
+        "FindNearestVehicle",
+    ):
         if symbol not in player_source:
-            fail(f"MHPlayerCharacter.cpp is missing vehicle helper: {symbol}")
+            fail(f"MHPlayerCharacter.cpp is missing: {symbol}")
+
+    default_input = read_text("Config/DefaultInput.ini")
+    if "EnhancedInput.EnhancedPlayerInput" not in default_input:
+        fail("DefaultInput.ini does not set EnhancedPlayerInput as default")
 
     trigger_source = read_text("Source/MountHope/MHMissionTriggerActor.cpp")
     for symbol in ("SetTriggerRadius", "ResetConsumed"):
