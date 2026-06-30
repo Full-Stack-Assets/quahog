@@ -15,6 +15,7 @@ REPO_ROOT = PROJECT_ROOT.parent
 REQUIRED_FILES = [
     "MountHope.uproject",
     "Config/DefaultEngine.ini",
+    "Config/DefaultGameplayTags.ini",
     "Config/DefaultGame.ini",
     "Config/DefaultInput.ini",
     "Source/MountHope/MountHope.Build.cs",
@@ -28,10 +29,20 @@ REQUIRED_FILES = [
     "Source/MountHope/MHInteractable.h",
     "Source/MountHope/MHEconomySubsystem.h",
     "Source/MountHope/MHEconomySubsystem.cpp",
+    "Source/MountHope/MHDialogueSubsystem.h",
+    "Source/MountHope/MHDialogueSubsystem.cpp",
     "Source/MountHope/MHMissionSubsystem.h",
     "Source/MountHope/MHMissionSubsystem.cpp",
     "Source/MountHope/MHOpenWorldSubsystem.h",
     "Source/MountHope/MHOpenWorldSubsystem.cpp",
+    "Source/MountHope/MHReputationSubsystem.h",
+    "Source/MountHope/MHReputationSubsystem.cpp",
+    "Source/MountHope/MHSaveGame.h",
+    "Source/MountHope/MHSaveSubsystem.h",
+    "Source/MountHope/MHSaveSubsystem.cpp",
+    "Source/MountHope/MHWantedSubsystem.h",
+    "Source/MountHope/MHWantedSubsystem.cpp",
+    "Docs/READY_TO_PLAY_CHECKLIST.md",
     "Docs/VERTICAL_SLICE.md",
     "Docs/OSM_TO_UNREAL.md",
 ]
@@ -107,6 +118,24 @@ def validate_source_contract() -> None:
     for dependency in ("EnhancedInput", "GameplayTags", "ChaosVehicles"):
         if dependency not in build_source:
             fail(f"MountHope.Build.cs is missing dependency: {dependency}")
+
+    subsystem_contracts = {
+        "Source/MountHope/MHDialogueSubsystem.h": ("BeginConversation", "AdvanceConversation"),
+        "Source/MountHope/MHWantedSubsystem.h": ("ReportCrime", "GetWantedLevel"),
+        "Source/MountHope/MHReputationSubsystem.h": ("AddReputation", "MeetsReputation"),
+        "Source/MountHope/MHSaveSubsystem.h": ("LoadGameState", "SaveGameState"),
+        "Source/MountHope/MHSaveGame.h": ("CashBalance", "CompletedMissions"),
+    }
+    for relative_path, expected_symbols in subsystem_contracts.items():
+        source = read_text(relative_path)
+        for symbol in expected_symbols:
+            if symbol not in source:
+                fail(f"{relative_path} is missing symbol: {symbol}")
+
+    checklist = read_text("Docs/READY_TO_PLAY_CHECKLIST.md")
+    for required_phrase in ("Packaged Windows PC build", "Free-roam remains available", "Map uses real OSM-derived"):
+        if required_phrase not in checklist:
+            fail(f"READY_TO_PLAY_CHECKLIST.md is missing: {required_phrase}")
 
 
 def validate_existing_data_links() -> None:
