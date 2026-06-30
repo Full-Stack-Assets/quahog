@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import polygonClipping from "polygon-clipping";
-import { makeAsphaltTexture, makeCobbleTexture, makeNoiseNormal, makeGroundTexture } from "./textures";
+import { makeAsphaltTexture, makeCobbleTexture, makeCobbleNormal, makeNoiseNormal, makeGroundTexture } from "./textures";
 import { useGame } from "../store";
 import type { Road } from "../slice";
 
@@ -223,6 +223,7 @@ export function Roads({ roads }: { roads: Road[] }) {
     t.repeat.set(1, 0.5); // bigger cobbles along length
     return t;
   }, []);
+  const cobbleNrm = useMemo(() => { const t = makeCobbleNormal(); t.repeat.set(1, 0.5); return t; }, []);
   const nrm = useMemo(() => makeNoiseNormal(), []);
   const ns = useMemo(() => new THREE.Vector2(0.4, 0.4), []);
   const sidewalkTex = useMemo(() => { const t = makeGroundTexture(); t.repeat.set(3, 0.4); return t; }, []);
@@ -303,7 +304,7 @@ export function Roads({ roads }: { roads: Road[] }) {
           )}
           {c.cobble && (
             <mesh geometry={c.cobble} receiveShadow>
-              <meshStandardMaterial map={cobbleTex} color="#8a8580" roughness={0.95} userData={{ base: 0.95 }} />
+              <meshStandardMaterial map={cobbleTex} normalMap={cobbleNrm} normalScale={ns} color="#8a8580" roughness={0.95} userData={{ base: 0.95 }} />
             </mesh>
           )}
           {c.service && (

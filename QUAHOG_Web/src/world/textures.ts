@@ -353,6 +353,47 @@ export function makeCobbleTexture(): THREE.Texture {
   return asColor(t);
 }
 
+// Normal map for the cobblestone: each rounded sett is a raised dome, the joints
+// recessed, Sobel-converted so the setts catch light with real relief + shadow
+// in the joints (matches makeCobbleTexture's running-bond layout).
+let _cobbleNormal: THREE.Texture | null = null;
+export function makeCobbleNormal(): THREE.Texture {
+  if (_cobbleNormal) return _cobbleNormal;
+  const N = 256;
+  const [hc, h] = canvas(N);
+  h.fillStyle = "#1e1e1e"; h.fillRect(0, 0, N, N); // joints low
+  const SP = 22;
+  for (let y = -SP; y < N + SP; y += SP) {
+    const row = Math.round(y / SP);
+    for (let x = -SP; x < N + SP; x += SP) {
+      const ox = (row % 2) * (SP / 2);
+      const cx = x + ox, cy = y, r = SP * 0.46;
+      const g = h.createRadialGradient(cx, cy, 1, cx, cy, r);
+      g.addColorStop(0, "#dcdcdc"); g.addColorStop(0.8, "#9a9a9a"); g.addColorStop(1, "#303030"); // sett dome
+      h.fillStyle = g; h.beginPath(); h.arc(cx, cy, r, 0, Math.PI * 2); h.fill();
+    }
+  }
+  const src = h.getImageData(0, 0, N, N).data;
+  const [nc, n] = canvas(N);
+  const dst = n.createImageData(N, N);
+  const ht = (x: number, y: number) => src[(((y + N) % N) * N + ((x + N) % N)) * 4] / 255;
+  const k = 2.6;
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const dx = (ht(x - 1, y) - ht(x + 1, y)) * k, dy = (ht(x, y - 1) - ht(x, y + 1)) * k;
+    const len = Math.hypot(dx, dy, 1);
+    const i = (y * N + x) * 4;
+    dst.data[i] = Math.round((dx / len * 0.5 + 0.5) * 255);
+    dst.data[i + 1] = Math.round((dy / len * 0.5 + 0.5) * 255);
+    dst.data[i + 2] = Math.round((1 / len * 0.5 + 0.5) * 255);
+    dst.data[i + 3] = 255;
+  }
+  n.putImageData(dst, 0, 0);
+  const t = new THREE.Texture(nc);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  _cobbleNormal = asData(t);
+  return _cobbleNormal;
+}
+
 /** Asphalt texture for road ribbons (u across width, v along length). */
 export function makeAsphaltTexture(withLanes: boolean): THREE.Texture {
   const S = 256;
