@@ -30,6 +30,8 @@ var _target: Vector3 = Vector3.ZERO
 var _has_target: bool = false
 var _yaw: float = 0.0
 var _light_meshes: Array[MeshInstance3D] = []
+var stop_timer: float = 0.0
+var carjacked: bool = false
 
 
 func setup(p_path: String, p_height: float, p_speed: float, p_waypoints: PackedVector3Array) -> void :
@@ -107,6 +109,14 @@ func update_running_lights(night: float) -> void :
             (mi.material_override as StandardMaterial3D).emission_energy_multiplier = e
 
 
+func halt(duration: float = 1.6) -> void :
+    stop_timer = maxf(stop_timer, duration)
+
+
+func can_carjack() -> bool:
+    return stop_timer > 0.0 and not carjacked
+
+
 func _pick_target() -> void :
     if waypoints.size() == 0:
         _has_target = false
@@ -141,6 +151,9 @@ func _respawn_near_player() -> void :
 
 
 func _physics_process(delta: float) -> void :
+    if carjacked:
+        return
+    stop_timer = maxf(0.0, stop_timer - delta)
     # Keep traffic near the player: if it drifts too far, hop to a road near you.
     if player != null and is_instance_valid(player):
         if global_position.distance_to(player.global_position) > FAR_DIST:
@@ -155,7 +168,10 @@ func _physics_process(delta: float) -> void :
         var to_target: Vector3 = _target - global_position
         to_target.y = 0.0
         var dist: float = to_target.length()
-        if dist < ARRIVE_DIST:
+        if stop_timer > 0.0:
+            velocity.x = move_toward(velocity.x, 0.0, 12.0 * delta)
+            velocity.z = move_toward(velocity.z, 0.0, 12.0 * delta)
+        elif dist < ARRIVE_DIST:
             _pick_target()
         else:
             var dir: Vector3 = to_target / dist

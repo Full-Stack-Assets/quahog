@@ -17,6 +17,7 @@ const LAYOUT_PATH: = "user://controls_layout.json"
 var _player: CharacterBody3D = null
 var _root: Control
 var _cash_label: Label
+var _scrimshaw_label: Label = null
 var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
@@ -91,9 +92,11 @@ func _ready() -> void :
         GameManager.notify.connect(show_toast)
         GameManager.wanted_changed.connect(_on_wanted_changed)
         GameManager.faction_changed.connect(_on_faction_changed)
+        GameManager.scrimshaw_changed.connect(_on_scrimshaw_changed)
         _on_cash_changed(GameManager.cash)
         _on_wanted_changed(GameManager.wanted_level)
         _on_faction_changed(GameManager.faction_level)
+        _on_scrimshaw_changed(GameManager.scrimshaw_found())
 
 
 func bind_player(player: CharacterBody3D) -> void :
@@ -377,7 +380,7 @@ func _build_top_bar() -> void :
     _root.add_child(panel)
     panel.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
     panel.position = Vector2(-260, 24)
-    panel.custom_minimum_size = Vector2(236, 64)
+    panel.custom_minimum_size = Vector2(236, 88)
 
     var margin: = MarginContainer.new()
     margin.add_theme_constant_override("margin_left", 22)
@@ -386,12 +389,21 @@ func _build_top_bar() -> void :
     margin.add_theme_constant_override("margin_bottom", 8)
     panel.add_child(margin)
 
+    var stack: = VBoxContainer.new()
+    stack.alignment = BoxContainer.ALIGNMENT_CENTER
+    margin.add_child(stack)
+
     _cash_label = Label.new()
     _cash_label.text = "$0"
     _cash_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-    _cash_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
     _apply_font(_cash_label, 34, Color(0.96, 0.81, 0.45))
-    margin.add_child(_cash_label)
+    stack.add_child(_cash_label)
+
+    _scrimshaw_label = Label.new()
+    _scrimshaw_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_scrimshaw_label, 20, Color(0.92, 0.86, 0.68))
+    _scrimshaw_label.visible = false
+    stack.add_child(_scrimshaw_label)
 
 
 func _build_prompt() -> void :
@@ -931,6 +943,16 @@ func _load_layout() -> void :
 func _on_cash_changed(value: int) -> void :
     if _cash_label:
         _cash_label.text = "$" + str(value)
+
+
+func _on_scrimshaw_changed(found: int) -> void :
+    if _scrimshaw_label == null:
+        return
+    if found <= 0:
+        _scrimshaw_label.visible = false
+        return
+    _scrimshaw_label.visible = true
+    _scrimshaw_label.text = "🦴 %d/%d scrimshaw" % [found, GameManager.SCRIMSHAW_TOTAL]
 
 
 func _on_interactable_changed(prompt: String) -> void :

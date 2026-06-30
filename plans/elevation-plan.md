@@ -91,6 +91,12 @@ These are the highest-leverage moves, in order:
 31. **Faction enforcers** — street muscle spawn when faction heat ≥ 1 (`faction_enforcer.gd`). **DONE**
 32. **Delivery job polish** — distance-scaled payout + km readout (`job_manager.gd`). **DONE**
 
+### Tier 9 — Exploration & driving rewards
+
+33. **Scrimshaw collectibles** — 8 hidden artifacts downtown, persisted save, HUD tally. **DONE**
+34. **Near-miss bonus** — fast close passes on traffic pay +$15 (`car.gd`). **DONE**
+35. **Traffic carjack** — ram traffic to stop it, then steal the ride (`traffic_car.gd`, `game_world.gd`). **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -115,13 +121,13 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A10 | Act III: Gloria storm, Battleship finale | **[Godot]** done |
 | A11 | Delivery job polish (markers, payout UX, chains) | **[Godot]** done |
 | A12 | Side activities: street races, boxing, boat smuggling | **[Both]** |
-| A13 | Collectibles / photo-ops at landmarks | **[Web]** partial |
+| A13 | Collectibles / photo-ops at landmarks | **[Godot]** done (scrimshaw) |
 | A14 | Chop shop / weapons gated by progression | Design |
 | A15 | Respect/reputation per faction | Design |
 | A16 | Player upgrades (driving, shooting, health, stamina) | |
 | A17 | Busted/wasted consequence screens | **[Godot]** done |
-| A18 | Near-miss driving cash bonus | **[Web]** |
-| A19 | Carjack traffic on foot | **[Web]** |
+| A18 | Near-miss driving cash bonus | **[Godot]** done |
+| A19 | Carjack traffic on foot | **[Godot]** done |
 | A20 | Vehicle damage, smoke, explosions | **[Godot]** partial (body damage, impacts, smoke) |
 | A21 | Ram traffic to stop / steal | **[Both]** |
 | A22 | Pilotable boat / yacht | **[Web]** |

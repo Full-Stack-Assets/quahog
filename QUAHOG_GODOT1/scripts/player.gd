@@ -70,6 +70,7 @@ const CAR_CAM_YAW_MAX: float = 0.85
 var _car_cam_yaw: float = 0.0
 var _car_cam_pitch: float = 0.0
 var _cars: Array = []
+var _traffic_cars: Array = []
 
 
 var wanted_system: Node = null
@@ -233,6 +234,10 @@ func register_systems(p_wanted: Node, p_spawn: Vector3) -> void :
 
 func register_cars(cars: Array) -> void :
     _cars = cars
+
+
+func register_traffic(cars: Array) -> void :
+    _traffic_cars = cars
 
 func owns_weapon(id: String) -> bool:
     return _weapons.has(id)
@@ -542,6 +547,14 @@ func try_enter_vehicle() -> void :
     if _driving:
         exit_car()
         return
+    var world: = get_tree().get_first_node_in_group("game_world")
+    if world and world.has_method("find_carjackable_traffic"):
+        var tc: Variant = world.find_carjackable_traffic(global_position, 6.5)
+        if tc and world.has_method("carjack_traffic"):
+            var jacked: Variant = world.carjack_traffic(tc)
+            if jacked:
+                enter_car(jacked)
+                return
     var nearest: Node = null
     var best: = 7.5
     for c in _cars:

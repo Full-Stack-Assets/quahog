@@ -63,6 +63,7 @@ var body_damage: float = 0.0
 const MAX_BODY_DAMAGE: float = 100.0
 var _impact_cd: float = 0.0
 var _smoke_t: float = 0.0
+var _near_miss_cd: float = 0.0
 
 
 func _ready() -> void :
@@ -391,6 +392,7 @@ func _drive(delta: float) -> void :
     _effect_ambient_engine(delta)
     _effect_skid(delta)
     _effect_damage_smoke(delta)
+    _check_near_miss(delta)
     if active and GameManager:
         var ang: float = GameManager.day_phase * TAU
         var daylight: float = clampf(sin(ang + PI), 0.0, 1.0)
@@ -465,9 +467,12 @@ func _on_body_entered(body: Node) -> void :
     linear_speed *= 0.5
     angular_speed *= 0.65
     if traffic:
-        other.global_position += vehicle_model.global_basis.z.normalized() * 1.2
-        if "speed" in other:
-            other.speed = 0.0
+        if other.has_method("halt"):
+            other.halt(1.6)
+        else:
+            other.global_position += vehicle_model.global_basis.z.normalized() * 1.2
+            if "speed" in other:
+                other.speed = 0.0
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/vehicle/vehicle_impact.mp3")
         if snd:
@@ -478,6 +483,32 @@ func _on_body_entered(body: Node) -> void :
         GameManager.show_message("Vehicle damage — body at %d%%" % int(get_damage_percent() * 100.0))
     if body_damage >= MAX_BODY_DAMAGE and GameManager:
         GameManager.show_message("Ride's totaled — grab another car.")
+
+
+func _check_near_miss(delta: float) -> void :
+    if not active:
+        return
+    _near_miss_cd = maxf(0.0, _near_miss_cd - delta)
+    if _near_miss_cd > 0.0 or absf(linear_speed) < 24.0:
+        return
+    var world: = get_tree().get_first_node_in_group("game_world")
+    if world == null or not ("_traffic" in world):
+        return
+    var missed: bool = false
+    var cp: Vector3 = vehicle_model.global_position if vehicle_model else global_position
+    for tc in world._traffic:
+        if not is_instance_valid(tc) or ("carjacked" in tc and tc.carjacked):
+            continue
+        var d: float = Vector2(cp.x - tc.global_position.x, cp.z - tc.global_position.z).length()
+        if d < 4.4 and absf(linear_speed) > 6.0:
+            if tc.has_method("halt"):
+                tc.halt(1.6)
+        elif d < 6.6:
+            missed = true
+    if missed and GameManager:
+        _near_miss_cd = 1.1
+        GameManager.add_cash(15)
+        GameManager.show_message("NEAR MISS +$15")
 
 
 # Camera orbit offset (driver can pan the chase cam around the car).

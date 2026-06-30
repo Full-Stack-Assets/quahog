@@ -8,6 +8,7 @@ signal cash_changed(new_cash: int)
 signal notify(message: String)
 signal wanted_changed(level: int)
 signal faction_changed(level: int)
+signal scrimshaw_changed(found: int)
 signal open_shop_requested(shop_kind: String)
 signal open_diner_requested()
 signal graphics_quality_changed(level: int)
@@ -15,6 +16,7 @@ signal graphics_quality_changed(level: int)
 const SAVE_PATH: = "user://mount_hope_save.json"
 const QUALITY_NAMES: PackedStringArray = ["Low", "Medium", "High"]
 const STARTING_CASH: = 40
+const SCRIMSHAW_TOTAL: int = 8
 
 var cash: int = STARTING_CASH
 var missions_completed: int = 0
@@ -27,6 +29,7 @@ var campaign_step: int = 0
 var campaign_done: bool = false
 var player_spawn_override: = Vector3.ZERO
 var has_spawn_override: bool = false
+var scrimshaw_mask: int = 0
 
 # Cheats (toggled from the main-menu CHEATS panel; persisted with the save).
 # no_police suppresses all wanted-heat for testing. Defaults OFF so the crime loop bites.
@@ -175,6 +178,28 @@ func set_faction(level: int) -> void :
     faction_level = level
     faction_changed.emit(faction_level)
 
+
+func scrimshaw_found() -> int:
+    var n: int = 0
+    for i in SCRIMSHAW_TOTAL:
+        if scrimshaw_mask & (1 << i):
+            n += 1
+    return n
+
+
+func is_scrimshaw_collected(index: int) -> bool:
+    return index >= 0 and index < SCRIMSHAW_TOTAL and (scrimshaw_mask & (1 << index)) != 0
+
+
+func collect_scrimshaw(index: int) -> bool:
+    if index < 0 or index >= SCRIMSHAW_TOTAL:
+        return false
+    if is_scrimshaw_collected(index):
+        return false
+    scrimshaw_mask |= 1 << index
+    scrimshaw_changed.emit(scrimshaw_found())
+    return true
+
 func _ready() -> void :
     _load_graphics_cfg()
     load_game()
@@ -230,6 +255,7 @@ func save_game() -> void :
         "has_pos": has_saved_pos,
         "px": saved_pos.x, "py": saved_pos.y, "pz": saved_pos.z,
         "yaw": saved_yaw,
+        "scrimshaw_mask": scrimshaw_mask,
         "cheats": _cheat_dict(),
     }
     var f: = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -270,6 +296,8 @@ func load_game() -> void :
     if has_saved_pos:
         saved_pos = Vector3(float(data.get("px", 0.0)), float(data.get("py", 0.0)), float(data.get("pz", 0.0)))
         saved_yaw = float(data.get("yaw", 0.0))
+    scrimshaw_mask = int(data.get("scrimshaw_mask", 0))
+    scrimshaw_changed.emit(scrimshaw_found())
     cash_changed.emit(cash)
 
 func reset_save() -> void :
@@ -285,5 +313,7 @@ func reset_save() -> void :
     has_saved_pos = false
     saved_pos = Vector3.ZERO
     saved_yaw = 0.0
+    scrimshaw_mask = 0
+    scrimshaw_changed.emit(0)
     cash_changed.emit(cash)
     save_game()

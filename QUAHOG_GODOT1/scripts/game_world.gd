@@ -21,6 +21,7 @@ const StoryMissionScript: = preload("res://scripts/systems/story_mission.gd")
 const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
 const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
 const SafehouseZoneScript: = preload("res://scripts/world/safehouse_zone.gd")
+const ScrimshawCollectibleScript: = preload("res://scripts/world/scrimshaw_collectible.gd")
 const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
 const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
 const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
@@ -183,6 +184,7 @@ func _ready() -> void :
     _build_hud()
     _build_systems()
     _spawn_pickups()
+    _spawn_scrimshaw()
     _spawn_shops()
     _build_shop_menu()
     _build_diner()
@@ -816,6 +818,8 @@ func _build_systems() -> void :
         _player.register_systems(_wanted_system, spawn)
     if _player.has_method("register_cars"):
         _player.register_cars(_drivable_cars)
+    if _player.has_method("register_traffic"):
+        _player.register_traffic(_traffic)
     if _hud and _hud.has_method("bind_systems"):
         _hud.bind_systems(_job_manager, _wanted_system)
     if _hud and _hud.has_method("bind_story") and _story_mission:
@@ -855,6 +859,68 @@ func _spawn_pickups() -> void :
         pickup.set_script(WeaponPickupScript)
         add_child(pickup)
         pickup.setup(s[2], _player, s[0], s[1], 0)
+
+
+func _spawn_scrimshaw() -> void :
+    if _player == null:
+        return
+    # World XZ (z = -north) — mirrors web Collectibles.tsx spots.
+    var spots: Array[Vector3] = [
+        Vector3(-272.0, 0.0, -106.0), Vector3(-244.0, 0.0, -70.0), Vector3(-300.0, 0.0, -130.0),
+        Vector3(-210.0, 0.0, -100.0), Vector3(-330.0, 0.0, -80.0), Vector3(-256.0, 0.0, -150.0),
+        Vector3(-225.0, 0.0, -60.0), Vector3(-290.0, 0.0, -175.0),
+    ]
+    for i in spots.size():
+        if GameManager and GameManager.is_scrimshaw_collected(i):
+            continue
+        var c: = Node3D.new()
+        c.set_script(ScrimshawCollectibleScript)
+        add_child(c)
+        c.setup(i, spots[i], _player)
+
+
+func find_carjackable_traffic(near: Vector3, radius: float) -> Node:
+    var best: Node = null
+    var best_d: float = radius
+    for tc in _traffic:
+        if not is_instance_valid(tc):
+            continue
+        if not tc.has_method("can_carjack") or not tc.can_carjack():
+            continue
+        var d: float = near.distance_to(tc.global_position)
+        if d < best_d:
+            best_d = d
+            best = tc
+    return best
+
+
+func carjack_traffic(tc: Node) -> Node:
+    if tc == null or not is_instance_valid(tc) or not tc.has_method("can_carjack"):
+        return null
+    if not tc.can_carjack():
+        return null
+    tc.carjacked = true
+    tc.visible = false
+    tc.set_physics_process(false)
+    var pos: Vector3 = tc.global_position
+    var yaw: float = 0.0
+    if "mesh_root" in tc and tc.mesh_root:
+        yaw = rad_to_deg(tc.mesh_root.rotation.y)
+    var path: String = str(tc.model_path) if "model_path" in tc else "res://assets/props/vehicles/sedan.glb"
+    var spec: Dictionary = {
+        "res://assets/props/vehicles/taxi.glb": {"path": "res://assets/props/vehicles/taxi.glb", "h": 1.5, "name": "Cab", "spd": 76.0, "trq": 310.0, "mass": 1100.0},
+        "res://assets/props/vehicles/suv.glb": {"path": "res://assets/props/vehicles/suv.glb", "h": 1.85, "name": "SUV", "spd": 62.0, "trq": 340.0, "mass": 1500.0},
+    }.get(path, {"path": "res://assets/props/vehicles/sedan.glb", "h": 1.5, "name": "Sedan", "spd": 68.0, "trq": 280.0, "mass": 1000.0})
+    _spawn_drivable_car(spec, pos, yaw)
+    var car = _drivable_cars.back()
+    if _player and _player.has_method("register_cars"):
+        _player.register_cars(_drivable_cars)
+    if _wanted_system and _wanted_system.has_method("add_heat"):
+        _wanted_system.add_heat(1)
+    if _wanted_system and _wanted_system.has_method("add_faction_heat"):
+        _wanted_system.add_faction_heat(1)
+    GameManager.show_message("Carjacked — lose the heat.")
+    return car
 
 
 func _spawn_shops() -> void :
