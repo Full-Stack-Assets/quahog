@@ -17,6 +17,9 @@ const WantedSystemScript: = preload("res://scripts/systems/wanted_system.gd")
 const WeaponPickupScript: = preload("res://scripts/weapons/weapon_pickup.gd")
 const ShopScript: = preload("res://scripts/world/shop.gd")
 const ShopMenuScript: = preload("res://scripts/ui/shop_menu.gd")
+const StoryMissionScript: = preload("res://scripts/systems/story_mission.gd")
+const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
+const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
 
 # Cars everywhere: every parked car is a real, takeable drivable car (parked
 # cars are frozen/dormant in car.gd, so a full map costs almost nothing until you
@@ -93,9 +96,16 @@ var _last_stream_tile: Vector2i = Vector2i(999999, 999999)
 var _contacts: Array = []
 var _job_manager: Node = null
 var _wanted_system: Node = null
+var _story_mission: Node = null
+var _water_hazard: Node = null
+
+
+func get_wanted_system() -> Node:
+    return _wanted_system
 
 
 func _ready() -> void :
+    add_to_group("game_world")
     # Cheat: global slow-mo / fast-forward (clamped to a sane range).
     if GameManager:
         Engine.time_scale = clampf(GameManager.cheat_time_scale, 0.1, 4.0)
@@ -554,19 +564,37 @@ func _build_systems() -> void :
     add_child(_job_manager)
     _job_manager.setup(_player, self, _job_locations())
 
+    _story_mission = Node.new()
+    _story_mission.set_script(StoryMissionScript)
+    add_child(_story_mission)
+    _story_mission.setup(_player, self)
+    if _story_mission.has_method("try_start_opener"):
+        _story_mission.call_deferred("try_start_opener")
+
+    _water_hazard = Node.new()
+    _water_hazard.set_script(WaterHazardScript)
+    add_child(_water_hazard)
+    var spawn: Vector3 = _city.player_spawn if _city else Vector3(8, 0.6, 8)
+    _water_hazard.setup(_player, spawn)
+
+    var respray: = Node3D.new()
+    respray.set_script(ResprayZoneScript)
+    add_child(respray)
+    respray.global_position = Vector3(48.0, 0.0, -12.0)
+
 
     for c in _contacts:
         if is_instance_valid(c):
             c.job_manager = _job_manager
 
-
-    var spawn: Vector3 = _city.player_spawn if _city else Vector3(8, 0.6, 8)
     if _player.has_method("register_systems"):
         _player.register_systems(_wanted_system, spawn)
     if _player.has_method("register_cars"):
         _player.register_cars(_drivable_cars)
     if _hud and _hud.has_method("bind_systems"):
         _hud.bind_systems(_job_manager, _wanted_system)
+    if _hud and _hud.has_method("bind_story") and _story_mission:
+        _hud.bind_story(_story_mission)
 
 
 func _job_locations() -> Array[Vector3]:
@@ -583,14 +611,17 @@ func _spawn_pickups() -> void :
     var spawn: Vector3 = _city.player_spawn if _city else Vector3(8, 0.6, 8)
 
     var specs: = [
-        ["weapon", "pistol", spawn + Vector3(6.0, 0, -8.0)], 
-        ["weapon", "bat", Vector3(68.0, 0.5, 10.0)], 
-        ["weapon", "shotgun", Vector3(-48.0, 0.5, 66.0)], 
-        ["weapon", "rifle", Vector3(-100.0, 0.5, -98.0)], 
-        ["medkit", "", Vector3(12.0, 0.5, 64.0)], 
-        ["medkit", "", Vector3(64.0, 0.5, -64.0)], 
-        ["armor", "", Vector3(-64.0, 0.5, -8.0)], 
-        ["armor", "", Vector3(104.0, 0.5, 100.0)], 
+        ["weapon", "pistol", spawn + Vector3(6.0, 0, -8.0)],
+        ["weapon", "bat", Vector3(68.0, 0.5, 10.0)],
+        ["weapon", "shotgun", Vector3(-48.0, 0.5, 66.0)],
+        ["weapon", "rifle", Vector3(-100.0, 0.5, -98.0)],
+        ["ammo", "pistol", spawn + Vector3(10.0, 0, -6.0)],
+        ["ammo", "shotgun", Vector3(-44.0, 0.5, 72.0)],
+        ["ammo", "rifle", Vector3(-92.0, 0.5, -90.0)],
+        ["medkit", "", Vector3(12.0, 0.5, 64.0)],
+        ["medkit", "", Vector3(64.0, 0.5, -64.0)],
+        ["armor", "", Vector3(-64.0, 0.5, -8.0)],
+        ["armor", "", Vector3(104.0, 0.5, 100.0)],
     ]
     for s in specs:
         var pickup: = Node3D.new()

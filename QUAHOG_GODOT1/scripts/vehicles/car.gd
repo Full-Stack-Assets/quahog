@@ -28,6 +28,11 @@ var handbrake_on: bool = false
 func set_handbrake(on: bool) -> void :
     handbrake_on = on
 
+
+func honk() -> void :
+    if AudioManager:
+        AudioManager.play_horn()
+
 var input: Vector3 = Vector3.ZERO
 var normal: Vector3 = Vector3.UP
 var acceleration: float = 0.0

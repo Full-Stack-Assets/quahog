@@ -100,3 +100,22 @@ func play_sfx(stream: AudioStream, volume_db: float = 0.0, pitch_variation: floa
                 p.pitch_scale = randf_range(1.0 - pitch_variation, 1.0 + pitch_variation)
             p.play()
             return
+
+
+# Short two-tone horn (web parity: square-wave feel via pitched UI blips).
+func play_horn() -> void :
+    var snd: = load("res://assets/audio/sfx/ui/ui_ui_confirm.mp3")
+    if snd == null:
+        return
+    play_sfx(snd, -4.0, 0.0)
+    var t: = create_tween()
+    t.tween_interval(0.08)
+    t.tween_callback(func() -> void :
+        for p in sfx_players:
+            if not p.playing:
+                p.stream = snd
+                p.volume_db = -6.0
+                p.pitch_scale = 1.22
+                p.play()
+                return
+    )

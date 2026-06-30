@@ -42,6 +42,7 @@ var _health_bar: ProgressBar = null
 var _armor_bar: ProgressBar = null
 var _job_manager: Node = null
 var _wanted_system: Node = null
+var _story_mission: Node = null
 
 var _joystick
 var _look_area
@@ -131,6 +132,12 @@ func bind_systems(job_manager: Node, wanted_system: Node) -> void :
         _minimap.bind(_player, _job_manager, _wanted_system)
     if _big_map and _big_map.has_method("bind"):
         _big_map.bind(_player, _job_manager)
+
+
+func bind_story(story: Node) -> void :
+    _story_mission = story
+    if _story_mission and _story_mission.has_signal("mission_changed"):
+        _story_mission.mission_changed.connect(_on_story_changed)
 
 
 func _wire_tap(id: String, cb: Callable) -> void :
@@ -273,6 +280,16 @@ func _on_driving_changed(driving: bool) -> void :
 
 
 func _on_job_changed(active: bool, text: String, target: Vector3) -> void :
+    if _story_mission and _story_mission.has_method("has_active_mission") and _story_mission.has_active_mission():
+        return
+    _set_objective(active, text, target)
+
+
+func _on_story_changed(active: bool, text: String, target: Vector3) -> void :
+    _set_objective(active, text, target)
+
+
+func _set_objective(active: bool, text: String, target: Vector3) -> void :
     _obj_active = active
     _obj_text = text
     _obj_target = target
@@ -302,7 +319,11 @@ func _process(_delta: float) -> void :
         return
     if _player == null or not is_instance_valid(_player):
         return
-    var d: float = _player.global_position.distance_to(_obj_target)
+    var target: Vector3 = _obj_target
+    if _story_mission and _story_mission.has_method("has_active_mission") and _story_mission.has_active_mission():
+        if _story_mission.has_method("get_objective_position"):
+            target = _story_mission.get_objective_position()
+    var d: float = _player.global_position.distance_to(target)
     var dist_str: String = ""
     if d < 1000.0:
         dist_str = "%d m" % int(d)
@@ -390,6 +411,7 @@ func _build_touch_controls() -> void :
         {"id": "crouch", "label": "DUCK", "accent": Color(0.35, 0.5, 0.32), "hold": true, "action": "crouch", "pos": Vector2(1352, 764)},
         {"id": "swap", "label": "SWAP", "accent": Color(0.55, 0.4, 0.6), "hold": false, "action": "swap", "pos": Vector2(1212, 904)},
         {"id": "handbrake", "label": "BRAKE", "accent": Color(0.7, 0.5, 0.2), "hold": true, "action": "handbrake", "pos": Vector2(1212, 764)},
+        {"id": "horn", "label": "HORN", "accent": Color(0.35, 0.48, 0.62), "hold": false, "action": "horn", "pos": Vector2(1072, 764)},
     ]
     for s in specs:
         var b: = TouchButton.new()
