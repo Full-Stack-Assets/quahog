@@ -171,6 +171,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     _build_overlays(parent, FULL_BBOX)
     _build_braga_bridge(parent)
     _build_battleship(parent)
+    _build_bridge_decks(parent)
     _buildings_root = Node3D.new()
     _buildings_root.name = "Buildings"
     parent.add_child(_buildings_root)
@@ -182,6 +183,7 @@ func build_region(parent: Node3D, center_tile: Vector2i = Vector2i.ZERO, radius_
     # stream per-tile in stream_buildings().
     _scan_slice(parent)
     _derive_spawns()
+    _build_traffic_props(parent)
     # Seed the tiles around the initial spawn (NB core) so the player loads into
     # a built city immediately.
     stream_buildings(player_spawn)
@@ -336,9 +338,15 @@ func _commit_facade(parent: Node3D, st: SurfaceTool, tex: Texture2D) -> void :
     if tex:
         mat.albedo_texture = tex
         mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+    mat.emission_enabled = true
+    mat.emission = Color(1.0, 0.78, 0.45)
+    mat.emission_energy_multiplier = 0.0
     st.set_material(mat)
     var mi: = MeshInstance3D.new()
     mi.mesh = st.commit()
+    var glow: = mat.duplicate() as StandardMaterial3D
+    mi.material_override = glow
+    mi.add_to_group("facade_emissive")
     parent.add_child(mi)
 
 
@@ -860,6 +868,133 @@ func _emit_beam(st: SurfaceTool, p0: Vector3, p1: Vector3, thick: float, col: Co
 
 # Green through-truss framing the I-195 deck over the Taunton (the Braga Bridge).
 # Built once over the real crossing; the asphalt deck below stays drivable.
+func _build_bridge_decks(parent: Node3D) -> void :
+    var root: = Node3D.new()
+    root.name = "BridgeDecks"
+    parent.add_child(root)
+    _add_bridge_deck(root, BRAGA_A, BRAGA_B, BRAGA_HALF * 2.0, BRAGA_DECK_Y + 0.15)
+    # New Bedford hurricane barrier crossing (world fast-travel ~860, 2000).
+    _add_bridge_deck(root, Vector2(380.0, 2000.0), Vector2(1520.0, 2000.0), 14.0, 0.75)
+    # New Bedford ↔ Fairhaven span.
+    _add_bridge_deck(root, Vector2(1080.0, -8.0), Vector2(2120.0, -52.0), 12.0, 0.7)
+
+
+func _add_bridge_deck(root: Node3D, a_slice: Vector2, b_slice: Vector2, width: float, y_up: float) -> void :
+    var aw: = to_world(a_slice.x, a_slice.y, y_up)
+    var bw: = to_world(b_slice.x, b_slice.y, y_up)
+    var mid: Vector3 = (aw + bw) * 0.5
+    var d: Vector3 = bw - aw
+    var length: float = d.length()
+    if length < 1.0:
+        return
+    var yaw: float = atan2(d.z, d.x)
+    var body: = StaticBody3D.new()
+    body.collision_layer = 1
+    body.collision_mask = 0
+    var col: = CollisionShape3D.new()
+    var box: = BoxShape3D.new()
+    box.size = Vector3(length, 0.35, width)
+    col.shape = box
+    body.add_child(col)
+    body.position = mid
+    body.rotation.y = yaw
+    root.add_child(body)
+    var mesh: = MeshInstance3D.new()
+    var bm: = BoxMesh.new()
+    bm.size = box.size
+    var mat: = StandardMaterial3D.new()
+    mat.albedo_color = Color(0.22, 0.22, 0.24)
+    mat.roughness = 0.88
+    mesh.mesh = bm
+    mesh.material_override = mat
+    mesh.position = mid
+    mesh.rotation.y = yaw
+    root.add_child(mesh)
+
+
+# Stop signs + traffic lights at major arterial junctions near downtown.
+func _build_traffic_props(parent: Node3D) -> void :
+    var root: = Node3D.new()
+    root.name = "TrafficProps"
+    parent.add_child(root)
+    var core: Vector3 = player_spawn
+    var placed: int = 0
+    for key in _junctions:
+        if int(_junctions[key]) < 3:
+            continue
+        var wp: = to_world(float(key.x), float(key.y), 0.0)
+        if Vector2(wp.x - core.x, wp.z - core.z).length() > 720.0:
+            continue
+        _add_stop_sign(root, wp + Vector3(-2.5, 0.0, 1.8))
+        _add_traffic_light(root, wp + Vector3(2.5, 0.0, -1.8))
+        placed += 1
+        if placed >= 36:
+            break
+
+
+func _add_stop_sign(root: Node3D, pos: Vector3) -> void :
+    var pole: = MeshInstance3D.new()
+    var cyl: = CylinderMesh.new()
+    cyl.top_radius = 0.06
+    cyl.bottom_radius = 0.08
+    cyl.height = 2.6
+    pole.mesh = cyl
+    var pm: = StandardMaterial3D.new()
+    pm.albedo_color = Color(0.35, 0.36, 0.38)
+    pole.material_override = pm
+    pole.position = pos + Vector3(0, 1.3, 0)
+    root.add_child(pole)
+    var sign: = MeshInstance3D.new()
+    var plate: = BoxMesh.new()
+    plate.size = Vector3(0.04, 0.55, 0.55)
+    sign.mesh = plate
+    var sm: = StandardMaterial3D.new()
+    sm.albedo_color = Color(0.72, 0.08, 0.08)
+    sm.emission_enabled = true
+    sm.emission = Color(0.9, 0.1, 0.1)
+    sm.emission_energy_multiplier = 0.15
+    sign.material_override = sm
+    sign.position = pos + Vector3(0, 2.55, 0)
+    root.add_child(sign)
+
+
+func _add_traffic_light(root: Node3D, pos: Vector3) -> void :
+    var pole: = MeshInstance3D.new()
+    var cyl: = CylinderMesh.new()
+    cyl.top_radius = 0.07
+    cyl.bottom_radius = 0.09
+    cyl.height = 4.8
+    pole.mesh = cyl
+    var pm: = StandardMaterial3D.new()
+    pm.albedo_color = Color(0.32, 0.33, 0.35)
+    pole.material_override = pm
+    pole.position = pos + Vector3(0, 2.4, 0)
+    root.add_child(pole)
+    var housing: = MeshInstance3D.new()
+    var box: = BoxMesh.new()
+    box.size = Vector3(0.35, 0.9, 0.28)
+    housing.mesh = box
+    var hm: = StandardMaterial3D.new()
+    hm.albedo_color = Color(0.12, 0.12, 0.14)
+    housing.material_override = hm
+    housing.position = pos + Vector3(0, 4.9, 0)
+    root.add_child(housing)
+    var colors: Array = [Color(0.9, 0.1, 0.1), Color(0.9, 0.75, 0.1), Color(0.2, 0.85, 0.25)]
+    for i in 3:
+        var lens: = MeshInstance3D.new()
+        var lm: = BoxMesh.new()
+        lm.size = Vector3(0.08, 0.18, 0.18)
+        lens.mesh = lm
+        var m: = StandardMaterial3D.new()
+        m.albedo_color = colors[i]
+        m.emission_enabled = true
+        m.emission = colors[i]
+        m.emission_energy_multiplier = 0.35 if i == 2 else 0.12
+        lens.material_override = m
+        lens.position = pos + Vector3(0.2, 4.55 + float(i) * 0.28, 0)
+        root.add_child(lens)
+
+
 func _build_braga_bridge(parent: Node3D) -> void :
     var a: = BRAGA_A
     var b: = BRAGA_B
@@ -959,6 +1094,23 @@ func _build_battleship(parent: Node3D) -> void :
     mi.name = "Battleship"
     mi.mesh = st.commit()
     parent.add_child(mi)
+    # Mooring lights + nameplate so Battleship Cove reads from the Braga approach.
+    for off: Vector3 in [lx * 95.0, -lx * 95.0]:
+        var lamp: = OmniLight3D.new()
+        lamp.light_color = Color(1.0, 0.72, 0.42)
+        lamp.light_energy = 0.0
+        lamp.omni_range = 22.0
+        lamp.position = base + off + Vector3(0, 14.0, 0)
+        lamp.add_to_group("mooring_light")
+        parent.add_child(lamp)
+    var lbl: = Label3D.new()
+    lbl.text = "USS Massachusetts"
+    lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+    lbl.modulate = Color(0.88, 0.9, 0.92)
+    lbl.font_size = 48
+    lbl.pixel_size = 0.028
+    lbl.position = base + Vector3(0, 32.0, 0)
+    parent.add_child(lbl)
 
 
 func _emit_road(st: SurfaceTool, pts: Array, half: float, col: Color) -> void :

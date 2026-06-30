@@ -17,6 +17,11 @@ var vehicle_model: Node3D
 var camera: Camera3D
 var engine_sound: AudioStreamPlayer3D
 var screech_sound: AudioStreamPlayer3D
+var _head_l: SpotLight3D
+var _head_r: SpotLight3D
+var _tail_l: OmniLight3D
+var _tail_r: OmniLight3D
+var _light_meshes: Array[MeshInstance3D] = []
 
 
 var active: bool = false
@@ -135,6 +140,82 @@ func _ensure_cabin() -> void :
         if screech_sound.stream is AudioStreamMP3:
             (screech_sound.stream as AudioStreamMP3).loop = true
         vehicle_model.add_child(screech_sound)
+    _ensure_lights()
+
+
+func _ensure_lights() -> void :
+    if _head_l != null:
+        return
+    for side in [-1.0, 1.0]:
+        var spot: = SpotLight3D.new()
+        spot.light_color = Color(1.0, 0.94, 0.78)
+        spot.spot_range = 28.0
+        spot.spot_angle = 38.0
+        spot.light_energy = 0.0
+        spot.shadow_enabled = false
+        spot.position = Vector3(0.55 * side, 0.35, 1.05)
+        spot.rotation.y = PI
+        vehicle_model.add_child(spot)
+        if side < 0.0:
+            _head_l = spot
+        else:
+            _head_r = spot
+        var hm: = MeshInstance3D.new()
+        var hb: = BoxMesh.new()
+        hb.size = Vector3(0.22, 0.1, 0.04)
+        hm.mesh = hb
+        var m: = StandardMaterial3D.new()
+        m.albedo_color = Color(0.98, 0.94, 0.78)
+        m.emission_enabled = true
+        m.emission = Color(1.0, 0.92, 0.65)
+        m.emission_energy_multiplier = 0.2
+        hm.material_override = m
+        hm.position = Vector3(0.55 * side, 0.35, 1.08)
+        vehicle_model.add_child(hm)
+        _light_meshes.append(hm)
+    for side in [-1.0, 1.0]:
+        var tail: = OmniLight3D.new()
+        tail.light_color = Color(1.0, 0.15, 0.1)
+        tail.omni_range = 4.5
+        tail.light_energy = 0.0
+        tail.position = Vector3(0.5 * side, 0.32, -1.05)
+        vehicle_model.add_child(tail)
+        if side < 0.0:
+            _tail_l = tail
+        else:
+            _tail_r = tail
+        var tm: = MeshInstance3D.new()
+        var tb: = BoxMesh.new()
+        tb.size = Vector3(0.2, 0.08, 0.04)
+        tm.mesh = tb
+        var tmat: = StandardMaterial3D.new()
+        tmat.albedo_color = Color(0.65, 0.08, 0.08)
+        tmat.emission_enabled = true
+        tmat.emission = Color(0.9, 0.12, 0.1)
+        tmat.emission_energy_multiplier = 0.2
+        tm.material_override = tmat
+        tm.position = Vector3(0.5 * side, 0.32, -1.08)
+        vehicle_model.add_child(tm)
+        _light_meshes.append(tm)
+
+
+# Head/taillight energy from day_phase (0=day, 1=night). Braking flares tails.
+func update_vehicle_lights(night: float, braking: bool = false) -> void :
+    _ensure_lights()
+    var head_e: float = 0.15 + night * 2.4
+    var tail_e: float = 0.1 + night * 0.9 + (1.8 if braking else 0.0)
+    if _head_l:
+        _head_l.light_energy = head_e
+    if _head_r:
+        _head_r.light_energy = head_e
+    if _tail_l:
+        _tail_l.light_energy = tail_e
+    if _tail_r:
+        _tail_r.light_energy = tail_e
+    var mesh_e: float = 0.2 + night * 1.4 + (0.8 if braking else 0.0)
+    for mi in _light_meshes:
+        if is_instance_valid(mi) and mi.material_override is StandardMaterial3D:
+            (mi.material_override as StandardMaterial3D).emission_energy_multiplier = mesh_e
 
 
 # A parked car freezes its physics body and stops per-frame driving; entering
@@ -290,6 +371,12 @@ func _drive(delta: float) -> void :
 
     _effect_engine(delta)
     _effect_skid(delta)
+    if active and GameManager:
+        var ang: float = GameManager.day_phase * TAU
+        var daylight: float = clampf(sin(ang + PI), 0.0, 1.0)
+        var night: float = clampf(1.0 - daylight, 0.0, 1.0)
+        var braking: bool = handbrake_on or (_throttle < -0.05 and linear_speed > 0.5)
+        update_vehicle_lights(night, braking)
 
 
 func _effect_engine(delta: float) -> void :

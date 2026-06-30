@@ -42,7 +42,7 @@ const MAP_RADIUS: = 2
 # Each gets an emissive dusk beacon + a billboard name so the corridor towns are
 # recognizable the moment you fast-travel in — not anonymous streamed blocks.
 const HERO_LANDMARKS: Array = [
-    {"name": "Whaling Museum", "pos": Vector2(-219, 107)},
+    {"name": "Whaling Museum", "pos": Vector2(-219, 107), "tag": "museum", "h": 18.0},
     {"name": "Seamen's Bethel", "pos": Vector2(-272, 106)},
     {"name": "New Bedford City Hall", "pos": Vector2(-582, 60)},
     {"name": "Fort Taber", "pos": Vector2(1495, 4560)},
@@ -52,7 +52,8 @@ const HERO_LANDMARKS: Array = [
     {"name": "UMass Dartmouth", "pos": Vector2(-7190, 767)},
     {"name": "Westport", "pos": Vector2(-11897, 1521)},
     {"name": "Fall River City Hall", "pos": Vector2(-19475, -7216)},
-    {"name": "Battleship Cove", "pos": Vector2(-20180, -7882)},
+    {"name": "Battleship Cove", "pos": Vector2(-20180, -7882), "tag": "battleship", "h": 22.0},
+    {"name": "Lizzie Borden House", "pos": Vector2(-19599, -7080), "tag": "borden", "h": 14.0},
     {"name": "St. Mary's Cathedral", "pos": Vector2(-19696, -6969)},
     {"name": "Notre Dame Cathedral", "pos": Vector2(-17596, -6054)},
     {"name": "Narrows Center", "pos": Vector2(-20164, -7470)},
@@ -98,6 +99,8 @@ var _job_manager: Node = null
 var _wanted_system: Node = null
 var _story_mission: Node = null
 var _water_hazard: Node = null
+var _ambient_player: AudioStreamPlayer = null
+var _tod_life_t: float = 0.0
 
 
 func get_wanted_system() -> Node:
@@ -137,6 +140,7 @@ func _ready() -> void :
     _build_shop_menu()
     _start_audio()
     _setup_weather()
+    call_deferred("_apply_tod_life")
 
 
 # Emissive dusk beacon + billboard name at each curated hero landmark, so the
@@ -150,32 +154,66 @@ func _place_landmark_beacons() -> void :
     for lm in HERO_LANDMARKS:
         var p: Vector2 = lm["pos"]
         var nm: String = str(lm["name"])
+        var tag: String = str(lm.get("tag", ""))
+        var tower_h: float = float(lm.get("h", 12.0))
         var beacon: = MeshInstance3D.new()
         var cyl: = CylinderMesh.new()
-        cyl.top_radius = 0.25
-        cyl.bottom_radius = 0.7
-        cyl.height = 12.0
+        cyl.top_radius = 0.25 if tag == "" else 0.35
+        cyl.bottom_radius = 0.7 if tag == "" else 1.0
+        cyl.height = tower_h
         beacon.mesh = cyl
         var m: = StandardMaterial3D.new()
-        m.albedo_color = Color(0.95, 0.72, 0.36)
+        if tag == "museum":
+            m.albedo_color = Color(0.72, 0.58, 0.38)
+            m.emission = Color(1.0, 0.82, 0.45)
+        elif tag == "battleship":
+            m.albedo_color = Color(0.55, 0.58, 0.62)
+            m.emission = Color(0.75, 0.8, 0.9)
+        elif tag == "borden":
+            m.albedo_color = Color(0.62, 0.48, 0.42)
+            m.emission = Color(1.0, 0.55, 0.35)
+        else:
+            m.albedo_color = Color(0.95, 0.72, 0.36)
+            m.emission = Color(1.0, 0.74, 0.34)
         m.emission_enabled = true
-        m.emission = Color(1.0, 0.74, 0.34)
         m.emission_energy_multiplier = 2.4
         beacon.material_override = m
-        beacon.position = Vector3(p.x, 11.0, p.y)
+        beacon.position = Vector3(p.x, tower_h * 0.5, p.y)
         root.add_child(beacon)
         var lbl: = Label3D.new()
         lbl.text = nm
         lbl.billboard = BaseMaterial3D.BILLBOARD_ENABLED
         lbl.modulate = Color(1.0, 0.91, 0.68)
         lbl.outline_modulate = Color(0.0, 0.0, 0.0, 0.85)
-        lbl.font_size = 64
+        lbl.font_size = 64 if tag == "" else 72
         lbl.outline_size = 14
         lbl.pixel_size = 0.03
-        lbl.position = Vector3(p.x, 19.0, p.y)
+        lbl.position = Vector3(p.x, tower_h + 7.0, p.y)
         if font:
             lbl.font = font
         root.add_child(lbl)
+        if tag == "museum":
+            var sub: = Label3D.new()
+            sub.text = "Johnny Cake Hill"
+            sub.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+            sub.modulate = Color(0.9, 0.86, 0.72)
+            sub.font_size = 36
+            sub.pixel_size = 0.022
+            sub.position = Vector3(p.x, tower_h + 3.5, p.y)
+            if font:
+                sub.font = font
+            root.add_child(sub)
+        elif tag == "borden":
+            var sub: = Label3D.new()
+            sub.text = "92 Second St"
+            sub.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+            sub.modulate = Color(0.92, 0.78, 0.7)
+            sub.font_size = 36
+            sub.pixel_size = 0.022
+            sub.position = Vector3(p.x, tower_h + 3.5, p.y)
+            if font:
+                sub.font = font
+            root.add_child(sub)
 
 
 func _setup_weather() -> void :
@@ -277,6 +315,10 @@ func _process(delta: float) -> void :
     _apply_day_night()
     _update_weather(delta)
     _update_streaming()
+    _tod_life_t += delta
+    if _tod_life_t >= 2.0:
+        _tod_life_t = 0.0
+        _apply_tod_life()
     if GameManager:
         GameManager.day_phase = _day_phase
         GameManager.raining = _raining
@@ -351,6 +393,53 @@ func _apply_day_night() -> void :
     for lamp in _street_lights:
         if is_instance_valid(lamp):
             lamp.light_energy = lamp_e
+    var window_glow: float = clampf(1.0 - daylight, 0.0, 1.0) * 0.42
+    for node in get_tree().get_nodes_in_group("facade_emissive"):
+        if node is MeshInstance3D and node.material_override is StandardMaterial3D:
+            (node.material_override as StandardMaterial3D).emission_energy_multiplier = window_glow
+    for lamp in get_tree().get_nodes_in_group("mooring_light"):
+        if lamp is OmniLight3D:
+            (lamp as OmniLight3D).light_energy = lamp_e * 0.55
+    for tc in _traffic:
+        if is_instance_valid(tc) and tc.has_method("update_running_lights"):
+            tc.update_running_lights(night)
+    if _player and "current_car" in _player and _player.current_car and is_instance_valid(_player.current_car):
+        var car = _player.current_car
+        if car.has_method("update_vehicle_lights"):
+            var braking: bool = false
+            if "handbrake_on" in car:
+                braking = car.handbrake_on
+            car.update_vehicle_lights(night, braking)
+
+
+func _apply_tod_life() -> void :
+    if _sun == null:
+        return
+    var ang: float = _day_phase * TAU
+    var daylight: float = clampf(sin(ang + PI), 0.0, 1.0)
+    var night: float = clampf(1.0 - daylight, 0.0, 1.0)
+    # Rush-hour bump around late afternoon; thin out peds/traffic deep at night.
+    var rush: float = 1.0 if daylight > 0.35 and daylight < 0.85 else 0.72
+    var traffic_keep: float = clampf(lerp(0.38, 1.0, daylight) * rush, 0.25, 1.0)
+    var ped_keep: float = clampf(lerp(0.3, 1.0, daylight) * rush, 0.2, 1.0)
+    for i in _traffic.size():
+        var tc = _traffic[i]
+        if not is_instance_valid(tc):
+            continue
+        var on: bool = float(i) / maxf(float(_traffic.size()), 1.0) < traffic_keep
+        tc.visible = on
+        tc.set_physics_process(on)
+        if "base_speed" in tc:
+            tc.speed = float(tc.base_speed) * lerp(0.75, 1.05, daylight) * rush
+    for i in _npcs.size():
+        var npc = _npcs[i]
+        if not is_instance_valid(npc):
+            continue
+        var show: bool = float(i) / maxf(float(_npcs.size()), 1.0) < ped_keep
+        npc.visible = show
+        npc.set_physics_process(show)
+        if "walk_speed" in npc:
+            npc.walk_speed = lerp(1.1, 1.65, daylight) * (0.85 if night > 0.55 else 1.0)
 
 
 func _make_ground() -> void :
@@ -701,8 +790,16 @@ func _build_hud() -> void :
 
 
 func _start_audio() -> void :
-    # No auto-started background music: the radio (number keys 1-9 / HUD) is the
-    # only music source, so the world is quiet until the player tunes a station.
-    # The looping exploration theme + coastal-city ambience were removed on
-    # request — they played over everything whether or not the radio was on.
-    pass
+    # Quiet coastal ambience (gulls, harbor, distant traffic). Radio stays the
+    # only music source — this loop sits on SFX so it doesn't fight stations.
+    var amb: = load("res://assets/audio/ambient/ambient_coastal_city_coastal_city.mp3")
+    if amb == null:
+        return
+    _ambient_player = AudioStreamPlayer.new()
+    _ambient_player.bus = "SFX"
+    _ambient_player.volume_db = -24.0
+    if amb is AudioStreamMP3:
+        (amb as AudioStreamMP3).loop = true
+    _ambient_player.stream = amb
+    add_child(_ambient_player)
+    _ambient_player.play()
