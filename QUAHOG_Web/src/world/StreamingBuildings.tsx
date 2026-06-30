@@ -5,7 +5,7 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 import { RigidBody } from "@react-three/rapier";
 import { shared } from "../shared";
 import { Buildings } from "./Buildings";
-import { makeFacadeMaps, makeFacadeNormal } from "./textures";
+import { makeFacadeMaps, makeFacadeNormal, makeFacadeRoughness } from "./textures";
 import type { Building } from "../slice";
 
 // Multi-tile building streamer (Step 19). Loads building tiles (public/tiles/
@@ -244,6 +244,7 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
   const geom = useMemo(() => tileGeometry(buildings), [buildings]);
   const maps = useMemo(() => makeFacadeMaps(), []);
   const nrm = useMemo(() => makeFacadeNormal(), []); // brick-aligned relief
+  const rough = useMemo(() => makeFacadeRoughness(), []); // glossy glass vs matte brick
   const nrmScale = useMemo(() => new THREE.Vector2(0.7, 0.7), []);
   const mat = useRef<THREE.MeshStandardMaterial>(null);
   useFrame(() => { if (mat.current) mat.current.emissiveIntensity = (1 - shared.dayT) * 1.0; });
@@ -274,8 +275,8 @@ function Tile({ buildings, colliders }: { buildings: Building[]; colliders: bool
     <mesh geometry={geom} castShadow={colliders} receiveShadow>
       <meshStandardMaterial
         ref={mat} vertexColors map={maps.albedo} emissiveMap={maps.emissive}
-        normalMap={nrm} normalScale={nrmScale}
-        emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={0.82} metalness={0.04}
+        normalMap={nrm} normalScale={nrmScale} roughnessMap={rough}
+        emissive={WINDOW_GLOW} emissiveIntensity={0} roughness={1} metalness={0.04} envMapIntensity={1.1}
       />
     </mesh>
   );

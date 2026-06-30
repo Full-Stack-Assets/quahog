@@ -181,6 +181,30 @@ export function makeFacadeNormal(): THREE.Texture {
   return _facadeNormal;
 }
 
+// Roughness map for the facade: glass panes are smooth (reflective via IBL),
+// the brick wall + window frame/muntins are matte. Lines up with the facade
+// albedo's per-floor UV. Lets a single building material show glossy windows
+// against matte masonry — a big "that's glass" realism cue.
+let _facadeRough: THREE.Texture | null = null;
+export function makeFacadeRoughness(): THREE.Texture {
+  if (_facadeRough) return _facadeRough;
+  const S = 128;
+  const [c, x] = canvas(S);
+  x.fillStyle = "#e0e0e0"; x.fillRect(0, 0, S, S);          // wall ≈ 0.88 rough (matte)
+  const mx = 30, my = 20, w = S - mx * 2, h = S - my * 2;
+  x.fillStyle = "#2c2c2c"; x.fillRect(mx, my, w, h);        // glass panes ≈ 0.17 (glossy)
+  // frame + muntins stay matte (drawn over the glass)
+  x.fillStyle = "#cccccc";
+  x.fillRect(mx - 4, my - 4, w + 8, 4); x.fillRect(mx - 4, my + h, w + 8, 4);
+  x.fillRect(mx - 4, my - 4, 4, h + 8); x.fillRect(mx + w, my - 4, 4, h + 8);
+  x.fillRect(mx + w / 2 - 1.5, my, 3, h);
+  for (const fy of [my + h / 3, my + h / 2, my + (2 * h) / 3]) x.fillRect(mx, fy - 1.5, w, 3);
+  const t = new THREE.Texture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  _facadeRough = asData(t); // linear data map
+  return _facadeRough;
+}
+
 /** A 1980s flyer/poster (radio station or street-feast), procedural. */
 export function makePoster(variant: number): THREE.Texture {
   const [c, ctx] = canvas(256);
