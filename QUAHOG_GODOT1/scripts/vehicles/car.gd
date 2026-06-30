@@ -22,7 +22,6 @@ var sphere: RigidBody3D
 var raycast: RayCast3D
 var vehicle_model: Node3D
 var camera: Camera3D
-var engine_sound: AudioStreamPlayer3D
 var screech_sound: AudioStreamPlayer3D
 var _head_l: SpotLight3D
 var _head_r: SpotLight3D
@@ -55,8 +54,8 @@ var linear_velocity: Vector3 = Vector3.ZERO
 var prev_position: Vector3 = Vector3.ZERO
 
 
-var max_throttle: float = 11.0
-var torque: float = 95.0
+var max_throttle: float = 65.0
+var torque: float = 220.0
 var mass: float = 1000.0
 var body_damage: float = 0.0
 
@@ -121,8 +120,7 @@ func _ready() -> void :
                          # the map can be full of takeable cars at near-zero cost
 
 
-# The camera + engine/screech audio are created lazily on first entry, so the
-# hundreds of parked cars on the map don't each carry a Camera3D + 2 audio players.
+# Camera + tire screech are created lazily on first entry so parked cars stay cheap.
 func _ensure_cabin() -> void :
     if camera == null:
         camera = Camera3D.new()
@@ -131,22 +129,11 @@ func _ensure_cabin() -> void :
         camera.far = 400.0
         add_child(camera)
         camera.top_level = true
-    if engine_sound == null:
-        engine_sound = AudioStreamPlayer3D.new()
-        engine_sound.name = "EngineSound"
-        engine_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3")
-        engine_sound.unit_size = 10.0
-        engine_sound.max_db = 0.0
-        engine_sound.volume_db = -28.0
-        engine_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
-        if engine_sound.stream is AudioStreamMP3:
-            (engine_sound.stream as AudioStreamMP3).loop = true
-        vehicle_model.add_child(engine_sound)
     if screech_sound == null:
         screech_sound = AudioStreamPlayer3D.new()
         screech_sound.name = "ScreechSound"
         screech_sound.stream = load("res://assets/audio/sfx/vehicle/vehicle_tire_screech.mp3")
-        screech_sound.volume_db = -50.0
+        screech_sound.volume_db = -4.0
         screech_sound.playback_type = AudioServer.PLAYBACK_TYPE_STREAM
         if screech_sound.stream is AudioStreamMP3:
             (screech_sound.stream as AudioStreamMP3).loop = true
@@ -268,10 +255,6 @@ func enter(_driver: Node) -> void :
     _snap_camera()
     if camera:
         camera.make_current()
-    if engine_sound and not engine_sound.playing:
-        engine_sound.play()
-    if screech_sound and not screech_sound.playing:
-        screech_sound.play()
     if AudioManager:
         var snd: = load("res://assets/audio/sfx/vehicle/vehicle_car_enter.mp3")
         if snd:
@@ -282,8 +265,6 @@ func exit() -> Vector3:
     active = false
     _steer = 0.0
     _throttle = 0.0
-    if engine_sound:
-        engine_sound.stop()
     if screech_sound:
         screech_sound.stop()
 
@@ -356,9 +337,11 @@ func _drive(delta: float) -> void :
         direction = sign(input.z) if absf(input.z) > 0.1 else 1.0
 
     var speed_frac: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
-    var steering_grip: float = clampf(0.42 + speed_frac * 0.58, 0.42, 1.0)
-    # Handbrake: break rear grip so the car slides, and turn harder into the slide.
-    var turn_gain: float = 5.4 if (handbrake_on and active) else 4.8
+    var steering_grip: float = clampf(0.48 + speed_frac * 0.52, 0.48, 1.0)
+    # High-speed stability: turn rate tapers so triple-digit runs stay controllable.
+    var turn_gain: float = lerpf(6.8, 3.6, speed_frac)
+    if handbrake_on and active:
+        turn_gain = 7.2
     var target_angular: float = - input.x * steering_grip * turn_gain * direction
     angular_speed = lerpf(angular_speed, target_angular, delta * 9.0)
     vehicle_model.rotate_y(angular_speed * delta)
@@ -378,7 +361,7 @@ func _drive(delta: float) -> void :
     elif target_speed < 0.0:
         linear_speed = lerpf(linear_speed, target_speed * 0.5, delta * 3.0)  # reverse, slower
     else:
-        linear_speed = lerpf(linear_speed, target_speed, delta * 7.5)
+        linear_speed = lerpf(linear_speed, target_speed, delta * 16.0)
 
     acceleration = lerpf(acceleration, linear_speed, delta)
 
@@ -389,7 +372,6 @@ func _drive(delta: float) -> void :
     linear_velocity = (vehicle_model.position - prev_position) / delta
     prev_position = vehicle_model.position
 
-    _effect_engine(delta)
     _effect_skid(delta)
     _effect_damage_smoke(delta)
     if active and GameManager:
@@ -400,31 +382,23 @@ func _drive(delta: float) -> void :
         update_vehicle_lights(night, braking)
 
 
-func _effect_engine(delta: float) -> void :
-    if engine_sound == null:
-        return
-    if not active:
-        engine_sound.volume_db = lerpf(engine_sound.volume_db, -50.0, delta * 5.0)
-        return
-    var speed_factor: float = clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
-    var throttle_factor: float = clampf(absf(_throttle), 0.0, 1.0)
-    var target_volume: float = remap(speed_factor * 0.85 + throttle_factor * 0.4, 0.0, 1.2, -22.0, -6.0)
-    engine_sound.volume_db = lerpf(engine_sound.volume_db, target_volume, delta * 4.0)
-    var target_pitch: float = remap(speed_factor, 0.0, 1.0, 0.92, 1.65) + throttle_factor * 0.08
-    engine_sound.pitch_scale = lerpf(engine_sound.pitch_scale, target_pitch, delta * 3.0)
-
-
 func _effect_skid(delta: float) -> void :
     if screech_sound == null:
         return
     var drift: float = absf(angular_speed) * clampf(absf(linear_speed) / maxf(max_throttle, 0.1), 0.0, 1.0)
-    var handbrake_skid: float = 1.4 if (handbrake_on and absf(linear_speed) > 3.0) else 0.0
+    var handbrake_skid: float = 1.6 if (handbrake_on and absf(linear_speed) > 8.0) else 0.0
     drift += handbrake_skid
-    var target_volume: float = -50.0
-    if active and drift > 0.85:
-        target_volume = remap(clampf(drift, 0.85, 2.4), 0.85, 2.4, -18.0, -5.0)
-    screech_sound.volume_db = lerpf(screech_sound.volume_db, target_volume, delta * 10.0)
-    screech_sound.pitch_scale = lerpf(screech_sound.pitch_scale, 0.95 + clampf(drift * 0.15, 0.0, 0.35), delta * 6.0)
+    var skidding: bool = active and drift > 1.05
+    if skidding:
+        if not screech_sound.playing:
+            screech_sound.play()
+        var loud: float = remap(clampf(drift, 1.05, 2.8), 1.05, 2.8, -14.0, 0.0)
+        screech_sound.volume_db = lerpf(screech_sound.volume_db, loud, delta * 12.0)
+        screech_sound.pitch_scale = lerpf(screech_sound.pitch_scale, 0.92 + clampf(drift * 0.12, 0.0, 0.4), delta * 8.0)
+    else:
+        screech_sound.volume_db = lerpf(screech_sound.volume_db, -40.0, delta * 14.0)
+        if screech_sound.volume_db < -28.0 and screech_sound.playing:
+            screech_sound.stop()
 
 
 func _effect_damage_smoke(delta: float) -> void :

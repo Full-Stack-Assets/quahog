@@ -252,7 +252,6 @@ const PRELOAD_PATHS: PackedStringArray = [
     "res://assets/audio/sfx/ui/ui_shop_denied.mp3", 
     "res://assets/audio/sfx/ui/ui_ui_click.mp3", 
     "res://assets/audio/sfx/ui/ui_ui_confirm.mp3", 
-    "res://assets/audio/sfx/vehicle/vehicle_car_engine_loop.mp3", 
     "res://assets/audio/sfx/vehicle/vehicle_car_enter.mp3", 
     "res://assets/audio/sfx/vehicle/vehicle_tire_screech.mp3", 
     "res://assets/audio/sfx/weapon/weapon_bullet_impact.mp3", 
