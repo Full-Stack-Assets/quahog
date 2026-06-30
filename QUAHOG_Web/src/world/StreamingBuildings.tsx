@@ -134,6 +134,48 @@ function plinth(b: Building, h: number, col: THREE.Color): THREE.BufferGeometry 
   return g;
 }
 
+// A brick chimney stack rising through the roof of a house — the recognizable
+// New Bedford triple-decker / Cape silhouette cue. Sides are wound outward from
+// the stack centre (same deterministic approach as the parapet/plinth).
+function chimney(b: Building, idx: number, col: THREE.Color): THREE.BufferGeometry | null {
+  const fp = b.footprint;
+  if (fp.length < 3) return null;
+  let cx = 0, cn = 0;
+  for (const [e, n] of fp) { cx += e; cn += n; }
+  cx /= fp.length; cn /= fp.length;
+  // sit it partway from the centroid toward a footprint vertex, so it lands on
+  // the roof slope rather than dead-centre on the apex
+  const vtx = fp[idx % fp.length];
+  const x0 = cx + (vtx[0] - cx) * 0.5;
+  const z0 = -(cn + (vtx[1] - cn) * 0.5);
+  const s = 0.45;
+  const y0 = b.height - 0.3;
+  const y1 = b.height + 1.8 + ((idx * 0.6180339887) % 1) * 0.9;
+  const corner: [number, number][] = [[x0 - s, z0 - s], [x0 + s, z0 - s], [x0 + s, z0 + s], [x0 - s, z0 + s]];
+  const pos: number[] = [], colr: number[] = [], uv: number[] = [];
+  const push = (x: number, y: number, z: number) => { pos.push(x, y, z); colr.push(col.r, col.g, col.b); uv.push(0.04, 0.04); };
+  for (let i = 0; i < 4; i++) {
+    const [ax, az] = corner[i], [bx, bz] = corner[(i + 1) % 4];
+    const ex = bx - ax, ez = bz - az;
+    let nx = -ez, nz = ex;
+    const mx = (ax + bx) / 2 - x0, mz = (az + bz) / 2 - z0;
+    if (nx * mx + nz * mz < 0) { nx = -nx; nz = -nz; }
+    const A0: [number, number, number] = [ax, y0, az], B0: [number, number, number] = [bx, y0, bz];
+    const B1: [number, number, number] = [bx, y1, bz], A1: [number, number, number] = [ax, y1, az];
+    if ((-ez) * nx + ex * nz >= 0) { push(...A0); push(...B0); push(...B1); push(...A0); push(...B1); push(...A1); }
+    else { push(...A0); push(...B1); push(...B0); push(...A0); push(...A1); push(...B1); }
+  }
+  // top cap (upward-facing)
+  const T = corner.map(([x, z]) => [x, y1, z] as [number, number, number]);
+  push(...T[0]); push(...T[2]); push(...T[1]); push(...T[0]); push(...T[3]); push(...T[2]);
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute("color", new THREE.Float32BufferAttribute(colr, 3));
+  g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  return g;
+}
+
 function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
   const geoms: THREE.BufferGeometry[] = [];
   buildings.forEach((b, i) => {
@@ -175,6 +217,11 @@ function tileGeometry(buildings: Building[]): THREE.BufferGeometry | null {
     if (!isHero && b.height < 12) {
       const r = hipRoof(b, 1.5 + ((i * 0.6180339887) % 1) * 1.6, roof);
       if (r) geoms.push(r);
+      // most houses get a brick chimney for silhouette variety (deterministic)
+      if (b.height >= 5 && i % 3 !== 0) {
+        const ch = chimney(b, i, new THREE.Color("#6e4a3e"));
+        if (ch) geoms.push(ch);
+      }
     } else if (!isHero) {
       // coping tone: the wall colour lightened toward limestone/concrete
       const coping = wall.clone().lerp(new THREE.Color("#cfc9bc"), 0.4);
