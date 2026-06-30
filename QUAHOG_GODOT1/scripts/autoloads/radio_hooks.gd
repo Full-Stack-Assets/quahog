@@ -77,6 +77,11 @@ func on_gloria_started() -> void :
         _flash(GLORIA_LINES.pick_random())
 
 
+func on_business_bought(name: String, blurb: String) -> void :
+    if Radio and Radio.current >= 0:
+        _flash("Hear %s just changed hands — new owner, same %s. Money's movin' in this town." % [name, blurb])
+
+
 func _flash(line: String) -> void :
     var host: String = "Radio"
     if Radio and Radio.current >= 0:

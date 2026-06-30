@@ -154,6 +154,14 @@ func _draw() -> void :
             if is_instance_valid(goon):
                 _draw_blip(goon.global_position, center, Color(0.95, 0.45, 0.2), 4.0)
 
+    if BusinessManager:
+        for i in BusinessManager.BUSINESSES.size():
+            var b: Dictionary = BusinessManager.BUSINESSES[i]
+            var pos: Vector3 = b["pos"]
+            var owned: bool = BusinessManager.is_owned(i)
+            var col: Color = Color(0.29, 0.84, 0.43) if owned else Color(1.0, 0.81, 0.29)
+            _draw_blip(pos, center, col, 3.5 if owned else 2.5)
+
 
     var yaw: float = 0.0
     if player.has_method("get_map_heading"):

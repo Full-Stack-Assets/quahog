@@ -22,6 +22,7 @@ const WaterHazardScript: = preload("res://scripts/systems/water_hazard.gd")
 const ResprayZoneScript: = preload("res://scripts/world/respray_zone.gd")
 const SafehouseZoneScript: = preload("res://scripts/world/safehouse_zone.gd")
 const ScrimshawCollectibleScript: = preload("res://scripts/world/scrimshaw_collectible.gd")
+const BusinessFrontsScript: = preload("res://scripts/world/business_fronts.gd")
 const DinerInteriorScript: = preload("res://scripts/world/diner_interior.gd")
 const DinerMenuScript: = preload("res://scripts/ui/diner_menu.gd")
 const NeonSignsScript: = preload("res://scripts/world/neon_signs.gd")
@@ -808,6 +809,15 @@ func _build_systems() -> void :
     safehouse.set_script(SafehouseZoneScript)
     add_child(safehouse)
     safehouse.global_position = Vector3(-188.0, 0.0, -40.0)
+
+    var fronts: = Node3D.new()
+    fronts.set_script(BusinessFrontsScript)
+    add_child(fronts)
+    fronts.setup(_player)
+    if GameManager:
+        GameManager.businesses_changed.connect(fronts.on_owned_changed)
+    if BusinessManager:
+        BusinessManager.set_active(true)
 
 
     for c in _contacts:

@@ -97,6 +97,13 @@ These are the highest-leverage moves, in order:
 34. **Near-miss bonus** — fast close passes on traffic pay +$15 (`car.gd`). **DONE**
 35. **Traffic carjack** — ram traffic to stop it, then steal the ride (`traffic_car.gd`, `game_world.gd`). **DONE**
 
+### Tier 10 — Economy loop (business empire)
+
+36. **Buyable business fronts** — 7 South Coast properties with gold/green rings (`business_fronts.gd`, `business_manager.gd`). **DONE**
+37. **Passive income** — owned fronts trickle cash per in-game day (`business_manager.gd`). **DONE**
+38. **Revenue events** — random boom/leak windfalls on owned fronts (`business_manager.gd`). **DONE**
+39. **Owned-front rest** — heal + bleed heat while standing in owned rings (`business_fronts.gd`). **DONE**
+
 ---
 
 ## Comprehensive improvement list
@@ -139,8 +146,8 @@ Everything possible, grouped by area. Items marked **[Web]** / **[Godot]** / **[
 | A28 | Melee combos, block, grapple | |
 | A29 | Gun: reload, ammo pickups, weapon wheel | **[Godot]** partial (pickups) |
 | A30 | Health regen, medkits, armor vests | **[Godot]** done |
-| A31 | Businesses to buy (5 fronts) + passive income | **[Web]** |
-| A32 | Revenue events (margin leak, boom) | **[Web]** |
+| A31 | Businesses to buy (5 fronts) + passive income | **[Godot]** done (7 fronts) |
+| A32 | Revenue events (margin leak, boom) | **[Godot]** done |
 | A33 | Shops: weapons, clothing, food, vehicle mods | |
 | A34 | Bank, stash, bribes, fines | |
 | A35 | Time-skip via sleep at safehouse | **[Web]** |

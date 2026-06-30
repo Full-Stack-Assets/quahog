@@ -18,6 +18,8 @@ var _player: CharacterBody3D = null
 var _root: Control
 var _cash_label: Label
 var _scrimshaw_label: Label = null
+var _fronts_label: Label = null
+var _buy_prompt: Label = null
 var _prompt_label: Label
 var _toast_label: Label
 var _radio_label: Label = null
@@ -93,10 +95,14 @@ func _ready() -> void :
         GameManager.wanted_changed.connect(_on_wanted_changed)
         GameManager.faction_changed.connect(_on_faction_changed)
         GameManager.scrimshaw_changed.connect(_on_scrimshaw_changed)
+        GameManager.businesses_changed.connect(_on_businesses_changed)
         _on_cash_changed(GameManager.cash)
         _on_wanted_changed(GameManager.wanted_level)
         _on_faction_changed(GameManager.faction_level)
         _on_scrimshaw_changed(GameManager.scrimshaw_found())
+        _on_businesses_changed(GameManager.businesses_owned())
+    if BusinessManager:
+        BusinessManager.near_buy_changed.connect(_on_near_buy_changed)
 
 
 func bind_player(player: CharacterBody3D) -> void :
@@ -405,6 +411,12 @@ func _build_top_bar() -> void :
     _scrimshaw_label.visible = false
     stack.add_child(_scrimshaw_label)
 
+    _fronts_label = Label.new()
+    _fronts_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_fronts_label, 20, Color(0.78, 0.92, 0.72))
+    _fronts_label.visible = false
+    stack.add_child(_fronts_label)
+
 
 func _build_prompt() -> void :
     _prompt_label = Label.new()
@@ -417,6 +429,17 @@ func _build_prompt() -> void :
     _prompt_label.position = Vector2(-260, -300)
     _prompt_label.custom_minimum_size = Vector2(520, 40)
     _prompt_label.visible = false
+
+    _buy_prompt = Label.new()
+    _buy_prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+    _apply_font(_buy_prompt, 24, Color(0.06, 0.13, 0.08))
+    _buy_prompt.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.7))
+    _buy_prompt.add_theme_constant_override("outline_size", 4)
+    _root.add_child(_buy_prompt)
+    _buy_prompt.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+    _buy_prompt.position = Vector2(-320, -360)
+    _buy_prompt.custom_minimum_size = Vector2(640, 72)
+    _buy_prompt.visible = false
 
 
 func _build_toast() -> void :
@@ -953,6 +976,33 @@ func _on_scrimshaw_changed(found: int) -> void :
         return
     _scrimshaw_label.visible = true
     _scrimshaw_label.text = "🦴 %d/%d scrimshaw" % [found, GameManager.SCRIMSHAW_TOTAL]
+
+
+func _on_businesses_changed(count: int) -> void :
+    if _fronts_label == null or BusinessManager == null:
+        return
+    if count <= 0:
+        _fronts_label.visible = false
+        return
+    _fronts_label.visible = true
+    _fronts_label.text = "🏠 %d/%d fronts" % [count, BusinessManager.business_count()]
+
+
+func _on_near_buy_changed(index: int) -> void :
+    if _buy_prompt == null or BusinessManager == null:
+        return
+    if index < 0:
+        _buy_prompt.visible = false
+        return
+    var b: Dictionary = BusinessManager.BUSINESSES[index]
+    var cost: int = int(b["cost"])
+    var affordable: bool = GameManager.can_afford(cost)
+    var col: Color = Color(0.29, 0.84, 0.43) if affordable else Color(0.75, 0.75, 0.78)
+    _buy_prompt.add_theme_color_override("font_color", col)
+    _buy_prompt.text = "PRESS B — BUY %s ($%d)\n%s · +$%d/day" % [
+        str(b["name"]).to_upper(), cost, str(b["blurb"]), int(b["per_day"])
+    ]
+    _buy_prompt.visible = true
 
 
 func _on_interactable_changed(prompt: String) -> void :
