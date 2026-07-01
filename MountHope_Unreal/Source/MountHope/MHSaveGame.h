@@ -27,4 +27,13 @@ public:
 
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
     TArray<FString> OwnedBusinessIds;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    bool bHasSafehouse = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    FVector SafehouseLocation = FVector::ZeroVector;
+
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Mount Hope|Save")
+    TArray<FString> CollectedCollectibleIds;
 };

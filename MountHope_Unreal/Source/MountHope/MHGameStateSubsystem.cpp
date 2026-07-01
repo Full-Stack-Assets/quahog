@@ -1,12 +1,27 @@
 #include "MHGameStateSubsystem.h"
 
 #include "Dom/JsonObject.h"
+#include "Engine/World.h"
 #include "Kismet/GameplayStatics.h"
+#include "MHCollectibleSubsystem.h"
 #include "MHSaveGame.h"
+#include "MHWantedSubsystem.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "Serialization/JsonReader.h"
 #include "Serialization/JsonSerializer.h"
+
+namespace
+{
+void ClearWantedStateForGameInstance(const UGameInstance* GameInstance)
+{
+    const UWorld* World = GameInstance ? GameInstance->GetWorld() : nullptr;
+    if (UMHWantedSubsystem* Wanted = World ? World->GetSubsystem<UMHWantedSubsystem>() : nullptr)
+    {
+        Wanted->ClearWantedState();
+    }
+}
+}
 
 namespace
 {
@@ -51,7 +66,29 @@ void UMHGameStateSubsystem::AddCash(int32 Delta)
 
 void UMHGameStateSubsystem::ApplyDamage(float Damage)
 {
+    const bool bWasAlive = Health > 0.0f;
     Health = FMath::Clamp(Health - FMath::Max(0.0f, Damage), 0.0f, 100.0f);
+
+    if (bWasAlive && Health <= 0.0f)
+    {
+        AddCash(-WastedCashPenalty);
+        Health = 100.0f;
+        ClearWantedStateForGameInstance(GetGameInstance());
+        OnPlayerWasted.Broadcast();
+    }
+}
+
+void UMHGameStateSubsystem::Heal(float Amount)
+{
+    Health = FMath::Clamp(Health + FMath::Max(0.0f, Amount), 0.0f, 100.0f);
+}
+
+void UMHGameStateSubsystem::TriggerBusted()
+{
+    AddCash(-BustedCashPenalty);
+    Health = 100.0f;
+    ClearWantedStateForGameInstance(GetGameInstance());
+    OnPlayerBusted.Broadcast();
 }
 
 void UMHGameStateSubsystem::CycleWeather()
@@ -103,6 +140,12 @@ bool UMHGameStateSubsystem::BuyBusiness(const FString& BusinessId)
     }
 
     return false;
+}
+
+void UMHGameStateSubsystem::SetSafehouseLocation(const FVector& NewLocation)
+{
+    bHasSafehouse = true;
+    SafehouseLocation = NewLocation;
 }
 
 int32 UMHGameStateSubsystem::GetPassiveDailyIncome() const
@@ -196,6 +239,17 @@ bool UMHGameStateSubsystem::SaveToSlot(const FString& SlotName, int32 UserIndex)
         Save->OwnedBusinessIds.Add(Id.ToString());
     }
 
+    Save->bHasSafehouse = bHasSafehouse;
+    Save->SafehouseLocation = SafehouseLocation;
+
+    if (const UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (const UMHCollectibleSubsystem* Collectibles = GameInstance->GetSubsystem<UMHCollectibleSubsystem>())
+        {
+            Save->CollectedCollectibleIds = Collectibles->GetCollectedIdsAsStrings();
+        }
+    }
+
     return UGameplayStatics::SaveGameToSlot(Save, SlotName, UserIndex);
 }
 
@@ -225,6 +279,17 @@ bool UMHGameStateSubsystem::LoadFromSlot(const FString& SlotName, int32 UserInde
         if (!Id.IsEmpty())
         {
             OwnedBusinessIds.Add(FName(*Id));
+        }
+    }
+
+    bHasSafehouse = Save->bHasSafehouse;
+    SafehouseLocation = Save->SafehouseLocation;
+
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UMHCollectibleSubsystem* Collectibles = GameInstance->GetSubsystem<UMHCollectibleSubsystem>())
+        {
+            Collectibles->RestoreCollectedIds(Save->CollectedCollectibleIds);
         }
     }
 

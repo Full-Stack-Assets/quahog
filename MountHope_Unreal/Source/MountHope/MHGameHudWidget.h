@@ -27,6 +27,12 @@ public:
     void SetStatusText(const FText& Status);
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|HUD")
+    void SetWantedText(const FText& Wanted);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|HUD")
+    void SetRadioText(const FText& Radio);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|HUD")
     void RefreshHud();
 
 protected:
@@ -41,6 +47,12 @@ protected:
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> StatusTextBlock;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> WantedTextBlock;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> RadioTextBlock;
 
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UTextBlock> SpeakerTextBlock;
@@ -62,6 +74,12 @@ private:
 
     UFUNCTION()
     void HandleDialogueEnded(FName ConversationId);
+
+    UFUNCTION()
+    void HandleStationChanged(FName StationId);
+
+    UFUNCTION()
+    void HandleSongChanged(FName StationId, FString SongTitle);
 
     void SetTextBlockContent(UTextBlock* TextBlock, const FText& Content, bool bCollapseWhenEmpty);
 

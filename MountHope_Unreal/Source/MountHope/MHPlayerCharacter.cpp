@@ -15,6 +15,7 @@
 #include "MHGameModeBase.h"
 #include "MHDialogueSubsystem.h"
 #include "MHInteractable.h"
+#include "MHRadioSubsystem.h"
 #include "MHVehiclePawn.h"
 
 AMHPlayerCharacter::AMHPlayerCharacter()
@@ -46,6 +47,28 @@ void AMHPlayerCharacter::BeginPlay()
 void AMHPlayerCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
+    TickStamina(DeltaSeconds);
+}
+
+void AMHPlayerCharacter::TickStamina(float DeltaSeconds)
+{
+    if (bInVehicle)
+    {
+        return;
+    }
+
+    if (bSprintRequested && Stamina > 0.0f)
+    {
+        Stamina = FMath::Max(0.0f, Stamina - SprintStaminaDrainPerSecond * DeltaSeconds);
+        if (Stamina <= 0.0f)
+        {
+            SetSprinting(false);
+        }
+    }
+    else if (!bSprintRequested && Stamina < MaxStamina)
+    {
+        Stamina = FMath::Min(MaxStamina, Stamina + StaminaRegenPerSecond * DeltaSeconds);
+    }
 }
 
 void AMHPlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -114,6 +137,14 @@ void AMHPlayerCharacter::BindEnhancedInput(UInputComponent* PlayerInputComponent
             this,
             &AMHPlayerCharacter::InputEnterExitVehicle);
     }
+    if (IA_RadioNextStation)
+    {
+        EnhancedInput->BindAction(
+            IA_RadioNextStation,
+            ETriggerEvent::Started,
+            this,
+            &AMHPlayerCharacter::InputRadioNextStation);
+    }
 }
 
 void AMHPlayerCharacter::BindLegacyInput(UInputComponent* PlayerInputComponent)
@@ -133,6 +164,27 @@ void AMHPlayerCharacter::BindLegacyInput(UInputComponent* PlayerInputComponent)
         IE_Pressed,
         this,
         &AMHPlayerCharacter::RequestEnterExitVehicle);
+    PlayerInputComponent->BindAction(
+        TEXT("RadioNextStation"),
+        IE_Pressed,
+        this,
+        &AMHPlayerCharacter::RequestRadioNextStation);
+}
+
+void AMHPlayerCharacter::RequestRadioNextStation()
+{
+    if (!bInVehicle)
+    {
+        return;
+    }
+
+    if (UGameInstance* GameInstance = GetGameInstance())
+    {
+        if (UMHRadioSubsystem* RadioSubsystem = GameInstance->GetSubsystem<UMHRadioSubsystem>())
+        {
+            RadioSubsystem->NextStation();
+        }
+    }
 }
 
 void AMHPlayerCharacter::SetSprinting(bool bEnableSprint)
@@ -266,11 +318,13 @@ void AMHPlayerCharacter::InputLook(const FInputActionValue& Value)
 
 void AMHPlayerCharacter::InputSprintStart(const FInputActionValue& Value)
 {
-    SetSprinting(true);
+    bSprintRequested = true;
+    SetSprinting(Stamina > 0.0f);
 }
 
 void AMHPlayerCharacter::InputSprintStop(const FInputActionValue& Value)
 {
+    bSprintRequested = false;
     SetSprinting(false);
 }
 
@@ -282,6 +336,11 @@ void AMHPlayerCharacter::InputInteract(const FInputActionValue& Value)
 void AMHPlayerCharacter::InputEnterExitVehicle(const FInputActionValue& Value)
 {
     RequestEnterExitVehicle();
+}
+
+void AMHPlayerCharacter::InputRadioNextStation(const FInputActionValue& Value)
+{
+    RequestRadioNextStation();
 }
 
 void AMHPlayerCharacter::TryInteractWithWorld()

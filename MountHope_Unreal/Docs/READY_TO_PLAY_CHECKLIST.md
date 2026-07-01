@@ -52,12 +52,32 @@ delivery.
 ## Expanded feature targets
 
 - Police/wanted loop supports crimes, pursuit/search, cooldown, fine/bribe, and
-  escalation.
+  escalation. **C++ done:** `UMHWantedSubsystem` reports crimes (traffic/theft/
+  assault/property damage/mission heat), decays over time, and exposes a
+  suggested fine; `AMHVehiclePawn` reports crashes into other actors. **Still
+  needed:** actual cop-car pursuit AI/spawning (no AI pawn exists yet).
 - Reputation tracks standing with local crews, police, businesses, and community
-  contacts.
+  contacts. **C++ done:** `UMHReputationSubsystem` is now read/written by
+  mission steps and `AMHShopActor` discounts.
 - Safehouse supports saving, vehicle storage, mission planning, and money stash.
+  **C++ done:** `AMHSafehouseActor` saves + sets next-session spawn + clears
+  wanted state. **Still needed:** vehicle storage and a money stash (a
+  separate balance from carried cash) are not modeled.
 - Shops/services include garage repair and at least one purchase interaction.
+  **C++ done:** `AMHShopActor` (`Garage` repairs the nearest damaged vehicle;
+  `GeneralStore` buys a linked business).
 - Side content includes at least one optional activity or collectible loop.
+  **C++ done:** `UMHCollectibleSubsystem` + `AMHCollectibleActor`, 8 scrimshaw
+  items in `Data/Collectibles/vertical_slice.json`.
 - Dialogue supports speaker names, subtitles, skippable lines, and mission barks.
-- World simulation includes time-of-day or weather if feasible.
+  Done via `UMHDialogueSubsystem`/`AMHDialogueNpcActor` (speaker + subtitles +
+  `AdvanceConversation` to skip).
+- World simulation includes time-of-day or weather if feasible. Weather done
+  (`AMHWeatherDirectorActor`, mission-driven via `weatherOnStart`); no
+  time-of-day/day-night cycle yet (see Godot/Web tracks' `TimeOfDayClock` for
+  reference if this is prioritized next).
+- A radio system with a real station/DJ/song roster
+  (`UMHRadioSubsystem` + `Data/Radio/stations.json`) — station cycling wired
+  to player input (`R` while driving) and the HUD; actual audio playback needs
+  editor-side `USoundWave` import (see `IMPROVEMENT_PLAN.md`).
 - Performance is stable enough for a smooth first-player experience.

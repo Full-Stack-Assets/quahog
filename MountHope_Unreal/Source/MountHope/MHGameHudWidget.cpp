@@ -9,6 +9,9 @@
 #include "MHDialogueSubsystem.h"
 #include "MHGameStateSubsystem.h"
 #include "MHMissionSubsystem.h"
+#include "MHPlayerCharacter.h"
+#include "MHRadioSubsystem.h"
+#include "MHWantedSubsystem.h"
 
 namespace
 {
@@ -70,6 +73,23 @@ void UMHGameHudWidget::EnsureWidgetTreeBuilt()
         StatusSlot->SetPadding(FMargin(0.0f, 28.0f, 36.0f, 0.0f));
     }
 
+    WantedTextBlock = MakeHudTextBlock(WidgetTree, TEXT("WantedText"), 22, FLinearColor(1.0f, 0.85f, 0.2f));
+    if (UOverlaySlot* WantedSlot = RootOverlay->AddChildToOverlay(WantedTextBlock))
+    {
+        WantedSlot->SetHorizontalAlignment(HAlign_Left);
+        WantedSlot->SetVerticalAlignment(VAlign_Top);
+        WantedSlot->SetPadding(FMargin(36.0f, 58.0f, 36.0f, 0.0f));
+    }
+
+    RadioTextBlock = MakeHudTextBlock(WidgetTree, TEXT("RadioText"), 15, FLinearColor(0.8f, 0.95f, 0.85f));
+    if (UOverlaySlot* RadioSlot = RootOverlay->AddChildToOverlay(RadioTextBlock))
+    {
+        RadioSlot->SetHorizontalAlignment(HAlign_Right);
+        RadioSlot->SetVerticalAlignment(VAlign_Top);
+        RadioSlot->SetPadding(FMargin(0.0f, 52.0f, 36.0f, 0.0f));
+    }
+    RadioTextBlock->SetVisibility(ESlateVisibility::Collapsed);
+
     DialogueBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("DialogueBox"));
     SpeakerTextBlock = MakeHudTextBlock(WidgetTree, TEXT("SpeakerText"), 22, FLinearColor(0.55f, 0.85f, 1.0f));
     DialogueLineTextBlock = MakeHudTextBlock(WidgetTree, TEXT("DialogueLineText"), 20, FLinearColor::White);
@@ -109,6 +129,12 @@ void UMHGameHudWidget::BindSubsystemDelegates()
         DialogueSubsystem->OnDialogueEnded.AddDynamic(this, &UMHGameHudWidget::HandleDialogueEnded);
     }
 
+    if (UMHRadioSubsystem* RadioSubsystem = GameInstance->GetSubsystem<UMHRadioSubsystem>())
+    {
+        RadioSubsystem->OnStationChanged.AddDynamic(this, &UMHGameHudWidget::HandleStationChanged);
+        RadioSubsystem->OnSongChanged.AddDynamic(this, &UMHGameHudWidget::HandleSongChanged);
+    }
+
     bDelegatesBound = true;
 }
 
@@ -125,6 +151,12 @@ void UMHGameHudWidget::UnbindSubsystemDelegates()
         {
             DialogueSubsystem->OnDialogueLineChanged.RemoveDynamic(this, &UMHGameHudWidget::HandleDialogueLineChanged);
             DialogueSubsystem->OnDialogueEnded.RemoveDynamic(this, &UMHGameHudWidget::HandleDialogueEnded);
+        }
+
+        if (UMHRadioSubsystem* RadioSubsystem = GameInstance->GetSubsystem<UMHRadioSubsystem>())
+        {
+            RadioSubsystem->OnStationChanged.RemoveDynamic(this, &UMHGameHudWidget::HandleStationChanged);
+            RadioSubsystem->OnSongChanged.RemoveDynamic(this, &UMHGameHudWidget::HandleSongChanged);
         }
     }
 
@@ -181,7 +213,26 @@ void UMHGameHudWidget::RefreshObjectiveAndStatus()
             *WeatherLabel);
     }
 
+    if (const AMHPlayerCharacter* PlayerCharacter = Cast<AMHPlayerCharacter>(GetOwningPlayerPawn()))
+    {
+        StatusString += FString::Printf(TEXT("  |  Stamina: %d%%"), FMath::RoundToInt(PlayerCharacter->GetStaminaPercent() * 100.0f));
+    }
+
     SetStatusText(FText::FromString(StatusString));
+
+    FString WantedString;
+    if (UWorld* World = GetWorld())
+    {
+        if (UMHWantedSubsystem* WantedSubsystem = World->GetSubsystem<UMHWantedSubsystem>())
+        {
+            const int32 Level = WantedSubsystem->GetWantedLevel();
+            for (int32 Index = 0; Index < 5; ++Index)
+            {
+                WantedString += Index < Level ? TEXT("*") : TEXT("-");
+            }
+        }
+    }
+    SetWantedText(FText::FromString(WantedString));
 }
 
 void UMHGameHudWidget::RefreshHud()
@@ -222,6 +273,16 @@ void UMHGameHudWidget::SetStatusText(const FText& Status)
     SetTextBlockContent(StatusTextBlock, Status, false);
 }
 
+void UMHGameHudWidget::SetWantedText(const FText& Wanted)
+{
+    SetTextBlockContent(WantedTextBlock, Wanted, false);
+}
+
+void UMHGameHudWidget::SetRadioText(const FText& Radio)
+{
+    SetTextBlockContent(RadioTextBlock, Radio, true);
+}
+
 void UMHGameHudWidget::HandleDialogueLineChanged(FName ConversationId, FName Speaker, FText LineText)
 {
     SetDialogueLine(FText::FromName(Speaker), LineText);
@@ -230,6 +291,36 @@ void UMHGameHudWidget::HandleDialogueLineChanged(FName ConversationId, FName Spe
 void UMHGameHudWidget::HandleDialogueEnded(FName ConversationId)
 {
     ClearDialogue();
+}
+
+void UMHGameHudWidget::HandleStationChanged(FName StationId)
+{
+    if (StationId.IsNone())
+    {
+        SetRadioText(FText::GetEmpty());
+        return;
+    }
+
+    UGameInstance* GameInstance = GetGameInstance();
+    UMHRadioSubsystem* RadioSubsystem = GameInstance ? GameInstance->GetSubsystem<UMHRadioSubsystem>() : nullptr;
+
+    FMHRadioStation Station;
+    if (RadioSubsystem && RadioSubsystem->GetCurrentStation(Station))
+    {
+        SetRadioText(FText::FromString(Station.DisplayName));
+    }
+}
+
+void UMHGameHudWidget::HandleSongChanged(FName StationId, FString SongTitle)
+{
+    UGameInstance* GameInstance = GetGameInstance();
+    UMHRadioSubsystem* RadioSubsystem = GameInstance ? GameInstance->GetSubsystem<UMHRadioSubsystem>() : nullptr;
+
+    FMHRadioStation Station;
+    if (RadioSubsystem && RadioSubsystem->GetCurrentStation(Station))
+    {
+        SetRadioText(FText::FromString(FString::Printf(TEXT("%s - %s"), *Station.DisplayName, *SongTitle)));
+    }
 }
 
 void UMHGameHudWidget::SetTextBlockContent(UTextBlock* TextBlock, const FText& Content, bool bCollapseWhenEmpty)

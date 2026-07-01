@@ -1,5 +1,7 @@
 #include "MHWantedSubsystem.h"
 
+#include "Kismet/GameplayStatics.h"
+
 void UMHWantedSubsystem::ReportCrime(EMHCrimeType CrimeType, int32 Severity)
 {
     if (Severity <= 0)
@@ -30,8 +32,19 @@ void UMHWantedSubsystem::ReportCrime(EMHCrimeType CrimeType, int32 Severity)
         break;
     }
 
+    const int32 PreviousLevel = WantedLevel;
     Heat = FMath::Clamp(Heat + Severity * Multiplier, 0, 100);
+    SecondsSinceLastCrime = 0.0f;
     RecalculateWantedLevel();
+
+    if (WantedLevel != PreviousLevel)
+    {
+        OnWantedLevelChanged.Broadcast(WantedLevel);
+        if (WantedLevel > PreviousLevel)
+        {
+            UGameplayStatics::PlaySound2D(this, WantedIncreaseSound);
+        }
+    }
 }
 
 void UMHWantedSubsystem::ReduceHeat(int32 Amount)
@@ -41,14 +54,50 @@ void UMHWantedSubsystem::ReduceHeat(int32 Amount)
         return;
     }
 
+    const int32 PreviousLevel = WantedLevel;
     Heat = FMath::Clamp(Heat - Amount, 0, 100);
     RecalculateWantedLevel();
+
+    if (WantedLevel != PreviousLevel)
+    {
+        OnWantedLevelChanged.Broadcast(WantedLevel);
+    }
 }
 
 void UMHWantedSubsystem::ClearWantedState()
 {
+    const int32 PreviousLevel = WantedLevel;
     Heat = 0;
     WantedLevel = 0;
+    SecondsSinceLastCrime = 0.0f;
+
+    if (WantedLevel != PreviousLevel)
+    {
+        OnWantedLevelChanged.Broadcast(WantedLevel);
+    }
+}
+
+void UMHWantedSubsystem::TickWantedDecay(float DeltaSeconds)
+{
+    if (Heat <= 0)
+    {
+        return;
+    }
+
+    SecondsSinceLastCrime += DeltaSeconds;
+    if (SecondsSinceLastCrime < DecayDelaySeconds)
+    {
+        return;
+    }
+
+    const int32 PreviousLevel = WantedLevel;
+    Heat = FMath::Clamp(Heat - FMath::RoundToInt(DecayPerSecond * DeltaSeconds), 0, 100);
+    RecalculateWantedLevel();
+
+    if (WantedLevel != PreviousLevel)
+    {
+        OnWantedLevelChanged.Broadcast(WantedLevel);
+    }
 }
 
 int32 UMHWantedSubsystem::GetWantedLevel() const

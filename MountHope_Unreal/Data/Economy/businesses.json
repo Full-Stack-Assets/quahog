@@ -34,6 +34,20 @@
       "cost": 1800,
       "dailyIncome": 600,
       "pos": [6092.0, 0.0, 4485.0]
+    },
+    {
+      "id": "champion_gym",
+      "name": "Champion City Gym",
+      "cost": 2500,
+      "dailyIncome": 450,
+      "pos": [-8350.0, 0.0, 49620.0]
+    },
+    {
+      "id": "heritage_marina",
+      "name": "Heritage Marina",
+      "cost": 4000,
+      "dailyIncome": 700,
+      "pos": [-10520.0, 0.0, 47420.0]
     }
   ]
 }

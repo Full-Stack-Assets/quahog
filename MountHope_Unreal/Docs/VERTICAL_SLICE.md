@@ -30,25 +30,43 @@ pull, not a blocker for the first Unreal slice.
 | --- | --- | --- |
 | On-foot traversal | Third-person walking, camera-relative movement, interaction input. | `MHPlayerCharacter` |
 | Driving | One drivable heavy-feeling car with chase camera and enter/exit flow. | `MHVehiclePawn`, `MHPlayerCharacter::RequestEnterExitVehicle` |
-| NPCs | Ambient pedestrians and mission givers; Mass AI can expand crowds later. | `MHInteractable`, Mass plugins |
+| NPCs | Ambient wandering/fleeing pedestrians (AIModule/NavigationSystem) and interactable mission givers; Mass AI can expand crowd density later. | `MHPedestrianCharacter`, `MHInteractable`, Mass plugins |
 | Missions | One authored mission with start, fail, complete, and reward states. | `MHMissionSubsystem` |
 | Economy | Cash reward/cost loop for mission reward, repair, bribe, or item purchase. | `MHEconomySubsystem` |
 | Dialogue | Short mission setup and world flavor barks through interactable actors. | `MHInteractable` |
 | OSM world | Import roads/water/building blockout in Unreal centimeters. | `MHOpenWorldSubsystem` |
+| Police/wanted | Crime reporting, heat decay, wanted stars. | `MHWantedSubsystem` |
+| Reputation | Faction standing gated by mission/shop outcomes. | `MHReputationSubsystem` |
+| Radio | Station roster with real DJ/song content, cycled while driving. | `MHRadioSubsystem` |
 
-## Prototype mission
+## Campaign (canonical)
 
-Working title: **Harbor Errand**
+The playable campaign is `Data/Missions/vertical_slice.json` — 11 missions
+across a prologue, three acts, and a hurricane finale, ported 1:1 from
+`QUAHOG_GODOT1/scripts/systems/story_mission.gd` (the most complete story
+implementation across the Godot/Web tracks; see `IMPROVEMENT_PLAN.md` for the
+coordinate-conversion notes):
 
-1. Player starts near a South Coast waterfront diner or garage.
-2. A mission NPC asks the player to retrieve a package from a dockside contact.
-3. Player enters a car, drives through OSM-derived streets, and reaches the
-   contact before a timer expires.
-4. A satirical dialogue exchange reveals local corruption without leaning on
-   parody of any protected franchise.
-5. Player returns, gets paid, and unlocks a small shop or repair interaction.
-6. Optional stinger hints at older local violence or Lizzie Borden-era folklore,
-   but the mission remains primarily crime/satire.
+1. **Off the Boat** (Prologue) — New Bedford waterfront opener: meet Deacon
+   Mealy at Seamen's Bethel, get ambushed at the fish pier, steal a car, reach
+   the safehouse.
+2. **Auction Rules / The Linguiça Run / Harbor Heat** (Act I — The Narrows) —
+   New Bedford crew jobs for Sully's operation.
+3. **Spindle City / Acquitted** (Act II — Spindle City) — Fall River, Lady
+   Borden's crew, Battleship Cove and the Borden House.
+4. **The Undefeated** (Act II — City of Champions) — Brockton, Iron Mike
+   Fontaine and Champion City Gym.
+5. **Heritage Marina / Compound Interest** (Act III — The Cape) — the Fake
+   Kennedys' Hyannis compound.
+6. **Gloria / Big Mamie** (Finale — Gloria) — Hurricane Gloria bears down;
+   the climax plays out at the Hurricane Barrier and the USS Massachusetts.
+
+Satire comes from characters, local institutions, radio, signage, and mission
+dialogue; a stinger of older local violence / Lizzie Borden-era folklore can
+still be layered into the Fall River act without leaning on parody of any
+protected franchise. Only the New Bedford graybox is OSM-imported today —
+Fall River, Brockton, and Cape Cod need their own import or hand-authored
+blockout before those missions' trigger volumes are reachable in PIE.
 
 ## Acceptance criteria
 
@@ -67,8 +85,10 @@ Working title: **Harbor Errand**
 ## HUD & weather
 
 `AMHPlayerController` spawns the game HUD at play start. Dialogue lines render
-as bottom subtitles; objectives and cash/weather display in the corners. Press
-`.` in PIE to cycle `EMHWeatherState` (fog/sun adjusted by `AMHWeatherDirectorActor`).
+as bottom subtitles; objectives, cash/weather, wanted stars, and the current
+radio station/song display in the corners. Press `.` in PIE to cycle
+`EMHWeatherState` (fog/sun adjusted by `AMHWeatherDirectorActor`); press `R`
+while driving to cycle radio stations (`AMHPlayerCharacter::RequestRadioNextStation`).
 
 - Use Lumen, Nanite-ready assets, virtual shadow maps, and cinematic exposure.
 - Favor overcast coastal realism, sodium vapor street lighting, wet asphalt,
