@@ -1,17 +1,23 @@
 #include "MHGameHudWidget.h"
 
 #include "Blueprint/WidgetTree.h"
+#include "Components/Image.h"
 #include "Components/Overlay.h"
 #include "Components/OverlaySlot.h"
+#include "Components/SizeBox.h"
 #include "Components/TextBlock.h"
 #include "Components/VerticalBox.h"
 #include "Components/VerticalBoxSlot.h"
+#include "Kismet/GameplayStatics.h"
 #include "MHDialogueSubsystem.h"
 #include "MHGameStateSubsystem.h"
+#include "MHMinimapCaptureActor.h"
 #include "MHMissionSubsystem.h"
 #include "MHPlayerCharacter.h"
 #include "MHRadioSubsystem.h"
 #include "MHWantedSubsystem.h"
+#include "Styling/SlateBrush.h"
+#include "TimerManager.h"
 
 namespace
 {
@@ -108,6 +114,30 @@ void UMHGameHudWidget::EnsureWidgetTreeBuilt()
     }
 
     DialogueBox->SetVisibility(ESlateVisibility::Collapsed);
+
+    ToastTextBlock = MakeHudTextBlock(WidgetTree, TEXT("ToastText"), 26, FLinearColor(1.0f, 0.92f, 0.6f));
+    if (UOverlaySlot* ToastSlot = RootOverlay->AddChildToOverlay(ToastTextBlock))
+    {
+        ToastSlot->SetHorizontalAlignment(HAlign_Center);
+        ToastSlot->SetVerticalAlignment(VAlign_Top);
+        ToastSlot->SetPadding(FMargin(0.0f, 120.0f, 0.0f, 0.0f));
+    }
+    ToastTextBlock->SetJustification(ETextJustify::Center);
+    ToastTextBlock->SetVisibility(ESlateVisibility::Collapsed);
+
+    USizeBox* MinimapBox = WidgetTree->ConstructWidget<USizeBox>(USizeBox::StaticClass(), TEXT("MinimapBox"));
+    MinimapBox->SetWidthOverride(220.0f);
+    MinimapBox->SetHeightOverride(220.0f);
+
+    MinimapImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("MinimapImage"));
+    MinimapBox->SetContent(MinimapImage);
+
+    if (UOverlaySlot* MinimapSlot = RootOverlay->AddChildToOverlay(MinimapBox))
+    {
+        MinimapSlot->SetHorizontalAlignment(HAlign_Right);
+        MinimapSlot->SetVerticalAlignment(VAlign_Bottom);
+        MinimapSlot->SetPadding(FMargin(0.0f, 0.0f, 36.0f, 36.0f));
+    }
 }
 
 void UMHGameHudWidget::BindSubsystemDelegates()
@@ -135,6 +165,11 @@ void UMHGameHudWidget::BindSubsystemDelegates()
         RadioSubsystem->OnSongChanged.AddDynamic(this, &UMHGameHudWidget::HandleSongChanged);
     }
 
+    if (UMHMissionSubsystem* MissionSubsystem = GameInstance->GetSubsystem<UMHMissionSubsystem>())
+    {
+        MissionSubsystem->OnMissionCompleted.AddDynamic(this, &UMHGameHudWidget::HandleMissionCompleted);
+    }
+
     bDelegatesBound = true;
 }
 
@@ -158,6 +193,16 @@ void UMHGameHudWidget::UnbindSubsystemDelegates()
             RadioSubsystem->OnStationChanged.RemoveDynamic(this, &UMHGameHudWidget::HandleStationChanged);
             RadioSubsystem->OnSongChanged.RemoveDynamic(this, &UMHGameHudWidget::HandleSongChanged);
         }
+
+        if (UMHMissionSubsystem* MissionSubsystem = GameInstance->GetSubsystem<UMHMissionSubsystem>())
+        {
+            MissionSubsystem->OnMissionCompleted.RemoveDynamic(this, &UMHGameHudWidget::HandleMissionCompleted);
+        }
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().ClearTimer(ToastTimerHandle);
     }
 
     bDelegatesBound = false;
@@ -216,6 +261,10 @@ void UMHGameHudWidget::RefreshObjectiveAndStatus()
     if (const AMHPlayerCharacter* PlayerCharacter = Cast<AMHPlayerCharacter>(GetOwningPlayerPawn()))
     {
         StatusString += FString::Printf(TEXT("  |  Stamina: %d%%"), FMath::RoundToInt(PlayerCharacter->GetStaminaPercent() * 100.0f));
+        if (PlayerCharacter->HasPistol())
+        {
+            StatusString += FString::Printf(TEXT("  |  Ammo: %d"), PlayerCharacter->GetPistolAmmo());
+        }
     }
 
     SetStatusText(FText::FromString(StatusString));
@@ -233,6 +282,39 @@ void UMHGameHudWidget::RefreshObjectiveAndStatus()
         }
     }
     SetWantedText(FText::FromString(WantedString));
+
+    RefreshMinimap();
+}
+
+void UMHGameHudWidget::RefreshMinimap()
+{
+    if (!MinimapImage)
+    {
+        return;
+    }
+
+    if (!CachedMinimapCapture)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            TArray<AActor*> FoundActors;
+            UGameplayStatics::GetAllActorsOfClass(World, AMHMinimapCaptureActor::StaticClass(), FoundActors);
+            if (FoundActors.Num() > 0)
+            {
+                CachedMinimapCapture = Cast<AMHMinimapCaptureActor>(FoundActors[0]);
+            }
+        }
+    }
+
+    if (!CachedMinimapCapture || !CachedMinimapCapture->GetRenderTarget())
+    {
+        return;
+    }
+
+    FSlateBrush Brush;
+    Brush.SetResourceObject(CachedMinimapCapture->GetRenderTarget());
+    Brush.ImageSize = FVector2D(220.0f, 220.0f);
+    MinimapImage->SetBrush(Brush);
 }
 
 void UMHGameHudWidget::RefreshHud()
@@ -321,6 +403,25 @@ void UMHGameHudWidget::HandleSongChanged(FName StationId, FString SongTitle)
     {
         SetRadioText(FText::FromString(FString::Printf(TEXT("%s - %s"), *Station.DisplayName, *SongTitle)));
     }
+}
+
+void UMHGameHudWidget::HandleMissionCompleted(FString Title, FString CompletionMessage)
+{
+    const FString ToastLine = CompletionMessage.IsEmpty()
+        ? FString::Printf(TEXT("%s complete."), *Title)
+        : CompletionMessage;
+
+    SetTextBlockContent(ToastTextBlock, FText::FromString(ToastLine), true);
+
+    if (UWorld* World = GetWorld())
+    {
+        World->GetTimerManager().SetTimer(ToastTimerHandle, this, &UMHGameHudWidget::ClearToast, 5.0f, false);
+    }
+}
+
+void UMHGameHudWidget::ClearToast()
+{
+    SetTextBlockContent(ToastTextBlock, FText::GetEmpty(), true);
 }
 
 void UMHGameHudWidget::SetTextBlockContent(UTextBlock* TextBlock, const FText& Content, bool bCollapseWhenEmpty)

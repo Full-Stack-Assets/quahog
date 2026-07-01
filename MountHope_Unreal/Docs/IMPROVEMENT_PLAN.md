@@ -185,8 +185,40 @@ next-steps output.
   requirements table; Mass AI (already an enabled plugin) remains the planned
   upgrade path for denser crowds later — no ragdoll-on-death behavior yet.
 
-Not ported this pass (flagged by research as more involved / Phase 2): a
-minimap and any weapon/combat system.
+### Third pass — minimap, mission-completion toast, denser crowds, basic combat
+
+Closing the loop on the two items explicitly deferred in the previous pass:
+
+- **Mission-completion toast (bug fix)** — `UMHMissionSubsystem::OnMissionCompleted`
+  was being broadcast but nothing subscribed to it. `UMHGameHudWidget` now
+  binds it and shows each mission's `CompletionMessage` ("Act I wrapped —
+  Fall River's next.", etc.) as a centered toast for 5 seconds.
+- **Minimap** — `AMHMinimapCaptureActor` (spawned by `AMHGameModeBase` like
+  the weather director) is a top-down orthographic `USceneCaptureComponent2D`
+  that follows the player's position and yaw (so the player always faces
+  "up"), rendering into a runtime-created `UTextureRenderTarget2D`. The HUD
+  displays it in a 220x220 `SizeBox` bottom-right. No blips for other actors
+  yet (would need per-frame world-to-minimap projection); the exact "up"
+  axis convention for a yaw-following top-down capture is a one-line offset
+  to tune once seen in PIE.
+- **Denser ambient crowds** — `AMHPedestrianSpawnerActor` (also spawned by
+  `AMHGameModeBase`) is a pragmatic substitute for true Mass AI: it
+  maintains up to `MaxActivePedestrians` `AMHPedestrianCharacter` instances
+  in a radius around the player, using `UNavigationSystemV1::GetRandomReachablePointInRadius`
+  to place them and despawning ones that fall far behind — the same
+  "DynamicSpawner" pattern the Godot track used. This is *not* Mass AI; Mass
+  (already an enabled plugin) remains the upgrade path if crowd density or
+  per-agent LOD becomes a real perf concern.
+- **Basic combat** — a single sidearm, kept intentionally minimal rather than
+  a full weapon system: `AMHWeaponPickupActor` grants ammo via
+  `AMHPlayerCharacter::PickUpPistol`; left-click (`FirePistol`) does an
+  `ECC_Visibility` line trace from the camera, applies `ApplyVehicleDamage`
+  to a hit `AMHVehiclePawn` or destroys a hit `AMHPedestrianCharacter`, and
+  reports `Assault`/`PropertyDamage` to `UMHWantedSubsystem` accordingly. No
+  reload, no weapon switching, no aim-down-sights, on-foot only (no
+  drive-by) — deliberately scoped down from a full combat system; verify the
+  `ECC_Visibility` trace channel against the project's actual collision
+  presets once in PIE.
 
 ### Audio cue hook points
 

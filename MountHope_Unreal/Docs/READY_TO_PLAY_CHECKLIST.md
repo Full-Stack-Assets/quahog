@@ -72,12 +72,22 @@ delivery.
 - Dialogue supports speaker names, subtitles, skippable lines, and mission barks.
   Done via `UMHDialogueSubsystem`/`AMHDialogueNpcActor` (speaker + subtitles +
   `AdvanceConversation` to skip).
-- World simulation includes time-of-day or weather if feasible. Weather done
-  (`AMHWeatherDirectorActor`, mission-driven via `weatherOnStart`); no
-  time-of-day/day-night cycle yet (see Godot/Web tracks' `TimeOfDayClock` for
-  reference if this is prioritized next).
+- World simulation includes time-of-day or weather if feasible. **C++ done:**
+  weather (`AMHWeatherDirectorActor`, mission-driven via `weatherOnStart`) and
+  a lightweight day/night clock (`UMHTimeOfDaySubsystem`) that modulates sun
+  intensity; no sky/moon material or full visual blend yet.
 - A radio system with a real station/DJ/song roster
   (`UMHRadioSubsystem` + `Data/Radio/stations.json`) — station cycling wired
   to player input (`R` while driving) and the HUD; actual audio playback needs
   editor-side `USoundWave` import (see `IMPROVEMENT_PLAN.md`).
+- A minimap. **C++ done:** `AMHMinimapCaptureActor` (top-down scene capture,
+  player-relative yaw) shown in the HUD; no per-actor blips yet.
+- Ambient pedestrians at a believable density. **C++ done:**
+  `AMHPedestrianCharacter` (wander/flee) plus `AMHPedestrianSpawnerActor`
+  maintaining a pool around the player; a pragmatic substitute for true Mass
+  AI crowds (see `IMPROVEMENT_PLAN.md`).
+- Basic weapon/combat. **C++ done:** a single sidearm
+  (`AMHWeaponPickupActor` → `AMHPlayerCharacter::FirePistol`), hitscan against
+  vehicles/pedestrians, reports crime to the wanted system. Deliberately
+  minimal — no reload/switching/aim-down-sights/drive-by.
 - Performance is stable enough for a smooth first-player experience.

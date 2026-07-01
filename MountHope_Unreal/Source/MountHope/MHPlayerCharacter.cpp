@@ -12,11 +12,14 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "InputAction.h"
 #include "InputActionValue.h"
+#include "Kismet/GameplayStatics.h"
 #include "MHGameModeBase.h"
 #include "MHDialogueSubsystem.h"
 #include "MHInteractable.h"
+#include "MHPedestrianCharacter.h"
 #include "MHRadioSubsystem.h"
 #include "MHVehiclePawn.h"
+#include "MHWantedSubsystem.h"
 
 AMHPlayerCharacter::AMHPlayerCharacter()
 {
@@ -145,6 +148,10 @@ void AMHPlayerCharacter::BindEnhancedInput(UInputComponent* PlayerInputComponent
             this,
             &AMHPlayerCharacter::InputRadioNextStation);
     }
+    if (IA_Fire)
+    {
+        EnhancedInput->BindAction(IA_Fire, ETriggerEvent::Started, this, &AMHPlayerCharacter::InputFire);
+    }
 }
 
 void AMHPlayerCharacter::BindLegacyInput(UInputComponent* PlayerInputComponent)
@@ -169,6 +176,7 @@ void AMHPlayerCharacter::BindLegacyInput(UInputComponent* PlayerInputComponent)
         IE_Pressed,
         this,
         &AMHPlayerCharacter::RequestRadioNextStation);
+    PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &AMHPlayerCharacter::FirePistol);
 }
 
 void AMHPlayerCharacter::RequestRadioNextStation()
@@ -183,6 +191,60 @@ void AMHPlayerCharacter::RequestRadioNextStation()
         if (UMHRadioSubsystem* RadioSubsystem = GameInstance->GetSubsystem<UMHRadioSubsystem>())
         {
             RadioSubsystem->NextStation();
+        }
+    }
+}
+
+void AMHPlayerCharacter::PickUpPistol(int32 AmmoAmount)
+{
+    bHasPistol = true;
+    PistolAmmo = FMath::Max(0, PistolAmmo + AmmoAmount);
+}
+
+void AMHPlayerCharacter::FirePistol()
+{
+    if (!bHasPistol || bInVehicle || PistolAmmo <= 0 || !FollowCamera || !GetWorld())
+    {
+        return;
+    }
+
+    --PistolAmmo;
+    UGameplayStatics::PlaySound2D(this, GunfireSound);
+
+    const FVector TraceStart = FollowCamera->GetComponentLocation();
+    const FVector TraceEnd = TraceStart + FollowCamera->GetComponentRotation().Vector() * PistolRange;
+
+    FCollisionQueryParams QueryParams;
+    QueryParams.AddIgnoredActor(this);
+
+    FHitResult Hit;
+    if (!GetWorld()->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams))
+    {
+        return;
+    }
+
+    AActor* HitActor = Hit.GetActor();
+    if (!HitActor)
+    {
+        return;
+    }
+
+    UMHWantedSubsystem* WantedSubsystem = GetWorld()->GetSubsystem<UMHWantedSubsystem>();
+
+    if (AMHVehiclePawn* HitVehicle = Cast<AMHVehiclePawn>(HitActor))
+    {
+        HitVehicle->ApplyVehicleDamage(PistolVehicleDamage);
+        if (WantedSubsystem)
+        {
+            WantedSubsystem->ReportCrime(EMHCrimeType::PropertyDamage, PistolCrimeSeverity / 2);
+        }
+    }
+    else if (AMHPedestrianCharacter* HitPedestrian = Cast<AMHPedestrianCharacter>(HitActor))
+    {
+        HitPedestrian->Destroy();
+        if (WantedSubsystem)
+        {
+            WantedSubsystem->ReportCrime(EMHCrimeType::Assault, PistolCrimeSeverity);
         }
     }
 }
@@ -341,6 +403,11 @@ void AMHPlayerCharacter::InputEnterExitVehicle(const FInputActionValue& Value)
 void AMHPlayerCharacter::InputRadioNextStation(const FInputActionValue& Value)
 {
     RequestRadioNextStation();
+}
+
+void AMHPlayerCharacter::InputFire(const FInputActionValue& Value)
+{
+    FirePistol();
 }
 
 void AMHPlayerCharacter::TryInteractWithWorld()

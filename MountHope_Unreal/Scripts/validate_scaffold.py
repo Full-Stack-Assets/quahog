@@ -75,6 +75,12 @@ REQUIRED_FILES = [
     "Source/MountHope/MHHealthPickupActor.cpp",
     "Source/MountHope/MHPedestrianCharacter.h",
     "Source/MountHope/MHPedestrianCharacter.cpp",
+    "Source/MountHope/MHMinimapCaptureActor.h",
+    "Source/MountHope/MHMinimapCaptureActor.cpp",
+    "Source/MountHope/MHPedestrianSpawnerActor.h",
+    "Source/MountHope/MHPedestrianSpawnerActor.cpp",
+    "Source/MountHope/MHWeaponPickupActor.h",
+    "Source/MountHope/MHWeaponPickupActor.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
     "Data/Dialogue/vertical_slice.json",
@@ -336,6 +342,34 @@ def validate_source_contract() -> None:
         fail("MHHealthPickupActor.cpp does not wire a heal sound cue")
     if "WantedIncreaseSound" not in wanted_source:
         fail("MHWantedSubsystem.cpp does not wire a wanted-increase sound cue")
+
+    if "HandleMissionCompleted" not in hud_source or "ToastTextBlock" not in hud_source:
+        fail("MHGameHudWidget.cpp does not display mission-completion toasts")
+    if "RefreshMinimap" not in hud_source or "MinimapImage" not in hud_source:
+        fail("MHGameHudWidget.cpp does not wire the minimap")
+
+    minimap_source = read_text("Source/MountHope/MHMinimapCaptureActor.cpp")
+    if "TextureTarget" not in minimap_source or "USceneCaptureComponent2D" not in minimap_source:
+        fail("MHMinimapCaptureActor.cpp does not set up a scene capture render target")
+
+    if "AMHMinimapCaptureActor" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not spawn the minimap capture actor")
+    if "AMHPedestrianSpawnerActor" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not spawn the pedestrian spawner")
+
+    spawner_source = read_text("Source/MountHope/MHPedestrianSpawnerActor.cpp")
+    for symbol in ("SpawnIfNeeded", "DespawnFarPedestrians", "GetRandomReachablePointInRadius"):
+        if symbol not in spawner_source:
+            fail(f"MHPedestrianSpawnerActor.cpp is missing: {symbol}")
+
+    weapon_pickup_source = read_text("Source/MountHope/MHWeaponPickupActor.cpp")
+    if "PickUpPistol" not in weapon_pickup_source:
+        fail("MHWeaponPickupActor.cpp does not grant the pistol on interact")
+
+    if "FirePistol" not in player_source or "PickUpPistol" not in player_source:
+        fail("MHPlayerCharacter.cpp does not implement the pistol combat loop")
+    if "LineTraceSingleByChannel" not in player_source:
+        fail("MHPlayerCharacter.cpp does not raycast for pistol hit detection")
 
 
 def validate_default_config() -> None:
