@@ -9,6 +9,7 @@ class UCameraComponent;
 class AMHVehiclePawn;
 class UInputAction;
 class UInputMappingContext;
+class USoundBase;
 struct FInputActionValue;
 
 UCLASS()
@@ -42,6 +43,18 @@ public:
 
     UFUNCTION(BlueprintPure, Category = "Mount Hope|Movement")
     float GetStaminaPercent() const { return MaxStamina > 0.0f ? Stamina / MaxStamina : 0.0f; }
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Combat")
+    void PickUpPistol(int32 AmmoAmount);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Combat")
+    void FirePistol();
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Combat")
+    bool HasPistol() const { return bHasPistol; }
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Combat")
+    int32 GetPistolAmmo() const { return PistolAmmo; }
 
 protected:
     virtual void BeginPlay() override;
@@ -97,6 +110,27 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
     TObjectPtr<UInputAction> IA_RadioNextStation = nullptr;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_Fire = nullptr;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Combat")
+    bool bHasPistol = false;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Combat")
+    int32 PistolAmmo = 0;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Combat")
+    float PistolRange = 15000.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Combat")
+    float PistolVehicleDamage = 25.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Combat")
+    int32 PistolCrimeSeverity = 40;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> GunfireSound;
+
     UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     bool bInVehicle = false;
 
@@ -115,6 +149,7 @@ private:
     void InputInteract(const FInputActionValue& Value);
     void InputEnterExitVehicle(const FInputActionValue& Value);
     void InputRadioNextStation(const FInputActionValue& Value);
+    void InputFire(const FInputActionValue& Value);
 
     void MoveForward(float Value);
     void MoveRight(float Value);

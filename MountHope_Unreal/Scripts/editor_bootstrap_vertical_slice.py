@@ -47,6 +47,8 @@ PEDESTRIAN_LOCATIONS = (
     unreal.Vector(-32100.0, 150.0, 6000.0),
 )
 
+WEAPON_PICKUP_LOCATION = unreal.Vector(-27050.0, -200.0, 9750.0)
+
 CONTENT_FOLDERS = (
     "/Game/Maps",
     "/Game/Blueprints",
@@ -248,6 +250,10 @@ def spawn_pedestrians() -> None:
             log(f"Spawned BP_MHPedestrian_{index}")
 
 
+def spawn_weapon_pickup() -> None:
+    _spawn_singleton("/Script/MountHope.MHWeaponPickupActor", WEAPON_PICKUP_LOCATION, "BP_MHWeaponPickup_Pistol")
+
+
 def save_dirty_packages() -> None:
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
 
@@ -272,7 +278,13 @@ def print_next_steps() -> None:
         "  9. Press Play — talk to Deacon Mealy with E to advance dialogue, R cycles "
         "the radio while driving\n"
         " 10. BP_MHPedestrian_* wander/flee via AAIController + the navmesh from step 4 — "
-        "bake the navmesh before expecting them to path"
+        "bake the navmesh before expecting them to path (the pedestrian spawner also needs "
+        "the navmesh to place new pedestrians around the player)\n"
+        " 11. Left mouse fires the pistol once BP_MHWeaponPickup_Pistol is picked up — "
+        "hits register on AMHVehiclePawn and AMHPedestrianCharacter via an ECC_Visibility "
+        "trace; adjust the trace channel if your collision presets differ\n"
+        " 12. The minimap (bottom-right) and mission-complete toasts are spawned/wired "
+        "automatically at runtime — no editor placement needed, just compile"
     )
 
 
@@ -288,6 +300,7 @@ def main() -> None:
     spawn_general_store_shop()
     spawn_collectibles()
     spawn_pedestrians()
+    spawn_weapon_pickup()
     save_dirty_packages()
     print_next_steps()
     log("Bootstrap complete.")

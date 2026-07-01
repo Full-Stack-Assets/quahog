@@ -7,6 +7,8 @@
 class UTextBlock;
 class UVerticalBox;
 class UOverlay;
+class UImage;
+class AMHMinimapCaptureActor;
 
 UCLASS()
 class MOUNTHOPE_API UMHGameHudWidget : public UUserWidget
@@ -63,8 +65,15 @@ protected:
     UPROPERTY(meta = (BindWidgetOptional))
     TObjectPtr<UVerticalBox> DialogueBox;
 
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UTextBlock> ToastTextBlock;
+
+    UPROPERTY(meta = (BindWidgetOptional))
+    TObjectPtr<UImage> MinimapImage;
+
 private:
     void EnsureWidgetTreeBuilt();
+    void RefreshMinimap();
     void BindSubsystemDelegates();
     void UnbindSubsystemDelegates();
     void RefreshObjectiveAndStatus();
@@ -81,7 +90,15 @@ private:
     UFUNCTION()
     void HandleSongChanged(FName StationId, FString SongTitle);
 
+    UFUNCTION()
+    void HandleMissionCompleted(FString Title, FString CompletionMessage);
+
     void SetTextBlockContent(UTextBlock* TextBlock, const FText& Content, bool bCollapseWhenEmpty);
+    void ClearToast();
 
     bool bDelegatesBound = false;
+    FTimerHandle ToastTimerHandle;
+
+    UPROPERTY(Transient)
+    TObjectPtr<AMHMinimapCaptureActor> CachedMinimapCapture;
 };

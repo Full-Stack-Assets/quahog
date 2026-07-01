@@ -2,8 +2,10 @@
 
 #include "Kismet/GameplayStatics.h"
 #include "MHGameStateSubsystem.h"
+#include "MHMinimapCaptureActor.h"
 #include "MHMissionSubsystem.h"
 #include "MHMissionTriggerActor.h"
+#include "MHPedestrianSpawnerActor.h"
 #include "MHPlayerCharacter.h"
 #include "MHPlayerController.h"
 #include "MHReputationSubsystem.h"
@@ -46,6 +48,22 @@ void AMHGameModeBase::BeginPlay()
             FVector::ZeroVector,
             FRotator::ZeroRotator,
             SpawnParams);
+
+        FActorSpawnParameters MinimapSpawnParams;
+        MinimapSpawnParams.Name = TEXT("MH_MinimapCapture");
+        GetWorld()->SpawnActor<AMHMinimapCaptureActor>(
+            AMHMinimapCaptureActor::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            MinimapSpawnParams);
+
+        FActorSpawnParameters PedestrianSpawnerParams;
+        PedestrianSpawnerParams.Name = TEXT("MH_PedestrianSpawner");
+        GetWorld()->SpawnActor<AMHPedestrianSpawnerActor>(
+            AMHPedestrianSpawnerActor::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            PedestrianSpawnerParams);
     }
 
     RespawnAtSafehouseIfAvailable();
