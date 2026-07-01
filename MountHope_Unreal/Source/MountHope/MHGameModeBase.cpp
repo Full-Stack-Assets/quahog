@@ -8,6 +8,7 @@
 #include "MHPedestrianSpawnerActor.h"
 #include "MHPlayerCharacter.h"
 #include "MHPlayerController.h"
+#include "MHPoliceSpawnerActor.h"
 #include "MHReputationSubsystem.h"
 #include "MHTimeOfDaySubsystem.h"
 #include "MHWantedSubsystem.h"
@@ -64,6 +65,14 @@ void AMHGameModeBase::BeginPlay()
             FVector::ZeroVector,
             FRotator::ZeroRotator,
             PedestrianSpawnerParams);
+
+        FActorSpawnParameters PoliceSpawnerParams;
+        PoliceSpawnerParams.Name = TEXT("MH_PoliceSpawner");
+        GetWorld()->SpawnActor<AMHPoliceSpawnerActor>(
+            AMHPoliceSpawnerActor::StaticClass(),
+            FVector::ZeroVector,
+            FRotator::ZeroRotator,
+            PoliceSpawnerParams);
     }
 
     RespawnAtSafehouseIfAvailable();

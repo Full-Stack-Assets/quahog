@@ -220,6 +220,29 @@ Closing the loop on the two items explicitly deferred in the previous pass:
   `ECC_Visibility` trace channel against the project's actual collision
   presets once in PIE.
 
+### Fourth pass — police pursuit
+
+The last item flagged as "still needed" for the wanted loop: actual
+cop-car pursuit AI/spawning.
+
+- `AMHPoliceUnitPawn` — a deliberately simple pursuer: moves directly toward
+  the player pawn each tick (no steering/torque/road-following) and applies
+  small "catch pressure" damage (`ApplyDamage`, on a 2s cooldown) when within
+  `CatchRadius`. It does **not** trigger Busted directly — that stays owned
+  by `AMHGameModeBase`'s existing sustained-max-wanted timer
+  (`TickBustedTimer`), so proximity pressure and the actual arrest transition
+  don't fight each other.
+- `AMHPoliceSpawnerActor` (spawned by `AMHGameModeBase` alongside the other
+  managers) scales the active pursuer count to `UMHWantedSubsystem::GetWantedLevel()`
+  (capped at 5, matching the star cap), spawning/despawning in a ring around
+  the player every 2s.
+- Deliberately **not** real vehicle-driving AI (steering toward a nav-mesh
+  path while obeying Chaos vehicle physics is a much harder, much riskier
+  problem to write blind without a compiler) — `AMHPoliceUnitPawn` is a bare
+  `APawn` with a mesh, no `AMHVehiclePawn` inheritance. Upgrading pursuers to
+  actually drive cars along roads is the natural next step once this is
+  running in the real editor and the OSM road network is imported.
+
 ### Audio cue hook points
 
 Mirroring the radio subsystem's "data ready, asset bound in editor" pattern:
