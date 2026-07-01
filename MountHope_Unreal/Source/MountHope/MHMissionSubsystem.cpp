@@ -54,6 +54,14 @@ bool UMHMissionSubsystem::LoadMissionsFromJson(const FString& RelativeOrAbsolute
 
         FMHMission Mission;
         Mission.Title = MissionObject->GetStringField(TEXT("title"));
+        MissionObject->TryGetStringField(TEXT("act"), Mission.Act);
+        MissionObject->TryGetStringField(TEXT("completionMessage"), Mission.CompletionMessage);
+
+        int32 CompletionRewardValue = Mission.CompletionReward;
+        if (MissionObject->TryGetNumberField(TEXT("completionReward"), CompletionRewardValue))
+        {
+            Mission.CompletionReward = CompletionRewardValue;
+        }
 
         const TArray<TSharedPtr<FJsonValue>>* StepsArray = nullptr;
         if (MissionObject->TryGetArrayField(TEXT("steps"), StepsArray) && StepsArray)
@@ -71,6 +79,36 @@ bool UMHMissionSubsystem::LoadMissionsFromJson(const FString& RelativeOrAbsolute
                 Step.Radius = static_cast<float>(StepObject->GetNumberField(TEXT("radius")));
                 Step.bNeedVehicle = StepObject->GetBoolField(TEXT("needVehicle"));
                 Step.Reward = StepObject->GetIntegerField(TEXT("reward"));
+
+                if (StepObject->HasField(TEXT("crime")))
+                {
+                    Step.bIsCrime = StepObject->GetBoolField(TEXT("crime"));
+                }
+
+                int32 CrimeSeverityValue = Step.CrimeSeverity;
+                if (StepObject->TryGetNumberField(TEXT("crimeSeverity"), CrimeSeverityValue))
+                {
+                    Step.CrimeSeverity = CrimeSeverityValue;
+                }
+
+                FString FactionTagString;
+                if (StepObject->TryGetStringField(TEXT("reputationFaction"), FactionTagString) && !FactionTagString.IsEmpty())
+                {
+                    Step.ReputationFactionTag = FGameplayTag::RequestGameplayTag(FName(*FactionTagString), false);
+                }
+
+                int32 ReputationDeltaValue = Step.ReputationDelta;
+                if (StepObject->TryGetNumberField(TEXT("reputationDelta"), ReputationDeltaValue))
+                {
+                    Step.ReputationDelta = ReputationDeltaValue;
+                }
+
+                if (StepObject->HasField(TEXT("requireNoHeat")))
+                {
+                    Step.bRequireNoHeat = StepObject->GetBoolField(TEXT("requireNoHeat"));
+                }
+
+                StepObject->TryGetStringField(TEXT("weatherOnStart"), Step.WeatherOnStart);
 
                 const TArray<TSharedPtr<FJsonValue>>* TargetArray = nullptr;
                 if (StepObject->TryGetArrayField(TEXT("target"), TargetArray) && TargetArray && TargetArray->Num() >= 3)

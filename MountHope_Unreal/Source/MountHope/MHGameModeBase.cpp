@@ -1,10 +1,14 @@
 #include "MHGameModeBase.h"
 
+#include "Kismet/GameplayStatics.h"
 #include "MHGameStateSubsystem.h"
 #include "MHMissionSubsystem.h"
 #include "MHMissionTriggerActor.h"
 #include "MHPlayerCharacter.h"
 #include "MHPlayerController.h"
+#include "MHReputationSubsystem.h"
+#include "MHTimeOfDaySubsystem.h"
+#include "MHWantedSubsystem.h"
 #include "MHWeatherDirectorActor.h"
 
 AMHGameModeBase::AMHGameModeBase()
@@ -42,6 +46,14 @@ void AMHGameModeBase::BeginPlay()
             FRotator::ZeroRotator,
             SpawnParams);
     }
+
+    RespawnAtSafehouseIfAvailable();
+
+    if (UMHGameStateSubsystem* GameStateSubsystem = GetGameInstance()->GetSubsystem<UMHGameStateSubsystem>())
+    {
+        GameStateSubsystem->OnPlayerWasted.AddDynamic(this, &AMHGameModeBase::HandlePlayerWasted);
+        GameStateSubsystem->OnPlayerBusted.AddDynamic(this, &AMHGameModeBase::HandlePlayerBusted);
+    }
 }
 
 void AMHGameModeBase::Tick(float DeltaSeconds)
@@ -56,6 +68,80 @@ void AMHGameModeBase::Tick(float DeltaSeconds)
     if (UMHGameStateSubsystem* GameStateSubsystem = GetGameInstance()->GetSubsystem<UMHGameStateSubsystem>())
     {
         GameStateSubsystem->DecayHeat(DeltaSeconds);
+    }
+
+    if (UMHTimeOfDaySubsystem* TimeOfDaySubsystem = GetGameInstance()->GetSubsystem<UMHTimeOfDaySubsystem>())
+    {
+        TimeOfDaySubsystem->AdvanceTime(DeltaSeconds);
+    }
+
+    if (UWorld* World = GetWorld())
+    {
+        if (UMHWantedSubsystem* WantedSubsystem = World->GetSubsystem<UMHWantedSubsystem>())
+        {
+            WantedSubsystem->TickWantedDecay(DeltaSeconds);
+        }
+    }
+
+    TickBustedTimer(DeltaSeconds);
+}
+
+void AMHGameModeBase::TickBustedTimer(float DeltaSeconds)
+{
+    UWorld* World = GetWorld();
+    UMHWantedSubsystem* WantedSubsystem = World ? World->GetSubsystem<UMHWantedSubsystem>() : nullptr;
+    if (!WantedSubsystem)
+    {
+        return;
+    }
+
+    if (WantedSubsystem->GetWantedLevel() < 5)
+    {
+        TimeAtMaxWanted = 0.0f;
+        return;
+    }
+
+    TimeAtMaxWanted += DeltaSeconds;
+    if (TimeAtMaxWanted < MaxWantedBustedSeconds)
+    {
+        return;
+    }
+
+    TimeAtMaxWanted = 0.0f;
+    if (UMHGameStateSubsystem* GameStateSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMHGameStateSubsystem>() : nullptr)
+    {
+        GameStateSubsystem->TriggerBusted();
+    }
+}
+
+void AMHGameModeBase::HandlePlayerWasted()
+{
+    UE_LOG(LogTemp, Log, TEXT("MountHope: Player wasted - respawning at safehouse."));
+    RespawnAtSafehouseIfAvailable();
+}
+
+void AMHGameModeBase::HandlePlayerBusted()
+{
+    UE_LOG(LogTemp, Log, TEXT("MountHope: Player busted - respawning at safehouse."));
+    RespawnAtSafehouseIfAvailable();
+}
+
+void AMHGameModeBase::RespawnAtSafehouseIfAvailable()
+{
+    if (!GetWorld())
+    {
+        return;
+    }
+
+    UMHGameStateSubsystem* GameStateSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMHGameStateSubsystem>() : nullptr;
+    if (!GameStateSubsystem || !GameStateSubsystem->bHasSafehouse)
+    {
+        return;
+    }
+
+    if (APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0))
+    {
+        PlayerPawn->SetActorLocation(GameStateSubsystem->SafehouseLocation);
     }
 }
 
@@ -85,21 +171,101 @@ bool AMHGameModeBase::CompleteCurrentObjective(bool bPlayerInVehicle)
         return false;
     }
 
+    if (Step.bRequireNoHeat)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            if (UMHWantedSubsystem* WantedSubsystem = World->GetSubsystem<UMHWantedSubsystem>())
+            {
+                if (WantedSubsystem->GetWantedLevel() > 0)
+                {
+                    UE_LOG(LogTemp, Warning, TEXT("MountHope: objective requires losing the heat first."));
+                    return false;
+                }
+            }
+        }
+    }
+
     if (Step.Reward > 0)
     {
         GameStateSubsystem->AddCash(Step.Reward);
     }
 
+    if (Step.bIsCrime)
+    {
+        if (UWorld* World = GetWorld())
+        {
+            if (UMHWantedSubsystem* WantedSubsystem = World->GetSubsystem<UMHWantedSubsystem>())
+            {
+                WantedSubsystem->ReportCrime(EMHCrimeType::MissionHeat, Step.CrimeSeverity);
+            }
+        }
+    }
+
+    if (Step.ReputationFactionTag.IsValid() && Step.ReputationDelta != 0)
+    {
+        if (UMHReputationSubsystem* ReputationSubsystem = GetGameInstance()->GetSubsystem<UMHReputationSubsystem>())
+        {
+            ReputationSubsystem->AddReputation(Step.ReputationFactionTag, Step.ReputationDelta);
+        }
+    }
+
+    const int32 PreviousMissionIndex = MissionSubsystem->MissionIndex;
     const bool bAdvanced = MissionSubsystem->AdvanceStep();
+
+    if (bAdvanced
+        && MissionSubsystem->MissionIndex != PreviousMissionIndex
+        && MissionSubsystem->Missions.IsValidIndex(PreviousMissionIndex))
+    {
+        const FMHMission& CompletedMission = MissionSubsystem->Missions[PreviousMissionIndex];
+        if (CompletedMission.CompletionReward > 0)
+        {
+            GameStateSubsystem->AddCash(CompletedMission.CompletionReward);
+        }
+
+        MissionSubsystem->OnMissionCompleted.Broadcast(CompletedMission.Title, CompletedMission.CompletionMessage);
+        UE_LOG(LogTemp, Log, TEXT("MountHope: Mission complete -> %s"), *CompletedMission.Title);
+    }
+
     FMHMissionStep NextStep;
     if (bAdvanced && MissionSubsystem->GetCurrentStep(NextStep))
     {
         UE_LOG(LogTemp, Log, TEXT("MountHope: Next objective -> %s"), *NextStep.Text);
+        if (!NextStep.WeatherOnStart.IsEmpty())
+        {
+            ApplyWeatherFromString(NextStep.WeatherOnStart);
+        }
     }
 
     GameStateSubsystem->SaveToSlot();
     RefreshObjectiveTrigger();
     return bAdvanced;
+}
+
+void AMHGameModeBase::ApplyWeatherFromString(const FString& WeatherName) const
+{
+    UMHGameStateSubsystem* GameStateSubsystem = GetGameInstance() ? GetGameInstance()->GetSubsystem<UMHGameStateSubsystem>() : nullptr;
+    if (!GameStateSubsystem)
+    {
+        return;
+    }
+
+    if (WeatherName.Equals(TEXT("DenseFog"), ESearchCase::IgnoreCase))
+    {
+        GameStateSubsystem->SetWeather(EMHWeatherState::DenseFog);
+    }
+    else if (WeatherName.Equals(TEXT("CoastalRain"), ESearchCase::IgnoreCase))
+    {
+        GameStateSubsystem->SetWeather(EMHWeatherState::CoastalRain);
+    }
+    else if (WeatherName.Equals(TEXT("Noreaster"), ESearchCase::IgnoreCase))
+    {
+        GameStateSubsystem->SetWeather(EMHWeatherState::Noreaster);
+    }
+    else
+    {
+        GameStateSubsystem->SetWeather(EMHWeatherState::Clear);
+    }
 }
 
 bool AMHGameModeBase::TryCompleteVehicleObjective(bool bPlayerInVehicle)

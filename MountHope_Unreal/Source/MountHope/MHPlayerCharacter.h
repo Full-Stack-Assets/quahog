@@ -37,6 +37,12 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Movement")
     void SetSprinting(bool bEnableSprint);
 
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Radio")
+    void RequestRadioNextStation();
+
+    UFUNCTION(BlueprintPure, Category = "Mount Hope|Movement")
+    float GetStaminaPercent() const { return MaxStamina > 0.0f ? Stamina / MaxStamina : 0.0f; }
+
 protected:
     virtual void BeginPlay() override;
 
@@ -58,6 +64,18 @@ protected:
     UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     float VehicleInteractRange = 350.0f;
 
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float MaxStamina = 100.0f;
+
+    UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float Stamina = 100.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float SprintStaminaDrainPerSecond = 28.0f;
+
+    UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Mount Hope|Movement")
+    float StaminaRegenPerSecond = 18.0f;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
     TObjectPtr<UInputMappingContext> DefaultMappingContext = nullptr;
 
@@ -76,6 +94,9 @@ protected:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
     TObjectPtr<UInputAction> IA_EnterExitVehicle = nullptr;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Input")
+    TObjectPtr<UInputAction> IA_RadioNextStation = nullptr;
+
     UPROPERTY(BlueprintReadOnly, Category = "Mount Hope|Vehicle")
     bool bInVehicle = false;
 
@@ -93,6 +114,7 @@ private:
     void InputSprintStop(const FInputActionValue& Value);
     void InputInteract(const FInputActionValue& Value);
     void InputEnterExitVehicle(const FInputActionValue& Value);
+    void InputRadioNextStation(const FInputActionValue& Value);
 
     void MoveForward(float Value);
     void MoveRight(float Value);
@@ -101,4 +123,7 @@ private:
 
     void TryInteractWithWorld();
     AMHVehiclePawn* FindNearestVehicle() const;
+    void TickStamina(float DeltaSeconds);
+
+    bool bSprintRequested = false;
 };

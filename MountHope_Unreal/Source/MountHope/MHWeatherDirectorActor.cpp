@@ -7,6 +7,7 @@
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Kismet/GameplayStatics.h"
+#include "MHTimeOfDaySubsystem.h"
 
 AMHWeatherDirectorActor::AMHWeatherDirectorActor()
 {
@@ -166,7 +167,16 @@ void AMHWeatherDirectorActor::ApplyProfile(const FMHWeatherProfile& Profile)
 
     if (SunLightComponent)
     {
-        SunLightComponent->SetIntensity(Profile.SunIntensity);
+        float SunIntensity = Profile.SunIntensity;
+        if (const UGameInstance* GameInstance = GetGameInstance())
+        {
+            if (const UMHTimeOfDaySubsystem* TimeOfDaySubsystem = GameInstance->GetSubsystem<UMHTimeOfDaySubsystem>())
+            {
+                SunIntensity *= TimeOfDaySubsystem->GetSunIntensityMultiplier();
+            }
+        }
+
+        SunLightComponent->SetIntensity(SunIntensity);
         SunLightComponent->SetLightColor(Profile.SunColor);
     }
 }

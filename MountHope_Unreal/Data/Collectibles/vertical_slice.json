@@ -1,0 +1,60 @@
+{
+  "collectibles": [
+    {
+      "id": "scrimshaw_bethel_pew",
+      "name": "Scrimshaw Tooth - Bethel Pew",
+      "flavor": "Tucked under a pew at Seamen's Bethel, scratched with a whaling ship's initials.",
+      "cashReward": 120,
+      "pos": [-268.0, 0.0, 98.0]
+    },
+    {
+      "id": "scrimshaw_fish_pier",
+      "name": "Scrimshaw Tooth - Fish Pier Piling",
+      "flavor": "Wedged in a piling at the fish pier, worn smooth by fifty years of tide.",
+      "cashReward": 120,
+      "pos": [-306.0, 0.0, 84.0]
+    },
+    {
+      "id": "scrimshaw_anvil_garage",
+      "name": "Scrimshaw Tooth - Anvil Garage Shelf",
+      "flavor": "Sal keeps it on a shelf behind the parts counter and swears it's cursed.",
+      "cashReward": 130,
+      "pos": [-322.0, 0.0, 58.0]
+    },
+    {
+      "id": "scrimshaw_quohog_republic",
+      "name": "Scrimshaw Tooth - Quohog Republic Back Booth",
+      "flavor": "Somebody carved a whale onto it, then carved a name off it in a hurry.",
+      "cashReward": 130,
+      "pos": [-238.0, 0.0, 120.0]
+    },
+    {
+      "id": "scrimshaw_off_the_hook",
+      "name": "Scrimshaw Tooth - Off the Hook Bar Rafters",
+      "flavor": "Stashed in the rafters at Off the Hook, wrapped in a page of an old ledger.",
+      "cashReward": 150,
+      "pos": [6088.0, 0.0, 4480.0]
+    },
+    {
+      "id": "scrimshaw_battleship_cove",
+      "name": "Scrimshaw Tooth - Battleship Cove Overlook",
+      "flavor": "Left on a rail overlooking the USS Massachusetts, facing out toward Mount Hope Bay.",
+      "cashReward": 180,
+      "pos": [-20185.0, 0.0, 7878.0]
+    },
+    {
+      "id": "scrimshaw_champion_gym",
+      "name": "Scrimshaw Tooth - Champion City Gym Trophy Case",
+      "flavor": "Iron Mike keeps it next to a photo of a fighter nobody remembers anymore.",
+      "cashReward": 200,
+      "pos": [-8352.0, 0.0, 49615.0]
+    },
+    {
+      "id": "scrimshaw_heritage_marina",
+      "name": "Scrimshaw Tooth - Heritage Marina Slip",
+      "flavor": "Found in a boat slip at the heritage marina, next to hull numbers that don't match the registry.",
+      "cashReward": 220,
+      "pos": [-10515.0, 0.0, 47415.0]
+    }
+  ]
+}

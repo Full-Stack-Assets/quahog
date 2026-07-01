@@ -29,6 +29,18 @@ NPC_LOCATION = unreal.Vector(-27223.0, 0.0, 10650.0)
 NPC_CONVERSATION_ID = "deacon_mealy_harbor_errand"
 NPC_SPEAKER = "Deacon Mealy"
 
+# Derived from Data/Missions + Data/Economy JSON targets, scaled x100 to match
+# NPC_LOCATION's established (JSON X*100, 0, JSON Z*100) convention above.
+# Verify against final OSM-imported terrain height in editor before shipping.
+SAFEHOUSE_LOCATION = unreal.Vector(-18800.0, 0.0, 4000.0)
+GARAGE_LOCATION = unreal.Vector(-32000.0, 0.0, 6000.0)
+GENERAL_STORE_LOCATION = unreal.Vector(-24000.0, 0.0, 12200.0)
+
+COLLECTIBLE_LOCATIONS = (
+    ("scrimshaw_bethel_pew", unreal.Vector(-26800.0, 0.0, 9800.0)),
+    ("scrimshaw_anvil_garage", unreal.Vector(-32200.0, 0.0, 5800.0)),
+)
+
 CONTENT_FOLDERS = (
     "/Game/Maps",
     "/Game/Blueprints",
@@ -139,6 +151,71 @@ def spawn_mission_npc() -> None:
     log("Spawned Deacon Mealy dialogue NPC")
 
 
+def _spawn_singleton(class_path: str, location: "unreal.Vector", label: str) -> None:
+    actor_class = unreal.load_class(None, class_path)
+    if actor_class is None:
+        warn(f"Could not load {class_path}; compile C++ first.")
+        return
+
+    for actor in unreal.EditorLevelLibrary.get_all_level_actors():
+        if actor.get_class() == actor_class and actor.get_actor_label() == label:
+            log(f"{label} already placed")
+            return
+
+    actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+        actor_class,
+        location,
+        unreal.Rotator(0.0, 0.0, 0.0),
+    )
+    if actor:
+        actor.set_actor_label(label)
+        log(f"Spawned {label}")
+
+
+def spawn_safehouse() -> None:
+    _spawn_singleton("/Script/MountHope.MHSafehouseActor", SAFEHOUSE_LOCATION, "BP_MHSafehouse_Narrows")
+
+
+def spawn_garage_shop() -> None:
+    _spawn_singleton("/Script/MountHope.MHShopActor", GARAGE_LOCATION, "BP_MHShop_AnvilGarage")
+
+
+def spawn_general_store_shop() -> None:
+    _spawn_singleton("/Script/MountHope.MHShopActor", GENERAL_STORE_LOCATION, "BP_MHShop_QuohogRepublic")
+
+
+def spawn_collectibles() -> None:
+    collectible_class = unreal.load_class(None, "/Script/MountHope.MHCollectibleActor")
+    if collectible_class is None:
+        warn("Could not load MHCollectibleActor; compile C++ first.")
+        return
+
+    placed_labels = {
+        actor.get_actor_label()
+        for actor in unreal.EditorLevelLibrary.get_all_level_actors()
+        if actor.get_class() == collectible_class
+    }
+
+    for item_id, location in COLLECTIBLE_LOCATIONS:
+        label = f"BP_MHCollectible_{item_id}"
+        if label in placed_labels:
+            log(f"{label} already placed")
+            continue
+
+        actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+            collectible_class,
+            location,
+            unreal.Rotator(0.0, 0.0, 0.0),
+        )
+        if actor:
+            actor.set_actor_label(label)
+            try:
+                actor.set_editor_property("item_id", unreal.Name(item_id))
+            except Exception:
+                warn(f"Set ItemId={item_id} on {label} manually in Details panel.")
+            log(f"Spawned {label}")
+
+
 def save_dirty_packages() -> None:
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
 
@@ -151,7 +228,17 @@ def print_next_steps() -> None:
         "  3. Scripts/editor_import_southcoast_roads.py (optional, denser roads)\n"
         "  4. Scripts/editor_setup_navmesh.py\n"
         "  5. Create BP_MHVehicle (mesh + Chaos wheels)\n"
-        "  6. Press Play — talk to Deacon Mealy with E to advance dialogue"
+        "  6. Set ShopType=Garage on BP_MHShop_AnvilGarage, ShopType=GeneralStore "
+        "+ LinkedBusinessId=quohog on BP_MHShop_QuohogRepublic\n"
+        "  7. Import radio VO/music from Data/Radio/stations.json's voFolder/jingleFolder "
+        "paths as USoundWave assets and wire them to a Blueprint radio player bound to "
+        "UMHRadioSubsystem::OnStationChanged / OnSongChanged\n"
+        "  8. The campaign in Data/Missions/vertical_slice.json now spans New Bedford, "
+        "Fall River (Battleship Cove/Borden House), Brockton (Champion City Gym), and "
+        "Cape Cod (Hyannis) — missions past 'Harbor Heat' need those areas' OSM data "
+        "imported/authored before their trigger volumes are reachable\n"
+        "  9. Press Play — talk to Deacon Mealy with E to advance dialogue, R cycles "
+        "the radio while driving"
     )
 
 
@@ -162,6 +249,10 @@ def main() -> None:
     spawn_or_find_player_start()
     spawn_vehicle_pawn()
     spawn_mission_npc()
+    spawn_safehouse()
+    spawn_garage_shop()
+    spawn_general_store_shop()
+    spawn_collectibles()
     save_dirty_packages()
     print_next_steps()
     log("Bootstrap complete.")

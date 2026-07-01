@@ -1,0 +1,65 @@
+{
+  "stations": [
+    {
+      "id": "whale",
+      "name": "WHALE 92.1",
+      "tagline": "The Whaling City's home for classic rock",
+      "dj": "Sully",
+      "genre": "Classic Rock",
+      "songs": [
+        "Quohog Republic Saturday Night",
+        "Buzzards Bay",
+        "Mill Town Heart",
+        "Route 18",
+        "Whaling City"
+      ],
+      "voFolder": "QUAHOG_Web/public/music/whale/vo",
+      "jingleFolder": ""
+    },
+    {
+      "id": "rage",
+      "name": "The Rage, 1480 AM",
+      "tagline": "The only station that says what you're thinkin'",
+      "dj": "Buddy Mello",
+      "genre": "Talk Radio",
+      "songs": [],
+      "voFolder": "QUAHOG_Web/public/music/rage/vo",
+      "jingleFolder": "QUAHOG_Web/public/music/rage/jingles"
+    },
+    {
+      "id": "anvil",
+      "name": "The Anvil, WBOX",
+      "tagline": "City of Champions",
+      "dj": "Iron Mike Fontaine",
+      "genre": "Motivational Talk / Heartland Rock",
+      "songs": [
+        "George's Cafe Saturday Night",
+        "Shoe City Heart",
+        "Route 24",
+        "City of Champions",
+        "Forty-Nine and Oh",
+        "First to Light",
+        "Under the Lights at Marciano",
+        "Tower Hill"
+      ],
+      "voFolder": "QUAHOG_Web/public/music/anvil/vo",
+      "jingleFolder": ""
+    },
+    {
+      "id": "mare",
+      "name": "Mare Alta, 105.3",
+      "tagline": "High tide on your dial",
+      "dj": "Tia Conceicao",
+      "genre": "Portuguese / Cape Verdean",
+      "songs": [
+        "Mare Alta",
+        "Saudade do Mar",
+        "Carta pra Mae",
+        "Festa na Avenida",
+        "Volta pra Casa"
+      ],
+      "voFolder": "QUAHOG_Web/public/music/mare/vo",
+      "jingleFolder": ""
+    }
+  ]
+}

@@ -55,9 +55,29 @@ REQUIRED_FILES = [
     "Source/MountHope/MHPlayerController.cpp",
     "Source/MountHope/MHWeatherDirectorActor.h",
     "Source/MountHope/MHWeatherDirectorActor.cpp",
+    "Source/MountHope/MHWantedSubsystem.h",
+    "Source/MountHope/MHWantedSubsystem.cpp",
+    "Source/MountHope/MHReputationSubsystem.h",
+    "Source/MountHope/MHReputationSubsystem.cpp",
+    "Source/MountHope/MHSafehouseActor.h",
+    "Source/MountHope/MHSafehouseActor.cpp",
+    "Source/MountHope/MHShopActor.h",
+    "Source/MountHope/MHShopActor.cpp",
+    "Source/MountHope/MHCollectibleSubsystem.h",
+    "Source/MountHope/MHCollectibleSubsystem.cpp",
+    "Source/MountHope/MHCollectibleActor.h",
+    "Source/MountHope/MHCollectibleActor.cpp",
+    "Source/MountHope/MHRadioSubsystem.h",
+    "Source/MountHope/MHRadioSubsystem.cpp",
+    "Source/MountHope/MHTimeOfDaySubsystem.h",
+    "Source/MountHope/MHTimeOfDaySubsystem.cpp",
+    "Source/MountHope/MHHealthPickupActor.h",
+    "Source/MountHope/MHHealthPickupActor.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
     "Data/Dialogue/vertical_slice.json",
+    "Data/Collectibles/vertical_slice.json",
+    "Data/Radio/stations.json",
     "Docs/VERTICAL_SLICE.md",
     "Docs/OSM_TO_UNREAL.md",
     "Docs/BUILD_WINDOWS.md",
@@ -231,6 +251,67 @@ def validate_source_contract() -> None:
         if dependency not in build_source:
             fail(f"MountHope.Build.cs is missing dependency: {dependency}")
 
+    vehicle_source = read_text("Source/MountHope/MHVehiclePawn.cpp")
+    for symbol in ("ApplyVehicleDamage", "RepairVehicle", "GetHealthPercent", "NotifyHit"):
+        if symbol not in vehicle_source:
+            fail(f"MHVehiclePawn.cpp is missing damage/repair support: {symbol}")
+
+    wanted_source = read_text("Source/MountHope/MHWantedSubsystem.cpp")
+    if "TickWantedDecay" not in wanted_source:
+        fail("MHWantedSubsystem.cpp is missing TickWantedDecay")
+
+    if "MHWantedSubsystem" not in game_mode_source or "TickWantedDecay" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not tick the wanted subsystem")
+    if "MHReputationSubsystem" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not apply mission reputation")
+    if "RespawnAtSafehouseIfAvailable" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not respawn at the saved safehouse")
+
+    safehouse_source = read_text("Source/MountHope/MHSafehouseActor.cpp")
+    if "Interact_Implementation" not in safehouse_source or "SetSafehouseLocation" not in safehouse_source:
+        fail("MHSafehouseActor.cpp does not save/set the safehouse location")
+
+    shop_source = read_text("Source/MountHope/MHShopActor.cpp")
+    for symbol in ("HandleGarageInteraction", "HandleGeneralStoreInteraction", "RepairVehicle"):
+        if symbol not in shop_source:
+            fail(f"MHShopActor.cpp is missing: {symbol}")
+
+    collectible_source = read_text("Source/MountHope/MHCollectibleActor.cpp")
+    if "CollectItem" not in collectible_source:
+        fail("MHCollectibleActor.cpp does not call CollectItem")
+
+    radio_source = read_text("Source/MountHope/MHRadioSubsystem.cpp")
+    for symbol in ("TuneToStation", "NextStation", "LoadStationsFromJson"):
+        if symbol not in radio_source:
+            fail(f"MHRadioSubsystem.cpp is missing: {symbol}")
+
+    if "RequestRadioNextStation" not in player_source:
+        fail("MHPlayerCharacter.cpp does not wire radio station cycling")
+
+    if "HandleStationChanged" not in hud_source or "SetWantedText" not in hud_source:
+        fail("MHGameHudWidget.cpp does not surface wanted level / radio state")
+
+    if "TickStamina" not in player_source or "bSprintRequested" not in player_source:
+        fail("MHPlayerCharacter.cpp does not implement the stamina system")
+
+    game_state_source = read_text("Source/MountHope/MHGameStateSubsystem.cpp")
+    for symbol in ("OnPlayerWasted", "OnPlayerBusted", "TriggerBusted", "Heal"):
+        if symbol not in game_state_source:
+            fail(f"MHGameStateSubsystem.cpp is missing consequence-loop support: {symbol}")
+
+    if "TickBustedTimer" not in game_mode_source or "HandlePlayerWasted" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not wire the busted/wasted consequence loop")
+
+    time_of_day_source = read_text("Source/MountHope/MHTimeOfDaySubsystem.cpp")
+    if "AdvanceTime" not in time_of_day_source:
+        fail("MHTimeOfDaySubsystem.cpp is missing AdvanceTime")
+    if "MHTimeOfDaySubsystem" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not tick the time-of-day subsystem")
+
+    pickup_source = read_text("Source/MountHope/MHHealthPickupActor.cpp")
+    if "OnPickupOverlap" not in pickup_source or "Heal" not in pickup_source:
+        fail("MHHealthPickupActor.cpp does not heal the player on overlap")
+
 
 def validate_default_config() -> None:
     default_game = read_text("Config/DefaultGame.ini")
@@ -245,9 +326,12 @@ def validate_missions() -> None:
     missions = data.get("missions", [])
     if not missions:
         fail("No missions defined in vertical_slice.json")
+
+    titles = []
     for mission in missions:
         if not mission.get("title"):
             fail("Mission title is required")
+        titles.append(mission["title"])
         steps = mission.get("steps", [])
         if not steps:
             fail(f"Mission {mission.get('title')} has no steps")
@@ -255,6 +339,68 @@ def validate_missions() -> None:
             for field in ("text", "needVehicle", "reward"):
                 if field not in step:
                     fail(f"Mission step missing field: {field}")
+            if step.get("crime") and "crimeSeverity" not in step:
+                fail(f"Mission step '{step.get('text')}' flags crime without crimeSeverity")
+            if step.get("weatherOnStart") not in (None, "Clear", "DenseFog", "CoastalRain", "Noreaster"):
+                fail(f"Mission step '{step.get('text')}' has an unknown weatherOnStart value")
+
+    for required_title in ("Off the Boat", "Gloria", "Big Mamie"):
+        if required_title not in titles:
+            fail(f"Canonical campaign is missing story mission: {required_title}")
+
+    if len(missions) < 10:
+        fail("Canonical campaign should span the full Acts I-III + Gloria finale (10+ missions)")
+
+
+def validate_collectibles() -> None:
+    data = load_json("Data/Collectibles/vertical_slice.json")
+    collectibles = data.get("collectibles", [])
+    if not collectibles:
+        fail("No collectibles defined in Data/Collectibles/vertical_slice.json")
+    seen: set[str] = set()
+    for item in collectibles:
+        item_id = item.get("id")
+        if not item_id:
+            fail("Collectible missing id")
+        if item_id in seen:
+            fail(f"Duplicate collectible id: {item_id}")
+        seen.add(item_id)
+        if not item.get("name"):
+            fail(f"Collectible {item_id} missing name")
+        if item.get("cashReward", 0) < 0:
+            fail(f"Invalid cashReward for {item_id}")
+
+
+def validate_radio_stations() -> None:
+    data = load_json("Data/Radio/stations.json")
+    stations = data.get("stations", [])
+    if not stations:
+        fail("No stations defined in Data/Radio/stations.json")
+    seen: set[str] = set()
+    for station in stations:
+        station_id = station.get("id")
+        if not station_id:
+            fail("Radio station missing id")
+        if station_id in seen:
+            fail(f"Duplicate radio station id: {station_id}")
+        seen.add(station_id)
+        if not station.get("name"):
+            fail(f"Radio station {station_id} missing name")
+        if not station.get("dj"):
+            fail(f"Radio station {station_id} missing dj")
+
+
+def validate_gameplay_tags() -> None:
+    tags_text = read_text("Config/DefaultGameplayTags.ini")
+    for required_tag in (
+        "Faction.Crew.Dockside",
+        "Faction.Crew.FallRiver",
+        "Faction.Sports.Boxing",
+        "Faction.Elite.CapeCod",
+        "Faction.Business.Garage",
+    ):
+        if required_tag not in tags_text:
+            fail(f"DefaultGameplayTags.ini is missing required faction tag: {required_tag}")
 
 
 def validate_dialogue() -> None:
@@ -311,6 +457,9 @@ def main() -> None:
     validate_missions()
     validate_dialogue()
     validate_economy()
+    validate_collectibles()
+    validate_radio_stations()
+    validate_gameplay_tags()
     validate_existing_data_links()
     print("MountHope_Unreal scaffold validation passed")
 

@@ -1,8 +1,10 @@
 #include "MHGameInstance.h"
 
+#include "MHCollectibleSubsystem.h"
 #include "MHDialogueSubsystem.h"
 #include "MHGameStateSubsystem.h"
 #include "MHMissionSubsystem.h"
+#include "MHRadioSubsystem.h"
 #include "MHWorldSliceSubsystem.h"
 
 void UMHGameInstance::Init()
@@ -22,6 +24,16 @@ void UMHGameInstance::Init()
     if (UMHDialogueSubsystem* DialogueSubsystem = GetSubsystem<UMHDialogueSubsystem>())
     {
         DialogueSubsystem->LoadDialogueFromJson(DialoguePath);
+    }
+
+    if (UMHCollectibleSubsystem* CollectibleSubsystem = GetSubsystem<UMHCollectibleSubsystem>())
+    {
+        CollectibleSubsystem->LoadCollectiblesFromJson(CollectiblesPath);
+    }
+
+    if (UMHRadioSubsystem* RadioSubsystem = GetSubsystem<UMHRadioSubsystem>())
+    {
+        RadioSubsystem->LoadStationsFromJson(RadioPath);
     }
 
     if (UMHGameStateSubsystem* GameStateSubsystem = GetSubsystem<UMHGameStateSubsystem>())

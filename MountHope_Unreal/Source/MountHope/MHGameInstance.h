@@ -25,5 +25,11 @@ public:
     FString DialoguePath = TEXT("Data/Dialogue/vertical_slice.json");
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Boot")
+    FString CollectiblesPath = TEXT("Data/Collectibles/vertical_slice.json");
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Boot")
+    FString RadioPath = TEXT("Data/Radio/stations.json");
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Boot")
     FString SaveSlotName = TEXT("MountHopeSlot");
 };

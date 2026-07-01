@@ -64,6 +64,118 @@ From `Docs/VERTICAL_SLICE.md`:
 - Expanded `Scripts/validate_scaffold.py` to cover targets, JSON schemas,
   config wiring, mission/vehicle helpers, and deprecated-macro guards.
 
+## Second pass — GTA-structure gameplay loop, canonical storyline, radio
+
+This pass wired up systems that existed as orphaned scaffolding (never spawned
+or read by anything) into real gameplay loops, and replaced the two-mission
+placeholder campaign with the canonical Acts I–III + Gloria finale storyline
+sourced from `QUAHOG_GODOT1/scripts/systems/story_mission.gd` (the most
+complete story-mission implementation across the Godot/Web tracks — see
+`ENGINES.md`/`QUAHOG_Unreal/LEGACY.md` for track history). `QUAHOG_Unreal/`
+(the legacy UE bootstrap) was checked for anything not already merged forward;
+its data files are byte-identical to `MountHope_Unreal/`'s and its C++ is a
+strict subset (no damage model, no `IMHInteractable`, weaker character), so
+nothing further was ported from it.
+
+### Police/wanted loop (previously orphaned)
+
+- `UMHWantedSubsystem` (`WorldSubsystem`) now decays heat over time
+  (`TickWantedDecay`, driven from `AMHGameModeBase::Tick`) and broadcasts
+  `OnWantedLevelChanged`. `AMHVehiclePawn` reports `PropertyDamage` crimes on
+  high-speed collisions with other pawns; mission steps can flag `"crime"`
+  with a `"crimeSeverity"`; `AMHSafehouseActor` clears wanted state on save.
+- HUD shows a 5-star wanted readout (`UMHGameHudWidget::SetWantedText`).
+
+### Reputation loop (previously orphaned)
+
+- `UMHReputationSubsystem` is now read/written by mission steps
+  (`"reputationFaction"` / `"reputationDelta"`) and by `AMHShopActor` (garage
+  repair discount when reputation with `Faction.Business.Garage` is high
+  enough). New faction tags for the expanded campaign: `Faction.Crew.FallRiver`,
+  `Faction.Sports.Boxing`, `Faction.Elite.CapeCod`.
+
+### Vehicle damage & repair
+
+- `AMHVehiclePawn` gained `Health`/`MaxHealth`, `ApplyVehicleDamage`,
+  `RepairVehicle`, `GetHealthPercent`, `IsWrecked`, and a `NotifyHit` override
+  that converts impact impulse into damage and a wanted-heat report. Chaos
+  vehicle `Mass`/`DragCoefficient` are tuned for a heavier, less toy-like feel.
+
+### Safehouse, shops, and collectibles (previously missing)
+
+- `AMHSafehouseActor` — interactable save point; persists a spawn location
+  (`UMHGameStateSubsystem::SafehouseLocation`) that `AMHGameModeBase` restores
+  the player to on the next session, and clears wanted state.
+- `AMHShopActor` — `Garage` mode repairs the nearest damaged vehicle for cash;
+  `GeneralStore` mode wraps `BuyBusiness` for a purchase interaction.
+- `UMHCollectibleSubsystem` + `AMHCollectibleActor` — a JSON-driven "scrimshaw"
+  side-content loop (`Data/Collectibles/vertical_slice.json`, 8 items across
+  the map), saved/loaded via `UMHGameStateSubsystem`.
+
+### Radio (new)
+
+- `UMHRadioSubsystem` — a JSON-driven station roster
+  (`Data/Radio/stations.json`) built from the real station/DJ/song content in
+  `quahog-project-files/radio-scripts.md` and the rendered VO/music already in
+  `QUAHOG_Web/public/music/`: **WHALE 92.1** (Sully, classic rock), **The
+  Rage, 1480 AM** (Buddy Mello, talk), **The Anvil, WBOX** (Iron Mike
+  Fontaine — its Brockton rock-anthem bed doubles as foreshadowing for the
+  "The Undefeated" mission), **Maré Alta, 105.3** (Tia Conceição, Portuguese/
+  Cape Verdean). `R` cycles stations while driving
+  (`AMHPlayerCharacter::RequestRadioNextStation`); the HUD shows
+  station/song. The subsystem only carries station/song *data* — binding
+  actual `USoundWave` assets from the `voFolder`/`jingleFolder` manifest paths
+  to a Blueprint audio player is an editor step (see
+  `Scripts/editor_bootstrap_vertical_slice.py`'s next-steps output).
+
+### Canonical campaign (replaces the 2-mission placeholder)
+
+`Data/Missions/vertical_slice.json` now has 11 missions matching
+`story_mission.gd`'s `MISSIONS` array 1:1 (title, steps, per-step reward,
+mission-level `completionReward`, `act` label, `completionMessage`), with
+world-space targets converted via the verified `(GodotX, 0, -GodotZ) ->
+(UnrealX, 0, UnrealZ)` rule (cross-checked against 3 coordinates shared with
+the pre-existing 2-mission data, which matched exactly):
+
+1. **Off the Boat** (Prologue) — New Bedford waterfront opener.
+2. **Auction Rules**, **The Linguiça Run**, **Harbor Heat** (Act I — The
+   Narrows) — New Bedford crew jobs.
+3. **Spindle City**, **Acquitted** (Act II — Spindle City) — Fall River /
+   Lady Borden's crew, Battleship Cove and the Borden House.
+4. **The Undefeated** (Act II — City of Champions) — Brockton / Iron Mike
+   Fontaine at Champion City Gym.
+5. **Heritage Marina**, **Compound Interest** (Act III — The Cape) — the Fake
+   Kennedys' Hyannis compound.
+6. **Gloria**, **Big Mamie** (Finale — Gloria) — the hurricane climax at the
+   Hurricane Barrier and the USS Massachusetts at Battleship Cove.
+
+Only New Bedford's core graybox is OSM-imported today; missions past "Harbor
+Heat" reference Fall River/Brockton/Cape Cod coordinates that need their own
+OSM import or hand-authored blockout before their trigger volumes are
+reachable in PIE — see `Scripts/editor_bootstrap_vertical_slice.py`'s
+next-steps output.
+
+### Consequence loop, stamina, time-of-day, health pickups
+
+- `UMHGameStateSubsystem::ApplyDamage` now triggers a "wasted" consequence at
+  0 HP (cash penalty, full heal, wanted cleared, `OnPlayerWasted`); a sustained
+  max wanted level (`AMHGameModeBase::MaxWantedBustedSeconds`, default 25s)
+  triggers "busted" the same way via `TriggerBusted`/`OnPlayerBusted`.
+  `AMHGameModeBase` binds both delegates and respawns at the safehouse.
+- `AMHPlayerCharacter` has a sprint stamina meter (drain while sprinting,
+  regen at rest, forces sprint off at 0); shown on the HUD status line.
+- `UMHTimeOfDaySubsystem` — a minimal hour clock (`AdvanceTime`, default one
+  game-day per 600 real seconds) that modulates `AMHWeatherDirectorActor`'s
+  sun intensity day vs. night. Deliberately lightweight — no sky/moon material
+  or full day-night blend; see the Godot tracks' `TimeOfDayClock.gd` if a
+  fuller cycle is wanted later.
+- `AMHHealthPickupActor` — walk-over heal pickup with a respawn cooldown,
+  matching the Web track's "green cross" pickups.
+
+Not ported this pass (flagged by research as more involved / Phase 2): a
+minimap, pedestrian AI with threat/ragdoll behavior, and any weapon/combat
+system.
+
 ## Next phases (editor workstation required)
 
 ### Phase 1 — First playable in editor
@@ -99,6 +211,11 @@ Run `Scripts/editor_create_enhanced_input.py` in the editor to create
 - Optional `WBP_MHGameHud` via `Scripts/editor_create_hud_widget.py`
 - Niagara rain particles for CoastalRain / Nor'easter
 - Package Development build via `Scripts/package.sh`
+- Meshes for `AMHSafehouseActor` / `AMHShopActor` / `AMHCollectibleActor`,
+  `ShopType` + `LinkedBusinessId` on the two placed shops
+- Import `USoundWave` assets from `Data/Radio/stations.json`'s
+  `voFolder`/`jingleFolder` paths and wire a Blueprint radio player to
+  `UMHRadioSubsystem::OnStationChanged` / `OnSongChanged`
 
 ### Phase 5 — Repo consolidation
 

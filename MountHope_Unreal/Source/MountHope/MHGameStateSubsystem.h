@@ -5,6 +5,8 @@
 #include "MHGameStateSubsystem.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMHOnWeatherChanged, EMHWeatherState, NewWeather);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMHOnPlayerWasted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FMHOnPlayerBusted);
 
 UENUM(BlueprintType)
 enum class EMHWeatherState : uint8
@@ -45,6 +47,18 @@ public:
     UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Weather")
     FMHOnWeatherChanged OnWeatherChanged;
 
+    UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Consequence")
+    FMHOnPlayerWasted OnPlayerWasted;
+
+    UPROPERTY(BlueprintAssignable, Category = "Mount Hope|Consequence")
+    FMHOnPlayerBusted OnPlayerBusted;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Consequence")
+    int32 WastedCashPenalty = 200;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Consequence")
+    int32 BustedCashPenalty = 150;
+
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Player")
     int32 Cash = 250;
 
@@ -66,6 +80,15 @@ public:
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Economy")
     TSet<FName> OwnedBusinessIds;
 
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Safehouse")
+    bool bHasSafehouse = false;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Safehouse")
+    FVector SafehouseLocation = FVector::ZeroVector;
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Safehouse")
+    void SetSafehouseLocation(const FVector& NewLocation);
+
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Hostility")
     void AddHeat(float PoliceDelta, float FactionDelta);
 
@@ -77,6 +100,12 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Player")
     void ApplyDamage(float Damage);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Player")
+    void Heal(float Amount);
+
+    UFUNCTION(BlueprintCallable, Category = "Mount Hope|Consequence")
+    void TriggerBusted();
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Weather")
     void CycleWeather();
