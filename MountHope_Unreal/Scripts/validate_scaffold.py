@@ -326,6 +326,17 @@ def validate_source_contract() -> None:
         if dependency not in build_source:
             fail(f"MountHope.Build.cs is missing dependency: {dependency}")
 
+    if "MissionCompleteSound" not in game_mode_source or "PlaySound2D" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not wire mission/consequence audio cues")
+    if "PickupSound" not in collectible_source:
+        fail("MHCollectibleActor.cpp does not wire a pickup sound cue")
+    if "TransactionSuccessSound" not in shop_source or "TransactionDeniedSound" not in shop_source:
+        fail("MHShopActor.cpp does not wire transaction sound cues")
+    if "HealSound" not in pickup_source:
+        fail("MHHealthPickupActor.cpp does not wire a heal sound cue")
+    if "WantedIncreaseSound" not in wanted_source:
+        fail("MHWantedSubsystem.cpp does not wire a wanted-increase sound cue")
+
 
 def validate_default_config() -> None:
     default_game = read_text("Config/DefaultGame.ini")

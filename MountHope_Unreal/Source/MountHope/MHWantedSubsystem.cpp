@@ -1,5 +1,7 @@
 #include "MHWantedSubsystem.h"
 
+#include "Kismet/GameplayStatics.h"
+
 void UMHWantedSubsystem::ReportCrime(EMHCrimeType CrimeType, int32 Severity)
 {
     if (Severity <= 0)
@@ -38,6 +40,10 @@ void UMHWantedSubsystem::ReportCrime(EMHCrimeType CrimeType, int32 Severity)
     if (WantedLevel != PreviousLevel)
     {
         OnWantedLevelChanged.Broadcast(WantedLevel);
+        if (WantedLevel > PreviousLevel)
+        {
+            UGameplayStatics::PlaySound2D(this, WantedIncreaseSound);
+        }
     }
 }
 

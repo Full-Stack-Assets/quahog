@@ -2,6 +2,7 @@
 
 #include "Components/SphereComponent.h"
 #include "EngineUtils.h"
+#include "Kismet/GameplayStatics.h"
 #include "MHGameStateSubsystem.h"
 #include "MHReputationSubsystem.h"
 #include "MHVehiclePawn.h"
@@ -79,12 +80,14 @@ void AMHShopActor::HandleGarageInteraction(APawn* InstigatorPawn)
     if (GameState->Cash < Cost)
     {
         UE_LOG(LogTemp, Log, TEXT("MountHope: Not enough cash to repair at %s (need $%d)"), *ShopName, Cost);
+        UGameplayStatics::PlaySound2D(this, TransactionDeniedSound);
         return;
     }
 
     GameState->AddCash(-Cost);
     Vehicle->RepairVehicle();
     UE_LOG(LogTemp, Log, TEXT("MountHope: Repaired vehicle at %s for $%d"), *ShopName, Cost);
+    UGameplayStatics::PlaySound2D(this, TransactionSuccessSound);
 }
 
 void AMHShopActor::HandleGeneralStoreInteraction(APawn* InstigatorPawn)
@@ -100,10 +103,12 @@ void AMHShopActor::HandleGeneralStoreInteraction(APawn* InstigatorPawn)
         if (GameState->BuyBusiness(LinkedBusinessId))
         {
             UE_LOG(LogTemp, Log, TEXT("MountHope: Purchased business '%s' at %s"), *LinkedBusinessId, *ShopName);
+            UGameplayStatics::PlaySound2D(this, TransactionSuccessSound);
         }
         else
         {
             UE_LOG(LogTemp, Log, TEXT("MountHope: Could not purchase '%s' at %s"), *LinkedBusinessId, *ShopName);
+            UGameplayStatics::PlaySound2D(this, TransactionDeniedSound);
         }
     }
 }

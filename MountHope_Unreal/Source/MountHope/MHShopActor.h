@@ -7,6 +7,7 @@
 #include "MHShopActor.generated.h"
 
 class USphereComponent;
+class USoundBase;
 
 UENUM(BlueprintType)
 enum class EMHShopType : uint8
@@ -58,6 +59,12 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Shop")
     float ReputationDiscountPct = 0.25f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> TransactionSuccessSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> TransactionDeniedSound;
 
 private:
     void HandleGarageInteraction(APawn* InstigatorPawn);

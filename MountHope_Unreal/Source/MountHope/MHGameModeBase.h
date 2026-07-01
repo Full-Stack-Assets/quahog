@@ -5,6 +5,7 @@
 #include "MHGameModeBase.generated.h"
 
 class AMHMissionTriggerActor;
+class USoundBase;
 struct FMHMissionStep;
 
 UCLASS()
@@ -30,6 +31,15 @@ protected:
 
     UPROPERTY(EditDefaultsOnly, Category = "Mount Hope|Police")
     float MaxWantedBustedSeconds = 25.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> MissionCompleteSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> ObjectiveUpdateSound;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> BustedOrWastedSound;
 
 private:
     bool IsWorldTargetObjective(const FMHMissionStep& Step) const;

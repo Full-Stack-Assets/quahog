@@ -2,6 +2,7 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "MHCollectibleSubsystem.h"
 #include "MHGameStateSubsystem.h"
 
@@ -85,6 +86,7 @@ void AMHCollectibleActor::Interact_Implementation(APawn* InstigatorPawn)
         }
     }
 
+    UGameplayStatics::PlaySound2D(this, PickupSound);
     RefreshVisibilityForCollectedState();
 }
 

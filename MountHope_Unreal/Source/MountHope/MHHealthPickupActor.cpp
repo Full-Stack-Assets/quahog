@@ -2,6 +2,7 @@
 
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "MHGameStateSubsystem.h"
 #include "MHPlayerCharacter.h"
 #include "TimerManager.h"
@@ -51,6 +52,7 @@ void AMHHealthPickupActor::OnPickupOverlap(
     }
 
     GameState->Heal(HealAmount);
+    UGameplayStatics::PlaySound2D(this, HealSound);
 
     SetActorEnableCollision(false);
     SetActorHiddenInGame(true);

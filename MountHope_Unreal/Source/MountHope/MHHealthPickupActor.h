@@ -6,6 +6,7 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class MOUNTHOPE_API AMHHealthPickupActor : public AActor
@@ -32,6 +33,9 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Health")
     float PickupRadius = 120.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> HealSound;
 
     UFUNCTION()
     void OnPickupOverlap(

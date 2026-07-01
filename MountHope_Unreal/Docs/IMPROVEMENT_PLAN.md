@@ -188,6 +188,17 @@ next-steps output.
 Not ported this pass (flagged by research as more involved / Phase 2): a
 minimap and any weapon/combat system.
 
+### Audio cue hook points
+
+Mirroring the radio subsystem's "data ready, asset bound in editor" pattern:
+`AMHGameModeBase` (mission complete / next objective / busted-wasted),
+`AMHCollectibleActor` (pickup), `AMHShopActor` (transaction success/denied),
+`AMHHealthPickupActor` (heal), and `UMHWantedSubsystem` (wanted level
+increase) all expose `EditAnywhere`/`EditDefaultsOnly` `USoundBase*`
+properties and call `UGameplayStatics::PlaySound2D` — safe to leave unset
+(null-safe), ready for `USoundWave`/`SoundCue` assets to be assigned in the
+editor.
+
 ## Next phases (editor workstation required)
 
 ### Phase 1 — First playable in editor

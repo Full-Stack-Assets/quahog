@@ -10,6 +10,7 @@
 #include "MHTimeOfDaySubsystem.h"
 #include "MHWantedSubsystem.h"
 #include "MHWeatherDirectorActor.h"
+#include "Sound/SoundBase.h"
 
 AMHGameModeBase::AMHGameModeBase()
 {
@@ -117,12 +118,14 @@ void AMHGameModeBase::TickBustedTimer(float DeltaSeconds)
 void AMHGameModeBase::HandlePlayerWasted()
 {
     UE_LOG(LogTemp, Log, TEXT("MountHope: Player wasted - respawning at safehouse."));
+    UGameplayStatics::PlaySound2D(this, BustedOrWastedSound);
     RespawnAtSafehouseIfAvailable();
 }
 
 void AMHGameModeBase::HandlePlayerBusted()
 {
     UE_LOG(LogTemp, Log, TEXT("MountHope: Player busted - respawning at safehouse."));
+    UGameplayStatics::PlaySound2D(this, BustedOrWastedSound);
     RespawnAtSafehouseIfAvailable();
 }
 
@@ -225,6 +228,7 @@ bool AMHGameModeBase::CompleteCurrentObjective(bool bPlayerInVehicle)
 
         MissionSubsystem->OnMissionCompleted.Broadcast(CompletedMission.Title, CompletedMission.CompletionMessage);
         UE_LOG(LogTemp, Log, TEXT("MountHope: Mission complete -> %s"), *CompletedMission.Title);
+        UGameplayStatics::PlaySound2D(this, MissionCompleteSound);
     }
 
     FMHMissionStep NextStep;
@@ -235,6 +239,7 @@ bool AMHGameModeBase::CompleteCurrentObjective(bool bPlayerInVehicle)
         {
             ApplyWeatherFromString(NextStep.WeatherOnStart);
         }
+        UGameplayStatics::PlaySound2D(this, ObjectiveUpdateSound);
     }
 
     GameStateSubsystem->SaveToSlot();

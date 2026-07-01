@@ -7,6 +7,7 @@
 
 class USphereComponent;
 class UStaticMeshComponent;
+class USoundBase;
 
 UCLASS(BlueprintType)
 class MOUNTHOPE_API AMHCollectibleActor : public AActor, public IMHInteractable
@@ -33,6 +34,9 @@ protected:
 
     UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Collectible")
     float InteractionRadius = 200.0f;
+
+    UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<USoundBase> PickupSound;
 
 private:
     void RefreshVisibilityForCollectedState();

@@ -62,6 +62,9 @@ private:
     UPROPERTY(EditDefaultsOnly, Category = "Mount Hope|Police")
     float DecayDelaySeconds = 4.0f;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Mount Hope|Audio")
+    TObjectPtr<class USoundBase> WantedIncreaseSound;
+
     float SecondsSinceLastCrime = 0.0f;
 
     void RecalculateWantedLevel();
