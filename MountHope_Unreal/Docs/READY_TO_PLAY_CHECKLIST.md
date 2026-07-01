@@ -54,8 +54,13 @@ delivery.
 - Police/wanted loop supports crimes, pursuit/search, cooldown, fine/bribe, and
   escalation. **C++ done:** `UMHWantedSubsystem` reports crimes (traffic/theft/
   assault/property damage/mission heat), decays over time, and exposes a
-  suggested fine; `AMHVehiclePawn` reports crashes into other actors. **Still
-  needed:** actual cop-car pursuit AI/spawning (no AI pawn exists yet).
+  suggested fine; `AMHVehiclePawn` reports crashes into other actors;
+  `AMHPoliceSpawnerActor` scales a pool of `AMHPoliceUnitPawn` pursuers with
+  the wanted level, chasing the player and applying catch-pressure damage
+  (the sustained-max-wanted busted timer, not proximity, still governs the
+  actual arrest). **Still needed:** the pursuers use direct-line chase, not
+  road-following vehicle AI (kept intentionally simple/low-risk — see
+  `IMPROVEMENT_PLAN.md`); no fine/bribe interaction yet.
 - Reputation tracks standing with local crews, police, businesses, and community
   contacts. **C++ done:** `UMHReputationSubsystem` is now read/written by
   mission steps and `AMHShopActor` discounts.

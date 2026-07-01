@@ -35,7 +35,7 @@ pull, not a blocker for the first Unreal slice.
 | Economy | Cash reward/cost loop for mission reward, repair, bribe, or item purchase. | `MHEconomySubsystem` |
 | Dialogue | Short mission setup and world flavor barks through interactable actors. | `MHInteractable` |
 | OSM world | Import roads/water/building blockout in Unreal centimeters. | `MHOpenWorldSubsystem` |
-| Police/wanted | Crime reporting, heat decay, wanted stars. | `MHWantedSubsystem` |
+| Police/wanted | Crime reporting, heat decay, wanted stars, scaling chase pursuers. | `MHWantedSubsystem`, `MHPoliceUnitPawn`, `MHPoliceSpawnerActor` |
 | Reputation | Faction standing gated by mission/shop outcomes. | `MHReputationSubsystem` |
 | Radio | Station roster with real DJ/song content, cycled while driving. | `MHRadioSubsystem` |
 

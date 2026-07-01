@@ -81,6 +81,10 @@ REQUIRED_FILES = [
     "Source/MountHope/MHPedestrianSpawnerActor.cpp",
     "Source/MountHope/MHWeaponPickupActor.h",
     "Source/MountHope/MHWeaponPickupActor.cpp",
+    "Source/MountHope/MHPoliceUnitPawn.h",
+    "Source/MountHope/MHPoliceUnitPawn.cpp",
+    "Source/MountHope/MHPoliceSpawnerActor.h",
+    "Source/MountHope/MHPoliceSpawnerActor.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
     "Data/Dialogue/vertical_slice.json",
@@ -370,6 +374,17 @@ def validate_source_contract() -> None:
         fail("MHPlayerCharacter.cpp does not implement the pistol combat loop")
     if "LineTraceSingleByChannel" not in player_source:
         fail("MHPlayerCharacter.cpp does not raycast for pistol hit detection")
+
+    if "AMHPoliceSpawnerActor" not in game_mode_source:
+        fail("MHGameModeBase.cpp does not spawn the police pursuit spawner")
+
+    police_spawner_source = read_text("Source/MountHope/MHPoliceSpawnerActor.cpp")
+    if "GetDesiredUnitCount" not in police_spawner_source or "GetWantedLevel" not in police_spawner_source:
+        fail("MHPoliceSpawnerActor.cpp does not scale pursuit units with wanted level")
+
+    police_unit_source = read_text("Source/MountHope/MHPoliceUnitPawn.cpp")
+    if "TryCatchPlayer" not in police_unit_source or "ApplyDamage" not in police_unit_source:
+        fail("MHPoliceUnitPawn.cpp does not chase and apply catch pressure")
 
 
 def validate_default_config() -> None:
