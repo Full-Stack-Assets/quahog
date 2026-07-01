@@ -30,7 +30,7 @@ pull, not a blocker for the first Unreal slice.
 | --- | --- | --- |
 | On-foot traversal | Third-person walking, camera-relative movement, interaction input. | `MHPlayerCharacter` |
 | Driving | One drivable heavy-feeling car with chase camera and enter/exit flow. | `MHVehiclePawn`, `MHPlayerCharacter::RequestEnterExitVehicle` |
-| NPCs | Ambient pedestrians and mission givers; Mass AI can expand crowds later. | `MHInteractable`, Mass plugins |
+| NPCs | Ambient wandering/fleeing pedestrians (AIModule/NavigationSystem) and interactable mission givers; Mass AI can expand crowd density later. | `MHPedestrianCharacter`, `MHInteractable`, Mass plugins |
 | Missions | One authored mission with start, fail, complete, and reward states. | `MHMissionSubsystem` |
 | Economy | Cash reward/cost loop for mission reward, repair, bribe, or item purchase. | `MHEconomySubsystem` |
 | Dialogue | Short mission setup and world flavor barks through interactable actors. | `MHInteractable` |

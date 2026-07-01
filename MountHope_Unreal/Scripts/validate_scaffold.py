@@ -73,6 +73,8 @@ REQUIRED_FILES = [
     "Source/MountHope/MHTimeOfDaySubsystem.cpp",
     "Source/MountHope/MHHealthPickupActor.h",
     "Source/MountHope/MHHealthPickupActor.cpp",
+    "Source/MountHope/MHPedestrianCharacter.h",
+    "Source/MountHope/MHPedestrianCharacter.cpp",
     "Data/Missions/vertical_slice.json",
     "Data/Economy/businesses.json",
     "Data/Dialogue/vertical_slice.json",
@@ -311,6 +313,18 @@ def validate_source_contract() -> None:
     pickup_source = read_text("Source/MountHope/MHHealthPickupActor.cpp")
     if "OnPickupOverlap" not in pickup_source or "Heal" not in pickup_source:
         fail("MHHealthPickupActor.cpp does not heal the player on overlap")
+
+    pedestrian_source = read_text("Source/MountHope/MHPedestrianCharacter.cpp")
+    for symbol in ("PickNewWanderTarget", "FindNearestThreat", "FleeFromThreat"):
+        if symbol not in pedestrian_source:
+            fail(f"MHPedestrianCharacter.cpp is missing: {symbol}")
+
+    if "MHPedestrianCharacter" not in vehicle_source:
+        fail("MHVehiclePawn.cpp does not distinguish pedestrian hits (Assault)")
+
+    for dependency in ("AIModule", "NavigationSystem"):
+        if dependency not in build_source:
+            fail(f"MountHope.Build.cs is missing dependency: {dependency}")
 
 
 def validate_default_config() -> None:

@@ -172,9 +172,21 @@ next-steps output.
 - `AMHHealthPickupActor` — walk-over heal pickup with a respawn cooldown,
   matching the Web track's "green cross" pickups.
 
+### Ambient pedestrians (previously zero implementation)
+
+- `AMHPedestrianCharacter` — an `AAIController`-driven wander/flee pedestrian
+  using the `AIModule`/`NavigationSystem` dependencies the module already
+  declared but never used. Wanders to random navmesh-reachable points near
+  its spawn; flees on foot when a fast-moving `AMHVehiclePawn` gets close.
+  `AMHVehiclePawn::NotifyHit` now reports `Assault` (not just
+  `PropertyDamage`) when the actor hit is a pedestrian. Needs the navmesh
+  baked (`Scripts/editor_setup_navmesh.py`) to path.
+- This is the "first-slice" ambient NPC per `VERTICAL_SLICE.md`'s
+  requirements table; Mass AI (already an enabled plugin) remains the planned
+  upgrade path for denser crowds later — no ragdoll-on-death behavior yet.
+
 Not ported this pass (flagged by research as more involved / Phase 2): a
-minimap, pedestrian AI with threat/ragdoll behavior, and any weapon/combat
-system.
+minimap and any weapon/combat system.
 
 ## Next phases (editor workstation required)
 

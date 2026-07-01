@@ -41,6 +41,12 @@ COLLECTIBLE_LOCATIONS = (
     ("scrimshaw_anvil_garage", unreal.Vector(-32200.0, 0.0, 5800.0)),
 )
 
+PEDESTRIAN_LOCATIONS = (
+    unreal.Vector(-27100.0, 200.0, 9700.0),
+    unreal.Vector(-26900.0, -300.0, 10600.0),
+    unreal.Vector(-32100.0, 150.0, 6000.0),
+)
+
 CONTENT_FOLDERS = (
     "/Game/Maps",
     "/Game/Blueprints",
@@ -216,6 +222,32 @@ def spawn_collectibles() -> None:
             log(f"Spawned {label}")
 
 
+def spawn_pedestrians() -> None:
+    pedestrian_class = unreal.load_class(None, "/Script/MountHope.MHPedestrianCharacter")
+    if pedestrian_class is None:
+        warn("Could not load MHPedestrianCharacter; compile C++ first.")
+        return
+
+    placed = sum(
+        1
+        for actor in unreal.EditorLevelLibrary.get_all_level_actors()
+        if actor.get_class() == pedestrian_class
+    )
+    if placed >= len(PEDESTRIAN_LOCATIONS):
+        log("Pedestrians already placed")
+        return
+
+    for index, location in enumerate(PEDESTRIAN_LOCATIONS[placed:], start=placed):
+        actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
+            pedestrian_class,
+            location,
+            unreal.Rotator(0.0, 0.0, 0.0),
+        )
+        if actor:
+            actor.set_actor_label(f"BP_MHPedestrian_{index}")
+            log(f"Spawned BP_MHPedestrian_{index}")
+
+
 def save_dirty_packages() -> None:
     unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
 
@@ -238,7 +270,9 @@ def print_next_steps() -> None:
         "Cape Cod (Hyannis) — missions past 'Harbor Heat' need those areas' OSM data "
         "imported/authored before their trigger volumes are reachable\n"
         "  9. Press Play — talk to Deacon Mealy with E to advance dialogue, R cycles "
-        "the radio while driving"
+        "the radio while driving\n"
+        " 10. BP_MHPedestrian_* wander/flee via AAIController + the navmesh from step 4 — "
+        "bake the navmesh before expecting them to path"
     )
 
 
@@ -253,6 +287,7 @@ def main() -> None:
     spawn_garage_shop()
     spawn_general_store_shop()
     spawn_collectibles()
+    spawn_pedestrians()
     save_dirty_packages()
     print_next_steps()
     log("Bootstrap complete.")

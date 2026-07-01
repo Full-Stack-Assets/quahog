@@ -3,6 +3,7 @@
 #include "ChaosVehicleMovementComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/Pawn.h"
+#include "MHPedestrianCharacter.h"
 #include "MHWantedSubsystem.h"
 
 AMHVehiclePawn::AMHVehiclePawn()
@@ -70,7 +71,8 @@ void AMHVehiclePawn::NotifyHit(
             if (UMHWantedSubsystem* Wanted = World->GetSubsystem<UMHWantedSubsystem>())
             {
                 const int32 Severity = FMath::Clamp(FMath::RoundToInt(Damage * 0.5f), 1, 20);
-                Wanted->ReportCrime(EMHCrimeType::PropertyDamage, Severity);
+                const bool bHitPedestrian = Other->IsA<AMHPedestrianCharacter>();
+                Wanted->ReportCrime(bHitPedestrian ? EMHCrimeType::Assault : EMHCrimeType::PropertyDamage, Severity);
             }
         }
     }
