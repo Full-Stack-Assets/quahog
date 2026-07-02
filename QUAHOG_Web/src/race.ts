@@ -30,7 +30,9 @@ export const useRace = create<RaceState>((set, get) => ({
     const { idx, time, best } = get();
     const next = idx + 1;
     if (next >= CHECKPOINTS.length) {
-      set({ active: false, idx: 0, best: best == null ? time : Math.min(best, time) });
+      // Reset the clock too, so a re-entered start pad doesn't briefly show the
+      // finished run's elapsed time before start() zeroes it.
+      set({ active: false, idx: 0, time: 0, best: best == null ? time : Math.min(best, time) });
       return REWARD;
     }
     set({ idx: next });

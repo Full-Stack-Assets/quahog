@@ -45,13 +45,29 @@ export const useEconomy = create<EconomyState>((set, get) => ({
   buy: (b) => set((s) => ({ owned: { ...s.owned, [b.id]: true } })),
   setNear: (b) => set((s) => (s.near?.id === b?.id ? s : { near: b })),
   incomePerSec: (daySeconds) => {
+    // A zero/negative/NaN day length would divide to Infinity/NaN and corrupt
+    // the wallet on the next income tick — guard it.
+    if (!Number.isFinite(daySeconds) || daySeconds <= 0) return 0;
     const { owned } = get();
     let perDay = 0;
     for (const b of BUSINESSES) if (owned[b.id]) perDay += b.perDay;
     return perDay / daySeconds;
   },
   save: () => { try { localStorage.setItem(KEY, JSON.stringify(get().owned)); } catch { /* ignore */ } },
-  load: () => { try { const r = localStorage.getItem(KEY); if (r) set({ owned: JSON.parse(r) }); } catch { /* ignore */ } },
+  load: () => {
+    try {
+      const r = localStorage.getItem(KEY);
+      if (!r) return;
+      const parsed = JSON.parse(r);
+      // Only accept a plain object map; ignore arrays/strings/null from a
+      // corrupt save so `owned[b.id]` lookups can't throw or misbehave.
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return;
+      // Keep only ids that still map to a real business and truthy values.
+      const owned: Record<string, true> = {};
+      for (const b of BUSINESSES) if ((parsed as Record<string, unknown>)[b.id]) owned[b.id] = true;
+      set({ owned });
+    } catch { /* ignore malformed save */ }
+  },
 }));
 
 // --- RevenueManager: margin-leak / boom events (§15/§17) ---------------------
