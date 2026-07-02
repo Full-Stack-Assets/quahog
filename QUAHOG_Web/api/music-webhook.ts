@@ -28,8 +28,16 @@ function verify(secret: string, h: Record<string, any>, body: string): boolean {
   if (!id || !ts || !sig) return false;
   const key = Buffer.from(secret.replace(/^w?h?sec_/, ""), "base64");
   const expected = crypto.createHmac("sha256", key).update(`${id}.${ts}.${body}`).digest("base64");
-  // header is a space-separated list of "v1,<sig>" entries
-  return String(sig).split(" ").some((p) => (p.includes(",") ? p.split(",")[1] : p) === expected);
+  const expectedBuf = Buffer.from(expected);
+  // header is a space-separated list of "v1,<sig>" entries. Compare with a
+  // constant-time check (timingSafeEqual) so an attacker can't recover the
+  // valid signature byte-by-byte via response-timing differences.
+  return String(sig).split(" ").some((p) => {
+    const provided = p.includes(",") ? p.split(",")[1] : p;
+    const providedBuf = Buffer.from(provided);
+    return providedBuf.length === expectedBuf.length &&
+      crypto.timingSafeEqual(providedBuf, expectedBuf);
+  });
 }
 
 const pickStr = (...vals: any[]) => vals.find((v) => typeof v === "string" && v) as string | undefined;

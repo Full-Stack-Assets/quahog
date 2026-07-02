@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { guard } from "./_guard";
 
 // Server-side Google Static Maps proxy. Signs the request with the URL-signing
 // secret (kept server-side only) and streams the image back from our own origin
@@ -20,6 +21,9 @@ function sign(pathAndQuery: string, secret: string): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function handler(req: any, res: any) {
+  // Gate before signing/forwarding: this proxy spends Google Maps quota, so
+  // reject cross-site callers and throttle per-IP to prevent quota abuse.
+  if (!guard(req, res, 60)) return;
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   const secret = process.env.GOOGLE_MAPS_URL_SIGNING_SECRET;
   if (!apiKey) {

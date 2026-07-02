@@ -10,6 +10,8 @@
 // Client calls: POST /api/tts  { text, voice: "mike" }  →  audio/mpeg
 // If the key isn't set, returns 503 so the client falls back to Web Speech.
 
+import { guard } from "./_guard";
+
 const API = "https://api.elevenlabs.io/v1";
 const MODEL = "eleven_turbo_v2_5"; // fast, cheap, good for barks/VO
 const looksLikeId = (s: string) => /^[A-Za-z0-9]{18,24}$/.test(s);
@@ -50,10 +52,19 @@ async function resolveVoiceId(apiKey: string, value: string): Promise<string | n
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") { res.status(405).json({ error: "POST only" }); return; }
+  // Gate before touching the paid upstream: reject cross-site callers and
+  // throttle per-IP so an anonymous client can't run up the ElevenLabs bill.
+  if (!guard(req, res, 30)) return;
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) { res.status(503).json({ error: "ELEVENLABS_API_KEY not configured" }); return; }
 
-  const body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body ?? {});
+  // req.body may be an unparsed string; never let a malformed payload throw a
+  // 500 — treat bad JSON as an empty body and fall through to the 400 below.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let body: any = {};
+  try {
+    body = typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body ?? {});
+  } catch { res.status(400).json({ error: "invalid JSON body" }); return; }
   const text: string = (body.text ?? "").toString().slice(0, 800);
   const voiceKey: string = (body.voice ?? "narrator").toString().toUpperCase().replace(/[^A-Z0-9]/g, "");
   if (!text) { res.status(400).json({ error: "missing text" }); return; }
