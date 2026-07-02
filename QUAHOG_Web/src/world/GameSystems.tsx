@@ -2,12 +2,14 @@ import { useEffect, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useStats } from "../game";
 import { useGame } from "../store";
+import type { Weather } from "../store";
 import { useEconomy, rollRevenueEvent } from "../economy";
 import { useToasts } from "../store";
 import { consumeTap } from "../input";
 import { shared } from "../shared";
 import { sfx } from "../audio/sfx";
 import { radio } from "../audio/radioEngine";
+import { loadJSON, saveJSON } from "../storage";
 
 const DAY_SECONDS = 600; // matches DayNight's cycle length
 const POS_KEY = "mounthope.pos.v1";
@@ -22,21 +24,19 @@ interface PosRec {
 // Persist where the player is so "Continue" resumes them in place (§26). New
 // Game removes this key, so a present key always means "resume".
 function savePos() {
-  try {
-    const g = useGame.getState();
-    const pl = shared.player?.translation();
-    const car = shared.car?.translation();
-    const rec: PosRec = {
-      mode: g.mode, px: pl?.x, py: pl?.y, pz: pl?.z, heading: shared.heading,
-      carx: car?.x, cary: car?.y, carz: car?.z, carYaw: shared.carYaw,
-      carType: g.playerCarType, carColor: g.playerCarColor,
-      day: shared.day, hour: shared.hour,
-    };
-    localStorage.setItem(POS_KEY, JSON.stringify(rec));
-  } catch { /* ignore */ }
+  const g = useGame.getState();
+  const pl = shared.player?.translation();
+  const car = shared.car?.translation();
+  const rec: PosRec = {
+    mode: g.mode, px: pl?.x, py: pl?.y, pz: pl?.z, heading: shared.heading,
+    carx: car?.x, cary: car?.y, carz: car?.z, carYaw: shared.carYaw,
+    carType: g.playerCarType, carColor: g.playerCarColor,
+    day: shared.day, hour: shared.hour,
+  };
+  saveJSON(POS_KEY, rec);
 }
 function loadPos(): PosRec | null {
-  try { const r = localStorage.getItem(POS_KEY); return r ? JSON.parse(r) : null; } catch { return null; }
+  return loadJSON<PosRec | null>(POS_KEY, null);
 }
 function applyRestore(r: PosRec) {
   const pl = shared.player, car = shared.car;
@@ -88,16 +88,16 @@ export function GameSystems() {
     useEconomy.getState().load();
     sfx.startAmbience();
     // restore settings (§26)
-    try {
-      const s = JSON.parse(localStorage.getItem("mounthope.settings.v1") || "{}");
+    {
+      const s = loadJSON<Record<string, unknown>>("mounthope.settings.v1", {});
       const g = useGame.getState();
       if (typeof s.fxOn === "boolean" && s.fxOn !== g.fxOn) g.toggleFx();
       if (typeof s.shadows === "boolean" && s.shadows !== g.shadows) g.toggleShadows();
       if (typeof s.fov === "number") g.setFov(s.fov);
       if (typeof s.reduceShake === "boolean" && s.reduceShake !== g.reduceShake) g.toggleReduceShake();
       if (typeof s.quality === "number") g.setQuality(s.quality as 0 | 1 | 2);
-      if (s.weather) useGame.setState({ weather: s.weather });
-    } catch { /* ignore */ }
+      if (s.weather) useGame.setState({ weather: s.weather as Weather });
+    }
     // persist position on tab-hide / close so a quick exit still resumes
     const onHide = () => { if (useGame.getState().started) savePos(); };
     window.addEventListener("pagehide", onHide);
@@ -178,7 +178,7 @@ export function GameSystems() {
       st.save();
       if (useGame.getState().started) savePos();
       const g = useGame.getState();
-      try { localStorage.setItem("mounthope.settings.v1", JSON.stringify({ fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather, quality: g.quality })); } catch { /* ignore */ }
+      saveJSON("mounthope.settings.v1", { fxOn: g.fxOn, shadows: g.shadows, fov: g.fov, reduceShake: g.reduceShake, weather: g.weather, quality: g.quality });
     }
   });
   return null;
