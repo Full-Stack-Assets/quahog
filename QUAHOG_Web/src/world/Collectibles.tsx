@@ -5,6 +5,7 @@ import { shared } from "../shared";
 import { useGame, useToasts } from "../store";
 import { useStats } from "../game";
 import { sfx } from "../audio/sfx";
+import { loadJSON, saveJSON } from "../storage";
 
 // Hidden collectibles (§18): scrimshaw "whaling artifacts" scattered around the
 // core. Walk into one to grab it — small cash bounty + a toast. Persisted.
@@ -18,8 +19,7 @@ const SPOTS: [number, number, number][] = [
 export const SCRIMSHAW_TOTAL = SPOTS.length;
 
 function loadGot(): boolean[] {
-  try { const r = localStorage.getItem(KEY); if (r) return JSON.parse(r); } catch { /* ignore */ }
-  return SPOTS.map(() => false);
+  return loadJSON<boolean[]>(KEY, SPOTS.map(() => false));
 }
 
 export function Collectibles() {
@@ -47,7 +47,7 @@ export function Collectibles() {
         const n = got.current.filter(Boolean).length;
         useGame.getState().setScrimshaw(n);
         useToasts.getState().push(`Scrimshaw ${n}/${SPOTS.length} · +$${REWARD}`, "#ffd24a");
-        try { localStorage.setItem(KEY, JSON.stringify(got.current)); } catch { /* ignore */ }
+        saveJSON(KEY, got.current);
       }
     });
   });

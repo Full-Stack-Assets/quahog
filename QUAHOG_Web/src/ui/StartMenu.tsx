@@ -4,8 +4,9 @@ import { useStats } from "../game";
 import { useMission } from "../mission";
 import { useEconomy } from "../economy";
 import { sfx } from "../audio/sfx";
+import { getItem, removeItem } from "../storage";
 
-const hasSave = () => { try { return !!localStorage.getItem("mounthope.save.v1"); } catch { return false; } };
+const hasSave = () => !!getItem("mounthope.save.v1");
 
 // Title / start screen (§22). Shown over the loading world until the player
 // presses Play; doubles as the first user gesture that unlocks audio.
@@ -29,7 +30,7 @@ export function StartMenu({ sliceName, progress = 0 }: { sliceName: string; prog
 
   const play = () => { sfx.setVolume(0.5); useGame.getState().setStarted(true); };
   const newGame = () => {
-    try { ["mounthope.save.v1", "mounthope.economy.v1", "mounthope.scrimshaw.v1", "mounthope.pos.v1"].forEach((k) => localStorage.removeItem(k)); } catch { /* ignore */ }
+    removeItem("mounthope.save.v1", "mounthope.economy.v1", "mounthope.scrimshaw.v1", "mounthope.pos.v1");
     useStats.getState().reset();
     useMission.getState().reset();
     useEconomy.setState({ owned: {} });
