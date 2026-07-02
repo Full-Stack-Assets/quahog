@@ -122,7 +122,8 @@ export const useMission = create<MissionState>((set, get) => ({
   title: MISSIONS[0].title,
   objective: MISSIONS[0].steps[0].text,
   advance: () => {
-    const { mi, step, steps } = get();
+    const { mi, step, steps, done } = get();
+    if (done) return; // campaign already finished — don't run past the end
     const next = step + 1;
     if (next < steps.length) { set({ step: next, objective: steps[next].text }); return; }
     // mission finished — chain to the next, or end the campaign
