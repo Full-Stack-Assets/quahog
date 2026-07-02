@@ -40,6 +40,7 @@ public:
     AMHWeatherDirectorActor();
 
     virtual void BeginPlay() override;
+    virtual void Tick(float DeltaSeconds) override;
 
     UFUNCTION(BlueprintCallable, Category = "Mount Hope|Weather")
     void ApplyWeather(EMHWeatherState WeatherState, bool bInstant = true);
