@@ -63,8 +63,15 @@ export async function loadSlice(
   url = "slice-newbedford.json",
   onProgress?: (frac: number) => void,
 ): Promise<Slice> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`failed to load slice: ${res.status}`);
+  let res: Response;
+  try {
+    res = await fetch(url);
+  } catch (e) {
+    // Network failure / offline / CORS — surface a clear, actionable message
+    // instead of the raw "Failed to fetch" so the start screen can show why.
+    throw new Error(`could not fetch slice "${url}": ${e instanceof Error ? e.message : String(e)}`);
+  }
+  if (!res.ok) throw new Error(`failed to load slice "${url}": HTTP ${res.status}`);
   // Stream the (multi-MB) slice so the start screen can show a real progress
   // bar. If the body isn't streamable or has no length, fall back to res.json()
   // and just report indeterminate progress.
@@ -84,9 +91,22 @@ export async function loadSlice(
     const buf = new Uint8Array(got);
     let o = 0;
     for (const c of chunks) { buf.set(c, o); o += c.length; }
-    slice = JSON.parse(new TextDecoder().decode(buf)) as Slice;
+    try {
+      slice = JSON.parse(new TextDecoder().decode(buf)) as Slice;
+    } catch (e) {
+      throw new Error(`slice "${url}" is not valid JSON (${got} bytes): ${e instanceof Error ? e.message : String(e)}`);
+    }
   } else {
-    slice = (await res.json()) as Slice;
+    try {
+      slice = (await res.json()) as Slice;
+    } catch (e) {
+      throw new Error(`slice "${url}" is not valid JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  // Validate the shape enough to fail loudly here (with a useful message)
+  // rather than crashing deep in the renderer on a missing array.
+  if (!slice || typeof slice !== "object" || !Array.isArray(slice.buildings) || !Array.isArray(slice.roads)) {
+    throw new Error(`slice "${url}" is missing required fields (buildings/roads)`);
   }
   onProgress?.(0.95);
   // Optional island/wharf land polygons (islands-<name>.json). Absent file is
