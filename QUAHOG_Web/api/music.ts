@@ -4,9 +4,9 @@
 // static public/music manifest, then to the procedural synth bed.
 
 import { list } from "@vercel/blob";
+import type { ApiHandler } from "./_http";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default async function handler(req: any, res: any) {
+const handler: ApiHandler = async (req, res) => {
   const station = String(req.query?.station ?? "").replace(/[^a-z0-9]/gi, "").toLowerCase();
   if (!station) { res.status(400).json({ error: "?station= required" }); return; }
   try {
@@ -18,4 +18,6 @@ export default async function handler(req: any, res: any) {
     // Blob not configured / not reachable → no remote tracks (graceful)
     res.status(200).json({ tracks: [] });
   }
-}
+};
+
+export default handler;

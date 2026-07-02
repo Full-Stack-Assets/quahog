@@ -38,6 +38,27 @@ export interface Impact {
   color: string;
 }
 
+// A traffic signal stop-line published by TrafficLights; traffic halts while red.
+export interface StopZone {
+  x: number;
+  z: number;
+  rot: number;
+  red: boolean;
+}
+
+// A collectible cash drop (from a downed ped), drained by the Pickups layer.
+export interface Pickup {
+  pos: THREE.Vector3;
+  value: number;
+  spin: number;
+}
+
+// A transient threat point that scatters nearby pedestrians (gunfire/violence).
+export interface Alarm {
+  pos: THREE.Vector3;
+  t: number; // seconds remaining
+}
+
 // Cross-component mutable handles shared by the player, car, and camera.
 // (Kept out of React state so per-frame updates don't trigger re-renders.)
 export const shared = {
@@ -75,13 +96,13 @@ export const shared = {
   /** Sprint stamina 0..100 (on foot). */
   stamina: 100,
   /** Threat that scatters nearby pedestrians (gunfire/violence). */
-  alarm: { pos: new THREE.Vector3(), t: 0 },
+  alarm: { pos: new THREE.Vector3(), t: 0 } as Alarm,
   /** Pending impact bursts (blood/dust) drained by the particle renderer. */
   impacts: [] as Impact[],
   /** Signal stop-lines published by TrafficLights; traffic halts at red ones. */
-  stopZones: [] as { x: number; z: number; rot: number; red: boolean }[],
+  stopZones: [] as StopZone[],
   /** Collectible cash drops (from downed peds), drained by the Pickups layer. */
-  pickups: [] as { pos: THREE.Vector3; value: number; spin: number }[],
+  pickups: [] as Pickup[],
   /** Player car body damage 0 (pristine) .. 100 (wrecked) — smokes when high. */
   carDamage: 0,
 };
