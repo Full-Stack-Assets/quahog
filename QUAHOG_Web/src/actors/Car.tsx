@@ -14,6 +14,14 @@ import { sfx } from "../audio/sfx";
 const MAX_SPEED = 44;
 const REVERSE_SPEED = 16;
 
+// Module-scope scratch vectors reused every frame. The car's useFrame runs at
+// 60 Hz; allocating fresh THREE.Vector3s here (fwd/nfwd/right) produced ~180
+// short-lived objects per second per car and showed up as GC-pause jank under
+// load (see QUAHOG_Web/ROADMAP.md §3 "per-frame garbage").
+const _fwd = new THREE.Vector3();
+const _nfwd = new THREE.Vector3();
+const _right = new THREE.Vector3();
+
 export function Car() {
   const body = useRef<RapierRigidBody>(null);
   const carType = useGame((s) => s.playerCarType);
@@ -39,7 +47,7 @@ export function Car() {
 
     const ax = moveAxis();
     let yaw = shared.carYaw;
-    const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    const fwd = _fwd.set(Math.sin(yaw), 0, Math.cos(yaw));
     const v = rb.linvel();
     const vForward = v.x * fwd.x + v.z * fwd.z;
 
@@ -63,7 +71,7 @@ export function Car() {
     const rate = handbrake ? 4.5 : ax.y !== 0 ? 2.2 : 1.2;
     let nf = THREE.MathUtils.lerp(vForward, target, 1 - Math.exp(-dt * rate));
 
-    const nfwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    const nfwd = _nfwd.set(Math.sin(yaw), 0, Math.cos(yaw));
 
     // forward wall-probe: the solver alone can't hold a trimesh wall when we
     // re-inject full forward velocity every frame (that's how the car "drove
@@ -124,7 +132,7 @@ export function Car() {
     // exit
     if (consumeTap("KeyE")) {
       const c = rb.translation();
-      const right = new THREE.Vector3(nfwd.z, 0, -nfwd.x);
+      const right = _right.set(nfwd.z, 0, -nfwd.x);
       const pl = shared.player;
       if (pl) {
         pl.setEnabled(true);

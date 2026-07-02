@@ -14,6 +14,12 @@ const BARKS = ["Hey! Watch it!", "You crazy?!", "Somebody call the cops!", "Get 
 const WALK_SPEED = 6.5;
 const ENTER_RADIUS = 4.5;
 
+// Reused every frame in the movement hot path (see ROADMAP §3). The discrete
+// melee/gun blocks below allocate only on a key/click tap, so they're left as-is.
+const _fwd = new THREE.Vector3();
+const _right = new THREE.Vector3();
+const _dir = new THREE.Vector3();
+
 export function Player() {
   const body = useRef<RapierRigidBody>(null);
   const mesh = useRef<THREE.Group>(null);
@@ -40,9 +46,9 @@ export function Player() {
 
     const ax = moveAxis();
     const yaw = shared.camYaw;
-    const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-    const right = new THREE.Vector3(fwd.z, 0, -fwd.x);
-    const dir = new THREE.Vector3()
+    const fwd = _fwd.set(Math.sin(yaw), 0, Math.cos(yaw));
+    const right = _right.set(fwd.z, 0, -fwd.x);
+    const dir = _dir.set(0, 0, 0)
       .addScaledVector(fwd, ax.y)
       .addScaledVector(right, -ax.x); // A/D inverted for on-foot strafing
 

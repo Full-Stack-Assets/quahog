@@ -18,6 +18,10 @@ const _up = new THREE.Vector3();
 const _a = new THREE.Vector3();
 const _b = new THREE.Vector3();
 const _c = new THREE.Vector3();
+// Scratch for followCam so the chase camera doesn't allocate two Vector3s per
+// frame (it runs every frame in the photoreal build's hot loop).
+const _off = new THREE.Vector3();
+const _look = new THREE.Vector3();
 
 /** ENU "up" direction in world space, from the content group's orientation.
  *  Returns a shared scratch vector — use it immediately, don't store across frames. */
@@ -83,15 +87,14 @@ export function followCam(
   height: number,
   t: number,
 ) {
-  const off = new THREE.Vector3(
-    -Math.sin(yaw) * dist,
-    height,
-    -Math.cos(yaw) * dist,
-  ).add(posLocal);
-  const camW = parent.localToWorld(off.clone());
-  const look = parent.localToWorld(posLocal.clone().add(new THREE.Vector3(0, 1.4, 0)));
+  // localToWorld mutates + returns its argument, so feed it the scratch vectors
+  // (no per-frame allocation). posLocal is only read, never mutated.
+  const camW = parent.localToWorld(
+    _off.set(-Math.sin(yaw) * dist, height, -Math.cos(yaw) * dist).add(posLocal),
+  );
   camera.up.copy(up);
   camera.position.lerp(camW, t);
+  const look = parent.localToWorld(_look.copy(posLocal).add(_a.set(0, 1.4, 0)));
   camera.lookAt(look);
 }
 
