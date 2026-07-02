@@ -10,14 +10,16 @@
     "build": "tsc && vite build",
     "prebuild": "node scripts/gen_manifests.mjs",
     "music:manifest": "node scripts/gen_manifests.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@react-three/drei": "9.114.3",
     "@react-three/fiber": "8.17.10",
-    "@vercel/blob": "^0.27.0",
     "@react-three/postprocessing": "^2.16.3",
     "@react-three/rapier": "1.5.0",
+    "@vercel/blob": "^0.27.0",
     "3d-tiles-renderer": "^0.4.28",
     "postprocessing": "^6.36.4",
     "react": "18.3.1",
@@ -32,6 +34,7 @@
     "@types/three": "0.169.0",
     "@vitejs/plugin-react": "4.3.3",
     "typescript": "5.6.3",
-    "vite": "5.4.10"
+    "vite": "5.4.10",
+    "vitest": "^2.1.9"
   }
 }
